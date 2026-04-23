@@ -467,7 +467,63 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 <div id="toast"></div>
 
   <script>
-// === API CENTRAL Oviedo (misma que index y apps) ===
+// === SESIÓN COMPARTIDA ENTRE PÁGINAS (admin / vendedor / cliente) ============
+const SESS_KEYS = {
+  token: 'ov_s_token',
+  name:  'ov_s_name',
+  role:  'ov_s_role'
+};
+
+function getSessionShared(){
+  return {
+    token: localStorage.getItem(SESS_KEYS.token),
+    name:  localStorage.getItem(SESS_KEYS.name),
+    role:  localStorage.getItem(SESS_KEYS.role)
+  };
+}
+function setSessionShared(data){
+  if(!data) return;
+  if(data.token)  localStorage.setItem(SESS_KEYS.token, data.token);
+  if(data.nombre) localStorage.setItem(SESS_KEYS.name,  data.nombre);
+  if(data.rol)    localStorage.setItem(SESS_KEYS.role,  data.rol);
+}
+function clearSessionShared(){
+  Object.values(SESS_KEYS).forEach(function(k){ localStorage.removeItem(k); });
+}
+
+function routeByRole(role){
+  if(role === 'admin'){
+    // Admin se queda en este panel
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+  }else if(role === 'vendedor'){
+    window.location.href = 'panel-vendedor.html';
+  }else if(role === 'cliente'){
+    window.location.href = 'panel-cliente.html';
+  }else{
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  }
+}
+
+// Al cargar: si hay sesión y es admin, entrar directo; si no, redirigir o mostrar login
+window.addEventListener('load', function(){
+  var s = getSessionShared();
+  if(s && s.token && s.role){
+    if(s.role === 'admin'){
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('app').style.display='block';
+      initApp();
+    }else{
+      routeByRole(s.role);
+    }
+  }else{
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  }
+});
+
+// === API CENTRAL Oviedo (misma que index y apps) ============================
 var API_URL = 'https://script.google.com/macros/s/AKfycby1CkzmTUHJrkQu8LVFoMdv8PbssNSGp9ZFa1vD8LbkwMEcLPzM4Lcrz8RmuIR700Zf/exec';
 
 // GET vía JSONP (evita CORS)
@@ -556,7 +612,7 @@ function loadConfigFromAPI() {
 }
 
 function saveConfigToAPI(cfg) {
-  // cfg: { key:'URL_PUB', value:'...' }
+  // cfg esperado por GAS: { key:'ov_url_pub', value:'...' } etc.
   return apiPost({action:'setConfig', key: cfg.key, value: cfg.value});
 }
 
@@ -579,14 +635,20 @@ function saveAll(){
   localStorage.setItem('ov_log', JSON.stringify(LOG));
 }
 
-function fmtCLP(n){ return '$'+Math.round(n||0).toLocaleString('es-CL');  
- }
+function fmtCLP(n){ return '$'+Math.round(n||0).toLocaleString('es-CL'); }
 
 // ── LOGIN ────────────────────────────────────────────
 function doLogin(){
   var u=document.getElementById('lu').value.trim();
   var p=document.getElementById('lp').value.trim();
   if(u===ADMIN_USER.u && p===ADMIN_USER.p){
+    // guardar sesión compartida como admin
+    setSessionShared({
+      token:  Date.now().toString(),
+      nombre: 'Administrador',
+      rol:    'admin'
+    });
+
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
     initApp();
@@ -594,12 +656,15 @@ function doLogin(){
     document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
   }
 }
+
 function doLogout(){
   document.getElementById('app').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('lu').value='';
   document.getElementById('lp').value='';
   document.getElementById('lerr').textContent='';
+
+  clearSessionShared();
 }
 
 // ── TABS ─────────────────────────────────────────────
@@ -1085,14 +1150,17 @@ function guardarURLs(){
   URL_PROXY = document.getElementById('urlProxy').value.trim();
   localStorage.setItem('ov_url_pub',   URL_PUB);
   localStorage.setItem('ov_url_proxy', URL_PROXY);
-  saveConfigToAPI({ov_url_pub:URL_PUB, ov_url_proxy:URL_PROXY})
-    .then(function(){
-      toast('✅ URLs guardadas en servidor. Las apps cliente y vendedor usarán estas URLs.','ok');
-      testConexion();
-    }).catch(function(){
-      toast('Guardado local ok, error en servidor','warn');
-      testConexion();
-    });
+  // Guardar en GAS con claves separadas
+  Promise.all([
+    saveConfigToAPI({key:'ov_url_pub',   value:URL_PUB}),
+    saveConfigToAPI({key:'ov_url_proxy', value:URL_PROXY})
+  ]).then(function(){
+    toast('✅ URLs guardadas en servidor. Las apps cliente y vendedor usarán estas URLs.','ok');
+    testConexion();
+  }).catch(function(){
+    toast('Guardado local ok, error en servidor','warn');
+    testConexion();
+  });
 }
 
 function testConexion(){
