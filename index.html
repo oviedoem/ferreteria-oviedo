@@ -304,13 +304,13 @@ var CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || CSV_URL_PUB_DEFAULT;
 
 var CK = 'ov_v_prods', CT = 'ov_v_ts';
 
-// ── USUARIOS: lee de ov_v2_users (guardado por admin) ────────────────────────
+// ── USUARIOS LOCALES (fallback) ───────────────────────────────────────────────
 var USERS_DEFAULT = [
-  {u:'vendedor1', p:'vend2025', nombre:'Ricardo Vidal',   role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
-  {u:'vendedor2', p:'vend2025', nombre:'Rafaela Flores',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
-  {u:'vendedor3', p:'vend2025', nombre:'Gregorio Reyes',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
-  {u:'vendedor4', p:'vend2025', nombre:'Jaime Subiabre',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
-  {u:'admin',     p:'oviedo2025admin', nombre:'Administrador', role:'admin', exp:Date.now()+365*864e5, estado:'activo'}
+  {u:'vendedor1', p:'vend2025',       nombre:'Ricardo Vidal',   role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'vendedor2', p:'vend2025',       nombre:'Rafaela Flores',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'vendedor3', p:'vend2025',       nombre:'Gregorio Reyes',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'vendedor4', p:'vend2025',       nombre:'Jaime Subiabre',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'admin',     p:'oviedo2025admin',nombre:'Administrador',   role:'admin',    exp:Date.now()+365*864e5, estado:'activo'}
 ];
 var USERS = USERS_DEFAULT.slice();
 
@@ -328,10 +328,69 @@ loadUsers();
 var me=null, PRODS=[], FILT=[], CART=[], MPROD=null, MARCA='TODOS';
 var _sessInterval=null;
 
+// ── SESIÓN COMPARTIDA ENTRE PÁGINAS ──────────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbxj3vPc80IjDmVcSDCFLZkHHNPNT4AuSCn3378Tlk4tpjS8o24j5o_u2Crm_VQexk6Z/exec';
+
+const SESS_KEYS = {
+  token: 'ov_s_token',
+  name:  'ov_s_name',
+  role:  'ov_s_role'
+};
+
+function getSessionShared(){
+  return {
+    token: localStorage.getItem(SESS_KEYS.token),
+    name:  localStorage.getItem(SESS_KEYS.name),
+    role:  localStorage.getItem(SESS_KEYS.role)
+  };
+}
+function setSessionShared(data){
+  if(!data) return;
+  if(data.token)  localStorage.setItem(SESS_KEYS.token, data.token);
+  if(data.nombre) localStorage.setItem(SESS_KEYS.name,  data.nombre);
+  if(data.rol)    localStorage.setItem(SESS_KEYS.role,  data.rol);
+}
+function clearSessionShared(){
+  Object.values(SESS_KEYS).forEach(function(k){ localStorage.removeItem(k); });
+}
+
+function routeByRole(role){
+  if(role==='admin'){
+    window.location.href = 'panel-admin.html';
+  }else if(role==='vendedor'){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display         = 'block';
+  }else if(role==='cliente'){
+    window.location.href = 'panel-cliente.html';
+  }else{
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display         = 'none';
+  }
+}
+
+// Al cargar index.html: si existe sesión, actuar según rol
+window.addEventListener('load', function(){
+  var s = getSessionShared();
+  if(s && s.token && s.role){
+    if(s.role==='vendedor'){
+      me = { nombre: s.name || 'Vendedor', role:'vendedor' };
+      document.getElementById('wuser').textContent = me.nombre;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display         = 'block';
+      startApp();
+    }else{
+      routeByRole(s.role);
+    }
+  }else{
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display         = 'none';
+  }
+});
+
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
+// Por ahora usa USERS locales; luego se puede cambiar a Apps Script (API_URL).
 function login(){
-  loadUsers(); // Refresca siempre antes de validar
-  // Refresca URLs por si admin las actualizó
+  loadUsers();
   CSV_URL     = localStorage.getItem('ov_url_proxy') || CSV_URL_DEFAULT;
   CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || CSV_URL_PUB_DEFAULT;
 
@@ -339,6 +398,11 @@ function login(){
   var p   = document.getElementById('lpass').value.trim();
   var err = document.getElementById('lerr');
   err.textContent = '';
+
+  if(!u || !p){
+    err.textContent = 'Ingresa usuario y contraseña';
+    return;
+  }
 
   var found = null;
   for(var i=0;i<USERS.length;i++){
@@ -358,9 +422,18 @@ function login(){
   var diasRest = Math.ceil((found.exp-Date.now())/864e5);
   if(diasRest<=7) showToast('Licencia vence en '+diasRest+' días','warn');
 
+  // Guardar sesión compartida
+  setSessionShared({
+    token:  Date.now().toString(),
+    nombre: found.nombre,
+    rol:    found.role
+  });
+
   registerSession(found.nombre,'Vendedor');
   if(_sessInterval) clearInterval(_sessInterval);
-  _sessInterval = setInterval(function(){ if(me) registerSession(me.nombre,'Vendedor'); }, 60000);
+  _sessInterval = setInterval(function(){
+    if(me) registerSession(me.nombre,'Vendedor');
+  }, 60000);
 
   startApp();
 }
@@ -369,6 +442,9 @@ function logout(){
   if(me) clearSession(me.nombre,'Vendedor');
   if(_sessInterval){ clearInterval(_sessInterval); _sessInterval=null; }
   me=null; PRODS=[]; FILT=[]; CART=[]; MARCA='TODOS';
+
+  clearSessionShared();
+
   document.getElementById('app').style.display         = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('luser').value = '';
@@ -377,7 +453,7 @@ function logout(){
   document.getElementById('abar').style.display = 'none';
 }
 
-// ── SESIONES PARA ADMIN ───────────────────────────────────────────────────────
+// ── SESIONES PARA ADMIN (vista de quién está conectado) ──────────────────────
 function registerSession(nombre, app){
   try{
     var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
@@ -398,7 +474,7 @@ function clearSession(nombre, app){
   }catch(e){}
 }
 
-// ── ADMIN ─────────────────────────────────────────────────────────────────────
+// ── ADMIN (gestión de usuarios local) ────────────────────────────────────────
 function openAdmin(){
   if(!me||me.role!=='admin') return;
   renderAdmin();
@@ -808,7 +884,6 @@ function genPDF(){
   var obs    = document.getElementById('cobs').value    || '';
   var vend   = document.getElementById('cvend').value   || (me?me.nombre:'');
 
-  // HEADER
   doc.setFillColor(og[0],og[1],og[2]); doc.rect(0,0,216,28,'F');
   doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
   doc.text('FERRETERÍA OVIEDO',12,12);
@@ -822,7 +897,6 @@ function genPDF(){
   doc.setFontSize(9); doc.setTextColor(gr[0],gr[1],gr[2]);
   doc.text(fecha,12,35); doc.text('Sucursal: El Manzano',130,35);
 
-  // CLIENTE
   var y=48;
   var campos=[['Señor(es):',nombre],['RUT:',rut],['Dirección:',dir],['Teléfono:',tel]];
   doc.setTextColor(dk[0],dk[1],dk[2]);
@@ -835,7 +909,6 @@ function genPDF(){
   doc.setFont('helvetica','italic'); doc.setTextColor(gr[0],gr[1],gr[2]);
   doc.text('De acuerdo a lo solicitado, cotizamos lo siguiente:',12,y); y+=8;
 
-  // TABLA
   var sub  = CART.reduce(function(a,c){return a+c.precio*c.qty;},0);
   var rows = CART.map(function(it){
     var desc = it.Desc.length>56 ? it.Desc.substring(0,56)+'...' : it.Desc;
