@@ -468,19 +468,19 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 
 <script>
 // === API CENTRAL Oviedo (misma que index y panel-cliente) ===
-var API_URL = 'https://script.google.com/macros/s/AKfycbwNM8k_b2OhNZKBKFHmdC8KOlDn9tOae-IigJd6keOu5lgQnQdzo_m-1425Xamj-ho/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbwNM8k_b2OhNZKBKFHmdC8K0IDn9tOae-ligJd6keOu5lgQnQdzo_m-1425Xa/exec';
 
 function apiGet(params) {
   var url = API_URL + '?' + Object.keys(params).map(function(k){
-    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
   }).join('&');
   return fetch(url).then(function(r){ return r.json(); });
 }
 
 function apiPost(body) {
   return fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
     body: JSON.stringify(body)
   }).then(function(r){ return r.json(); });
 }
@@ -488,7 +488,7 @@ function apiPost(body) {
 // Usuarios (clientes + vendedores) desde hoja GAS
 function loadUsersFromAPI() {
   return apiGet({action:'getUsers'}).then(function(data){
-    if(!Array.isArray(data)) return;
+    if (!Array.isArray(data)) return;
     CLI_USERS  = data.filter(function(u){ return u.app === 'cliente'; });
     VEND_USERS = data.filter(function(u){ return u.app === 'vendedor' || u.role === 'admin'; });
   }).catch(function(e){
