@@ -467,18 +467,37 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 <div id="toast"></div>
 
 <script>
-// === API CENTRAL Oviedo (misma que index y panel-cliente) ===
+// === API CENTRAL Oviedo (misma que index y apps) ===
 var API_URL = 'https://script.google.com/macros/s/AKfycby1CkzmTUHJrkQu8LVFoMdv8PbssNSGp9ZFa1vD8LbkwMEcLPzM4Lcrz8RmuIR700Zf/exec';
 
-// GET genérico (querystring)
+// GET vía JSONP (evita CORS)
 function apiGet(params) {
-  var url = API_URL + '?' + Object.keys(params).map(function(k){
-    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-  }).join('&');
-  return fetch(url).then(function(r){ return r.json(); });
+  return new Promise(function(resolve, reject) {
+    var cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+    params.callback = cbName;
+
+    var url = API_URL + '?' + Object.keys(params).map(function(k){
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+
+    window[cbName] = function(data) {
+      resolve(data);
+      delete window[cbName];
+      document.head.removeChild(script);
+    };
+
+    var script = document.createElement('script');
+    script.src = url;
+    script.onerror = function() {
+      reject(new Error('JSONP error'));
+      delete window[cbName];
+      document.head.removeChild(script);
+    };
+    document.head.appendChild(script);
+  });
 }
 
-// POST genérico (form-encoded para evitar problemas CORS)
+// POST vía form-encoded (sin headers especiales)
 function apiPost(body) {
   var form = new URLSearchParams();
   Object.keys(body).forEach(function(k){
@@ -489,11 +508,11 @@ function apiPost(body) {
 
   return fetch(API_URL, {
     method: 'POST',
-    body: form   // sin headers personalizados -> menos preflight
+    body: form
   }).then(function(r){ return r.json(); });
 }
 
-// Usuarios (clientes + vendedores) desde hoja GAS
+// Usuarios (clientes + vendedores) desde GAS
 function loadUsersFromAPI() {
   return apiGet({action:'getUsers'}).then(function(data){
     if (!Array.isArray(data)) return;
@@ -537,11 +556,11 @@ function loadConfigFromAPI() {
 }
 
 function saveConfigToAPI(cfg) {
-  // cfg: { key:'URL_PUB', value:'...' } por ejemplo
+  // cfg: { key:'URL_PUB', value:'...' }
   return apiPost({action:'setConfig', key: cfg.key, value: cfg.value});
 }
 
-// ── DATOS BASE Y LOCALSTORAGE (resto del script sigue igual) ──
+// ── DATOS BASE / LOCAL ─────────────────────────────
 var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
 
 var CLI_USERS  = [];
@@ -559,6 +578,10 @@ function saveAll(){
   localStorage.setItem('ov_promos', JSON.stringify(PROMOS));
   localStorage.setItem('ov_log', JSON.stringify(LOG));
 }
+
+// A partir de aquí deja todo el resto del JS igual:
+// LOGIN, renderDashboard, renderUsuarios, loadPrecios, etc.
+</script>
 
 function fmtCLP(n){ return '$'+Math.round(n||0).toLocaleString('es-CL'); }
 
