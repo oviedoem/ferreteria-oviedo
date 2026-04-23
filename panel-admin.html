@@ -467,35 +467,86 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 <div id="toast"></div>
 
 <script>
+// === API CENTRAL Oviedo (misma que index y panel-cliente) ===
+var API_URL = 'https://script.google.com/macros/s/AKfycbwNM8k_b2OhNZKBKFHmdC8KOlDn9tOae-IigJd6keOu5lgQnQdzo_m-1425Xamj-ho/exec';
+
+function apiGet(params) {
+  var url = API_URL + '?' + Object.keys(params).map(function(k){
+    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+  }).join('&');
+  return fetch(url).then(function(r){ return r.json(); });
+}
+
+function apiPost(body) {
+  return fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  }).then(function(r){ return r.json(); });
+}
+
+// Usuarios (clientes + vendedores) desde hoja GAS
+function loadUsersFromAPI() {
+  return apiGet({action:'getUsers'}).then(function(data){
+    if(!Array.isArray(data)) return;
+    CLI_USERS  = data.filter(function(u){ return u.app === 'cliente'; });
+    VEND_USERS = data.filter(function(u){ return u.app === 'vendedor' || u.role === 'admin'; });
+  }).catch(function(e){
+    console.error('Error getUsers', e);
+  });
+}
+
+function saveUserToAPI(userObj) {
+  return apiPost({action:'saveUser', data:userObj});
+}
+
+function deleteUserFromAPI(username) {
+  return apiGet({action:'deleteUser', u: username});
+}
+
+// Sesiones y cotizaciones
+function loadSessionsFromAPI() {
+  return apiGet({action:'getSessions'}).catch(function(e){
+    console.error('Error getSessions', e);
+    return [];
+  });
+}
+
+function loadCotizacionesFromAPI(limit) {
+  return apiGet({action:'getCotizaciones', limit: limit || '200'})
+    .catch(function(e){
+      console.error('Error getCotizaciones', e);
+      return [];
+    });
+}
+
+// Config (URL_PUB, URL_PROXY, etc.)
+function loadConfigFromAPI() {
+  return apiGet({action:'getConfig'}).catch(function(e){
+    console.error('Error getConfig', e);
+    return {};
+  });
+}
+
+function saveConfigToAPI(cfg) {
+  return apiPost({action:'setConfig', data: cfg});
+}
+
 // ── DATOS BASE ──────────────────────────────────────
 var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
 
-var CLI_USERS = JSON.parse(localStorage.getItem('ov_cli_v2_users') || 'null') || [
-  {user:'admin',pass:'oviedo2025admin',nombre:'Administrador',role:'admin',licExpiry:new Date(Date.now()+365*864e5).toISOString(),estado:'activo'},
-  {user:'cliente1',pass:'cli2025',nombre:'Cliente 1',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'cliente2',pass:'cli2025',nombre:'Cliente 2',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'demo',pass:'demo123',nombre:'Demo',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'}
-];
-
-var VEND_USERS = JSON.parse(localStorage.getItem('ov_v2_users') || 'null') || [
-  {u:'vendedor1',p:'vend2025',nombre:'Ricardo Vidal',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'vendedor2',p:'vend2025',nombre:'Rafaela Flores',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'vendedor3',p:'vend2025',nombre:'Gregorio Reyes',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'vendedor4',p:'vend2025',nombre:'Jaime Subiabre',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'admin',p:'oviedo2025admin',nombre:'Administrador',role:'admin',exp:Date.now()+365*864e5,estado:'activo'}
-];
+var CLI_USERS  = [];
+var VEND_USERS = [];
 
 var PROMOS = JSON.parse(localStorage.getItem('ov_promos') || '[]');
-var LOG = JSON.parse(localStorage.getItem('ov_log') || '[]');
+var LOG    = JSON.parse(localStorage.getItem('ov_log') || '[]');
 var PRODS_CACHE = [];
-var PRODS_FILT = [];
+var PRODS_FILT  = [];
 
-var URL_PUB   = localStorage.getItem('ov_url_pub')   || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb/pub?output=csv';
-var URL_PROXY = localStorage.getItem('ov_url_proxy') || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb/pub?output=csv';
+var URL_PUB   = localStorage.getItem('ov_url_pub')   || '';
+var URL_PROXY = localStorage.getItem('ov_url_proxy') || '';
 
 function saveAll(){
-  localStorage.setItem('ov_cli_v2_users', JSON.stringify(CLI_USERS));
-  localStorage.setItem('ov_v2_users', JSON.stringify(VEND_USERS));
   localStorage.setItem('ov_promos', JSON.stringify(PROMOS));
   localStorage.setItem('ov_log', JSON.stringify(LOG));
 }
@@ -542,75 +593,95 @@ function showTab(id, btn){
 
 // ── INIT ─────────────────────────────────────────────
 function initApp(){
-  renderDashboard();
-  renderUsuarios();
+  // Config desde GAS
+  loadConfigFromAPI().then(function(cfg){
+    if(cfg && cfg.ov_url_pub)   URL_PUB   = cfg.ov_url_pub;
+    if(cfg && cfg.ov_url_proxy) URL_PROXY = cfg.ov_url_proxy;
+    localStorage.setItem('ov_url_pub',   URL_PUB);
+    localStorage.setItem('ov_url_proxy', URL_PROXY);
+    var up = document.getElementById('urlPub');
+    var ux = document.getElementById('urlProxy');
+    if(up) up.value = URL_PUB || '';
+    if(ux) ux.value = URL_PROXY || '';
+    loadPrecios();
+  });
+
+  // Usuarios desde GAS
+  loadUsersFromAPI().then(function(){
+    renderUsuarios();
+    renderDashboard();
+  });
+
   renderPromos();
-  loadPrecios();
   loadRedes();
-  document.getElementById('urlPub').value   = URL_PUB;
-  document.getElementById('urlProxy').value = URL_PROXY;
   setInterval(renderDashboard, 30000);
 }
 
 // ── DASHBOARD ────────────────────────────────────────
 function renderDashboard(){
+  // Usuarios
   document.getElementById('statTotalCli').textContent  = CLI_USERS.filter(function(u){return u.role==='cliente';}).length;
   document.getElementById('statTotalVend').textContent = VEND_USERS.filter(function(u){return u.role==='vendedor';}).length;
 
-  var sessions = JSON.parse(localStorage.getItem('ov_sessions') || '[]');
-  var now = Date.now();
-  var activas = sessions.filter(function(s){ return now - s.ts < 30*60*1000; });
-  document.getElementById('statOnline').textContent = activas.length;
-  document.getElementById('onlineBadge').textContent = '● '+activas.length+' en línea';
+  // Sesiones desde GAS
+  loadSessionsFromAPI().then(function(sessions){
+    var now = Date.now();
+    var activas = sessions.filter(function(s){ return now - s.ts < 30*60*1000; });
+    document.getElementById('statOnline').textContent = activas.length;
+    document.getElementById('onlineBadge').textContent = '● '+activas.length+' en línea';
 
-  if(activas.length===0){
-    document.getElementById('onlineList').innerHTML =
-      '<div style="background:#f9fafb;border-radius:10px;padding:14px;font-size:13px;color:#6b7280">'+
-      '<div style="font-weight:700;margin-bottom:6px">Sin sesiones activas en este momento</div>'+
-      '<div style="font-size:12px">ℹ️ Las sesiones se registran cuando un usuario inicia sesión en la app cliente o vendedor <strong>en el mismo dispositivo o red que comparte localStorage</strong>.</div></div>';
-  } else {
-    document.getElementById('onlineList').innerHTML = activas.map(function(s){
-      var mins = Math.floor((now-s.ts)/60000);
-      return '<div class="online-item">'+
-        '<div class="online-avatar">'+s.user.charAt(0).toUpperCase()+'</div>'+
-        '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+s.user+'</div>'+
-        '<div style="font-size:12px;color:#6b7280">'+s.app+' · '+s.device+' · hace '+(mins<1?'<1':mins)+' min</div></div>'+
-        '<span class="badge badge-verde"><span class="online-dot"></span>Activo</span></div>';
-    }).join('');
-  }
+    if(activas.length===0){
+      document.getElementById('onlineList').innerHTML =
+        '<div style="background:#f9fafb;border-radius:10px;padding:14px;font-size:13px;color:#6b7280">'+
+        '<div style="font-weight:700;margin-bottom:6px">Sin sesiones activas en este momento</div>'+
+        '<div style="font-size:12px">ℹ️ Las sesiones se registran cuando un usuario inicia sesión en cualquiera de las apps.</div></div>';
+    } else {
+      document.getElementById('onlineList').innerHTML = activas.map(function(s){
+        var mins = Math.floor((now-s.ts)/60000);
+        return '<div class="online-item">'+
+          '<div class="online-avatar">'+(s.user||'?').charAt(0).toUpperCase()+'</div>'+
+          '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+(s.user||'Usuario')+'</div>'+
+          '<div style="font-size:12px;color:#6b7280">'+(s.app||'App')+' · '+(s.device||'')+' · hace '+(mins<1?'<1':mins)+' min</div></div>'+
+          '<span class="badge badge-verde"><span class="online-dot"></span>Activo</span></div>';
+      }).join('');
+    }
+  });
+
+  // Cotizaciones desde GAS
+  loadCotizacionesFromAPI('200').then(function(cotiz){
+    var totalMonto = cotiz.reduce(function(a,c){return a+(c.total||0);},0);
+    var cotizCli  = cotiz.filter(function(c){return c.app==='Cliente';}).length;
+    var cotizVend = cotiz.filter(function(c){return c.app==='Vendedor';}).length;
+    document.getElementById('statTotalCotiz').textContent = cotiz.length;
+    document.getElementById('statMontoTotal').textContent = fmtCLP(totalMonto);
+    document.getElementById('statCotizCli').textContent   = cotizCli;
+    document.getElementById('statCotizVend').textContent  = cotizVend;
+
+    var lastDiv = document.getElementById('lastCotiz');
+    if(cotiz.length===0){
+      lastDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones.</p>';
+    } else {
+      var recent = cotiz.slice(-5).reverse();
+      lastDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
+        '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th></th></tr>'+
+        recent.map(function(c,i){
+          var idx = cotiz.length-1-i;
+          return '<tr>'+
+            '<td>'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
+            '<td><b>'+c.user+'</b></td>'+
+            '<td><span class="badge '+(c.app==="Vendedor"?"badge-azul":"badge-naranja")+'">'+c.app+'</span></td>'+
+            '<td>'+c.items+'</td>'+
+            '<td>'+fmtCLP(c.total)+'</td>'+
+            '<td><button class="btn btn-sm btn-primary" onclick="verCotizacionAPI('+idx+')">Ver</button></td>'+
+          '</tr>';
+        }).join('')+
+      '</table></div>';
+    }
+
+    renderTopProductos('topProductos', cotiz);
+  });
 
   document.getElementById('statProds').textContent = PRODS_CACHE.length || '—';
-
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var totalMonto = cotiz.reduce(function(a,c){return a+(c.total||0);},0);
-  var cotizCli  = cotiz.filter(function(c){return c.app==='Cliente';}).length;
-  var cotizVend = cotiz.filter(function(c){return c.app==='Vendedor';}).length;
-  document.getElementById('statTotalCotiz').textContent  = cotiz.length;
-  document.getElementById('statMontoTotal').textContent  = fmtCLP(totalMonto);
-  document.getElementById('statCotizCli').textContent    = cotizCli;
-  document.getElementById('statCotizVend').textContent   = cotizVend;
-
-  var lastDiv = document.getElementById('lastCotiz');
-  if(cotiz.length===0){ lastDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones.</p>'; }
-  else {
-    var recent = cotiz.slice(-5).reverse();
-    lastDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th></th></tr>'+
-      recent.map(function(c,i){
-        var idx = cotiz.length-1-i;
-        return '<tr>'+
-          '<td>'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-          '<td><b>'+c.user+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
-          '<td>'+c.items+'</td>'+
-          '<td>'+fmtCLP(c.total)+'</td>'+
-          '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+idx+')">Ver</button></td>'+
-        '</tr>';
-      }).join('')+
-    '</table></div>';
-  }
-
-  renderTopProductos('topProductos', cotiz);
 }
 
 // ── TOP PRODUCTOS ────────────────────────────────────
@@ -644,107 +715,105 @@ function renderTopProductos(elId, cotiz){
   }).join('');
 }
 
-// ── COTIZACIONES ─────────────────────────────────────
+// ── COTIZACIONES (lista) ─────────────────────────────
 function renderCotizaciones(){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]').slice().reverse();
-  var busq  = (document.getElementById('cotizSearch')     || {value:''}).value.toLowerCase().trim();
-  var appF  = (document.getElementById('cotizFiltroApp')  || {value:''}).value;
+  loadCotizacionesFromAPI('200').then(function(cotizRaw){
+    var cotiz = cotizRaw.slice().reverse();
+    var busq  = (document.getElementById('cotizSearch')     || {value:''}).value.toLowerCase().trim();
+    var appF  = (document.getElementById('cotizFiltroApp')  || {value:''}).value;
 
-  var filtradas = cotiz.filter(function(c){
-    var okUser = !busq || (c.user||'').toLowerCase().includes(busq);
-    var okApp  = !appF || c.app===appF;
-    return okUser && okApp;
+    var filtradas = cotiz.filter(function(c){
+      var okUser = !busq || (c.user||'').toLowerCase().includes(busq);
+      var okApp  = !appF || c.app===appF;
+      return okUser && okApp;
+    });
+
+    var totalMonto = filtradas.reduce(function(a,c){return a+(c.total||0);},0);
+    var cCli  = filtradas.filter(function(c){return c.app==='Cliente';}).length;
+    var cVend = filtradas.filter(function(c){return c.app==='Vendedor';}).length;
+    document.getElementById('cotizStatTotal').textContent = filtradas.length;
+    document.getElementById('cotizStatMonto').textContent = fmtCLP(totalMonto);
+    document.getElementById('cotizStatCli').textContent   = cCli;
+    document.getElementById('cotizStatVend').textContent  = cVend;
+
+    var div = document.getElementById('tablaCotiz');
+    if(filtradas.length===0){ 
+      div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones para mostrar.</p>'; 
+    } else {
+      var totalLen = cotizRaw.length;
+      div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
+        '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th>Detalle</th></tr>'+
+        filtradas.map(function(c, i){
+          var idxOrig = totalLen - 1 - i;
+          return '<tr>'+
+            '<td style="white-space:nowrap">'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
+            '<td><b>'+c.user+'</b></td>'+
+            '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
+            '<td>'+c.items+'</td>'+
+            '<td>'+fmtCLP(c.total)+'</td>'+
+            '<td><button class="btn btn-sm btn-primary" onclick="verCotizacionAPI('+idxOrig+')">📋 Ver</button></td>'+
+          '</tr>';
+        }).join('')+
+      '</table></div>';
+    }
+
+    renderTopProductos('topProductosCotiz', filtradas.slice().reverse());
   });
-
-  // Stats
-  var totalMonto = filtradas.reduce(function(a,c){return a+(c.total||0);},0);
-  var cCli  = filtradas.filter(function(c){return c.app==='Cliente';}).length;
-  var cVend = filtradas.filter(function(c){return c.app==='Vendedor';}).length;
-  document.getElementById('cotizStatTotal').textContent = filtradas.length;
-  document.getElementById('cotizStatMonto').textContent = fmtCLP(totalMonto);
-  document.getElementById('cotizStatCli').textContent   = cCli;
-  document.getElementById('cotizStatVend').textContent  = cVend;
-
-  var div = document.getElementById('tablaCotiz');
-  if(filtradas.length===0){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones para mostrar.</p>'; }
-  else {
-    // Necesitamos el índice original (en el array invertido) para verCotizacion
-    var totalLen = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]').length;
-    div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th>Detalle</th></tr>'+
-      filtradas.map(function(c, i){
-        var idxOrig = totalLen - 1 - i; // índice en array original sin invertir
-        return '<tr>'+
-          '<td style="white-space:nowrap">'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-          '<td><b>'+c.user+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
-          '<td>'+c.items+'</td>'+
-          '<td>'+fmtCLP(c.total)+'</td>'+
-          '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+idxOrig+')">📋 Ver</button></td>'+
-        '</tr>';
-      }).join('')+
-    '</table></div>';
-  }
-
-  renderTopProductos('topProductosCotiz', filtradas.slice().reverse());
 }
 
 function limpiarCotizaciones(){
-  if(!confirm('¿Eliminar TODAS las cotizaciones guardadas? Esta acción no se puede deshacer.')) return;
-  localStorage.removeItem('ov_cotizaciones');
-  renderCotizaciones();
-  renderDashboard();
-  toast('Cotizaciones eliminadas','ok');
+  alert('La limpieza total de cotizaciones debe hacerse desde la hoja o agregando una acción en GAS (no se borra local ahora).');
 }
 
-// ── VER COTIZACIÓN MODAL ─────────────────────────────
-function verCotizacion(idx){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var c = cotiz[idx];
-  if(!c){ toast('Cotización no encontrada','err'); return; }
+// ── VER COTIZACIÓN (desde API) ───────────────────────
+function verCotizacionAPI(idx){
+  loadCotizacionesFromAPI('200').then(function(cotiz){
+    var c = cotiz[idx];
+    if(!c){ toast('Cotización no encontrada','err'); return; }
 
-  var fecha   = new Date(c.ts).toLocaleString('es-CL');
-  var detalle = Array.isArray(c.detalle) ? c.detalle : [];
+    var fecha   = new Date(c.ts).toLocaleString('es-CL');
+    var detalle = Array.isArray(c.detalle) ? c.detalle : [];
 
-  var rowsHTML = '';
-  if(detalle.length===0){
-    rowsHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:14px">Sin detalle de productos (cotización generada antes de la actualización)</td></tr>';
-  } else {
-    rowsHTML = detalle.map(function(it){
-      var sub = (it.PrecioIVA||0)*(it.qty||0);
-      return '<tr>'+
-        '<td>'+( it.Codigo||'—')+'</td>'+
-        '<td>'+( it.Descripcion||'—')+'</td>'+
-        '<td style="text-align:center">'+( it.qty||0)+'</td>'+
-        '<td style="text-align:right">'+fmtCLP(it.PrecioIVA||0)+'</td>'+
-        '<td style="text-align:right;font-weight:700;color:var(--naranja)">'+fmtCLP(sub)+'</td>'+
-      '</tr>';
-    }).join('');
-  }
+    var rowsHTML = '';
+    if(detalle.length===0){
+      rowsHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:14px">Sin detalle de productos</td></tr>';
+    } else {
+      rowsHTML = detalle.map(function(it){
+        var sub = (it.PrecioIVA||0)*(it.qty||0);
+        return '<tr>'+
+          '<td>'+( it.Codigo||'—')+'</td>'+
+          '<td>'+( it.Descripcion||'—')+'</td>'+
+          '<td style="text-align:center">'+( it.qty||0)+'</td>'+
+          '<td style="text-align:right">'+fmtCLP(it.PrecioIVA||0)+'</td>'+
+          '<td style="text-align:right;font-weight:700;color:var(--naranja)">'+fmtCLP(sub)+'</td>'+
+        '</tr>';
+      }).join('');
+    }
 
-  var neto = Math.round((c.total||0)/1.19);
-  var iva  = (c.total||0) - neto;
+    var neto = Math.round((c.total||0)/1.19);
+    var iva  = (c.total||0) - neto;
 
-  document.getElementById('cotizModalContent').innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Fecha</span><div style="font-weight:700">'+fecha+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Usuario</span><div style="font-weight:700">'+c.user+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">App origen</span><div><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">N° items</span><div style="font-weight:700">'+c.items+'</div></div>'+
-    '</div>'+
-    '<div style="overflow-x:auto;margin-bottom:14px">'+
-      '<table class="tbl">'+
-        '<tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio unit.</th><th style="text-align:right">Subtotal</th></tr>'+
-        rowsHTML+
-      '</table>'+
-    '</div>'+
-    '<div style="background:#f9fafb;border-radius:10px;padding:14px;text-align:right;font-size:13px">'+
-      '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">Neto:</span><span>'+fmtCLP(neto)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">IVA 19%:</span><span>'+fmtCLP(iva)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:16px;font-weight:800;color:var(--naranja);border-top:1px solid var(--border);margin-top:4px"><span>TOTAL:</span><span>'+fmtCLP(c.total)+'</span></div>'+
-    '</div>';
+    document.getElementById('cotizModalContent').innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">'+
+        '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Fecha</span><div style="font-weight:700">'+fecha+'</div></div>'+
+        '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Usuario</span><div style="font-weight:700">'+c.user+'</div></div>'+
+        '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">App origen</span><div><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></div></div>'+
+        '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">N° items</span><div style="font-weight:700">'+c.items+'</div></div>'+
+      '</div>'+
+      '<div style="overflow-x:auto;margin-bottom:14px">'+
+        '<table class="tbl">'+
+          '<tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio unit.</th><th style="text-align:right">Subtotal</th></tr>'+
+          rowsHTML+
+        '</table>'+
+      '</div>'+
+      '<div style="background:#f9fafb;border-radius:10px;padding:14px;text-align:right;font-size:13px">'+
+        '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">Neto:</span><span>'+fmtCLP(neto)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">IVA 19%:</span><span>'+fmtCLP(iva)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:16px;font-weight:800;color:var(--naranja);border-top:1px solid var(--border);margin-top:4px"><span>TOTAL:</span><span>'+fmtCLP(c.total)+'</span></div>'+
+      '</div>';
 
-  document.getElementById('cotizModal').classList.add('open');
+    document.getElementById('cotizModal').classList.add('open');
+  });
 }
 
 function cerrarCotizModal(){
@@ -810,11 +879,22 @@ function addCliUser(){
   var l=parseInt(document.getElementById('cnl').value)||365;
   if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
   if(CLI_USERS.find(function(x){return x.user===u;})){toast('Usuario ya existe','err');return;}
-  CLI_USERS.push({user:u,pass:p,nombre:n,role:'cliente',licExpiry:new Date(Date.now()+l*864e5).toISOString(),estado:'activo'});
-  addLog('Crear',u,'Cliente');
-  saveAll(); renderUsuarios();
-  document.getElementById('cnu').value=''; document.getElementById('cnn').value=''; document.getElementById('cnp').value='';
-  toast('Usuario '+u+' creado','ok');
+
+  var exp = Date.now()+l*864e5;
+  var nuevo = {user:u,pass:p,nombre:n,role:'cliente',app:'cliente',licExpiry:new Date(exp).toISOString(),estado:'activo'};
+
+  saveUserToAPI(nuevo).then(function(){
+    addLog('Crear',u,'Cliente');
+    return loadUsersFromAPI();
+  }).then(function(){
+    renderUsuarios();
+    document.getElementById('cnu').value='';
+    document.getElementById('cnn').value='';
+    document.getElementById('cnp').value='';
+    toast('Usuario '+u+' creado','ok');
+  }).catch(function(){
+    toast('Error guardando en servidor','err');
+  });
 }
 
 function addVendUser(){
@@ -824,11 +904,22 @@ function addVendUser(){
   var r=document.getElementById('vnr').value;
   if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
   if(VEND_USERS.find(function(x){return x.u===u;})){toast('Usuario ya existe','err');return;}
-  VEND_USERS.push({u:u,p:p,nombre:n,role:r,exp:Date.now()+365*864e5,estado:'activo'});
-  addLog('Crear',u,'Vendedor');
-  saveAll(); renderUsuarios();
-  document.getElementById('vnu').value=''; document.getElementById('vnn').value=''; document.getElementById('vnp').value='';
-  toast('Usuario '+u+' creado','ok');
+
+  var exp = Date.now()+365*864e5;
+  var nuevo = {u:u,p:p,nombre:n,role:r,app:'vendedor',exp:exp,estado:'activo'};
+
+  saveUserToAPI(nuevo).then(function(){
+    addLog('Crear',u,'Vendedor');
+    return loadUsersFromAPI();
+  }).then(function(){
+    renderUsuarios();
+    document.getElementById('vnu').value='';
+    document.getElementById('vnn').value='';
+    document.getElementById('vnp').value='';
+    toast('Usuario '+u+' creado','ok');
+  }).catch(function(){
+    toast('Error guardando en servidor','err');
+  });
 }
 
 function delUser(btn){
@@ -837,10 +928,16 @@ function delUser(btn){
   var arr=tipo==='cli'?CLI_USERS:VEND_USERS;
   var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
   if(!confirm('¿Eliminar usuario "'+uname+'"?')) return;
-  addLog('Eliminar',uname,tipo==='cli'?'Cliente':'Vendedor');
-  arr.splice(idx,1);
-  saveAll(); renderUsuarios();
-  toast('Usuario eliminado','ok');
+
+  deleteUserFromAPI(uname).then(function(){
+    addLog('Eliminar',uname,tipo==='cli'?'Cliente':'Vendedor');
+    return loadUsersFromAPI();
+  }).then(function(){
+    renderUsuarios();
+    toast('Usuario eliminado','ok');
+  }).catch(function(){
+    toast('Error eliminando en servidor','err');
+  });
 }
 
 function toggleBlock(btn){
@@ -850,20 +947,33 @@ function toggleBlock(btn){
   var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
   var nuevoEstado=arr[idx].estado==='bloqueado'?'activo':'bloqueado';
   arr[idx].estado=nuevoEstado;
-  addLog(nuevoEstado==='bloqueado'?'Bloquear':'Desbloquear',uname,tipo==='cli'?'Cliente':'Vendedor');
-  saveAll(); renderUsuarios();
-  toast('Usuario '+(nuevoEstado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
+
+  saveUserToAPI(arr[idx]).then(function(){
+    addLog(nuevoEstado==='bloqueado'?'Bloquear':'Desbloquear',uname,tipo==='cli'?'Cliente':'Vendedor');
+    return loadUsersFromAPI();
+  }).then(function(){
+    renderUsuarios();
+    toast('Usuario '+(nuevoEstado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
+  }).catch(function(){
+    toast('Error actualizando en servidor','err');
+  });
 }
 
 // ── PRECIOS ──────────────────────────────────────────
 var todosProds = [];
 function loadPrecios(){
-  document.getElementById('urlActiva').textContent = URL_PUB;
+  document.getElementById('urlActiva').textContent = URL_PUB || URL_PROXY;
   document.getElementById('urlPub').value   = URL_PUB;
   document.getElementById('urlProxy').value = URL_PROXY;
   document.getElementById('urlStatus').className='url-status url-loading';
   document.getElementById('urlStatus').textContent='⏳ Verificando conexión...';
-  fetch(URL_PUB).then(function(r){
+  var url = URL_PUB || URL_PROXY;
+  if(!url){
+    document.getElementById('urlStatus').className='url-status url-err';
+    document.getElementById('urlStatus').textContent='❌ No hay URL configurada';
+    return;
+  }
+  fetch(url).then(function(r){
     if(!r.ok) throw new Error('http');
     return r.text();
   }).then(function(txt){
@@ -878,16 +988,6 @@ function loadPrecios(){
   }).catch(function(){
     document.getElementById('urlStatus').className='url-status url-err';
     document.getElementById('urlStatus').textContent='❌ Sin conexión a Google Sheets — Verifica la URL';
-    fetch(URL_PROXY).then(function(r){ return r.text(); }).then(function(txt){
-      var prods = parseCSVAdmin(txt);
-      if(prods.length>0){
-        PRODS_CACHE = prods; todosProds = prods; PRODS_FILT = prods;
-        document.getElementById('urlStatus').className='url-status url-ok';
-        document.getElementById('urlStatus').textContent='✅ Conexión activa (proxy) — '+prods.length+' productos';
-        document.getElementById('statProds').textContent = prods.length;
-        renderTablaPrecios(prods.slice(0,100));
-      }
-    }).catch(function(){});
   });
 }
 
@@ -956,14 +1056,25 @@ function guardarURLs(){
   URL_PROXY = document.getElementById('urlProxy').value.trim();
   localStorage.setItem('ov_url_pub',   URL_PUB);
   localStorage.setItem('ov_url_proxy', URL_PROXY);
-  toast('✅ URLs guardadas. Las apps cliente y vendedor usarán estas URLs automáticamente.','ok');
-  testConexion();
+  saveConfigToAPI({ov_url_pub:URL_PUB, ov_url_proxy:URL_PROXY})
+    .then(function(){
+      toast('✅ URLs guardadas en servidor. Las apps cliente y vendedor usarán estas URLs.','ok');
+      testConexion();
+    }).catch(function(){
+      toast('Guardado local ok, error en servidor','warn');
+      testConexion();
+    });
 }
 
 function testConexion(){
   var res = document.getElementById('urlTestResult');
   res.innerHTML='<div class="url-status url-loading">⏳ Probando...</div>';
-  fetch(URL_PUB).then(function(r){
+  var url = URL_PUB || URL_PROXY;
+  if(!url){
+    res.innerHTML='<div class="url-status url-err">❌ No hay URL configurada.</div>';
+    return;
+  }
+  fetch(url).then(function(r){
     if(!r.ok) throw new Error();
     return r.text();
   }).then(function(txt){
@@ -1074,13 +1185,13 @@ function descTutorial(tipo){
 // ── MEJORAS ──────────────────────────────────────────
 function renderMejoras(){
   var mejoras=[
-    {icono:'🔄',titulo:'Sincronización en tiempo real entre dispositivos',desc:'Actualmente localStorage solo funciona en el mismo navegador. Para sincronización entre dispositivos se requiere una base de datos externa como Firebase o Supabase (gratuito).'},
+    {icono:'🔄',titulo:'Sincronización en tiempo real entre dispositivos',desc:'Actualmente los datos se centralizan en Google Sheets vía Apps Script; para tiempo real podrías agregar Firebase o Supabase.'},
     {icono:'📊',titulo:'Dashboard con más estadísticas históricas',desc:'Guardar datos históricos de ventas diarias/semanales para generar gráficos de tendencia por período.'},
     {icono:'🔔',titulo:'Notificaciones automáticas por WhatsApp o Email',desc:'Cuando un cliente genera una cotización, enviar automáticamente resumen al vendedor asignado vía WhatsApp o email.'},
     {icono:'📦',titulo:'Control de stock básico',desc:'Agregar columna de stock en Google Sheets para mostrar disponibilidad en las apps cliente y vendedor.'},
-    {icono:'🔐',titulo:'Autenticación con contraseña segura (hash)',desc:'Actualmente las contraseñas se guardan en texto plano en localStorage. Se recomienda usar hash SHA-256 para mayor seguridad.'},
-    {icono:'📱',titulo:'PWA (Progressive Web App)',desc:'Convertir las apps en instalables en el celular como si fuera una app nativa, sin necesitar tienda de apps.'},
-    {icono:'🌐',titulo:'Dominio personalizado',desc:'Usar un subdominio de oviedo.cl (por ejemplo clientes.oviedo.cl) apuntando a GitHub Pages para URLs más profesionales.'}
+    {icono:'🔐',titulo:'Autenticación con contraseña segura (hash)',desc:'Centralizar hash de contraseñas en la hoja o en un backend adicional para más seguridad.'},
+    {icono:'📱',titulo:'PWA (Progressive Web App)',desc:'Convertir las apps en instalables en el celular como si fuera una app nativa.'},
+    {icono:'🌐',titulo:'Dominio personalizado',desc:'Usar un subdominio tipo clientes.oviedo.cl apuntando a GitHub Pages.'}
   ];
   document.getElementById('listaMejoras').innerHTML=mejoras.map(function(m){
     return '<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)">'+
@@ -1100,5 +1211,3 @@ function toast(msg,type){
   window._toastT=setTimeout(function(){t.className='';},2800);
 }
 </script>
-</body>
-</html>
