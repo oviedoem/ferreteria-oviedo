@@ -468,7 +468,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 
 <script>
 // === API CENTRAL Oviedo (misma que index y panel-cliente) ===
-var API_URL = 'https://script.google.com/macros/s/AKfycbzFdWRQX4U4jfQiIPToguqL1RpeaNaMuRQhsVECHpEdz4XXZSbPFpJUDk9zHqF3VXZJ/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycby1CkzmTUHJrkQu8LVFoMdv8PbssNSGp9ZFa1vD8LbkwMEcLPzM4Lcrz8RmuIR700Zf/exec';
 
 // GET genérico (querystring)
 function apiGet(params) {
@@ -537,12 +537,11 @@ function loadConfigFromAPI() {
 }
 
 function saveConfigToAPI(cfg) {
-  // cfg es un objeto con { key, value } o con varias claves
-  // si quieres guardar varias, puedes llamar varias veces
+  // cfg: { key:'URL_PUB', value:'...' } por ejemplo
   return apiPost({action:'setConfig', key: cfg.key, value: cfg.value});
 }
 
-// ── DATOS BASE ──────────────────────────────────────
+// ── DATOS BASE Y LOCALSTORAGE (resto del script sigue igual) ──
 var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
 
 var CLI_USERS  = [];
