@@ -468,8 +468,9 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 
 <script>
 // === API CENTRAL Oviedo (misma que index y panel-cliente) ===
-var API_URL = 'https://script.google.com/macros/s/AKfycbwNM8k_b2OhNZKBKFHmdC8K0IDn9tOae-ligJd6keOu5lgQnQdzo_m-1425Xa/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbzFdWRQX4U4jfQiIPToguqL1RpeaNaMuRQhsVECHpEdz4XXZSbPFpJUDk9zHqF3VXZJ/exec';
 
+// GET genérico (querystring)
 function apiGet(params) {
   var url = API_URL + '?' + Object.keys(params).map(function(k){
     return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
@@ -477,11 +478,18 @@ function apiGet(params) {
   return fetch(url).then(function(r){ return r.json(); });
 }
 
+// POST genérico (form-encoded para evitar problemas CORS)
 function apiPost(body) {
+  var form = new URLSearchParams();
+  Object.keys(body).forEach(function(k){
+    var v = body[k];
+    if (typeof v === 'object') v = JSON.stringify(v);
+    form.append(k, v);
+  });
+
   return fetch(API_URL, {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(body)
+    body: form   // sin headers personalizados -> menos preflight
   }).then(function(r){ return r.json(); });
 }
 
@@ -529,7 +537,9 @@ function loadConfigFromAPI() {
 }
 
 function saveConfigToAPI(cfg) {
-  return apiPost({action:'setConfig', data: cfg});
+  // cfg es un objeto con { key, value } o con varias claves
+  // si quieres guardar varias, puedes llamar varias veces
+  return apiPost({action:'setConfig', key: cfg.key, value: cfg.value});
 }
 
 // ── DATOS BASE ──────────────────────────────────────
