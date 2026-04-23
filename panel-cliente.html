@@ -305,6 +305,68 @@ header{background:white;border-bottom:3px solid var(--naranja);padding:10px 16px
 </div>
 
 <script>
+// ── SESIÓN COMPARTIDA ENTRE PÁGINAS ──────────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbxj3vPc80IjDmVcSDCFLZkHHNPNT4AuSCn3378Tlk4tpjS8o24j5o_u2Crm_VQexk6Z/exec';
+
+const SESS_KEYS = {
+  token: 'ov_s_token',
+  name:  'ov_s_name',
+  role:  'ov_s_role'
+};
+
+function getSessionShared(){
+  return {
+    token: localStorage.getItem(SESS_KEYS.token),
+    name:  localStorage.getItem(SESS_KEYS.name),
+    role:  localStorage.getItem(SESS_KEYS.role)
+  };
+}
+function setSessionShared(data){
+  if(!data) return;
+  if(data.token)  localStorage.setItem(SESS_KEYS.token, data.token);
+  if(data.nombre) localStorage.setItem(SESS_KEYS.name,  data.nombre);
+  if(data.rol)    localStorage.setItem(SESS_KEYS.role,  data.rol);
+}
+function clearSessionShared(){
+  Object.values(SESS_KEYS).forEach(function(k){ localStorage.removeItem(k); });
+}
+
+function routeByRole(role){
+  if(role==='admin'){
+    window.location.href = 'panel-admin.html';
+  }else if(role==='vendedor'){
+    window.location.href = 'index.html';
+  }else if(role==='cliente'){
+    // Se queda en panel-cliente
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display     = 'block';
+  }else{
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display     = 'none';
+  }
+}
+
+// Al cargar panel-cliente: si existe sesión, actuar según rol
+window.addEventListener('load', function(){
+  var s = getSessionShared();
+  if(s && s.token && s.role){
+    if(s.role==='cliente'){
+      currentUser = {
+        nombre: s.name || 'Cliente',
+        role:   'cliente'
+      };
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display     = 'block';
+      iniciarApp();
+    }else{
+      routeByRole(s.role);
+    }
+  }else{
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display     = 'none';
+  }
+});
+
 // ── URLs GOOGLE SHEETS: lee del admin (ov_url_pub / ov_url_proxy) ────────────
 var SHEETS_CSV_DEFAULT = 'https://docs.google.com/spreadsheets/d/1Vj8p8CbZbRHZKJr3cJ0iDlEUcOi8bcIcctIRWCk5lOI/export?format=csv';
 var SHEETS_PUB_DEFAULT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb/pub?output=csv';
@@ -314,7 +376,7 @@ var CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
 var CACHE_KEY    = 'ov_cli_productos';
 var CACHE_TS_KEY = 'ov_cli_ts';
 
-// ── USUARIOS: siempre lee primero de ov_cli_v2_users (guardado por admin) ───
+// ── USUARIOS: lee de ov_cli_v2_users (guardado por admin) ────────────────────
 var USUARIOS_DEFAULT = [
   {user:'admin',   pass:'oviedo2025admin', nombre:'Administrador', role:'admin',   licExpiry:new Date(Date.now()+365*864e5).toISOString(), estado:'activo'},
   {user:'cliente1',pass:'cli2025',         nombre:'Cliente 1',     role:'cliente', licExpiry:new Date(Date.now()+30*864e5).toISOString(),  estado:'activo'},
@@ -344,8 +406,7 @@ var _sessionInterval = null;
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 function doLogin(){
-  loadCliUsers(); // Refresca siempre desde lo que admin guardó
-  // Refresca URLs por si admin las actualizó
+  loadCliUsers();
   SHEETS_CSV  = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
   CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
 
@@ -353,6 +414,11 @@ function doLogin(){
   var p   = document.getElementById('loginPass').value.trim();
   var err = document.getElementById('loginError');
   err.textContent = '';
+
+  if(!u || !p){
+    err.textContent = 'Ingresa usuario y contraseña';
+    return;
+  }
 
   var found = null;
   for(var i=0;i<USUARIOS.length;i++){
@@ -367,9 +433,18 @@ function doLogin(){
   document.getElementById('mainApp').style.display     = 'block';
   document.getElementById('adminBtn').style.display    = found.role==='admin' ? 'inline-flex' : 'none';
 
+  // Guardar sesión compartida para las otras páginas
+  setSessionShared({
+    token:  Date.now().toString(),
+    nombre: found.nombre,
+    rol:    found.role
+  });
+
   registerSession(found.nombre, 'Cliente');
   if(_sessionInterval) clearInterval(_sessionInterval);
-  _sessionInterval = setInterval(function(){ if(currentUser) registerSession(currentUser.nombre,'Cliente'); }, 60000);
+  _sessionInterval = setInterval(function(){
+    if(currentUser) registerSession(currentUser.nombre,'Cliente');
+  }, 60000);
 
   iniciarApp();
 }
@@ -378,7 +453,10 @@ function doLogout(){
   if(currentUser) clearSession(currentUser.nombre,'Cliente');
   if(_sessionInterval){ clearInterval(_sessionInterval); _sessionInterval=null; }
   currentUser=null; PRODUCTOS=[]; filtrados=[]; carrito=[];
-  document.getElementById('mainApp').style.display    = 'none';
+
+  clearSessionShared();
+
+  document.getElementById('mainApp').style.display     = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value='';
   document.getElementById('loginPass').value='';
@@ -456,11 +534,11 @@ function parseCSV(text){
   var idx = {};
   headers.forEach(function(h,i){
     var hl = h.toLowerCase().replace(/[^a-z]/g,'');
-    if(hl.includes('codigo'))                                    idx.Codigo=i;
+    if(hl.includes('codigo'))                                      idx.Codigo=i;
     else if(hl.includes('descripcion')||hl.includes('descripción')) idx.Descripcion=i;
-    else if(hl.includes('marca'))                                idx.Marca=i;
-    else if(hl.includes('subfamilia')||hl.includes('familia'))   idx.SubFamilia=i;
-    else if(hl.includes('precioiva'))                            idx.PrecioIVA=i;
+    else if(hl.includes('marca'))                                  idx.Marca=i;
+    else if(hl.includes('subfamilia')||hl.includes('familia'))     idx.SubFamilia=i;
+    else if(hl.includes('precioiva'))                              idx.PrecioIVA=i;
   });
   var rows=[];
   for(var i=1;i<lines.length;i++){
