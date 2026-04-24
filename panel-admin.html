@@ -1,9 +1,143 @@
-<!DOCTYPE html><html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" type="text/css" href="cid:css-39066a29-2681-430a-96af-88753d5489a6@mhtml.blink" />
-
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Ferretería Oviedo</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+:root{
+  --naranja:#E8450A;--naranja2:#c93a08;--dark:#111827;--card:#fff;
+  --border:#e5e7eb;--gris:#6b7280;--verde:#059669;--rojo:#dc2626;--azul:#2563eb;--amarillo:#d97706;
+}
 
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#111827,#E8450A);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:white;border-radius:20px;padding:36px 32px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
+.login-logo{width:60px;height:60px;background:var(--naranja);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:white;margin:0 auto 16px;letter-spacing:-1px}
+.login-title{font-size:20px;font-weight:800;color:var(--dark);margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--gris);margin-bottom:24px}
+.linput{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:10px;outline:none;transition:.2s}
+.linput:focus{border-color:var(--naranja);box-shadow:0 0 0 3px rgba(232,69,10,.1)}
+.lbtn{width:100%;padding:13px;background:var(--naranja);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.lbtn:hover{background:var(--naranja2)}
+.lerr{color:var(--rojo);font-size:12px;margin-top:6px;min-height:18px}
+
+/* LAYOUT */
+#app{display:none;min-height:100vh}
+.topbar{background:var(--dark);color:white;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.top-logo{width:34px;height:34px;background:var(--naranja);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:white}
+.top-title{font-size:15px;font-weight:700}
+.top-sub{font-size:11px;color:#9ca3af}
+.top-right{display:flex;align-items:center;gap:10px}
+.badge-online{background:#059669;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.btn-logout{background:rgba(255,255,255,.1);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* NAV TABS */
+.nav{background:white;border-bottom:1px solid var(--border);padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{background:none;border:none;padding:14px 14px 12px;font-size:13px;font-weight:600;color:var(--gris);cursor:pointer;font-family:inherit;border-bottom:2.5px solid transparent;white-space:nowrap;transition:.15s}
+.nav-btn.active{color:var(--naranja);border-bottom-color:var(--naranja)}
+
+/* CONTENT */
+.content{padding:20px;max-width:900px;margin:0 auto}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:1px solid var(--border);margin-bottom:16px}
+.card-title{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title span{font-size:18px}
+
+/* STATS ROW */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:white;border-radius:12px;padding:16px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.stat-val{font-size:28px;font-weight:800;color:var(--dark)}
+.stat-lbl{font-size:11px;color:var(--gris);margin-top:3px}
+.stat-icon{font-size:20px;margin-bottom:6px}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#f9fafb;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fafafa}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-verde{background:#d1fae5;color:#065f46}
+.badge-rojo{background:#fee2e2;color:#991b1b}
+.badge-amarillo{background:#fef3c7;color:#92400e}
+.badge-azul{background:#dbeafe;color:#1e40af}
+.badge-gris{background:#f3f4f6;color:#374151}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.btn-primary{background:var(--naranja);color:white}
+.btn-primary:hover{background:var(--naranja2)}
+.btn-danger{background:#fee2e2;color:var(--rojo)}
+.btn-danger:hover{background:#fecaca}
+.btn-warn{background:#fef3c7;color:var(--amarillo)}
+.btn-success{background:#d1fae5;color:var(--verde)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:500px){.form-grid{grid-template-columns:1fr 1fr}}
+.finput{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:.2s}
+.finput:focus{border-color:var(--naranja);box-shadow:0 0 0 3px rgba(232,69,10,.08)}
+.flabel{font-size:12px;font-weight:600;color:var(--gris);margin-bottom:4px;display:block}
+.fgroup{display:flex;flex-direction:column}
+
+/* PROMO CARD */
+.promo-preview{background:linear-gradient(135deg,#E8450A,#ff6b35);color:white;border-radius:12px;padding:16px;margin-top:10px}
+.promo-tag{background:rgba(255,255,255,.2);display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:8px}
+.promo-title{font-size:18px;font-weight:800;margin-bottom:4px}
+.promo-desc{font-size:13px;opacity:.9}
+
+/* URL STATUS */
+.url-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:10px}
+.url-ok{background:#d1fae5;color:#065f46}
+.url-err{background:#fee2e2;color:#991b1b}
+.url-loading{background:#dbeafe;color:#1e40af}
+
+/* TUTORIAL CARD */
+.tut-card{background:#f9fafb;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.15s}
+.tut-card:hover{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.tut-icon{width:42px;height:42px;border-radius:10px;background:var(--naranja);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tut-title{font-size:14px;font-weight:700;color:var(--dark)}
+.tut-desc{font-size:12px;color:var(--gris);margin-top:2px}
+
+/* REDES */
+.red-card{background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.red-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.red-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ig-icon{background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
+.fb-icon{background:#1877f2}
+.wa-icon{background:#25D366}
+.red-name{font-size:15px;font-weight:700}
+.red-status{font-size:12px;color:var(--gris)}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:99999;transition:.3s;opacity:0;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{background:#059669}
+#toast.err{background:#dc2626}
+#toast.warn{background:#d97706}
+
+/* ONLINE USERS */
+.online-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6}
+.online-item:last-child{border-bottom:none}
+.online-avatar{width:38px;height:38px;border-radius:50%;background:var(--naranja);color:white;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.online-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:4px}
+
+/* RESPONSIVE */
+@media(max-width:500px){.content{padding:12px}}
+</style>
 </head>
 <body>
 
@@ -14,8 +148,8 @@
     <div class="login-title">Panel Administrador</div>
     <div class="login-sub">Ferretería Oviedo — El Manzano</div>
     <input class="linput" id="lu" type="text" placeholder="Usuario" autocomplete="off">
-    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off">
-    <button class="lbtn">Ingresar</button>
+    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="lbtn" onclick="doLogin()">Ingresar</button>
     <div class="lerr" id="lerr"></div>
   </div>
 </div>
@@ -32,21 +166,21 @@
     </div>
     <div class="top-right">
       <span class="badge-online" id="onlineBadge">● 0 en línea</span>
-      <button class="btn-logout">Salir</button>
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
   </div>
 
   <!-- NAV -->
   <div class="nav">
-    <button class="nav-btn active">📊 Dashboard</button>
-    <button class="nav-btn">👥 Usuarios</button>
-    <button class="nav-btn">📄 Cotizaciones</button>
-    <button class="nav-btn">💰 Precios</button>
-    <button class="nav-btn">🎯 Promociones</button>
-    <button class="nav-btn">🔗 URL / Conexión</button>
-    <button class="nav-btn">📱 Redes Sociales</button>
-    <button class="nav-btn">📚 Tutoriales</button>
-    <button class="nav-btn">💡 Mejoras</button>
+    <button class="nav-btn active" onclick="showTab('dashboard')">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showTab('usuarios')">👥 Usuarios</button>
+    <button class="nav-btn" onclick="showTab('cotizaciones')">📄 Cotizaciones</button>
+    <button class="nav-btn" onclick="showTab('precios')">💰 Precios</button>
+    <button class="nav-btn" onclick="showTab('promociones')">🎯 Promociones</button>
+    <button class="nav-btn" onclick="showTab('url')">🔗 URL / Conexión</button>
+    <button class="nav-btn" onclick="showTab('redes')">📱 Redes Sociales</button>
+    <button class="nav-btn" onclick="showTab('tutoriales')">📚 Tutoriales</button>
+    <button class="nav-btn" onclick="showTab('mejoras')">💡 Mejoras</button>
   </div>
 
   <div class="content">
@@ -81,10 +215,10 @@
             <div class="fgroup"><label class="flabel">Nombre completo</label><input class="finput" id="cnn" placeholder="ej: Juan Pérez"></div>
             <div class="fgroup"><label class="flabel">Contraseña</label><input class="finput" id="cnp" type="password" placeholder="mínimo 6 caracteres"></div>
             <div class="fgroup"><label class="flabel">Licencia</label>
-              <select class="finput" id="cnl"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected="">1 año</option></select>
+              <select class="finput" id="cnl"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected>1 año</option></select>
             </div>
           </div>
-          <button class="btn btn-primary" style="margin-top:12px;width:100%">+ Agregar usuario cliente</button>
+          <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="addCliUser()">+ Agregar usuario cliente</button>
         </div>
       </div>
       <div class="card">
@@ -100,7 +234,7 @@
               <select class="finput" id="vnr"><option value="vendedor">Vendedor</option><option value="admin">Admin</option></select>
             </div>
           </div>
-          <button class="btn btn-primary" style="margin-top:12px;width:100%">+ Agregar usuario vendedor</button>
+          <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="addVendUser()">+ Agregar usuario vendedor</button>
         </div>
       </div>
       <div class="card">
@@ -123,12 +257,12 @@
         <div class="card-title"><span>🔗</span> Fuente de datos activa</div>
         <div id="urlStatus" class="url-status url-loading">⏳ Verificando conexión...</div>
         <div style="font-size:12px;color:var(--gris);margin-bottom:12px;word-break:break-all" id="urlActiva"></div>
-        <button class="btn btn-primary">🔄 Probar conexión</button>
+        <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
       </div>
       <div class="card">
         <div class="card-title"><span>📊</span> Vista previa del catálogo cargado</div>
         <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input class="finput" id="precioSearch" placeholder="🔍 Buscar producto..." style="flex:1;min-width:180px">
+          <input class="finput" id="precioSearch" placeholder="🔍 Buscar producto..." style="flex:1;min-width:180px" oninput="filtrarPrecios()">
           <span id="precioCount" style="font-size:12px;color:var(--gris)"></span>
         </div>
         <div style="overflow-x:auto"><div id="tablaPrecios"><p style="color:#9ca3af;font-size:13px">Cargando productos...</p></div></div>
@@ -151,11 +285,11 @@
       <div class="card">
         <div class="card-title"><span>🎯</span> Crear promoción / pack oferta</div>
         <div class="form-grid">
-          <div class="fgroup"><label class="flabel">Título de la promoción</label><input class="finput" id="promoTitle" placeholder="ej: Pack Pintor Completo"></div>
-          <div class="fgroup"><label class="flabel">Etiqueta (badge)</label><input class="finput" id="promoTag" placeholder="ej: OFERTA SEMANA"></div>
+          <div class="fgroup"><label class="flabel">Título de la promoción</label><input class="finput" id="promoTitle" placeholder="ej: Pack Pintor Completo" oninput="updatePromoPreview()"></div>
+          <div class="fgroup"><label class="flabel">Etiqueta (badge)</label><input class="finput" id="promoTag" placeholder="ej: OFERTA SEMANA" oninput="updatePromoPreview()"></div>
         </div>
-        <div class="fgroup" style="margin-top:10px"><label class="flabel">Descripción</label><textarea class="finput" id="promoDesc" rows="3" placeholder="ej: Brocha 4&quot;, rodillo, pintura 1 litro — Todo incluido" style="resize:vertical"></textarea></div>
-        <div class="fgroup" style="margin-top:10px"><label class="flabel">Precio promocional</label><input class="finput" id="promoPrice" type="text" placeholder="ej: $14.990"></div>
+        <div class="fgroup" style="margin-top:10px"><label class="flabel">Descripción</label><textarea class="finput" id="promoDesc" rows="3" placeholder="ej: Brocha 4&quot;, rodillo, pintura 1 litro — Todo incluido" oninput="updatePromoPreview()" style="resize:vertical"></textarea></div>
+        <div class="fgroup" style="margin-top:10px"><label class="flabel">Precio promocional</label><input class="finput" id="promoPrice" type="text" placeholder="ej: $14.990" oninput="updatePromoPreview()"></div>
         <div style="margin-top:14px;font-size:12px;font-weight:700;color:var(--gris);margin-bottom:8px">VISTA PREVIA:</div>
         <div class="promo-preview" id="promoPreview">
           <div class="promo-tag" id="pvTag">OFERTA</div>
@@ -163,7 +297,7 @@
           <div class="promo-desc" id="pvDesc">Descripción del pack o promoción</div>
           <div style="font-size:22px;font-weight:800;margin-top:10px" id="pvPrice"></div>
         </div>
-        <button class="btn btn-primary" style="margin-top:14px;width:100%">✅ Guardar y publicar promoción</button>
+        <button class="btn btn-primary" style="margin-top:14px;width:100%" onclick="guardarPromo()">✅ Guardar y publicar promoción</button>
       </div>
       <div class="card">
         <div class="card-title"><span>📋</span> Promociones activas</div>
@@ -181,11 +315,11 @@
         </div>
         <div class="fgroup" style="margin-bottom:12px">
           <label class="flabel">URL proxy (respaldo automático)</label>
-          <input class="finput" id="urlProxy" value="https://api.allorigins.win/raw?url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2Fe%2F2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb%2Fpub%3Fgid%3D111151517%26single%3Dtrue%26output%3Dcsv" placeholder="https://api.allorigins.win/raw?url=...">
+          <input class="finput" id="urlProxy" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb/pub?gid=111151517&single=true&output=csv" placeholder="https://api.allorigins.win/raw?url=...">
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary">🔄 Probar conexión</button>
-          <button class="btn btn-success">💾 Guardar URLs</button>
+          <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
+          <button class="btn btn-success" onclick="guardarURLs()">💾 Guardar URLs</button>
         </div>
         <div id="urlTestResult" style="margin-top:12px"></div>
       </div>
@@ -209,12 +343,12 @@
         <div class="red-header">
           <div class="red-icon ig-icon">📸</div>
           <div><div class="red-name">Instagram</div><div class="red-status" id="igStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('ig')">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">Nombre de usuario (@)</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="igUser" placeholder="@ferreteriaOviedo">
-            <button class="btn btn-sm btn-success">Vincular</button>
+            <button class="btn btn-sm btn-success" onclick="vincularRed('ig')">Vincular</button>
           </div>
         </div>
         <div id="igInfo" style="display:none;margin-top:10px"></div>
@@ -223,12 +357,12 @@
         <div class="red-header">
           <div class="red-icon fb-icon">📘</div>
           <div><div class="red-name">Facebook</div><div class="red-status" id="fbStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('fb')">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">URL de página Facebook</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="fbUrl" placeholder="https://facebook.com/tuPagina">
-            <button class="btn btn-sm btn-success">Vincular</button>
+            <button class="btn btn-sm btn-success" onclick="vincularRed('fb')">Vincular</button>
           </div>
         </div>
         <div id="fbInfo" style="display:none;margin-top:10px"></div>
@@ -237,17 +371,17 @@
         <div class="red-header">
           <div class="red-icon wa-icon">💬</div>
           <div><div class="red-name">WhatsApp Business</div><div class="red-status" id="waStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('wa')">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">Número WhatsApp (+56...)</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="waNum" placeholder="+56912345678">
-            <button class="btn btn-sm btn-success">Vincular</button>
+            <button class="btn btn-sm btn-success" onclick="vincularRed('wa')">Vincular</button>
           </div>
         </div>
         <div id="waInfo" style="display:none;margin-top:10px"></div>
       </div>
-      <div id="redModal" style="display:none" class="card">
+      <div id="redModal" style="display:none" class="card" id="redInstrucciones">
         <div class="card-title"><span>📋</span> Instrucciones de vinculación</div>
         <div id="redInstrContent"></div>
       </div>
@@ -255,27 +389,27 @@
 
     <!-- ── TUTORIALES ─────────────────────────────── -->
     <div class="tab-pane" id="tab-tutoriales">
-      <div class="tut-card">
+      <div class="tut-card" onclick="descTutorial('cliente')">
         <div class="tut-icon">📱</div>
         <div><div class="tut-title">Manual App Clientes</div><div class="tut-desc">Cómo buscar productos, crear cotizaciones y descargar PDF</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card">
+      <div class="tut-card" onclick="descTutorial('vendedor')">
         <div class="tut-icon">💼</div>
         <div><div class="tut-title">Manual App Vendedores</div><div class="tut-desc">Acceso, consulta de precios con margen y sincronización</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card">
+      <div class="tut-card" onclick="descTutorial('admin')">
         <div class="tut-icon">⚙️</div>
         <div><div class="tut-title">Manual Panel Admin</div><div class="tut-desc">Gestión de usuarios, precios, URLs y configuración</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card">
+      <div class="tut-card" onclick="descTutorial('actualizador')">
         <div class="tut-icon">🔄</div>
         <div><div class="tut-title">Manual Actualizador de URLs</div><div class="tut-desc">Cómo ejecutar el script para actualizar conexiones</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card">
+      <div class="tut-card" onclick="descTutorial('sheets')">
         <div class="tut-icon">📊</div>
         <div><div class="tut-title">Guía Google Sheets</div><div class="tut-desc">Cómo actualizar precios, publicar la planilla y obtener URL</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
@@ -295,6 +429,454 @@
 
 <div id="toast"></div>
 
+<script>
+// ── DATOS BASE ──────────────────────────────────────────
+var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
 
+var CLI_USERS = JSON.parse(localStorage.getItem('ov_cli_v2_users') || 'null') || [
+  {user:'admin',pass:'oviedo2025admin',nombre:'Administrador',role:'admin',licExpiry:new Date(Date.now()+365*864e5).toISOString(),estado:'activo'},
+  {user:'cliente1',pass:'cli2025',nombre:'Cliente 1',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
+  {user:'cliente2',pass:'cli2025',nombre:'Cliente 2',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
+  {user:'demo',pass:'demo123',nombre:'Demo',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'}
+];
 
-</body></html>
+var VEND_USERS = JSON.parse(localStorage.getItem('ov_v2_users') || 'null') || [
+  {u:'vendedor1',p:'vend2025',nombre:'Ricardo Vidal',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
+  {u:'vendedor2',p:'vend2025',nombre:'Rafaela Flores',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
+  {u:'vendedor3',p:'vend2025',nombre:'Gregorio Reyes',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
+  {u:'vendedor4',p:'vend2025',nombre:'Jaime Subiabre',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
+  {u:'admin',p:'oviedo2025admin',nombre:'Administrador',role:'admin',exp:Date.now()+365*864e5,estado:'activo'}
+];
+
+var PROMOS = JSON.parse(localStorage.getItem('ov_promos') || '[]');
+var LOG = JSON.parse(localStorage.getItem('ov_log') || '[]');
+var PRODS_CACHE = [];
+var PRODS_FILT = [];
+
+var URL_PUB = localStorage.getItem('ov_url_pub') || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb/pub?gid=111151517&single=true&output=csv';
+var URL_PROXY = localStorage.getItem('ov_url_proxy') || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb/pub?gid=111151517&single=true&output=csv';
+
+function saveAll(){
+  localStorage.setItem('ov_cli_v2_users', JSON.stringify(CLI_USERS));
+  localStorage.setItem('ov_v2_users', JSON.stringify(VEND_USERS));
+  localStorage.setItem('ov_promos', JSON.stringify(PROMOS));
+  localStorage.setItem('ov_log', JSON.stringify(LOG));
+}
+
+// ── LOGIN ──────────────────────────────────────────────
+function doLogin(){
+  var u=document.getElementById('lu').value.trim();
+  var p=document.getElementById('lp').value.trim();
+  if(u===ADMIN_USER.u && p===ADMIN_USER.p){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  } else {
+    document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
+  }
+}
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+  document.getElementById('lerr').textContent='';
+}
+
+// ── TABS ───────────────────────────────────────────────
+function showTab(id){
+  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='usuarios') renderUsuarios();
+  if(id==='precios') loadPrecios();
+  if(id==='mejoras') renderMejoras();
+  if(id==='cotizaciones') renderCotizaciones();
+}
+
+// ── INIT ───────────────────────────────────────────────
+function initApp(){
+  renderDashboard();
+  renderUsuarios();
+  renderPromos();
+  loadPrecios();
+  loadRedes();
+  setInterval(renderDashboard, 30000);
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+function renderDashboard(){
+  document.getElementById('statTotalCli').textContent = CLI_USERS.filter(function(u){return u.role==='cliente';}).length;
+  document.getElementById('statTotalVend').textContent = VEND_USERS.filter(function(u){return u.role==='vendedor';}).length;
+
+  // Sesiones activas (mismo dispositivo o red compartida con localStorage sincronizado)
+  var sessions = JSON.parse(localStorage.getItem('ov_sessions') || '[]');
+  var now = Date.now();
+  var activas = sessions.filter(function(s){ return now - s.ts < 30*60*1000; }); // activas en últimos 30min
+  document.getElementById('statOnline').textContent = activas.length;
+  document.getElementById('onlineBadge').textContent = '● '+activas.length+' en línea';
+
+  var onlineDiv = document.getElementById('onlineList');
+  if(activas.length===0){
+    onlineDiv.innerHTML='<div style="background:#f9fafb;border-radius:10px;padding:14px;font-size:13px;color:#6b7280">'+
+      '<div style="font-weight:700;margin-bottom:6px">Sin sesiones activas en este momento</div>'+
+      '<div style="font-size:12px">ℹ️ Las sesiones se registran cuando un usuario inicia sesión en la app cliente o vendedor <strong>en este mismo dispositivo o en un dispositivo que comparte almacenamiento</strong>. Para monitoreo entre dispositivos distintos se requiere un servidor externo (ver pestaña 💡 Mejoras).</div></div>';
+  } else {
+    onlineDiv.innerHTML = activas.map(function(s){
+      var mins = Math.floor((now-s.ts)/60000);
+      return '<div class="online-item">'+
+        '<div class="online-avatar">'+s.user.charAt(0).toUpperCase()+'</div>'+
+        '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+s.user+'</div>'+
+        '<div style="font-size:12px;color:#6b7280">'+s.app+' · '+s.device+' · hace '+(mins<1?'<1':mins)+' min</div></div>'+
+        '<span class="badge badge-verde"><span class="online-dot"></span>Activo</span></div>';
+    }).join('');
+  }
+  document.getElementById('statProds').textContent = PRODS_CACHE.length || '—';
+
+  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
+  var lastDiv = document.getElementById('lastCotiz');
+  if(cotiz.length===0){ lastDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones registradas.</p>'; return; }
+  var recent = cotiz.slice(-5).reverse();
+  lastDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl"><tr><th>Fecha</th><th>Usuario</th><th>Items</th><th>Total</th></tr>'+
+    recent.map(function(c){return '<tr><td>'+new Date(c.ts).toLocaleString('es-CL')+'</td><td>'+c.user+'</td><td>'+c.items+'</td><td>$'+c.total.toLocaleString('es-CL')+'</td></tr>';}).join('')+
+  '</table></div>';
+}
+
+// ── USUARIOS ─────────────────────────────────────────
+function renderUsuarios(){
+  // Clientes
+  var div = document.getElementById('tablaCliUsuarios');
+  if(CLI_USERS.length===0){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin usuarios.</p>'; }
+  else {
+    div.innerHTML='<div style="overflow-x:auto"><table class="tbl"><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Licencia</th><th>Estado</th><th>Acciones</th></tr>'+
+      CLI_USERS.map(function(u,idx){
+        var exp=new Date(u.licExpiry).getTime();
+        var dias=Math.ceil((exp-Date.now())/864e5);
+        var licBadge=dias>0?'<span class="badge badge-verde">'+dias+'d</span>':'<span class="badge badge-rojo">Vencido</span>';
+        var estBadge=u.estado==='activo'?'<span class="badge badge-verde">Activo</span>':u.estado==='bloqueado'?'<span class="badge badge-rojo">Bloqueado</span>':'<span class="badge badge-gris">Eliminado</span>';
+        var acciones=u.role!=='admin'?
+          '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="cli" onclick="delUser(this)">🗑</button> '+
+          '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="cli" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>':'—';
+        return '<tr><td><b>'+u.user+'</b></td><td>'+u.nombre+'</td><td><span class="badge badge-azul">'+u.role+'</span></td><td>'+licBadge+'</td><td>'+estBadge+'</td><td>'+acciones+'</td></tr>';
+      }).join('')+
+    '</table></div>';
+  }
+  // Vendedores
+  var div2 = document.getElementById('tablaVendUsuarios');
+  div2.innerHTML='<div style="overflow-x:auto"><table class="tbl"><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>'+
+    VEND_USERS.map(function(u,idx){
+      var estBadge=u.estado==='bloqueado'?'<span class="badge badge-rojo">Bloqueado</span>':'<span class="badge badge-verde">Activo</span>';
+      var acciones=u.role!=='admin'?
+        '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="vend" onclick="delUser(this)">🗑</button> '+
+        '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="vend" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>':'—';
+      return '<tr><td><b>'+u.u+'</b></td><td>'+u.nombre+'</td><td><span class="badge badge-azul">'+u.role+'</span></td><td>'+estBadge+'</td><td>'+acciones+'</td></tr>';
+    }).join('')+
+  '</table></div>';
+
+  // Log
+  var logDiv = document.getElementById('logUsuarios');
+  if(LOG.length===0){ logDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cambios registrados.</p>'; return; }
+  logDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl"><tr><th>Fecha</th><th>Acción</th><th>Usuario</th><th>App</th></tr>'+
+    LOG.slice(-20).reverse().map(function(l){return '<tr><td>'+new Date(l.ts).toLocaleString('es-CL')+'</td><td>'+l.accion+'</td><td>'+l.user+'</td><td>'+l.app+'</td></tr>';}).join('')+
+  '</table></div>';
+}
+
+function addLog(accion, user, app){
+  LOG.push({ts:Date.now(), accion:accion, user:user, app:app});
+  if(LOG.length>100) LOG.shift();
+  saveAll();
+}
+
+function addCliUser(){
+  var u=document.getElementById('cnu').value.trim();
+  var n=document.getElementById('cnn').value.trim();
+  var p=document.getElementById('cnp').value.trim();
+  var l=parseInt(document.getElementById('cnl').value)||365;
+  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
+  if(CLI_USERS.find(function(x){return x.user===u;})){toast('Usuario ya existe','err');return;}
+  CLI_USERS.push({user:u,pass:p,nombre:n,role:'cliente',licExpiry:new Date(Date.now()+l*864e5).toISOString(),estado:'activo'});
+  addLog('Crear',''+u,'Cliente');
+  saveAll(); renderUsuarios();
+  document.getElementById('cnu').value=''; document.getElementById('cnn').value=''; document.getElementById('cnp').value='';
+  toast('Usuario '+u+' creado','ok');
+}
+
+function addVendUser(){
+  var u=document.getElementById('vnu').value.trim();
+  var n=document.getElementById('vnn').value.trim();
+  var p=document.getElementById('vnp').value.trim();
+  var r=document.getElementById('vnr').value;
+  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
+  if(VEND_USERS.find(function(x){return x.u===u;})){toast('Usuario ya existe','err');return;}
+  VEND_USERS.push({u:u,p:p,nombre:n,role:r,exp:Date.now()+365*864e5,estado:'activo'});
+  addLog('Crear',''+u,'Vendedor');
+  saveAll(); renderUsuarios();
+  document.getElementById('vnu').value=''; document.getElementById('vnn').value=''; document.getElementById('vnp').value='';
+  toast('Usuario '+u+' creado','ok');
+}
+
+function delUser(btn){
+  var idx=parseInt(btn.getAttribute('data-i'));
+  var tipo=btn.getAttribute('data-t');
+  var arr=tipo==='cli'?CLI_USERS:VEND_USERS;
+  var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
+  if(!confirm('¿Eliminar usuario "'+uname+'"?')) return;
+  addLog('Eliminar',''+uname, tipo==='cli'?'Cliente':'Vendedor');
+  arr.splice(idx,1);
+  saveAll(); renderUsuarios();
+  toast('Usuario eliminado','ok');
+}
+
+function toggleBlock(btn){
+  var idx=parseInt(btn.getAttribute('data-i'));
+  var tipo=btn.getAttribute('data-t');
+  var arr=tipo==='cli'?CLI_USERS:VEND_USERS;
+  var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
+  var nuevoEstado=arr[idx].estado==='bloqueado'?'activo':'bloqueado';
+  arr[idx].estado=nuevoEstado;
+  addLog(nuevoEstado==='bloqueado'?'Bloquear':'Desbloquear',''+uname,tipo==='cli'?'Cliente':'Vendedor');
+  saveAll(); renderUsuarios();
+  toast('Usuario '+(nuevoEstado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
+}
+
+// ── COTIZACIONES ──────────────────────────────────────
+function renderCotizaciones(){
+  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
+  var div = document.getElementById('tablaCotiz');
+  if(cotiz.length===0){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones registradas aún.</p>'; return; }
+  div.innerHTML='<div style="overflow-x:auto"><table class="tbl"><tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th></tr>'+
+    cotiz.slice().reverse().map(function(c){
+      return '<tr><td>'+new Date(c.ts).toLocaleString('es-CL')+'</td><td>'+c.user+'</td><td>'+c.app+'</td><td>'+c.items+'</td><td>$'+c.total.toLocaleString('es-CL')+'</td></tr>';
+    }).join('')+'</table></div>';
+}
+
+// ── PRECIOS ──────────────────────────────────────────
+var todosProds=[];
+function loadPrecios(){
+  document.getElementById('urlActiva').textContent = URL_PUB;
+  document.getElementById('urlPub').value = URL_PUB;
+  document.getElementById('urlProxy').value = URL_PROXY;
+  document.getElementById('urlStatus').className='url-status url-loading';
+  document.getElementById('urlStatus').textContent='⏳ Verificando conexión...';
+  fetch(URL_PUB).then(function(r){
+    if(!r.ok) throw new Error();
+    return r.text();
+  }).then(function(txt){
+    todosProds=parseCSV(txt);
+    PRODS_CACHE=todosProds;
+    document.getElementById('statProds').textContent=PRODS_CACHE.length;
+    document.getElementById('urlStatus').className='url-status url-ok';
+    document.getElementById('urlStatus').textContent='✅ Conexión activa — '+PRODS_CACHE.length+' productos cargados';
+    renderTablaPrecios(todosProds.slice(0,50));
+    document.getElementById('precioCount').textContent='Mostrando primeros 50 de '+todosProds.length;
+  }).catch(function(){
+    document.getElementById('urlStatus').className='url-status url-err';
+    document.getElementById('urlStatus').textContent='❌ Sin conexión — Verifica la URL';
+    fetch(URL_PROXY).then(function(r){return r.text();}).then(function(txt){
+      todosProds=parseCSV(txt);
+      PRODS_CACHE=todosProds;
+      document.getElementById('urlStatus').className='url-status url-ok';
+      document.getElementById('urlStatus').textContent='✅ Conectado vía proxy — '+PRODS_CACHE.length+' productos';
+      renderTablaPrecios(todosProds.slice(0,50));
+    }).catch(function(){});
+  });
+}
+function filtrarPrecios(){
+  var q=document.getElementById('precioSearch').value.toLowerCase();
+  var filt=todosProds.filter(function(p){return p.Desc.toLowerCase().includes(q)||p.Codigo.includes(q)||(p.Marca||'').toLowerCase().includes(q);});
+  renderTablaPrecios(filt.slice(0,100));
+  document.getElementById('precioCount').textContent=filt.length+' resultados';
+}
+function renderTablaPrecios(arr){
+  var div=document.getElementById('tablaPrecios');
+  if(arr.length===0){div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin resultados.</p>';return;}
+  div.innerHTML='<table class="tbl"><tr><th>Código</th><th>Descripción</th><th>Marca</th><th>Precio IVA</th><th>Precio Socio</th></tr>'+
+    arr.map(function(p){
+      return '<tr><td><b>'+p.Codigo+'</b></td><td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.Desc+'</td><td>'+p.Marca+'</td><td>$'+p.PIva.toLocaleString('es-CL')+'</td><td>$'+p.SIva.toLocaleString('es-CL')+'</td></tr>';
+    }).join('')+'</table>';
+}
+function testConexion(){ loadPrecios(); }
+function guardarURLs(){
+  URL_PUB=document.getElementById('urlPub').value.trim();
+  URL_PROXY=document.getElementById('urlProxy').value.trim();
+  localStorage.setItem('ov_url_pub',URL_PUB);
+  localStorage.setItem('ov_url_proxy',URL_PROXY);
+  toast('URLs guardadas','ok');
+  testConexion();
+}
+
+// ── CSV PARSER ────────────────────────────────────────
+function parseCSV(txt){
+  var lines=txt.split('\n').filter(function(l){return l.trim();});
+  if(lines.length<2) return [];
+  var hdrs=lines[0].split(',').map(function(h){return h.replace(/"/g,'').trim().toLowerCase().replace(/[^a-z]/g,'');});
+  var idx={};
+  hdrs.forEach(function(h,i){
+    if(h.indexOf('codigo')>=0) idx.Codigo=i;
+    else if(h.indexOf('descripcion')>=0||h.indexOf('descripcin')>=0) idx.Desc=i;
+    else if(h.indexOf('marca')>=0) idx.Marca=i;
+    else if(h.indexOf('precioiva')>=0) idx.PIva=i;
+    else if(h.indexOf('socioiva')>=0) idx.SIva=i;
+  });
+  var rows=[];
+  for(var i=1;i<lines.length;i++){
+    var c=parseLine(lines[i]);
+    var row={Codigo:gt(c,idx.Codigo),Desc:gt(c,idx.Desc),Marca:gt(c,idx.Marca),
+      PIva:num(gt(c,idx.PIva)),SIva:num(gt(c,idx.SIva))};
+    if(row.Codigo&&row.PIva) rows.push(row);
+  }
+  return rows;
+}
+function gt(arr,i){return (arr&&i!=null&&arr[i])?arr[i].trim():'';}
+function num(s){return parseInt((s||'0').replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'').replace(/[^0-9]/g,''))||0;}
+function parseLine(line){
+  var res=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(ch==='"'){inQ=!inQ;continue;}
+    if(ch===','&&!inQ){res.push(cur);cur='';continue;}
+    cur+=ch;
+  }
+  res.push(cur);return res;
+}
+
+// ── PROMOCIONES ──────────────────────────────────────
+function updatePromoPreview(){
+  document.getElementById('pvTitle').textContent=document.getElementById('promoTitle').value||'Título de la promoción';
+  document.getElementById('pvTag').textContent=document.getElementById('promoTag').value||'OFERTA';
+  document.getElementById('pvDesc').textContent=document.getElementById('promoDesc').value||'Descripción del pack';
+  document.getElementById('pvPrice').textContent=document.getElementById('promoPrice').value||'';
+}
+function guardarPromo(){
+  var t=document.getElementById('promoTitle').value.trim();
+  var d=document.getElementById('promoDesc').value.trim();
+  var tag=document.getElementById('promoTag').value.trim();
+  var price=document.getElementById('promoPrice').value.trim();
+  if(!t||!d){toast('Completa título y descripción','warn');return;}
+  PROMOS.unshift({id:Date.now(),titulo:t,desc:d,tag:tag||'OFERTA',precio:price,activa:true,ts:Date.now()});
+  saveAll(); renderPromos();
+  document.getElementById('promoTitle').value=''; document.getElementById('promoDesc').value='';
+  document.getElementById('promoTag').value=''; document.getElementById('promoPrice').value='';
+  updatePromoPreview();
+  toast('Promoción publicada','ok');
+}
+function renderPromos(){
+  var div=document.getElementById('listaPromos');
+  if(PROMOS.length===0){div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin promociones activas.</p>';return;}
+  div.innerHTML=PROMOS.map(function(p,idx){
+    return '<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px">'+
+      '<div style="flex:1"><span style="background:#fee2e2;color:#991b1b;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">'+p.tag+'</span>'+
+      '<div style="font-weight:700;margin:6px 0 2px">'+p.titulo+'</div>'+
+      '<div style="font-size:12px;color:var(--gris)">'+p.desc+'</div>'+
+      (p.precio?'<div style="font-size:15px;font-weight:800;color:var(--naranja);margin-top:4px">'+p.precio+'</div>':'')+
+      '</div>'+
+      '<button class="btn btn-sm btn-danger" onclick="delPromo('+idx+')">🗑</button></div>';
+  }).join('');
+}
+function delPromo(idx){ PROMOS.splice(idx,1); saveAll(); renderPromos(); toast('Promoción eliminada','ok'); }
+
+// ── REDES SOCIALES ───────────────────────────────────
+var redes = JSON.parse(localStorage.getItem('ov_redes') || '{}');
+function loadRedes(){
+  if(redes.ig){ document.getElementById('igUser').value=redes.ig; document.getElementById('igStatus').textContent='Vinculado: '+redes.ig; }
+  if(redes.fb){ document.getElementById('fbUrl').value=redes.fb; document.getElementById('fbStatus').textContent='Vinculado'; }
+  if(redes.wa){ document.getElementById('waNum').value=redes.wa; document.getElementById('waStatus').textContent='Vinculado: '+redes.wa; }
+}
+function vincularRed(tipo){
+  var val='';
+  if(tipo==='ig') val=document.getElementById('igUser').value.trim();
+  if(tipo==='fb') val=document.getElementById('fbUrl').value.trim();
+  if(tipo==='wa') val=document.getElementById('waNum').value.trim();
+  if(!val){toast('Ingresa el dato requerido','warn');return;}
+  redes[tipo]=val;
+  localStorage.setItem('ov_redes',JSON.stringify(redes));
+  loadRedes(); toast('Vinculado correctamente','ok');
+}
+function showRedInstrucciones(tipo){
+  var div=document.getElementById('redModal');
+  var content=document.getElementById('redInstrContent');
+  div.style.display='block';
+  var instrucciones={
+    ig:'<ol style="font-size:13px;line-height:2;padding-left:18px;color:#374151">'+
+       '<li>Ve a <strong>instagram.com</strong> e ingresa con la cuenta de la ferretería</li>'+
+       '<li>En Configuración → Cuenta → Cambiar a cuenta profesional</li>'+
+       '<li>Elige categoría: <strong>Tienda de hardware / Ferretería</strong></li>'+
+       '<li>Conecta con una página de Facebook (opcional pero recomendado)</li>'+
+       '<li>Activa el catálogo de productos si deseas mostrar precios</li>'+
+       '<li>Ingresa tu @ arriba y haz clic en <strong>Vincular</strong></li>'+
+       '<li>Link directo al perfil: instagram.com/TU_USUARIO</li></ol>',
+    fb:'<ol style="font-size:13px;line-height:2;padding-left:18px;color:#374151">'+
+       '<li>Ve a <strong>facebook.com/pages/create</strong></li>'+
+       '<li>Crea una página de tipo <strong>Negocio local</strong></li>'+
+       '<li>Nombre: Ferretería Oviedo El Manzano</li>'+
+       '<li>Agrega número de teléfono, dirección y horario</li>'+
+       '<li>Activa el botón de <strong>Mensaje / WhatsApp</strong> en la página</li>'+
+       '<li>Para publicidad: ve a <strong>facebook.com/ads</strong> y crea una campaña de alcance local</li>'+
+       '<li>Pega la URL de tu página arriba y haz clic en <strong>Vincular</strong></li></ol>',
+    wa:'<ol style="font-size:13px;line-height:2;padding-left:18px;color:#374151">'+
+       '<li>Descarga <strong>WhatsApp Business</strong> desde Play Store o App Store</li>'+
+       '<li>Regístrate con el número de la ferretería</li>'+
+       '<li>Ve a Configuración → Perfil de empresa</li>'+
+       '<li>Completa nombre, dirección, horario y descripción del negocio</li>'+
+       '<li>Configura <strong>Respuestas rápidas</strong> para preguntas frecuentes</li>'+
+       '<li>Activa el <strong>Mensaje de bienvenida</strong> automático</li>'+
+       '<li>Comparte el link directo: wa.me/56XXXXXXXXX</li>'+
+       '<li>Ingresa tu número arriba (+56...) y haz clic en <strong>Vincular</strong></li></ol>'
+  };
+  content.innerHTML=instrucciones[tipo];
+}
+
+// ── TUTORIALES ───────────────────────────────────────
+var tutData = {
+  cliente:  {titulo:'Manual App Clientes', contenido:'1. Abrir el archivo HTML en el navegador\n2. Ingresar con usuario y contraseña\n3. La barra verde indica que los precios están actualizados\n4. Usar el buscador para encontrar productos\n5. Tocar un producto para ver detalles\n6. Agregar al carrito con el botón +\n7. Ir al carrito (botón flotante) para revisar\n8. Descargar cotización en PDF con el botón Descargar'},
+  vendedor: {titulo:'Manual App Vendedores', contenido:'1. Abrir ferreteria-oviedo-vendedor.html\n2. Ingresar con usuario vendedor y contraseña\n3. La barra superior muestra estado de sincronización\n4. Buscar producto por nombre, código o marca\n5. Ver precio IVA y precio socio\n6. Tocar producto para ver margen y detalles\n7. Agregar al carrito para generar cotización\n8. Admin puede gestionar usuarios desde el ícono ⚙'},
+  admin:    {titulo:'Manual Panel Admin', contenido:'1. Abrir ferreteria-oviedo-admin.html\n2. Ingresar con admin / oviedo2025admin\n3. Dashboard muestra resumen de usuarios y productos\n4. Pestaña Usuarios: agregar, eliminar y bloquear\n5. Pestaña Precios: verificar conexión y buscar productos\n6. Pestaña Promociones: crear y publicar ofertas\n7. Pestaña URL: actualizar enlace de Google Sheets\n8. Pestaña Redes: vincular Instagram, Facebook y WhatsApp'},
+  actualizador:{titulo:'Manual Actualizador de URLs', contenido:'1. Asegúrate de tener Python instalado (python.org)\n2. Pon actualizador-url.py en la misma carpeta que los HTML\n3. Doble clic sobre actualizador-url.py\n4. Espera el mensaje ✅ Actualizado\n5. Si falla, abre CMD y ejecuta: python actualizador-url.py\n6. Verifica que la barra sea verde al abrir las apps'},
+  sheets:   {titulo:'Guía Google Sheets', contenido:'1. Abre la planilla en sheets.google.com\n2. Edita directamente las columnas PrecioIVA o SocioIVA\n3. Ve a Archivo → Compartir → Publicar en la web\n4. Selecciona la hoja y formato CSV\n5. Copia el enlace generado\n6. Pégalo en Panel Admin → URL / Conexión\n7. Haz clic en Probar conexión para verificar'}
+};
+function descTutorial(tipo){
+  var d=tutData[tipo];
+  if(!d) return;
+  var txt=d.titulo+'\n'+'='.repeat(40)+'\n\n'+d.contenido;
+  var blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='tutorial-'+tipo+'.txt';
+  a.click();
+  toast('Tutorial descargado','ok');
+}
+
+// ── MEJORAS ──────────────────────────────────────────
+function renderMejoras(){
+  var mejoras=[
+    {n:1, icono:'🔐', titulo:'Agregar autenticación por backend', desc:'Actualmente los usuarios se guardan en localStorage. Para mayor seguridad, migra a un servidor con autenticación real (Firebase, Supabase o similar).'},
+    {n:2, icono:'📊', titulo:'Conectar Google Analytics', desc:'Instala Google Analytics en las apps para ver cuántos usuarios las usan, desde qué dispositivos y qué productos buscan más.'},
+    {n:3, icono:'🔔', titulo:'Notificaciones push', desc:'Usa OneSignal o Firebase para enviar notificaciones de promociones directamente al celular de los clientes.'},
+    {n:4, icono:'📦', titulo:'Control de stock en tiempo real', desc:'Agrega una columna de stock en Google Sheets y muéstrala en las apps para evitar cotizar productos sin stock.'},
+    {n:5, icono:'💳', titulo:'Integrar pasarela de pago', desc:'Integra Webpay Plus o MercadoPago para recibir pagos directamente desde la app de clientes.'},
+    {n:6, icono:'📱', titulo:'Convertir a PWA', desc:'Agrega un manifest.json y service worker para que los clientes puedan instalar la app como ícono en su celular.'},
+    {n:7, icono:'🗃️', titulo:'Historial de cotizaciones por cliente', desc:'Guarda las cotizaciones en la nube (Google Sheets o Firebase) para que el vendedor pueda ver el historial de cada cliente.'},
+    {n:8, icono:'🌐', titulo:'Versión web con dominio propio', desc:'Sube las apps a un hosting (Cloudflare Pages, Netlify o similar) con dominio propio para acceso desde cualquier lugar sin archivos locales.'},
+    {n:9, icono:'🤖', titulo:'Chatbot de WhatsApp automatizado', desc:'Usa Twilio o WhatsApp Business API para responder automáticamente preguntas frecuentes y enviar catálogos por WhatsApp.'},
+    {n:10, icono:'📈', titulo:'Dashboard de ventas con gráficos', desc:'Conecta las cotizaciones generadas a Google Data Studio para visualizar tendencias de ventas y productos más cotizados.'}
+  ];
+  document.getElementById('listaMejoras').innerHTML=mejoras.map(function(m){
+    return '<div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid #f3f4f6;align-items:flex-start">'+
+      '<div style="width:36px;height:36px;background:#fff3ee;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+m.icono+'</div>'+
+      '<div><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'+
+      '<span style="background:#f3f4f6;color:#374151;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px">#'+m.n+'</span>'+
+      '<span style="font-size:14px;font-weight:700">'+m.titulo+'</span></div>'+
+      '<div style="font-size:13px;color:#6b7280">'+m.desc+'</div></div></div>';
+  }).join('');
+}
+
+// ── TOAST ────────────────────────────────────────────
+function toast(msg, tipo){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='show '+(tipo||'');
+  setTimeout(function(){t.className='';},2800);
+}
+</script>
+</body>
+</html>
