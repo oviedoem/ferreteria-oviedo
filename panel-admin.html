@@ -1,140 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
+<!DOCTYPE html><html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" type="text/css" href="cid:css-39066a29-2681-430a-96af-88753d5489a6@mhtml.blink" />
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Ferretería Oviedo</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
-:root{
-  --naranja:#E8450A;--naranja2:#c93a08;--dark:#111827;--card:#fff;
-  --border:#e5e7eb;--gris:#6b7280;--verde:#059669;--rojo:#dc2626;--azul:#2563eb;--amarillo:#d97706;
-}
-/* LOGIN */
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#111827,#E8450A);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:white;border-radius:20px;padding:36px 32px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
-.login-logo{width:60px;height:60px;background:var(--naranja);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:white;margin:0 auto 16px;letter-spacing:-1px}
-.login-title{font-size:20px;font-weight:800;color:var(--dark);margin-bottom:4px}
-.login-sub{font-size:12px;color:var(--gris);margin-bottom:24px}
-.linput{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:10px;outline:none;transition:.2s}
-.linput:focus{border-color:var(--naranja);box-shadow:0 0 0 3px rgba(232,69,10,.1)}
-.lbtn{width:100%;padding:13px;background:var(--naranja);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
-.lbtn:hover{background:var(--naranja2)}
-.lerr{color:var(--rojo);font-size:12px;margin-top:6px;min-height:18px}
-/* LAYOUT */
-#app{display:none;min-height:100vh}
-.topbar{background:var(--dark);color:white;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.topbar-left{display:flex;align-items:center;gap:12px}
-.top-logo{width:34px;height:34px;background:var(--naranja);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:white}
-.top-title{font-size:15px;font-weight:700}
-.top-sub{font-size:11px;color:#9ca3af}
-.top-right{display:flex;align-items:center;gap:10px}
-.badge-online{background:#059669;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.btn-logout{background:rgba(255,255,255,.1);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-/* NAV TABS */
-.nav{background:white;border-bottom:1px solid var(--border);padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
-.nav::-webkit-scrollbar{display:none}
-.nav-btn{background:none;border:none;padding:14px 14px 12px;font-size:13px;font-weight:600;color:var(--gris);cursor:pointer;font-family:inherit;border-bottom:2.5px solid transparent;white-space:nowrap;transition:.15s}
-.nav-btn.active{color:var(--naranja);border-bottom-color:var(--naranja)}
-/* CONTENT */
-.content{padding:20px;max-width:960px;margin:0 auto}
-.tab-pane{display:none}
-.tab-pane.active{display:block}
-/* CARDS */
-.card{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:1px solid var(--border);margin-bottom:16px}
-.card-title{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.card-title span{font-size:18px}
-/* STATS */
-.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
-@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
-.stat-card{background:white;border-radius:12px;padding:16px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.stat-val{font-size:28px;font-weight:800;color:var(--dark)}
-.stat-lbl{font-size:11px;color:var(--gris);margin-top:3px}
-.stat-icon{font-size:20px;margin-bottom:6px}
-/* TABLES */
-.tbl{width:100%;border-collapse:collapse;font-size:13px}
-.tbl th{background:#f9fafb;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
-.tbl td{padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#fafafa}
-/* BADGES */
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
-.badge-verde{background:#d1fae5;color:#065f46}
-.badge-rojo{background:#fee2e2;color:#991b1b}
-.badge-amarillo{background:#fef3c7;color:#92400e}
-.badge-azul{background:#dbeafe;color:#1e40af}
-.badge-gris{background:#f3f4f6;color:#374151}
-.badge-naranja{background:#fff3ee;color:#E8450A}
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
-.btn-primary{background:var(--naranja);color:white}
-.btn-primary:hover{background:var(--naranja2)}
-.btn-danger{background:#fee2e2;color:var(--rojo)}
-.btn-danger:hover{background:#fecaca}
-.btn-warn{background:#fef3c7;color:var(--amarillo)}
-.btn-success{background:#d1fae5;color:var(--verde)}
-.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
-/* FORMS */
-.form-grid{display:grid;grid-template-columns:1fr;gap:10px}
-@media(min-width:500px){.form-grid{grid-template-columns:1fr 1fr}}
-.finput{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:.2s}
-.finput:focus{border-color:var(--naranja);box-shadow:0 0 0 3px rgba(232,69,10,.08)}
-.flabel{font-size:12px;font-weight:600;color:var(--gris);margin-bottom:4px;display:block}
-.fgroup{display:flex;flex-direction:column}
-/* PROMO */
-.promo-preview{background:linear-gradient(135deg,#E8450A,#ff6b35);color:white;border-radius:12px;padding:16px;margin-top:10px}
-.promo-tag{background:rgba(255,255,255,.2);display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:8px}
-.promo-title{font-size:18px;font-weight:800;margin-bottom:4px}
-.promo-desc{font-size:13px;opacity:.9}
-/* URL STATUS */
-.url-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:10px}
-.url-ok{background:#d1fae5;color:#065f46}
-.url-err{background:#fee2e2;color:#991b1b}
-.url-loading{background:#dbeafe;color:#1e40af}
-/* TUTORIAL */
-.tut-card{background:#f9fafb;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.15s}
-.tut-card:hover{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.tut-icon{width:42px;height:42px;border-radius:10px;background:var(--naranja);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.tut-title{font-size:14px;font-weight:700;color:var(--dark)}
-.tut-desc{font-size:12px;color:var(--gris);margin-top:2px}
-/* REDES */
-.red-card{background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
-.red-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.red-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.ig-icon{background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
-.fb-icon{background:#1877f2}
-.wa-icon{background:#25D366}
-.red-name{font-size:15px;font-weight:700}
-.red-status{font-size:12px;color:var(--gris)}
-/* TOAST */
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:99999;transition:.3s;opacity:0;pointer-events:none}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#toast.ok{background:#059669}
-#toast.err{background:#dc2626}
-#toast.warn{background:#d97706}
-/* ONLINE */
-.online-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6}
-.online-item:last-child{border-bottom:none}
-.online-avatar{width:38px;height:38px;border-radius:50%;background:var(--naranja);color:white;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.online-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:4px}
-/* MODAL COTIZACION */
-#cotizModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:16px}
-#cotizModal.open{display:flex}
-.modal-box{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:720px;max-height:90vh;overflow-y:auto;font-family:'Inter',sans-serif}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-/* BARRAS ESTADISTICAS */
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
-.bar-label{width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;font-weight:600;color:#374151}
-.bar-track{flex:1;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden}
-.bar-fill{height:100%;background:var(--naranja);border-radius:6px;transition:.4s}
-.bar-count{width:36px;text-align:right;font-weight:700;color:var(--naranja);flex-shrink:0}
-/* STATS COTIZ */
-.cotiz-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
-@media(min-width:500px){.cotiz-stats-grid{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:500px){.content{padding:12px}}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet">
+
 </head>
 <body>
 
@@ -145,8 +14,8 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
     <div class="login-title">Panel Administrador</div>
     <div class="login-sub">Ferretería Oviedo — El Manzano</div>
     <input class="linput" id="lu" type="text" placeholder="Usuario" autocomplete="off">
-    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="lbtn" onclick="doLogin()">Ingresar</button>
+    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off">
+    <button class="lbtn">Ingresar</button>
     <div class="lerr" id="lerr"></div>
   </div>
 </div>
@@ -163,54 +32,44 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
     </div>
     <div class="top-right">
       <span class="badge-online" id="onlineBadge">● 0 en línea</span>
-      <button class="btn-logout" onclick="doLogout()">Salir</button>
+      <button class="btn-logout">Salir</button>
     </div>
   </div>
 
   <!-- NAV -->
-  <div class="nav" id="mainNav">
-    <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
-    <button class="nav-btn" onclick="showTab('usuarios',this)">👥 Usuarios</button>
-    <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
-    <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
-    <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
-    <button class="nav-btn" onclick="showTab('url',this)">🔗 URL / Conexión</button>
-    <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
-    <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
-    <button class="nav-btn" onclick="showTab('mejoras',this)">💡 Mejoras</button>
+  <div class="nav">
+    <button class="nav-btn active">📊 Dashboard</button>
+    <button class="nav-btn">👥 Usuarios</button>
+    <button class="nav-btn">📄 Cotizaciones</button>
+    <button class="nav-btn">💰 Precios</button>
+    <button class="nav-btn">🎯 Promociones</button>
+    <button class="nav-btn">🔗 URL / Conexión</button>
+    <button class="nav-btn">📱 Redes Sociales</button>
+    <button class="nav-btn">📚 Tutoriales</button>
+    <button class="nav-btn">💡 Mejoras</button>
   </div>
 
   <div class="content">
 
-    <!-- ── DASHBOARD ── -->
+    <!-- ── DASHBOARD ─────────────────────────────── -->
     <div class="tab-pane active" id="tab-dashboard">
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val" id="statTotalCli">—</div><div class="stat-lbl">Usuarios Clientes</div></div>
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="statTotalVend">—</div><div class="stat-lbl">Usuarios Vendedores</div></div>
+        <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-val" id="statTotalVend">—</div><div class="stat-lbl">Usuarios Vendedores</div></div>
         <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-val" id="statOnline">0</div><div class="stat-lbl">Sesiones activas</div></div>
-        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-val" id="statProds">—</div><div class="stat-lbl">Productos catálogo</div></div>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-val" id="statTotalCotiz">0</div><div class="stat-lbl">Total cotizaciones</div></div>
-        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val" id="statMontoTotal">$0</div><div class="stat-lbl">Monto total cotizado</div></div>
-        <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-val" id="statCotizCli">0</div><div class="stat-lbl">Cotiz. App Clientes</div></div>
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="statCotizVend">0</div><div class="stat-lbl">Cotiz. App Vendedores</div></div>
+        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-val" id="statProds">—</div><div class="stat-lbl">Productos en catálogo</div></div>
       </div>
       <div class="card">
         <div class="card-title"><span>🟢</span> Usuarios en línea ahora</div>
-        <div id="onlineList"><p style="color:#9ca3af;font-size:13px">Sin sesiones activas.</p></div>
+        <div id="onlineList"><p style="color:#9ca3af;font-size:13px">Sin sesiones activas registradas.</p></div>
       </div>
       <div class="card">
         <div class="card-title"><span>📄</span> Últimas cotizaciones generadas</div>
-        <div id="lastCotiz"><p style="color:#9ca3af;font-size:13px">Sin cotizaciones aún.</p></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🏆</span> Top 10 productos más cotizados</div>
-        <div id="topProductos"><p style="color:#9ca3af;font-size:13px">Sin datos aún.</p></div>
+        <div id="lastCotiz"><p style="color:#9ca3af;font-size:13px">Sin cotizaciones registradas aún.</p></div>
       </div>
     </div>
 
-    <!-- ── USUARIOS ── -->
+    <!-- ── USUARIOS ───────────────────────────────── -->
     <div class="tab-pane" id="tab-usuarios">
       <div class="card">
         <div class="card-title"><span>📱</span> Usuarios App Clientes</div>
@@ -222,10 +81,10 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
             <div class="fgroup"><label class="flabel">Nombre completo</label><input class="finput" id="cnn" placeholder="ej: Juan Pérez"></div>
             <div class="fgroup"><label class="flabel">Contraseña</label><input class="finput" id="cnp" type="password" placeholder="mínimo 6 caracteres"></div>
             <div class="fgroup"><label class="flabel">Licencia</label>
-              <select class="finput" id="cnl"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected>1 año</option></select>
+              <select class="finput" id="cnl"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected="">1 año</option></select>
             </div>
           </div>
-          <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="addCliUser()">+ Agregar usuario cliente</button>
+          <button class="btn btn-primary" style="margin-top:12px;width:100%">+ Agregar usuario cliente</button>
         </div>
       </div>
       <div class="card">
@@ -241,94 +100,70 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
               <select class="finput" id="vnr"><option value="vendedor">Vendedor</option><option value="admin">Admin</option></select>
             </div>
           </div>
-          <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="addVendUser()">+ Agregar usuario vendedor</button>
+          <button class="btn btn-primary" style="margin-top:12px;width:100%">+ Agregar usuario vendedor</button>
         </div>
       </div>
       <div class="card">
-        <div class="card-title"><span>📋</span> Log de cambios</div>
-        <div id="logUsuarios"><p style="color:#9ca3af;font-size:13px">Sin cambios registrados.</p></div>
+        <div class="card-title"><span>📋</span> Resumen de cambios</div>
+        <div id="logUsuarios"><p style="color:#9ca3af;font-size:13px">Sin cambios registrados aún.</p></div>
       </div>
     </div>
 
-    <!-- ── COTIZACIONES ── -->
+    <!-- ── COTIZACIONES ───────────────────────────── -->
     <div class="tab-pane" id="tab-cotizaciones">
-      <div class="cotiz-stats-grid">
-        <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-val" id="cotizStatTotal">0</div><div class="stat-lbl">Total</div></div>
-        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val" id="cotizStatMonto">$0</div><div class="stat-lbl">Monto total</div></div>
-        <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-val" id="cotizStatCli">0</div><div class="stat-lbl">Desde Clientes</div></div>
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="cotizStatVend">0</div><div class="stat-lbl">Desde Vendedores</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🔍</span> Filtrar cotizaciones</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input class="finput" id="cotizSearch" placeholder="Buscar por usuario..." style="flex:1;min-width:160px" oninput="renderCotizaciones()">
-          <select class="finput" id="cotizFiltroApp" style="width:160px" onchange="renderCotizaciones()">
-            <option value="">Todas las apps</option>
-            <option value="Cliente">App Cliente</option>
-            <option value="Vendedor">App Vendedor</option>
-          </select>
-          <button class="btn btn-danger btn-sm" onclick="limpiarCotizaciones()">🗑 Limpiar todo</button>
-        </div>
-      </div>
       <div class="card">
         <div class="card-title"><span>📄</span> Cotizaciones registradas</div>
-        <div id="tablaCotiz"><p style="color:#9ca3af;font-size:13px">Sin cotizaciones aún.</p></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🏆</span> Productos más cotizados</div>
-        <div id="topProductosCotiz"><p style="color:#9ca3af;font-size:13px">Sin datos aún.</p></div>
+        <div id="tablaCotiz"><p style="color:#9ca3af;font-size:13px">Las cotizaciones generadas por clientes y vendedores aparecerán aquí automáticamente.</p></div>
       </div>
     </div>
 
-    <!-- ── PRECIOS ── -->
+    <!-- ── PRECIOS ─────────────────────────────────── -->
     <div class="tab-pane" id="tab-precios">
       <div class="card">
         <div class="card-title"><span>🔗</span> Fuente de datos activa</div>
         <div id="urlStatus" class="url-status url-loading">⏳ Verificando conexión...</div>
         <div style="font-size:12px;color:var(--gris);margin-bottom:12px;word-break:break-all" id="urlActiva"></div>
-        <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
+        <button class="btn btn-primary">🔄 Probar conexión</button>
       </div>
       <div class="card">
-        <div class="card-title"><span>📊</span> Vista previa del catálogo</div>
+        <div class="card-title"><span>📊</span> Vista previa del catálogo cargado</div>
         <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input class="finput" id="precioSearch" placeholder="🔍 Buscar producto..." style="flex:1;min-width:180px" oninput="filtrarPrecios()">
+          <input class="finput" id="precioSearch" placeholder="🔍 Buscar producto..." style="flex:1;min-width:180px">
           <span id="precioCount" style="font-size:12px;color:var(--gris)"></span>
         </div>
-        <div style="overflow-x:auto"><div id="tablaPrecios"><p style="color:#9ca3af;font-size:13px">Cargando...</p></div></div>
+        <div style="overflow-x:auto"><div id="tablaPrecios"><p style="color:#9ca3af;font-size:13px">Cargando productos...</p></div></div>
       </div>
       <div class="card">
         <div class="card-title"><span>📋</span> Instrucciones para actualizar precios</div>
         <ol style="font-size:13px;line-height:2;padding-left:18px;color:#374151">
           <li>Abre <strong>Google Sheets</strong> con la planilla de precios</li>
-          <li>Edita los valores en las columnas <strong>PrecioIVA</strong> o <strong>SocioIVA</strong></li>
+          <li>Edita directamente los valores en las columnas <strong>PrecioIVA</strong> o <strong>SocioIVA</strong></li>
           <li>Ve a <strong>Archivo → Compartir → Publicar en la web</strong></li>
           <li>Selecciona la hoja, formato <strong>CSV</strong> y copia el enlace</li>
-          <li>Pega el enlace en la sección <strong>🔗 URL / Conexión</strong></li>
-          <li>Las apps cliente y vendedor actualizarán precios automáticamente</li>
+          <li>Pega el enlace en la sección <strong>🔗 URL / Conexión</strong> de este panel</li>
+          <li>Las apps cliente y vendedor actualizarán los precios automáticamente al abrirse</li>
         </ol>
       </div>
     </div>
 
-    <!-- ── PROMOCIONES ── -->
+    <!-- ── PROMOCIONES ────────────────────────────── -->
     <div class="tab-pane" id="tab-promociones">
       <div class="card">
         <div class="card-title"><span>🎯</span> Crear promoción / pack oferta</div>
         <div class="form-grid">
-          <div class="fgroup"><label class="flabel">Título de la promoción</label><input class="finput" id="promoTitle" placeholder="ej: Pack Pintor Completo" oninput="updatePromoPreview()"></div>
-          <div class="fgroup"><label class="flabel">Etiqueta (badge)</label><input class="finput" id="promoTag" placeholder="ej: OFERTA SEMANA" oninput="updatePromoPreview()"></div>
+          <div class="fgroup"><label class="flabel">Título de la promoción</label><input class="finput" id="promoTitle" placeholder="ej: Pack Pintor Completo"></div>
+          <div class="fgroup"><label class="flabel">Etiqueta (badge)</label><input class="finput" id="promoTag" placeholder="ej: OFERTA SEMANA"></div>
         </div>
-        <div class="fgroup" style="margin-top:10px"><label class="flabel">Descripción</label>
-          <textarea class="finput" id="promoDesc" rows="3" placeholder="ej: Brocha 4&quot;, rodillo, pintura 1 litro — Todo incluido" oninput="updatePromoPreview()" style="resize:vertical"></textarea>
-        </div>
-        <div class="fgroup" style="margin-top:10px"><label class="flabel">Precio promocional</label><input class="finput" id="promoPrice" placeholder="ej: $14.990" oninput="updatePromoPreview()"></div>
+        <div class="fgroup" style="margin-top:10px"><label class="flabel">Descripción</label><textarea class="finput" id="promoDesc" rows="3" placeholder="ej: Brocha 4&quot;, rodillo, pintura 1 litro — Todo incluido" style="resize:vertical"></textarea></div>
+        <div class="fgroup" style="margin-top:10px"><label class="flabel">Precio promocional</label><input class="finput" id="promoPrice" type="text" placeholder="ej: $14.990"></div>
         <div style="margin-top:14px;font-size:12px;font-weight:700;color:var(--gris);margin-bottom:8px">VISTA PREVIA:</div>
         <div class="promo-preview" id="promoPreview">
           <div class="promo-tag" id="pvTag">OFERTA</div>
           <div class="promo-title" id="pvTitle">Título de la promoción</div>
-          <div class="promo-desc" id="pvDesc">Descripción del pack</div>
+          <div class="promo-desc" id="pvDesc">Descripción del pack o promoción</div>
           <div style="font-size:22px;font-weight:800;margin-top:10px" id="pvPrice"></div>
         </div>
-        <button class="btn btn-primary" style="margin-top:14px;width:100%" onclick="guardarPromo()">✅ Guardar y publicar promoción</button>
+        <button class="btn btn-primary" style="margin-top:14px;width:100%">✅ Guardar y publicar promoción</button>
       </div>
       <div class="card">
         <div class="card-title"><span>📋</span> Promociones activas</div>
@@ -336,21 +171,21 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
       </div>
     </div>
 
-    <!-- ── URL / CONEXIÓN ── -->
+    <!-- ── URL / CONEXIÓN ─────────────────────────── -->
     <div class="tab-pane" id="tab-url">
       <div class="card">
         <div class="card-title"><span>🔗</span> URL del catálogo Google Sheets</div>
         <div class="fgroup" style="margin-bottom:12px">
           <label class="flabel">URL pública (recomendada) — desde "Publicar en la web"</label>
-          <input class="finput" id="urlPub" placeholder="https://docs.google.com/...pub?...output=csv">
+          <input class="finput" id="urlPub" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb/pub?gid=111151517&single=true&output=csv" placeholder="https://docs.google.com/...pub?...output=csv">
         </div>
         <div class="fgroup" style="margin-bottom:12px">
-          <label class="flabel">URL proxy / respaldo</label>
-          <input class="finput" id="urlProxy" placeholder="https://docs.google.com/...">
+          <label class="flabel">URL proxy (respaldo automático)</label>
+          <input class="finput" id="urlProxy" value="https://api.allorigins.win/raw?url=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2Fe%2F2PACX-1vRTfL9Q9jwmQE5P7-M7oCiWgsIRZBqYZGJnD1z23JzQ2aBLwSrzxrQ0Is8YROV_XdyBRK5IK_T_S6tb%2Fpub%3Fgid%3D111151517%26single%3Dtrue%26output%3Dcsv" placeholder="https://api.allorigins.win/raw?url=...">
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
-          <button class="btn btn-success" onclick="guardarURLs()">💾 Guardar URLs</button>
+          <button class="btn btn-primary">🔄 Probar conexión</button>
+          <button class="btn btn-success">💾 Guardar URLs</button>
         </div>
         <div id="urlTestResult" style="margin-top:12px"></div>
       </div>
@@ -359,27 +194,27 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         <ol style="font-size:13px;line-height:2.1;padding-left:18px;color:#374151">
           <li>Abre tu planilla en <strong>Google Sheets</strong></li>
           <li>Ve a <strong>Archivo → Compartir → Publicar en la web</strong></li>
-          <li>Selecciona la hoja con los precios</li>
-          <li>En Formato selecciona <strong>CSV</strong></li>
-          <li>Haz clic en <strong>Publicar</strong> y copia el enlace</li>
-          <li>Pégalo arriba en "URL pública" y haz clic en <strong>Guardar URLs</strong></li>
+          <li>En "Hoja", selecciona la hoja con los precios</li>
+          <li>En "Formato", selecciona <strong>Valores separados por comas (.csv)</strong></li>
+          <li>Haz clic en <strong>Publicar</strong> y confirma</li>
+          <li>Copia el enlace generado y pégalo arriba en "URL pública"</li>
           <li>Haz clic en <strong>Probar conexión</strong> para verificar</li>
         </ol>
       </div>
     </div>
 
-    <!-- ── REDES SOCIALES ── -->
+    <!-- ── REDES SOCIALES ─────────────────────────── -->
     <div class="tab-pane" id="tab-redes">
       <div class="red-card">
         <div class="red-header">
           <div class="red-icon ig-icon">📸</div>
           <div><div class="red-name">Instagram</div><div class="red-status" id="igStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('ig')">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">Nombre de usuario (@)</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="igUser" placeholder="@ferreteriaOviedo">
-            <button class="btn btn-sm btn-success" onclick="vincularRed('ig')">Vincular</button>
+            <button class="btn btn-sm btn-success">Vincular</button>
           </div>
         </div>
         <div id="igInfo" style="display:none;margin-top:10px"></div>
@@ -388,12 +223,12 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         <div class="red-header">
           <div class="red-icon fb-icon">📘</div>
           <div><div class="red-name">Facebook</div><div class="red-status" id="fbStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('fb')">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">URL de página Facebook</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="fbUrl" placeholder="https://facebook.com/tuPagina">
-            <button class="btn btn-sm btn-success" onclick="vincularRed('fb')">Vincular</button>
+            <button class="btn btn-sm btn-success">Vincular</button>
           </div>
         </div>
         <div id="fbInfo" style="display:none;margin-top:10px"></div>
@@ -402,12 +237,12 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         <div class="red-header">
           <div class="red-icon wa-icon">💬</div>
           <div><div class="red-name">WhatsApp Business</div><div class="red-status" id="waStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('wa')">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">Número WhatsApp (+56...)</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="waNum" placeholder="+56912345678">
-            <button class="btn btn-sm btn-success" onclick="vincularRed('wa')">Vincular</button>
+            <button class="btn btn-sm btn-success">Vincular</button>
           </div>
         </div>
         <div id="waInfo" style="display:none;margin-top:10px"></div>
@@ -418,31 +253,36 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
       </div>
     </div>
 
-    <!-- ── TUTORIALES ── -->
+    <!-- ── TUTORIALES ─────────────────────────────── -->
     <div class="tab-pane" id="tab-tutoriales">
-      <div class="tut-card" onclick="descTutorial('cliente')">
+      <div class="tut-card">
         <div class="tut-icon">📱</div>
         <div><div class="tut-title">Manual App Clientes</div><div class="tut-desc">Cómo buscar productos, crear cotizaciones y descargar PDF</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card" onclick="descTutorial('vendedor')">
+      <div class="tut-card">
         <div class="tut-icon">💼</div>
         <div><div class="tut-title">Manual App Vendedores</div><div class="tut-desc">Acceso, consulta de precios con margen y sincronización</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card" onclick="descTutorial('admin')">
+      <div class="tut-card">
         <div class="tut-icon">⚙️</div>
         <div><div class="tut-title">Manual Panel Admin</div><div class="tut-desc">Gestión de usuarios, precios, URLs y configuración</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card" onclick="descTutorial('sheets')">
+      <div class="tut-card">
+        <div class="tut-icon">🔄</div>
+        <div><div class="tut-title">Manual Actualizador de URLs</div><div class="tut-desc">Cómo ejecutar el script para actualizar conexiones</div></div>
+        <div style="margin-left:auto;font-size:20px">⬇️</div>
+      </div>
+      <div class="tut-card">
         <div class="tut-icon">📊</div>
-        <div><div class="tut-title">Guía Google Sheets</div><div class="tut-desc">Cómo actualizar precios, publicar y obtener URL</div></div>
+        <div><div class="tut-title">Guía Google Sheets</div><div class="tut-desc">Cómo actualizar precios, publicar la planilla y obtener URL</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
     </div>
 
-    <!-- ── MEJORAS ── -->
+    <!-- ── MEJORAS ─────────────────────────────────── -->
     <div class="tab-pane" id="tab-mejoras">
       <div class="card">
         <div class="card-title"><span>💡</span> Recomendaciones de mejora continua</div>
@@ -453,783 +293,8 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
   </div><!-- /content -->
 </div><!-- /app -->
 
-<!-- MODAL DETALLE COTIZACIÓN -->
-<div id="cotizModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 style="font-size:16px;font-weight:800">📄 Detalle de Cotización</h2>
-      <button onclick="cerrarCotizModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#666">✕</button>
-    </div>
-    <div id="cotizModalContent"></div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
- <script>
-// === SESIÓN COMPARTIDA ENTRE PÁGINAS (admin / vendedor / cliente) ============
-const SESS_KEYS = {
-  token: 'ov_s_token',
-  name:  'ov_s_name',
-  role:  'ov_s_role'
-};
 
-function getSessionShared(){
-  return {
-    token: localStorage.getItem(SESS_KEYS.token),
-    name:  localStorage.getItem(SESS_KEYS.name),
-    role:  localStorage.getItem(SESS_KEYS.role)
-  };
-}
 
-function setSessionShared(data){
-  if(!data) return;
-  if(data.token)   localStorage.setItem(SESS_KEYS.token, data.token);
-  if(data.nombre)  localStorage.setItem(SESS_KEYS.name,  data.nombre);
-  if(data.rol)     localStorage.setItem(SESS_KEYS.role,  data.rol);
-}
-
-function clearSessionShared(){
-  Object.values(SESS_KEYS).forEach(function(k){ localStorage.removeItem(k); });
-}
-
-function routeByRole(role){
-  if(role === 'admin'){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-  }else if(role === 'vendedor'){
-    window.location.href = 'panel-vendedor.html';
-  }else if(role === 'cliente'){
-    window.location.href = 'panel-cliente.html';
-  }else{
-    document.getElementById('loginScreen').style.display='flex';
-    document.getElementById('app').style.display='none';
-  }
-}
-
-// Al cargar: si hay sesión y es admin, entrar directo; si no, redirigir o mostrar login
-window.addEventListener('load', function(){
-  var s = getSessionShared();
-  if(s && s.token && s.role){
-    if(s.role === 'admin'){
-      document.getElementById('loginScreen').style.display='none';
-      document.getElementById('app').style.display='block';
-      initApp();
-    }else{
-      routeByRole(s.role);
-    }
-  }else{
-    document.getElementById('loginScreen').style.display='flex';
-    document.getElementById('app').style.display='none';
-  }
-});
-
-// === API CENTRAL Oviedo (misma que index y apps) ============================
-var API_URL = 'https://script.google.com/macros/s/AKfycbxj3vPc80IjDmVcSDCFLZkHHNPNT4AuSCn3378Tlk4tpjS8o24j5o_u2Crm_VQexk6Z/exec';
-
-// GET vía JSONP (evita CORS)
-function apiGet(params) {
-  return new Promise(function(resolve, reject) {
-    var cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
-    params.callback = cbName;
-    var url = API_URL + '?' + Object.keys(params).map(function(k){
-      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-    }).join('&');
-    window[cbName] = function(data) {
-      resolve(data);
-      delete window[cbName];
-      document.head.removeChild(script);
-    };
-    var script = document.createElement('script');
-    script.src = url;
-    script.onerror = function() {
-      reject(new Error('JSONP error'));
-      delete window[cbName];
-      document.head.removeChild(script);
-    };
-    document.head.appendChild(script);
-  });
-}
-
-// POST vía form-encoded (sin headers especiales)
-function apiPost(body) {
-  var form = new URLSearchParams();
-  Object.keys(body).forEach(function(k){
-    var v = body[k];
-    if (typeof v === 'object') v = JSON.stringify(v);
-    form.append(k, v);
-  });
-  return fetch(API_URL, {
-    method: 'POST',
-    body: form
-  }).then(function(r){ return r.json(); });
-}
-
-// Usuarios (clientes + vendedores) desde GAS
-function loadUsersFromAPI() {
-  return apiGet({action:'getUsers'}).then(function(data){
-    if (!Array.isArray(data)) return;
-    CLI_USERS  = data.filter(function(u){ return u.app === 'cliente'; });
-    VEND_USERS = data.filter(function(u){ return u.app === 'vendedor' || u.role === 'admin'; });
-  }).catch(function(e){
-    console.error('Error getUsers', e);
-  });
-}
-
-function saveUserToAPI(userObj) {
-  // Se envía tal cual al GAS -> saveUser(JSON.parse(params.data))
-  return apiPost({action:'saveUser', data:userObj});
-}
-
-function deleteUserFromAPI(username) {
-  return apiGet({action:'deleteUser', u: username});
-}
-
-// Sesiones y cotizaciones
-function loadSessionsFromAPI() {
-  return apiGet({action:'getSessions'}).catch(function(e){
-    console.error('Error getSessions', e);
-    return [];
-  });
-}
-
-function loadCotizacionesFromAPI(limit) {
-  return apiGet({action:'getCotizaciones', limit: limit || '200'})
-  .catch(function(e){
-    console.error('Error getCotizaciones', e);
-    return [];
-  });
-}
-
-// Config (URL_PUB, URL_PROXY, etc.)
-function loadConfigFromAPI() {
-  return apiGet({action:'getConfig'}).catch(function(e){
-    console.error('Error getConfig', e);
-    return {};
-  });
-}
-
-function saveConfigToAPI(cfg) {
-  // cfg esperado por GAS: { key:'ov_url_pub', value:'...' } etc.
-  return apiPost({action:'setConfig', key: cfg.key, value: cfg.value});
-}
-
-// ── DATOS BASE / LOCAL ─────────────────────────────
-var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
-var CLI_USERS  = [];
-var VEND_USERS = [];
-var PROMOS     = JSON.parse(localStorage.getItem('ov_promos') || '[]');
-var LOG        = JSON.parse(localStorage.getItem('ov_log')    || '[]');
-var PRODS_CACHE = [];
-var PRODS_FILT  = [];
-var URL_PUB   = localStorage.getItem('ov_url_pub')   || '';
-var URL_PROXY = localStorage.getItem('ov_url_proxy') || '';
-
-function saveAll(){
-  localStorage.setItem('ov_promos', JSON.stringify(PROMOS));
-  localStorage.setItem('ov_log',    JSON.stringify(LOG));
-}
-
-function fmtCLP(n){ return '$'+Math.round(n||0).toLocaleString('es-CL'); }
-
-// ── LOGIN ────────────────────────────────────────────
-function doLogin(){
-  var u=document.getElementById('lu').value.trim();
-  var p=document.getElementById('lp').value.trim();
-  if(u===ADMIN_USER.u && p===ADMIN_USER.p){
-    setSessionShared({
-      token: Date.now().toString(),
-      nombre: 'Administrador',
-      rol: 'admin'
-    });
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    initApp();
-  } else {
-    document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
-  }
-}
-
-function doLogout(){
-  document.getElementById('app').style.display='none';
-  document.getElementById('loginScreen').style.display='flex';
-  document.getElementById('lu').value='';
-  document.getElementById('lp').value='';
-  document.getElementById('lerr').textContent='';
-  clearSessionShared();
-}
-
-// ── TABS ─────────────────────────────────────────────
-function showTab(id, btn){
-  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
-  document.getElementById('tab-'+id).classList.add('active');
-  if(btn) btn.classList.add('active');
-  if(id==='usuarios')     renderUsuarios();
-  if(id==='precios')      loadPrecios();
-  if(id==='mejoras')      renderMejoras();
-  if(id==='cotizaciones') renderCotizaciones();
-  if(id==='url'){
-    document.getElementById('urlPub').value   = URL_PUB;
-    document.getElementById('urlProxy').value = URL_PROXY;
-  }
-  if(id==='promociones') renderPromos();
-  if(id==='redes')       loadRedes();
-}
-
-// ── INIT ─────────────────────────────────────────────
-function initApp(){
-  // Config desde GAS
-  loadConfigFromAPI().then(function(cfg){
-    if(cfg && cfg.ov_url_pub)   URL_PUB   = cfg.ov_url_pub;
-    if(cfg && cfg.ov_url_proxy) URL_PROXY = cfg.ov_url_proxy;
-    localStorage.setItem('ov_url_pub',   URL_PUB);
-    localStorage.setItem('ov_url_proxy', URL_PROXY);
-    var up = document.getElementById('urlPub');
-    var ux = document.getElementById('urlProxy');
-    if(up) up.value = URL_PUB   || '';
-    if(ux) ux.value = URL_PROXY || '';
-    loadPrecios();
-  });
-
-  // Usuarios desde GAS
-  loadUsersFromAPI().then(function(){
-    renderUsuarios();
-    renderDashboard();
-  });
-
-  renderPromos();
-  loadRedes();
-  setInterval(renderDashboard, 30000);
-}
-
-// ── DASHBOARD ────────────────────────────────────────
-function renderDashboard(){
-  // Usuarios
-  document.getElementById('statTotalCli').textContent  =
-    CLI_USERS.filter(function(u){return u.role==='cliente';}).length;
-  document.getElementById('statTotalVend').textContent =
-    VEND_USERS.filter(function(u){return u.role==='vendedor';}).length;
-
-  // Sesiones desde GAS
-  loadSessionsFromAPI().then(function(sessions){
-    var now = Date.now();
-    var activas = sessions.filter(function(s){ return now - s.ts < 30*60*1000; });
-    document.getElementById('statOnline').textContent    = activas.length;
-    document.getElementById('onlineBadge').textContent   = '● '+activas.length+' en línea';
-
-    if(activas.length===0){
-      document.getElementById('onlineList').innerHTML =
-        '<div style="background:#f9fafb;border-radius:10px;padding:14px;font-size:13px;color:#6b7280">'+
-        '<div style="font-weight:700;margin-bottom:6px">Sin sesiones activas en este momento</div>'+
-        '<div style="font-size:12px">ℹ️ Las sesiones se registran cuando un usuario inicia sesión en cualquiera de las apps.</div></div>';
-    } else {
-      document.getElementById('onlineList').innerHTML = activas.map(function(s){
-        var mins = Math.floor((now-s.ts)/60000);
-        return '<div class="online-item">'+
-          '<div class="online-avatar">'+(s.user||'?').charAt(0).toUpperCase()+'</div>'+
-          '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+(s.user||'Usuario')+'</div>'+
-          '<div style="font-size:12px;color:#6b7280">'+(s.app||'App')+' · '+(s.device||'')+' · hace '+(mins<1?'<1':mins)+' min</div></div>'+
-          '<span class="badge badge-verde"><span class="online-dot"></span>Activo</span></div>';
-      }).join('');
-    }
-  });
-
-  // Cotizaciones desde GAS
-  loadCotizacionesFromAPI('200').then(function(cotiz){
-    var totalMonto = cotiz.reduce(function(a,c){return a+(c.total||0);},0);
-    var cotizCli   = cotiz.filter(function(c){return c.app==='Cliente';}).length;
-    var cotizVend  = cotiz.filter(function(c){return c.app==='Vendedor';}).length;
-
-    document.getElementById('statTotalCotiz').textContent = cotiz.length;
-    document.getElementById('statMontoTotal').textContent = fmtCLP(totalMonto);
-    document.getElementById('statCotizCli').textContent   = cotizCli;
-    document.getElementById('statCotizVend').textContent  = cotizVend;
-
-    var lastDiv = document.getElementById('lastCotiz');
-    if(cotiz.length===0){
-      lastDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones.</p>';
-    } else {
-      var recent = cotiz.slice(-5).reverse();
-      lastDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-        '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th></th></tr>'+
-        recent.map(function(c,i){
-          var idx = cotiz.length-1-i;
-          return '<tr>'+
-            '<td>'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-            '<td><b>'+c.user+'</b></td>'+
-            '<td><span class="badge '+(c.app==="Vendedor"?"badge-azul":"badge-naranja")+'">'+c.app+'</span></td>'+
-            '<td>'+c.items+'</td>'+
-            '<td>'+fmtCLP(c.total)+'</td>'+
-            '<td><button class="btn btn-sm btn-primary" onclick="verCotizacionAPI('+idx+')">Ver</button></td>'+
-          '</tr>';
-        }).join('')+
-        '</table></div>';
-    }
-
-    renderTopProductos('topProductos', cotiz);
-  });
-
-  document.getElementById('statProds').textContent = PRODS_CACHE.length || '—';
-}
-
-// ── TOP PRODUCTOS ────────────────────────────────────
-function renderTopProductos(elId, cotiz){
-  var el = document.getElementById(elId);
-  if(!cotiz || cotiz.length===0){
-    el.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin datos aún.</p>';
-    return;
-  }
-  var mapa = {};
-  cotiz.forEach(function(c){
-    if(!Array.isArray(c.detalle)) return;
-    c.detalle.forEach(function(it){
-      var key  = it.Codigo||it.Descripcion||'?';
-      var desc = it.Descripcion || key;
-      if(!mapa[key]) mapa[key]={desc:desc,qty:0,total:0};
-      mapa[key].qty   += (it.qty||0);
-      mapa[key].total += (it.PrecioIVA||0)*(it.qty||0);
-    });
-  });
-  var arr = Object.values(mapa).sort(function(a,b){return b.qty-a.qty;}).slice(0,10);
-  if(arr.length===0){
-    el.innerHTML='<p style="color:#9ca3af;font-size:13px">Las cotizaciones aún no tienen detalle de productos.</p>';
-    return;
-  }
-  var max = arr[0].qty || 1;
-  el.innerHTML = arr.map(function(p){
-    var pct = Math.round((p.qty/max)*100);
-    return '<div class="bar-row">'+
-      '<div class="bar-label" title="'+p.desc+'">'+p.desc+'</div>'+
-      '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+
-      '<div class="bar-count">'+p.qty+'</div>'+
-      '</div>';
-  }).join('');
-}
-
-// ── COTIZACIONES (lista) ─────────────────────────────
-function renderCotizaciones(){
-  loadCotizacionesFromAPI('200').then(function(cotizRaw){
-    var cotiz = cotizRaw.slice().reverse();
-    var busq  = (document.getElementById('cotizSearch') || {value:''}).value.toLowerCase().trim();
-    var appF  = (document.getElementById('cotizFiltroApp') || {value:''}).value;
-
-    var filtradas = cotiz.filter(function(c){
-      var okUser = !busq || (c.user||'').toLowerCase().includes(busq);
-      var okApp  = !appF || c.app===appF;
-      return okUser && okApp;
-    });
-
-    var totalMonto = filtradas.reduce(function(a,c){return a+(c.total||0);},0);
-    var cCli       = filtradas.filter(function(c){return c.app==='Cliente';}).length;
-    var cVend      = filtradas.filter(function(c){return c.app==='Vendedor';}).length;
-
-    document.getElementById('cotizStatTotal').textContent = filtradas.length;
-    document.getElementById('cotizStatMonto').textContent = fmtCLP(totalMonto);
-    document.getElementById('cotizStatCli').textContent   = cCli;
-    document.getElementById('cotizStatVend').textContent  = cVend;
-
-    var div = document.getElementById('tablaCotiz');
-    if(filtradas.length===0){
-      div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones para mostrar.</p>';
-    } else {
-      var totalLen = cotizRaw.length;
-      div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-        '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th>Detalle</th></tr>'+
-        filtradas.map(function(c,i){
-          var idxOrig = totalLen - 1 - i;
-          return '<tr>'+
-            '<td style="white-space:nowrap">'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-            '<td><b>'+c.user+'</b></td>'+
-            '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
-            '<td>'+c.items+'</td>'+
-            '<td>'+fmtCLP(c.total)+'</td>'+
-            '<td><button class="btn btn-sm btn-primary" onclick="verCotizacionAPI('+idxOrig+')">📋 Ver</button></td>'+
-          '</tr>';
-        }).join('')+
-        '</table></div>';
-    }
-
-    renderTopProductos('topProductosCotiz', filtradas.slice().reverse());
-  });
-}
-
-function limpiarCotizaciones(){
-  alert('La limpieza total de cotizaciones debe hacerse desde la hoja o agregando una acción en GAS (no se borra local ahora).');
-}
-
-// ── VER COTIZACIÓN (desde API) ───────────────────────
-function verCotizacionAPI(idx){
-  loadCotizacionesFromAPI('200').then(function(cotiz){
-    var c = cotiz[idx];
-    if(!c){ toast('Cotización no encontrada','err'); return; }
-    var fecha   = new Date(c.ts).toLocaleString('es-CL');
-    var detalle = Array.isArray(c.detalle) ? c.detalle : [];
-    var rowsHTML = '';
-    if(detalle.length===0){
-      rowsHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:14px">Sin detalle de productos</td></tr>';
-    } else {
-      rowsHTML = detalle.map(function(it){
-        var sub = (it.PrecioIVA||0)*(it.qty||0);
-        return '<tr>'+
-          '<td>'+( it.Codigo||'—')+'</td>'+
-          '<td>'+( it.Descripcion||'—')+'</td>'+
-          '<td style="text-align:center">'+( it.qty||0)+'</td>'+
-          '<td style="text-align:right">'+fmtCLP(it.PrecioIVA||0)+'</td>'+
-          '<td style="text-align:right;font-weight:700;color:var(--naranja)">'+fmtCLP(sub)+'</td>'+
-        '</tr>';
-      }).join('');
-    }
-    var neto = Math.round((c.total||0)/1.19);
-    var iva  = (c.total||0) - neto;
-
-    document.getElementById('cotizModalContent').innerHTML =
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Fecha</span><div style="font-weight:700">'+fecha+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Usuario</span><div style="font-weight:700">'+c.user+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">App origen</span><div><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">N° items</span><div style="font-weight:700">'+c.items+'</div></div>'+
-      '</div>'+
-      '<div style="overflow-x:auto;margin-bottom:14px">'+
-      '<table class="tbl">'+
-      '<tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio unit.</th><th style="text-align:right">Subtotal</th></tr>'+
-      rowsHTML+
-      '</table>'+
-      '</div>'+
-      '<div style="background:#f9fafb;border-radius:10px;padding:14px;text-align:right;font-size:13px">'+
-      '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">Neto:</span><span>'+fmtCLP(neto)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">IVA 19%:</span><span>'+fmtCLP(iva)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:16px;font-weight:800;color:var(--naranja);border-top:1px solid var(--border);margin-top:4px"><span>TOTAL:</span><span>'+fmtCLP(c.total)+'</span></div>'+
-      '</div>';
-
-    document.getElementById('cotizModal').classList.add('open');
-  });
-}
-
-function cerrarCotizModal(){
-  document.getElementById('cotizModal').classList.remove('open');
-}
-
-// Cerrar modal al hacer clic fuera
-document.getElementById('cotizModal').addEventListener('click', function(e){
-  if(e.target === this) cerrarCotizModal();
-});
-
-// ── USUARIOS ─────────────────────────────────────────
-function renderUsuarios(){
-  // Clientes
-  var div = document.getElementById('tablaCliUsuarios');
-  if(CLI_USERS.length===0){
-    div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin usuarios.</p>';
-  } else {
-    div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Licencia</th><th>Estado</th><th>Acciones</th></tr>'+
-      CLI_USERS.map(function(u,idx){
-        var dias = Math.ceil((u.exp - Date.now())/864e5);
-        var licBadge = dias>0
-          ? '<span class="badge badge-verde">'+dias+'d</span>'
-          : '<span class="badge badge-rojo">Vencido</span>';
-        var estBadge = u.estado==='activo'
-          ? '<span class="badge badge-verde">Activo</span>'
-          : u.estado==='bloqueado'
-            ? '<span class="badge badge-rojo">Bloqueado</span>'
-            : '<span class="badge badge-gris">—</span>';
-        var acc = u.role!=='admin'
-          ? '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="cli" onclick="delUser(this)">🗑</button> '+
-            '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="cli" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>'
-          : '—';
-        return '<tr>'+
-          '<td><b>'+u.u+'</b></td>'+
-          '<td>'+u.nombre+'</td>'+
-          '<td><span class="badge badge-azul">'+u.role+'</span></td>'+
-          '<td>'+licBadge+'</td>'+
-          '<td>'+estBadge+'</td>'+
-          '<td>'+acc+'</td>'+
-        '</tr>';
-      }).join('')+
-      '</table></div>';
-  }
-
-  // Vendedores
-  var div2 = document.getElementById('tablaVendUsuarios');
-  if(VEND_USERS.length===0){
-    div2.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin usuarios.</p>';
-  } else {
-    div2.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>'+
-      VEND_USERS.map(function(u,idx){
-        var estBadge = u.estado==='bloqueado'
-          ? '<span class="badge badge-rojo">Bloqueado</span>'
-          : '<span class="badge badge-verde">Activo</span>';
-        var acc = u.role!=='admin'
-          ? '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="vend" onclick="delUser(this)">🗑</button> '+
-            '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="vend" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>'
-          : '—';
-        return '<tr>'+
-          '<td><b>'+u.u+'</b></td>'+
-          '<td>'+u.nombre+'</td>'+
-          '<td><span class="badge badge-azul">'+u.role+'</span></td>'+
-          '<td>'+estBadge+'</td>'+
-          '<td>'+acc+'</td>'+
-        '</tr>';
-      }).join('')+
-      '</table></div>';
-  }
-
-  var logDiv = document.getElementById('logUsuarios');
-  if(LOG.length===0){
-    logDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cambios.</p>';
-    return;
-  }
-  logDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-    '<tr><th>Fecha</th><th>Acción</th><th>Usuario</th><th>App</th></tr>'+
-    LOG.slice(-30).reverse().map(function(l){
-      return '<tr>'+
-        '<td>'+new Date(l.ts).toLocaleString('es-CL')+'</td>'+
-        '<td>'+l.accion+'</td>'+
-        '<td>'+l.user+'</td>'+
-        '<td>'+l.app+'</td>'+
-      '</tr>';
-    }).join('')+
-    '</table></div>';
-}
-
-function addLog(accion,user,app){
-  LOG.push({ts:Date.now(),accion:accion,user:user,app:app});
-  if(LOG.length>100) LOG.shift();
-  saveAll();
-}
-
-function addCliUser(){
-  var u=document.getElementById('cnu').value.trim();
-  var n=document.getElementById('cnn').value.trim();
-  var p=document.getElementById('cnp').value.trim();
-  var l=parseInt(document.getElementById('cnl').value)||365;
-  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
-  if(CLI_USERS.find(function(x){return x.u===u;})){
-    toast('Usuario ya existe','err');
-    return;
-  }
-
-  var exp = Date.now()+l*864e5;
-  // Claves exactamente como la hoja: u,p,nombre,role,exp,estado,app
-  var nuevo = {
-    u:      u,
-    p:      p,
-    nombre: n,
-    role:   'cliente',
-    exp:    exp,
-    estado: 'activo',
-    app:    'cliente'
-  };
-
-  saveUserToAPI(nuevo).then(function(){
-    addLog('Crear',u,'Cliente');
-    return loadUsersFromAPI();
-  }).then(function(){
-    renderUsuarios();
-    document.getElementById('cnu').value='';
-    document.getElementById('cnn').value='';
-    document.getElementById('cnp').value='';
-    toast('Usuario '+u+' creado','ok');
-  }).catch(function(){
-    toast('Error guardando en servidor','err');
-  });
-}
-
-function addVendUser(){
-  var u=document.getElementById('vnu').value.trim();
-  var n=document.getElementById('vnn').value.trim();
-  var p=document.getElementById('vnp').value.trim();
-  var r=document.getElementById('vnr').value; // vendedor / admin
-
-  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
-  if(VEND_USERS.find(function(x){return x.u===u;})){
-    toast('Usuario ya existe','err');
-    return;
-  }
-
-  var exp = Date.now()+365*864e5;
-  var nuevo = {
-    u:      u,
-    p:      p,
-    nombre: n,
-    role:   r,
-    exp:    exp,
-    estado: 'activo',
-    app:    'vendedor'
-  };
-
-  saveUserToAPI(nuevo).then(function(){
-    addLog('Crear',u,'Vendedor');
-    return loadUsersFromAPI();
-  }).then(function(){
-    renderUsuarios();
-    document.getElementById('vnu').value='';
-    document.getElementById('vnn').value='';
-    document.getElementById('vnp').value='';
-    toast('Usuario '+u+' creado','ok');
-  }).catch(function(){
-    toast('Error guardando en servidor','err');
-  });
-}
-
-function delUser(btn){
-  var idx = parseInt(btn.getAttribute('data-i'));
-  var tipo= btn.getAttribute('data-t');
-  var arr = tipo==='cli'?CLI_USERS:VEND_USERS;
-  var uobj= arr[idx];
-  var uname = uobj.u;
-  if(!confirm('¿Eliminar usuario "'+uname+'"?')) return;
-
-  deleteUserFromAPI(uname).then(function(){
-    addLog('Eliminar',uname,tipo==='cli'?'Cliente':'Vendedor');
-    return loadUsersFromAPI();
-  }).then(function(){
-    renderUsuarios();
-    toast('Usuario eliminado','ok');
-  }).catch(function(){
-    toast('Error eliminando en servidor','err');
-  });
-}
-
-function toggleBlock(btn){
-  var idx = parseInt(btn.getAttribute('data-i'));
-  var tipo= btn.getAttribute('data-t');
-  var arr = tipo==='cli'?CLI_USERS:VEND_USERS;
-  var uobj= arr[idx];
-  var uname = uobj.u;
-  var nuevoEstado = uobj.estado==='bloqueado'?'activo':'bloqueado';
-
-  var nuevo = Object.assign({}, uobj, {estado:nuevoEstado});
-
-  saveUserToAPI(nuevo).then(function(){
-    addLog(nuevoEstado==='bloqueado'?'Bloquear':'Desbloquear',uname,
-      tipo==='cli'?'Cliente':'Vendedor');
-    return loadUsersFromAPI();
-  }).then(function(){
-    renderUsuarios();
-    toast('Estado actualizado','ok');
-  }).catch(function(){
-    toast('Error guardando en servidor','err');
-  });
-}
-
-// ── PRECIOS (idéntico a tu versión original, solo lectura de CSV) ───────────
-function loadPrecios(){
-  var status = document.getElementById('urlStatus');
-  var act    = document.getElementById('urlActiva');
-  status.className = 'url-status url-loading';
-  status.textContent = '⏳ Verificando conexión...';
-  act.textContent = '';
-
-  var url = URL_PUB || URL_PROXY;
-  if(!url){
-    status.className = 'url-status url-err';
-    status.textContent = '⚠️ No hay URL configurada';
-    return;
-  }
-
-  fetch(url).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return r.text();
-  }).then(function(txt){
-    var lines = txt.trim().split(/\r?\n/);
-    var hdrs  = lines[0].split(',');
-    PRODS_CACHE = lines.slice(1).map(function(l){
-      var cols = l.split(',');
-      var o = {};
-      hdrs.forEach(function(h,i){ o[h]=cols[i]; });
-      if(o.PrecioIVA) o.PrecioIVA = parseInt(o.PrecioIVA,10)||0;
-      if(o.SocioIVA)  o.SocioIVA  = parseInt(o.SocioIVA,10)||0;
-      return o;
-    });
-    PRODS_FILT = PRODS_CACHE.slice();
-
-    status.className = 'url-status url-ok';
-    status.textContent = '✅ Conectado a catálogo ('+PRODS_CACHE.length+' productos)';
-    act.textContent = 'Fuente: '+url;
-    renderTablaPrecios();
-  }).catch(function(e){
-    console.error(e);
-    status.className = 'url-status url-err';
-    status.textContent = '❌ Error al leer catálogo';
-    act.textContent = url;
-    PRODS_CACHE = [];
-    PRODS_FILT  = [];
-    document.getElementById('tablaPrecios').innerHTML =
-      '<p style="color:#9ca3af;font-size:13px">No se pudo cargar el catálogo.</p>';
-  });
-}
-
-function filtrarPrecios(){
-  var q = (document.getElementById('precioSearch')||{value:''}).value.toLowerCase().trim();
-  if(!q){
-    PRODS_FILT = PRODS_CACHE.slice();
-  } else {
-    PRODS_FILT = PRODS_CACHE.filter(function(p){
-      return (p.Codigo||'').toLowerCase().includes(q) ||
-             (p.Descripcion||'').toLowerCase().includes(q) ||
-             (p.Marca||'').toLowerCase().includes(q);
-    });
-  }
-  renderTablaPrecios();
-}
-
-function renderTablaPrecios(){
-  var div = document.getElementById('tablaPrecios');
-  var cnt = document.getElementById('precioCount');
-  if(!PRODS_FILT.length){
-    div.innerHTML = '<p style="color:#9ca3af;font-size:13px">Sin productos para mostrar.</p>';
-    cnt.textContent = '';
-    return;
-  }
-  cnt.textContent = PRODS_FILT.length+' productos';
-  div.innerHTML = '<table class="tbl">'+
-    '<tr><th>Código</th><th>Descripción</th><th>Marca</th><th>Precio IVA</th><th>Socio IVA</th></tr>'+
-    PRODS_FILT.slice(0,200).map(function(p){
-      return '<tr>'+
-        '<td>'+(p.Codigo||'')+'</td>'+
-        '<td>'+(p.Descripcion||'')+'</td>'+
-        '<td>'+(p.Marca||'')+'</td>'+
-        '<td>'+fmtCLP(p.PrecioIVA||0)+'</td>'+
-        '<td>'+(p.SocioIVA?fmtCLP(p.SocioIVA):'—')+'</td>'+
-      '</tr>';
-    }).join('')+
-    '</table>';
-}
-
-function testConexion(){
-  loadPrecios();
-}
-
-function guardarURLs(){
-  var up = document.getElementById('urlPub').value.trim();
-  var ux = document.getElementById('urlProxy').value.trim();
-  URL_PUB   = up;
-  URL_PROXY = ux;
-  localStorage.setItem('ov_url_pub',   URL_PUB);
-  localStorage.setItem('ov_url_proxy', URL_PROXY);
-  saveConfigToAPI({key:'ov_url_pub',   value:URL_PUB});
-  saveConfigToAPI({key:'ov_url_proxy', value:URL_PROXY});
-  toast('URLs guardadas','ok');
-}
-
-// ── PROMOCIONES / REDES / MEJORAS: deja tu implementación actual ────────────
-// (no toco esas funciones porque no afectan al bug de usuarios)
-
-// ── TOAST ─────────────────────────────────────────────
-var toastTimeout;
-function toast(msg,type){
-  var el = document.getElementById('toast');
-  if(!el) return;
-  el.textContent = msg;
-  el.className = '';
-  el.classList.add('show');
-  if(type) el.classList.add(type);
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(function(){
-    el.classList.remove('show');
-  },2500);
-}
-</script> 
+</body></html>
