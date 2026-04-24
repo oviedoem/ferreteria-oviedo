@@ -1,0 +1,44 @@
+name: Generate Datos.json
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 2 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'CATALOGO PRODUCTOS/Datos.csv'
+      - 'convert-csv-to-json.js'
+      - '.github/workflows/generate-datos-json.yml'
+
+jobs:
+  build:
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Generate Datos.json from CSV
+        run: node ./convert-csv-to-json.js
+
+      - name: Commit generated JSON if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "CATALOGO PRODUCTOS/Datos.json"
+          if ! git diff --cached --quiet; then
+            git commit -m "Auto-generate Datos.json [skip ci]"
+            git push
+          else
+            echo "No changes to commit"
+          fi
