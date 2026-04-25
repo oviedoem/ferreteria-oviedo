@@ -48,6 +48,13 @@ Usa las reglas seguras en `firestore.rules` (versión completa) y habilita Authe
 
 #### 4. Generación automática de Datos.json
 Este repositorio incluye una GitHub Action que convierte `CATALOGO PRODUCTOS/Datos.csv` a `CATALOGO PRODUCTOS/Datos.json` automáticamente.
+
+## ✅ Estado Actual del Setup
+
+- **Catálogo actualizado**: `Datos.json` generado correctamente con 9000 productos y precios precisos.
+- **Repositorio GitHub**: Cambios subidos y sincronizados en https://github.com/oviedoem/ferreteria-oviedo.
+- **Servidor local**: Ejecutándose en http://127.0.0.1:8080 para pruebas.
+- **Firebase**: Configurado, pendiente login y deploy de reglas para producción.
 - La acción se ejecuta manualmente (`workflow_dispatch`) y también cada día a las 02:00 UTC.
 - Si `Datos.json` cambia, la acción lo compromete y sube el cambio automáticamente.
 - Las apps de `index.html`, `panel-admin.html` y `panel-cliente.html` cargan `firebase-config.js` para inicializar Firebase.
