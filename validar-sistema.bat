@@ -15,7 +15,7 @@ if exist "CATALOGO PRODUCTOS\Datos.json" echo   ✓ Catálogo JSON presente
 echo.
 
 echo ✅ Verificando configuración GitHub...
-powershell -Command "& { $files = Get-ChildItem -Recurse -Include *.html; $hasGithub = $false; foreach ($file in $files) { $content = Get-Content $file.FullName -Raw; if ($content -match 'raw\.githubusercontent\.com') { $hasGithub = $true; break } } if ($hasGithub) { Write-Host '  ✓ URLs de GitHub configuradas' } else { Write-Host '  ⚠️  URLs de GitHub no encontradas' -ForegroundColor Yellow } }"
+powershell -Command "& { $files = Get-ChildItem -Recurse -Include *.html,*.js; $hasGithub = $false; foreach ($file in $files) { $content = Get-Content $file.FullName -Raw; if ($content -match 'raw\.githubusercontent\.com') { $hasGithub = $true; break } } if ($hasGithub) { Write-Host '  ✓ URLs de GitHub configuradas' } else { Write-Host '  ⚠️  URLs de GitHub no encontradas' -ForegroundColor Yellow } }"
 echo.
 
 echo ✅ Verificando configuración Firebase...
@@ -26,6 +26,7 @@ echo.
 echo ✅ Verificando scripts de automatización...
 if exist "actualizar-catalogo.bat" echo   ✓ Script de actualización de catálogo presente
 if exist "convert-csv-to-json.js" echo   ✓ Script de conversión CSV-JSON presente
+if exist ".github\workflows\generate-datos-json.yml" echo   ✓ GitHub Action para generación de Datos.json presente
 echo.
 
 echo 📋 PRÓXIMOS PASOS:

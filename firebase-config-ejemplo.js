@@ -1,7 +1,7 @@
 // Configuración de Firebase - Archivo de ejemplo
-// Copia este contenido y reemplaza con tus credenciales reales de Firebase Console
+// Copia este archivo como firebase-config.js y reemplaza los valores con los de tu proyecto Firebase.
 
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
   authDomain: "tu-proyecto-ferreteria.firebaseapp.com",
   projectId: "tu-proyecto-ferreteria",
@@ -12,9 +12,7 @@ const firebaseConfig = {
 
 // Instrucciones para obtener estas credenciales:
 // 1. Ve a https://console.firebase.google.com/
-// 2. Selecciona tu proyecto
-// 3. Ve a Configuración del proyecto > General > Tus apps
-// 4. Si no tienes una app web, crea una nueva
-// 5. Copia la configuración de SDK
-
-export default firebaseConfig;
+// 2. Crea un nuevo proyecto o abre tu proyecto existente
+// 3. En Configuración del proyecto > General > Tus apps, registra una app web
+// 4. Copia la configuración del SDK y reemplaza los valores anteriores
+// 5. Guarda el archivo en el repositorio como firebase-config.js

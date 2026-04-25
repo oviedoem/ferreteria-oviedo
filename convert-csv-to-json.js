@@ -22,7 +22,7 @@ for (let i = 1; i < lines.length; i++) {
     headers.forEach((header, index) => {
       let value = values[index] || '';
       if (header.includes('costo') || header.includes('precio') || header.includes('socio')) {
-        value = parseInt(value.replace(/[$.]/g, '').replace(/,/g, '')) || 0;
+        value = parseFloat(value.replace(/,/g, '')) || 0;
       }
       product[header] = value;
     });
