@@ -1,13 +1,32 @@
 <!DOCTYPE html>
-<!-- saved from url=(1576)https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/104809708/3f75b078-2899-4867-af05-5825d3ccb762/panel-admin.html?AWSAccessKeyId=ASIA2F3EMEYEVNOUMMXY&Signature=PiMK%2Bh3tzhWuGmIqr0%2B3ZU6JOno%3D&x-amz-security-token=IQoJb3JpZ2luX2VjEOf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQDUHg0%2B2RAeqF48HX%2FK4ju7MW5GWO8GSPTSy9I4AKQrpAIgX0cv8FcZNygTUm7WCyYLOsarJffNQcyRQn3OLWVXWzEq%2FAQIr%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw2OTk3NTMzMDk3MDUiDGX2vJ42DRraye7qiirQBE0WzLHKbhOJGI9JrH2YyCzsLL92jK0%2BPlw2Oj1QUinWLSmoicbEa61xGzr36D9LZcp9ZwHrgxGB94FwRRScfol1jxtS77cSlhIQraNmUfqxoXr66YpjBotVCss0biDWDpN1JfbmwUYrpf7QOS8cwkJ8jtk3QKQudngEpkUYNncq%2F%2ByO%2B6cAioXU3MgXA7PT11DwtBlCaY5VVudzD9VmjsCa8ciFNjuC%2B%2FhVonjPn0UCBckltCV4fB8kP2bnLnuU5wOV%2FNxzLEViN4uApkcFxeBx31y1j0MW4SimZ1lRFYcVsm%2BsJHZLFvUqTa3lNGbBi6S1KQIcTyEPclE21iHXPep4Jxp8g2IY6eKL%2BSUY6oyE%2Fw9Mnua9%2Fo0G%2FE7uA9DQtTQowLF8Dx02BdEV3Adg82%2BfJAOqoBSBzkD5w%2BqXMYj5XmquAyCwTDtWjB6YVvg2hG2CY7vRdVadED8yuewbOrgKtKkMVVbtsk2fOtsDvlTSeIz%2FNXRtVFdOti%2FqhlIbwPRNqPUVEUEI1oqL8wU3OCOeX5dhLZhl5gbwp3jDTS4hPtUKS%2F897PYLwNgK8zIGbjcV7vE6xviZP3ZoL75EVYozVBy2IJJDg73AVMELNj0OaDBDEWF96G5L8NrRvKbXBnMlkOQj%2BFgO01QphCS1R%2F6Vv7fxWXv0%2B4i1QD0mJDpXaX6ctaPTAe6ofsTEgBOPsV01nIO1EgUsiQKwFjU08vQTcPHj4cLiRTdguESsjyWMiJdYAzU8%2FbAAYU4R%2BpGoi7XMJMaDVagDZO91Xvf5jfAwjr24zwY6mAHmI1G%2Bsyzro9ArwqTLNAG1DYYmcxiRbjAfmMjLiInkEuwQK6Y0T8dCnDVgRSwkpEc6Xci%2BKjBUoYgw0%2FmBOPdw43VGSabBefzCzCUxaDibSnX66wO15YhoR%2BOBp%2BUcQdVpePHoCRfsyo5tYNHIO1oXYGR1VpwACZoRXuYLfHxcAFDu1mxqsPGtL8gdRtnsVMfHZM2IMTkChg%3D%3D&Expires=1777215219 -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Ferretería Oviedo</title>
-<link href="./Admin — Ferretería Oviedo_files/css2" rel="stylesheet">
-<script src="./Admin — Ferretería Oviedo_files/firebase-app-compat.js.descarga"></script>
-<script src="./Admin — Ferretería Oviedo_files/firebase-firestore-compat.js.descarga"></script>
-<script src="./Admin — Ferretería Oviedo_files/firebase-config.js.descarga"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>
+window.db=null;
+try{
+  if(!firebase.apps.length){
+    firebase.initializeApp({
+      apiKey:"AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",
+      authDomain:"ferreteria-oviedo.firebaseapp.com",
+      projectId:"ferreteria-oviedo",
+      storageBucket:"ferreteria-oviedo.firebasestorage.app",
+      messagingSenderId:"869283555582",
+      appId:"1:869283555582:web:6d5c64b33fd9cf6d861daf"
+    });
+  }
+  window.db=firebase.firestore();
+}catch(e){console.warn("Firebase init error",e);}
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
@@ -544,6 +563,56 @@ function fmtCLP(n){ return '$'+Math.round(n||0).toLocaleString('es-CL'); }
 
 var API_URL = localStorage.getItem('ov_api_url') || 'https://script.google.com/macros/s/TU_ID_AQUI/exec';
 
+
+// ── FIREBASE COMPAT BRIDGE ───────────────────────────────────────────────────
+function apiGetFirebase(params, cb) {
+  if (!window.db) return cb(new Error('Firebase no disponible'), null);
+  var a = params.action;
+  if (a === 'getUsers') {
+    window.db.collection('users').get()
+      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
+      .catch(function(e){cb(e,null);});
+  } else if (a === 'getSessions') {
+    window.db.collection('sessions').where('ts','>',Date.now()-30*60*1000).get()
+      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
+      .catch(function(e){cb(e,null);});
+  } else if (a === 'getCotizaciones') {
+    window.db.collection('cotizaciones').orderBy('ts','desc').limit(parseInt(params.limit)||200).get()
+      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
+      .catch(function(e){cb(e,null);});
+  } else if (a === 'clearSession') {
+    window.db.collection('sessions').where('user','==',params.user).where('app','==',params.app).get()
+      .then(function(s){var b=window.db.batch();s.forEach(function(d){b.delete(d.ref);});return b.commit();})
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else { cb(null,{}); }
+}
+function apiPostFirebase(body, cb) {
+  if (!window.db) return cb(new Error('Firebase no disponible'), null);
+  var a=body.action, d=body.data||{};
+  if (a==='saveUser') {
+    window.db.collection('users').doc(d.u||d.user).set(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='deleteUser') {
+    window.db.collection('users').doc(body.u||d.u).delete()
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='logSession') {
+    window.db.collection('sessions').add(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='saveCotizacion') {
+    window.db.collection('cotizaciones').add(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='saveConfig') {
+    window.db.collection('config').doc('main').set(d,{merge:true})
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='savePromo') {
+    window.db.collection('promociones').doc((d.id||d.ts||Date.now()).toString()).set(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='deletePromo') {
+    window.db.collection('promociones').doc(body.id).delete()
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else { cb(null,{}); }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 function apiGet(params, cb) {
   if (window.db) {
     apiGetFirebase(params, cb);
@@ -1155,33 +1224,45 @@ function deriveJsonUrl(url){
 function guardarURLs(){
   URL_PUB   = document.getElementById('urlPub').value.trim();
   URL_PROXY = document.getElementById('urlProxy').value.trim();
-  var jsonPub = deriveJsonUrl(URL_PUB) || URL_PUB;
-  var jsonProxy = deriveJsonUrl(URL_PROXY) || URL_PROXY;
-  localStorage.setItem('ov_url_pub',       URL_PUB);
-  localStorage.setItem('ov_url_proxy',     URL_PROXY);
-  localStorage.setItem('ov_url_json_pub',  jsonPub);
-  localStorage.setItem('ov_url_json',      jsonProxy);
-  toast('✅ URLs guardadas. Las apps cliente y vendedor usarán estas URLs automáticamente.','ok');
+  var jPub   = deriveJsonUrl(URL_PUB)   || URL_PUB;
+  var jProxy = deriveJsonUrl(URL_PROXY) || URL_PROXY;
+  localStorage.setItem('ov_url_pub',URL_PUB);
+  localStorage.setItem('ov_url_proxy',URL_PROXY);
+  localStorage.setItem('ov_url_json_pub',jPub);
+  localStorage.setItem('ov_url_json',jProxy);
+  var cfg={url_pub:URL_PUB,url_proxy:URL_PROXY,url_json_pub:jPub,url_json:jProxy,updatedAt:Date.now()};
+  if(window.db){
+    apiPost({action:'saveConfig',data:cfg},function(err){
+      toast(err?'⚠️ URL local OK, error Firebase':'✅ URLs guardadas y sincronizadas en Firebase','ok');
+    });
+  } else {
+    toast('✅ URLs guardadas localmente','ok');
+  }
   testConexion();
 }
 
 function testConexion(){
-  var res = document.getElementById('urlTestResult');
-  res.innerHTML='<div class="url-status url-loading">⏳ Probando...</div>';
-  fetch(URL_PUB).then(function(r){
-    if(!r.ok) throw new Error();
-    return r.text();
-  }).then(function(txt){
-    var prods=parseCSVAdmin(txt);
-    res.innerHTML='<div class="url-status url-ok">✅ Conexión exitosa — '+prods.length+' productos leídos</div>';
-    PRODS_CACHE=prods; todosProds=prods;
-    document.getElementById('statProds').textContent=prods.length;
-  }).catch(function(){
-    res.innerHTML='<div class="url-status url-err">❌ No se pudo conectar. Verifica la URL pública.</div>';
-  });
+  var res=document.getElementById('urlTestResult');
+  var pubUrl=(document.getElementById('urlPub')?document.getElementById('urlPub').value.trim():'')||URL_PUB;
+  var proxyUrl=(document.getElementById('urlProxy')?document.getElementById('urlProxy').value.trim():'')||URL_PROXY;
+  res.innerHTML='<div class="url-status url-loading">⏳ Probando URL pública...</div>';
+  function tryUrl(url,label,fallback){
+    fetch(url,{cache:'no-store'}).then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);return r.text();
+    }).then(function(txt){
+      var p=parseCSVAdmin(txt);
+      if(!p||!p.length)throw new Error('0 productos');
+      PRODS_CACHE=p;todosProds=p;
+      document.getElementById('statProds').textContent=p.length;
+      res.innerHTML='<div class="url-status url-ok">✅ '+label+' — '+p.length+' productos</div>';
+    }).catch(function(e){
+      if(fallback){res.innerHTML='<div class="url-status url-loading">⚠️ Pública falló ('+e.message+'). Probando proxy...</div>';fallback();}
+      else{res.innerHTML='<div class="url-status url-err">❌ Ambas URLs fallaron: '+e.message+'</div>';}
+    });
+  }
+  tryUrl(pubUrl,'URL pública OK',function(){tryUrl(proxyUrl,'Proxy OK',null);});
 }
 
-// ── PROMOCIONES ──────────────────────────────────────
 function updatePromoPreview(){
   document.getElementById('pvTitle').textContent=document.getElementById('promoTitle').value||'Título';
   document.getElementById('pvTag').textContent=document.getElementById('promoTag').value||'OFERTA';
