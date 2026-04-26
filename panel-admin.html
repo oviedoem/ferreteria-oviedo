@@ -491,6 +491,7 @@ var VEND_USERS = JSON.parse(localStorage.getItem('ov_v2_users') || 'null') || [
 var PROMOS = JSON.parse(localStorage.getItem('ov_promos') || '[]');
 var LOG = JSON.parse(localStorage.getItem('ov_log') || '[]');
 var PRODS_CACHE = [];
+var COTIZ_CACHE = [];
 var PRODS_FILT = [];
 
 var URL_PUB   = localStorage.getItem('ov_url_pub')   || 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
@@ -640,6 +641,35 @@ function initApp(){
 }
 
 // ── DASHBOARD ────────────────────────────────────────
+// ── COTIZACIONES DESDE FIREBASE ──────────────────────────────────────────────
+function loadCotizacionesAdmin(cb){
+  var local = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
+  if(!window.db){
+    COTIZ_CACHE = local.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    if(cb) cb(); return;
+  }
+  window.db.collection('cotizaciones').orderBy('ts','desc').limit(500).get()
+    .then(function(snap){
+      var fbArr = [];
+      snap.forEach(function(d){ var dat=d.data(); dat._id=d.id; fbArr.push(dat); });
+      // Merge: Firebase principal + local como fallback (sin duplicados)
+      var merged = fbArr.slice();
+      local.forEach(function(lc){
+        var dup = fbArr.some(function(fc){
+          return fc.ts===lc.ts && (fc.user||'')===(lc.user||'');
+        });
+        if(!dup) merged.push(lc);
+      });
+      merged.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+      COTIZ_CACHE = merged;
+      try{ localStorage.setItem('ov_cotizaciones',JSON.stringify(merged.slice(0,500))); }catch(e){}
+      if(cb) cb();
+    }).catch(function(){
+      COTIZ_CACHE = local.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+      if(cb) cb();
+    });
+}
+
 function renderDashboard(){
   limpiarSesionesViejas();
   document.getElementById('statTotalCli').textContent  = CLI_USERS.filter(function(u){return u.role==='cliente';}).length;
@@ -707,37 +737,39 @@ function renderDashboard(){
 
   document.getElementById('statProds').textContent = PRODS_CACHE.length || '—';
 
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var totalMonto = cotiz.reduce(function(a,c){return a+(c.total||0);},0);
-  var cotizCli  = cotiz.filter(function(c){return c.app==='Cliente';}).length;
-  var cotizVend = cotiz.filter(function(c){return c.app==='Vendedor';}).length;
-  document.getElementById('statTotalCotiz').textContent  = cotiz.length;
-  document.getElementById('statMontoTotal').textContent  = fmtCLP(totalMonto);
-  document.getElementById('statCotizCli').textContent    = cotizCli;
-  document.getElementById('statCotizVend').textContent   = cotizVend;
+    loadCotizacionesAdmin(function(){
+    var cotiz = COTIZ_CACHE;
+    var totalMonto = cotiz.reduce(function(a,c){return a+(c.total||0);},0);
+    var cotizCli  = cotiz.filter(function(c){return c.app==='Cliente';}).length;
+    var cotizVend = cotiz.filter(function(c){return c.app==='Vendedor';}).length;
+    document.getElementById('statTotalCotiz').textContent  = cotiz.length;
+    document.getElementById('statMontoTotal').textContent  = fmtCLP(totalMonto);
+    document.getElementById('statCotizCli').textContent    = cotizCli;
+    document.getElementById('statCotizVend').textContent   = cotizVend;
 
-  var lastDiv = document.getElementById('lastCotiz');
-  if(cotiz.length===0){ lastDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones.</p>'; }
-  else {
-    var recent = cotiz.slice(-5).reverse();
-    lastDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th></th></tr>'+
-      recent.map(function(c,i){
-        var idx = cotiz.length-1-i;
-        return '<tr>'+
-          '<td>'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-          '<td><b>'+c.user+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
-          '<td>'+c.items+'</td>'+
-          '<td>'+fmtCLP(c.total)+'</td>'+
-          '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+idx+')">Ver</button></td>'+
-        '</tr>';
-      }).join('')+
-    '</table></div>';
-  }
-
-  renderTopProductos('topProductos', cotiz);
+    var lastDiv = document.getElementById('lastCotiz');
+    if(cotiz.length===0){
+      lastDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones registradas.</p>';
+    } else {
+      var recent = cotiz.slice(0,5);
+      lastDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
+        '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th></th></tr>'+
+        recent.map(function(c,i){
+          return '<tr>'+
+            '<td>'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
+            '<td><b>'+c.user+'</b></td>'+
+            '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
+            '<td>'+c.items+'</td>'+
+            '<td>'+fmtCLP(c.total)+'</td>'+
+            '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+i+')">Ver</button></td>'+
+          '</tr>';
+        }).join('')+
+      '</table></div>';
+    }
+    renderTopProductos('topProductos', cotiz);
+  });
 }
+
 
 // ── TOP PRODUCTOS ────────────────────────────────────
 function renderTopProductos(elId, cotiz){
@@ -799,61 +831,85 @@ function setTopLimit(n){
 
 // ── COTIZACIONES ─────────────────────────────────────
 function renderCotizaciones(){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]').slice().reverse();
-  var busq  = (document.getElementById('cotizSearch')     || {value:''}).value.toLowerCase().trim();
-  var appF  = (document.getElementById('cotizFiltroApp')  || {value:''}).value;
+  loadCotizacionesAdmin(function(){
+    var busq = (document.getElementById('cotizSearch')    ||{value:''}).value.toLowerCase().trim();
+    var appF = (document.getElementById('cotizFiltroApp') ||{value:''}).value;
 
-  var filtradas = cotiz.filter(function(c){
-    var okUser = !busq || (c.user||'').toLowerCase().includes(busq);
-    var okApp  = !appF || c.app===appF;
-    return okUser && okApp;
+    var filtradas = COTIZ_CACHE.filter(function(c){
+      var okUser = !busq || (c.user||'').toLowerCase().includes(busq);
+      var okApp  = !appF || c.app===appF;
+      return okUser && okApp;
+    });
+
+    var totalMonto = filtradas.reduce(function(a,c){return a+(c.total||0);},0);
+    var cCli  = filtradas.filter(function(c){return c.app==='Cliente';}).length;
+    var cVend = filtradas.filter(function(c){return c.app==='Vendedor';}).length;
+    document.getElementById('cotizStatTotal').textContent = filtradas.length;
+    document.getElementById('cotizStatMonto').textContent = fmtCLP(totalMonto);
+    document.getElementById('cotizStatCli').textContent   = cCli;
+    document.getElementById('cotizStatVend').textContent  = cVend;
+
+    var div = document.getElementById('tablaCotiz');
+    if(filtradas.length===0){
+      div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones para mostrar.</p>';
+    } else {
+      div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
+        '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th>Acciones</th></tr>'+
+        filtradas.map(function(c,i){
+          return '<tr>'+
+            '<td style="white-space:nowrap">'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
+            '<td><b>'+c.user+'</b></td>'+
+            '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
+            '<td>'+c.items+'</td>'+
+            '<td>'+fmtCLP(c.total)+'</td>'+
+            '<td>'+
+              '<button class="btn btn-sm btn-primary" onclick="verCotizacionCache('+i+')">📋 Ver</button> '+
+              '<button class="btn btn-sm btn-success" onclick="descargarCotizacionCache('+i+')">📥 PDF</button>'+
+            '</td>'+
+          '</tr>';
+        }).join('')+
+      '</table></div>';
+    }
+    renderTopProductos('topProductosCotiz', filtradas);
   });
-
-  // Stats
-  var totalMonto = filtradas.reduce(function(a,c){return a+(c.total||0);},0);
-  var cCli  = filtradas.filter(function(c){return c.app==='Cliente';}).length;
-  var cVend = filtradas.filter(function(c){return c.app==='Vendedor';}).length;
-  document.getElementById('cotizStatTotal').textContent = filtradas.length;
-  document.getElementById('cotizStatMonto').textContent = fmtCLP(totalMonto);
-  document.getElementById('cotizStatCli').textContent   = cCli;
-  document.getElementById('cotizStatVend').textContent  = cVend;
-
-  var div = document.getElementById('tablaCotiz');
-  if(filtradas.length===0){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones para mostrar.</p>'; }
-  else {
-    // Necesitamos el índice original (en el array invertido) para verCotizacion
-    var totalLen = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]').length;
-    div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th>Acciones</th></tr>'+
-      filtradas.map(function(c, i){
-        var idxOrig = totalLen - 1 - i; // índice en array original sin invertir
-        return '<tr>'+
-          '<td style="white-space:nowrap">'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-          '<td><b>'+c.user+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
-          '<td>'+c.items+'</td>'+
-          '<td>'+fmtCLP(c.total)+'</td>'+
-          '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+idxOrig+')">📋 Ver</button> <button class="btn btn-sm btn-success" onclick="descargarCotizacionPDF('+idxOrig+')">📥 PDF</button></td>'+
-        '</tr>';
-      }).join('')+
-    '</table></div>';
-  }
-
-  renderTopProductos('topProductosCotiz', filtradas.slice().reverse());
 }
+
 
 function limpiarCotizaciones(){
-  if(!confirm('¿Eliminar TODAS las cotizaciones guardadas? Esta acción no se puede deshacer.')) return;
+  if(!confirm('¿Eliminar TODAS las cotizaciones? Esta acción no se puede deshacer.')) return;
   localStorage.removeItem('ov_cotizaciones');
+  COTIZ_CACHE = [];
+  if(window.db){
+    window.db.collection('cotizaciones').get().then(function(snap){
+      var batch = window.db.batch();
+      snap.forEach(function(d){ batch.delete(d.ref); });
+      if(!snap.empty) batch.commit().then(function(){
+        toast('Cotizaciones eliminadas de Firebase y local','ok');
+      });
+    }).catch(function(){ toast('Local eliminado; Firebase falló','warn'); });
+  } else {
+    toast('Cotizaciones eliminadas (local)','ok');
+  }
   renderCotizaciones();
   renderDashboard();
-  toast('Cotizaciones eliminadas','ok');
 }
 
-// ── VER COTIZACIÓN MODAL ─────────────────────────────
-function verCotizacion(idx){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var c = cotiz[idx];
+
+function verCotizacionCache(i){
+  var c = COTIZ_CACHE[i];
+  if(!c){ toast('Cotización no encontrada','err'); return; }
+  // Reutilizar la lógica de verCotizacion pasando el objeto directamente
+  _verCotizObj(c);
+}
+function descargarCotizacionCache(i){
+  var c = COTIZ_CACHE[i];
+  if(!c){ toast('Cotización no encontrada','err'); return; }
+  _descargarCotizObj(c);
+}
+
+function verCotizacion(idx){ _verCotizObj(COTIZ_CACHE[idx]||null); }
+function _verCotizObj(c){
+  var c = COTIZ_CACHE[idx];
   if(!c){ toast('Cotización no encontrada','err'); return; }
 
   var fecha   = new Date(c.ts).toLocaleString('es-CL');
@@ -910,9 +966,9 @@ document.getElementById('cotizModal').addEventListener('click', function(e){
 });
 
 // ── DESCARGAR COTIZACIÓN PDF ─────────────────────────
-function descargarCotizacionPDF(idx){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var c = cotiz[idx];
+function descargarCotizacionPDF(idx){ _descargarCotizObj(COTIZ_CACHE[idx]||null); }
+function _descargarCotizObj(c){
+  var c = COTIZ_CACHE[idx];
   if(!c){ toast('Cotización no encontrada','err'); return; }
   
   var jsPDF = window.jspdf.jsPDF;
