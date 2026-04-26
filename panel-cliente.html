@@ -476,22 +476,47 @@ var USUARIOS_DEFAULT = [
 var USUARIOS = USUARIOS_DEFAULT;
 
 function loadCliUsers(cb){
+  // 1. Cargar desde localStorage si existe
   try{
     var s=localStorage.getItem('ov_cli_v2_users');
     if(s){var u=JSON.parse(s);if(u&&u.length)USUARIOS=u;}
   }catch(e){}
   if(window.db){
-    window.db.collection('users').where('role','==','cliente').get()
+    // 2. Leer todos los usuarios desde Firebase (sin filtro para no depender de rol exacto)
+    window.db.collection('users').get()
       .then(function(snap){
         var arr=[];
         snap.forEach(function(d){
           var u=d.data();
-          arr.push({user:u.user||u.u,pass:u.pass||u.p,nombre:u.nombre,role:u.role||'cliente',licExpiry:u.licExpiry||new Date(u.exp||Date.now()+30*864e5).toISOString(),estado:u.estado||'activo'});
+          if(!u.role||u.role==='cliente'||u.role==='admin'){
+            arr.push({
+              user:u.user||u.u||'',
+              pass:u.pass||u.p||'',
+              nombre:u.nombre||u.user||'',
+              role:u.role||'cliente',
+              licExpiry:u.licExpiry||new Date(u.exp||Date.now()+30*864e5).toISOString(),
+              estado:u.estado||'activo'
+            });
+          }
         });
-        if(arr.length){USUARIOS=arr;localStorage.setItem('ov_cli_v2_users',JSON.stringify(arr));}
+        // 3. Si Firebase tiene usuarios → usarlos; si no → mantener DEFAULT
+        if(arr.length){
+          USUARIOS=arr;
+          localStorage.setItem('ov_cli_v2_users',JSON.stringify(arr));
+        } else if(USUARIOS.length===0){
+          USUARIOS=USUARIOS_DEFAULT; // Fallback: usar usuarios por defecto
+        }
         if(cb)cb();
-      }).catch(function(){if(cb)cb();});
-  } else { if(cb)cb(); }
+      }).catch(function(){
+        // Firebase falló: usar localStorage o DEFAULT
+        if(USUARIOS.length===0) USUARIOS=USUARIOS_DEFAULT;
+        if(cb)cb();
+      });
+  } else {
+    // Sin Firebase: usar localStorage o DEFAULT
+    if(USUARIOS.length===0) USUARIOS=USUARIOS_DEFAULT;
+    if(cb)cb();
+  }
 }
 function saveCliUsers(){
   try{ localStorage.setItem('ov_cli_v2_users', JSON.stringify(USUARIOS)); }catch(e){}
