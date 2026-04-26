@@ -433,7 +433,6 @@ function login(){
   _sessInterval = setInterval(function(){ if(me) registerSession(me.nombre,'Vendedor'); }, 60000);
 
   startApp();
-  });
 }
 
 function logout(){
@@ -579,32 +578,53 @@ function chgPass(){
 // ── CARGA DE CATÁLOGO ───────────────────────────────────────────────────────
 function startApp(){
   setSyncState('loading','Actualizando catálogo desde GitHub...');
-  function doFetch(url){
-    return fetch(url).then(function(r){
-      if(!r.ok) throw new Error('http');
+  function loadText(url){
+    return fetch(url, { cache:'no-store' }).then(function(r){
+      if(!r.ok) throw new Error('http-'+r.status);
       return r.text();
-    }).then(function(txt){
-      var trimmed = txt.trim();
-      if(trimmed.charAt(0)==='['){
-        try{ var data = JSON.parse(trimmed); if(Array.isArray(data)) return data; }catch(e){}
-      }
-      var parsed = parseCSV(txt);
-      if(parsed.length<1) throw new Error('empty');
-      return parsed;
     });
   }
-  doFetch(JSON_URL)
-    .catch(function(){ return doFetch(CSV_URL); })
-    .catch(function(){ return doFetch(JSON_URL_PUB); })
-    .catch(function(){ return doFetch(CSV_URL_PUB); })
+  function normalizeJsonItems(items){
+    return items.map(function(it){
+      return {
+        Codigo: (it.Codigo||it.codigo||it.CODIGO||it.code||'').toString().trim(),
+        Desc:   (it.Desc||it.desc||it.DESCRIPCION||it.descripcion||it.Descripcion||'').toString().trim(),
+        Marca:  (it.Marca||it.marca||it.MARCA||'').toString().trim(),
+        Sub:    (it.Sub||it.sub||it.SUBFAMILIA||it.subfamilia||it.SubFamilia||'').toString().trim(),
+        CP:     num(it.CP || it.cp || it.COSTO_PROMEDIO || it.costopromedio || it.costo_promedio || it.costo || '0'),
+        PIva:   num(it.PIva || it.piva || it.PRECIO_IVA || it.precioiva || it.precio_iva || it.precio || '0'),
+        SIva:   num(it.SIva || it.siva || it.SOCIO_IVA || it.socioiva || it.socio_iva || '0')
+      };
+    }).filter(function(p){ return p.Codigo && (p.PIva||p.SIva); });
+  }
+  function parseCatalog(txt){
+    var trimmed = txt.trim();
+    if(trimmed.charAt(0)==='['){
+      try{ var data = JSON.parse(trimmed); if(Array.isArray(data)){
+          var normalized = normalizeJsonItems(data);
+          if(normalized.length) return normalized;
+        }
+      }catch(e){}
+    }
+    var parsed = parseCSV(txt);
+    if(parsed.length>0) return parsed;
+    throw new Error('invalid-data');
+  }
+  function tryUrl(url){
+    return loadText(url).then(parseCatalog);
+  }
+  tryUrl(JSON_URL)
+    .catch(function(){ return tryUrl(JSON_URL_PUB); })
+    .catch(function(){ return tryUrl(CSV_URL); })
+    .catch(function(){ return tryUrl(CSV_URL_PUB); })
     .then(function(parsed){
       PRODS = parsed;
       try{ localStorage.setItem(CK,JSON.stringify(parsed)); localStorage.setItem(CT,''+Date.now()); }catch(e){}
       var ts = new Date().toLocaleTimeString('es-CL');
-      setSyncState('ok','✓ Precios actualizados — '+parsed.length+' productos — '+ts);
+      setSyncState('ok','✓ Catálogo actualizado — '+parsed.length+' productos — '+ts);
       initUI();
     })
-    .catch(function(){
+    .catch(function(err){
       try{
         var c = localStorage.getItem(CK);
         if(c){
@@ -615,7 +635,8 @@ function startApp(){
           initUI(); return;
         }
       }catch(e){}
-      setSyncState('warn','Sin conexión y sin caché local — Verifica internet');
+      console.error('Carga de catálogo fallida:', err);
+      setSyncState('warn','Sin conexión y sin caché local — Verifica internet o la URL del catálogo');
     });
 }
 

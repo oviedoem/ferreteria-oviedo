@@ -560,6 +560,18 @@ function clearSession(nombre, app){
 // ── CARGA DE CATÁLOGO ───────────────────────────────────────────────────────
 function iniciarApp(){
   setSyncState('loading','Actualizando catálogo desde GitHub...');
+  function normalizeJsonItems(items){
+    return items.map(function(it){
+      return {
+        Codigo: (it.Codigo||it.codigo||it.CODIGO||it.code||'').toString().trim(),
+        Descripcion: (it.Descripcion||it.descripcion||it.DESCRIPCION||it.Desc||it.desc||'').toString().trim(),
+        Marca: (it.Marca||it.marca||it.MARCA||'').toString().trim(),
+        SubFamilia: (it.SubFamilia||it.subfamilia||it.SUBFAMILIA||it.Sub||it.sub||'').toString().trim(),
+        PrecioIVA: num(it.PrecioIVA||it.precioiva||it.PRECIO_IVA||it.precioiva||it.precio_iva||it.precio||'0'),
+        SocioIVA: num(it.SocioIVA||it.socioiva||it.SOCIO_IVA||it.socioiva||it.socio_iva||'0')
+      };
+    }).filter(function(p){ return p.Codigo && (p.PrecioIVA||p.SocioIVA); });
+  }
   function tryFetch(url){
     return fetch(url).then(function(r){
       if(!r.ok) throw new Error('http');
@@ -567,7 +579,7 @@ function iniciarApp(){
     }).then(function(txt){
       var trimmed = txt.trim();
       if(trimmed.charAt(0)==='['){
-        try{ var data = JSON.parse(trimmed); if(Array.isArray(data)) return data; }catch(e){}
+        try{ var data = JSON.parse(trimmed); if(Array.isArray(data)) return normalizeJsonItems(data); }catch(e){}
       }
       var parsed = parseCSV(txt);
       if(parsed.length<1) throw new Error('empty');

@@ -1148,11 +1148,19 @@ function filtrarPrecios(){
 }
 
 // ── URL / CONEXIÓN ───────────────────────────────────
+function deriveJsonUrl(url){
+  if(!url) return url;
+  return url.replace(/Datos\.csv(\?.*)?$/i,'Datos.json$1');
+}
 function guardarURLs(){
   URL_PUB   = document.getElementById('urlPub').value.trim();
   URL_PROXY = document.getElementById('urlProxy').value.trim();
-  localStorage.setItem('ov_url_pub',   URL_PUB);
-  localStorage.setItem('ov_url_proxy', URL_PROXY);
+  var jsonPub = deriveJsonUrl(URL_PUB) || URL_PUB;
+  var jsonProxy = deriveJsonUrl(URL_PROXY) || URL_PROXY;
+  localStorage.setItem('ov_url_pub',       URL_PUB);
+  localStorage.setItem('ov_url_proxy',     URL_PROXY);
+  localStorage.setItem('ov_url_json_pub',  jsonPub);
+  localStorage.setItem('ov_url_json',      jsonProxy);
   toast('✅ URLs guardadas. Las apps cliente y vendedor usarán estas URLs automáticamente.','ok');
   testConexion();
 }

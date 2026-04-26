@@ -1,4 +1,5 @@
-// Configuración Firebase - Ferreteria Oviedo
+// Configuración Firebase - Proyecto Ferretería Oviedo
+// Reemplaza estos valores con tu propia configuración desde Firebase Console.
 var db = null;
 var firebaseConfig = {
   apiKey: "AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",
