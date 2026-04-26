@@ -1,32 +1,13 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="es">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Ferretería Oviedo</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script>
-window.db=null;
-try{
-  if(!firebase.apps.length){
-    firebase.initializeApp({
-      apiKey:"AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",
-      authDomain:"ferreteria-oviedo.firebaseapp.com",
-      projectId:"ferreteria-oviedo",
-      storageBucket:"ferreteria-oviedo.firebasestorage.app",
-      messagingSenderId:"869283555582",
-      appId:"1:869283555582:web:6d5c64b33fd9cf6d861daf"
-    });
-  }
-  window.db=firebase.firestore();
-}catch(e){console.warn("Firebase init error",e);}
-</script>
+<script src="firebase-config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
@@ -167,7 +148,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
     <div class="login-title">Panel Administrador</div>
     <div class="login-sub">Ferretería Oviedo — El Manzano</div>
     <input class="linput" id="lu" type="text" placeholder="Usuario" autocomplete="off">
-    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()">
+    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="lbtn" onclick="doLogin()">Ingresar</button>
     <div class="lerr" id="lerr"></div>
   </div>
@@ -191,15 +172,15 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 
   <!-- NAV -->
   <div class="nav" id="mainNav">
-    <button class="nav-btn active" onclick="showTab(&#39;dashboard&#39;,this)">📊 Dashboard</button>
-    <button class="nav-btn" onclick="showTab(&#39;usuarios&#39;,this)">👥 Usuarios</button>
-    <button class="nav-btn" onclick="showTab(&#39;cotizaciones&#39;,this)">📄 Cotizaciones</button>
-    <button class="nav-btn" onclick="showTab(&#39;precios&#39;,this)">💰 Precios</button>
-    <button class="nav-btn" onclick="showTab(&#39;promociones&#39;,this)">🎯 Promociones</button>
-    <button class="nav-btn" onclick="showTab(&#39;url&#39;,this)">🔗 URL / Conexión</button>
-    <button class="nav-btn" onclick="showTab(&#39;redes&#39;,this)">📱 Redes Sociales</button>
-    <button class="nav-btn" onclick="showTab(&#39;tutoriales&#39;,this)">📚 Tutoriales</button>
-    <button class="nav-btn" onclick="showTab(&#39;mejoras&#39;,this)">💡 Mejoras</button>
+    <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showTab('usuarios',this)">👥 Usuarios</button>
+    <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
+    <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
+    <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
+    <button class="nav-btn" onclick="showTab('url',this)">🔗 URL / Conexión</button>
+    <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
+    <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
+    <button class="nav-btn" onclick="showTab('mejoras',this)">💡 Mejoras</button>
   </div>
 
   <div class="content">
@@ -244,7 +225,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
             <div class="fgroup"><label class="flabel">Nombre completo</label><input class="finput" id="cnn" placeholder="ej: Juan Pérez"></div>
             <div class="fgroup"><label class="flabel">Contraseña</label><input class="finput" id="cnp" type="password" placeholder="mínimo 6 caracteres"></div>
             <div class="fgroup"><label class="flabel">Licencia</label>
-              <select class="finput" id="cnl"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected="">1 año</option></select>
+              <select class="finput" id="cnl"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected>1 año</option></select>
             </div>
           </div>
           <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="addCliUser()">+ Agregar usuario cliente</button>
@@ -396,12 +377,12 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         <div class="red-header">
           <div class="red-icon ig-icon">📸</div>
           <div><div class="red-name">Instagram</div><div class="red-status" id="igStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones(&#39;ig&#39;)">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('ig')">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">Nombre de usuario (@)</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="igUser" placeholder="@ferreteriaOviedo">
-            <button class="btn btn-sm btn-success" onclick="vincularRed(&#39;ig&#39;)">Vincular</button>
+            <button class="btn btn-sm btn-success" onclick="vincularRed('ig')">Vincular</button>
           </div>
         </div>
         <div id="igInfo" style="display:none;margin-top:10px"></div>
@@ -410,12 +391,12 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         <div class="red-header">
           <div class="red-icon fb-icon">📘</div>
           <div><div class="red-name">Facebook</div><div class="red-status" id="fbStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones(&#39;fb&#39;)">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('fb')">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">URL de página Facebook</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="fbUrl" placeholder="https://facebook.com/tuPagina">
-            <button class="btn btn-sm btn-success" onclick="vincularRed(&#39;fb&#39;)">Vincular</button>
+            <button class="btn btn-sm btn-success" onclick="vincularRed('fb')">Vincular</button>
           </div>
         </div>
         <div id="fbInfo" style="display:none;margin-top:10px"></div>
@@ -424,12 +405,12 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         <div class="red-header">
           <div class="red-icon wa-icon">💬</div>
           <div><div class="red-name">WhatsApp Business</div><div class="red-status" id="waStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones(&#39;wa&#39;)">Ver instrucciones</button>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('wa')">Ver instrucciones</button>
         </div>
         <div class="fgroup"><label class="flabel">Número WhatsApp (+56...)</label>
           <div style="display:flex;gap:8px">
             <input class="finput" id="waNum" placeholder="+56912345678">
-            <button class="btn btn-sm btn-success" onclick="vincularRed(&#39;wa&#39;)">Vincular</button>
+            <button class="btn btn-sm btn-success" onclick="vincularRed('wa')">Vincular</button>
           </div>
         </div>
         <div id="waInfo" style="display:none;margin-top:10px"></div>
@@ -442,22 +423,22 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 
     <!-- ── TUTORIALES ── -->
     <div class="tab-pane" id="tab-tutoriales">
-      <div class="tut-card" onclick="descTutorial(&#39;cliente&#39;)">
+      <div class="tut-card" onclick="descTutorial('cliente')">
         <div class="tut-icon">📱</div>
         <div><div class="tut-title">Manual App Clientes</div><div class="tut-desc">Cómo buscar productos, crear cotizaciones y descargar PDF</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card" onclick="descTutorial(&#39;vendedor&#39;)">
+      <div class="tut-card" onclick="descTutorial('vendedor')">
         <div class="tut-icon">💼</div>
         <div><div class="tut-title">Manual App Vendedores</div><div class="tut-desc">Acceso, consulta de precios con margen y sincronización</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card" onclick="descTutorial(&#39;admin&#39;)">
+      <div class="tut-card" onclick="descTutorial('admin')">
         <div class="tut-icon">⚙️</div>
         <div><div class="tut-title">Manual Panel Admin</div><div class="tut-desc">Gestión de usuarios, precios, URLs y configuración</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
       </div>
-      <div class="tut-card" onclick="descTutorial(&#39;sheets&#39;)">
+      <div class="tut-card" onclick="descTutorial('sheets')">
         <div class="tut-icon">📊</div>
         <div><div class="tut-title">Guía de catálogo</div><div class="tut-desc">Cómo actualizar precios, publicar y obtener URL</div></div>
         <div style="margin-left:auto;font-size:20px">⬇️</div>
@@ -564,55 +545,19 @@ function fmtCLP(n){ return '$'+Math.round(n||0).toLocaleString('es-CL'); }
 var API_URL = localStorage.getItem('ov_api_url') || 'https://script.google.com/macros/s/TU_ID_AQUI/exec';
 
 
-// ── FIREBASE COMPAT BRIDGE ───────────────────────────────────────────────────
-function apiGetFirebase(params, cb) {
-  if (!window.db) return cb(new Error('Firebase no disponible'), null);
-  var a = params.action;
-  if (a === 'getUsers') {
-    window.db.collection('users').get()
-      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
-      .catch(function(e){cb(e,null);});
-  } else if (a === 'getSessions') {
-    window.db.collection('sessions').where('ts','>',Date.now()-30*60*1000).get()
-      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
-      .catch(function(e){cb(e,null);});
-  } else if (a === 'getCotizaciones') {
-    window.db.collection('cotizaciones').orderBy('ts','desc').limit(parseInt(params.limit)||200).get()
-      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
-      .catch(function(e){cb(e,null);});
-  } else if (a === 'clearSession') {
-    window.db.collection('sessions').where('user','==',params.user).where('app','==',params.app).get()
-      .then(function(s){var b=window.db.batch();s.forEach(function(d){b.delete(d.ref);});return b.commit();})
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else { cb(null,{}); }
+// ── LIMPIAR SESIONES VIEJAS en Firebase (>60 min) para no acumular
+function limpiarSesionesViejas(){
+  if(!window.db) return;
+  var hace60 = Date.now() - 60*60*1000;
+  window.db.collection('sessions')
+    .where('ts','<', hace60)
+    .get().then(function(snap){
+      var batch = window.db.batch();
+      snap.forEach(function(d){ batch.delete(d.ref); });
+      if(!snap.empty) batch.commit();
+    }).catch(function(){});
 }
-function apiPostFirebase(body, cb) {
-  if (!window.db) return cb(new Error('Firebase no disponible'), null);
-  var a=body.action, d=body.data||{};
-  if (a==='saveUser') {
-    window.db.collection('users').doc(d.u||d.user).set(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='deleteUser') {
-    window.db.collection('users').doc(body.u||d.u).delete()
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='logSession') {
-    window.db.collection('sessions').add(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='saveCotizacion') {
-    window.db.collection('cotizaciones').add(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='saveConfig') {
-    window.db.collection('config').doc('main').set(d,{merge:true})
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='savePromo') {
-    window.db.collection('promociones').doc((d.id||d.ts||Date.now()).toString()).set(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='deletePromo') {
-    window.db.collection('promociones').doc(body.id).delete()
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else { cb(null,{}); }
-}
-// ─────────────────────────────────────────────────────────────────────────────
+
 function apiGet(params, cb) {
   if (window.db) {
     apiGetFirebase(params, cb);
@@ -696,6 +641,7 @@ function initApp(){
 
 // ── DASHBOARD ────────────────────────────────────────
 function renderDashboard(){
+  limpiarSesionesViejas();
   document.getElementById('statTotalCli').textContent  = CLI_USERS.filter(function(u){return u.role==='cliente';}).length;
   document.getElementById('statTotalVend').textContent = VEND_USERS.filter(function(u){return u.role==='vendedor';}).length;
 
@@ -704,22 +650,45 @@ function renderDashboard(){
 
   function renderSessions(sessions) {
     var activas = sessions.filter(function(s){ return now - s.ts < 30*60*1000; });
-    document.getElementById('statOnline').textContent = activas.length;
-    document.getElementById('onlineBadge').textContent = '● '+activas.length+' en línea';
 
-    if(activas.length===0){
+    // ── Agrupar por usuario: mantener solo la sesión más reciente por usuario
+    var mapaUsuarios = {};
+    activas.forEach(function(s){
+      var key = (s.user||'').toLowerCase().trim();
+      if(!mapaUsuarios[key] || s.ts > mapaUsuarios[key].ts){
+        mapaUsuarios[key] = s;
+      }
+    });
+    var unicosActivos = Object.values(mapaUsuarios)
+      .sort(function(a,b){ return b.ts - a.ts; }); // más reciente primero
+
+    document.getElementById('statOnline').textContent = unicosActivos.length;
+    document.getElementById('onlineBadge').textContent = '● '+unicosActivos.length+' en línea';
+
+    if(unicosActivos.length===0){
       document.getElementById('onlineList').innerHTML =
         '<div style="background:#f9fafb;border-radius:10px;padding:14px;font-size:13px;color:#6b7280">'+
         '<div style="font-weight:700;margin-bottom:6px">Sin sesiones activas en este momento</div>'+
-        '<div style="font-size:12px">ℹ️ Las sesiones se registran cuando un usuario inicia sesión en la app cliente o vendedor.</div></div>';
+        '<div style="font-size:12px">ℹ️ Las sesiones se registran cuando un usuario inicia sesión.</div></div>';
     } else {
-      document.getElementById('onlineList').innerHTML = activas.map(function(s){
-        var mins = Math.floor((now-s.ts)/60000);
-        return '<div class="online-item">'+
-          '<div class="online-avatar">'+s.user.charAt(0).toUpperCase()+'</div>'+
-          '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+s.user+'</div>'+
-          '<div style="font-size:12px;color:#6b7280">'+s.app+' · '+s.device+' · hace '+(mins<1?'<1':mins)+' min</div></div>'+
-          '<span class="badge badge-verde"><span class="online-dot"></span>Activo</span></div>';
+      document.getElementById('onlineList').innerHTML = unicosActivos.map(function(s){
+        var mins = Math.floor((now - s.ts) / 60000);
+        var tiempoStr = mins < 1 ? 'ahora mismo' : (mins < 60 ? 'hace '+mins+' min' : 'hace '+(Math.floor(mins/60))+'h');
+        var appColor  = s.app==='Vendedor' ? '#1565c0' : (s.app==='Admin' ? '#4a148c' : '#2e7d32');
+        var inicial   = (s.user||'?').charAt(0).toUpperCase();
+        return '<div class="online-item" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;margin-bottom:8px;">'+
+          '<div class="online-avatar" style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;background:'+appColor+'">'+inicial+'</div>'+
+          '<div style="flex:1">'+
+            '<div style="font-size:14px;font-weight:700;color:#111827">'+s.user+'</div>'+
+            '<div style="font-size:11px;color:#6b7280;margin-top:2px">'+
+              '<span style="background:'+appColor+';color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">'+s.app+'</span>'+
+              ' &nbsp;·&nbsp; '+s.device+' &nbsp;·&nbsp; '+tiempoStr+
+            '</div>'+
+          '</div>'+
+          '<span style="background:#d1fae5;color:#065f46;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px">'+
+            '<span style="width:7px;height:7px;background:#059669;border-radius:50%;display:inline-block"></span>Activo'+
+          '</span>'+
+        '</div>';
       }).join('');
     }
   }
@@ -1224,45 +1193,33 @@ function deriveJsonUrl(url){
 function guardarURLs(){
   URL_PUB   = document.getElementById('urlPub').value.trim();
   URL_PROXY = document.getElementById('urlProxy').value.trim();
-  var jPub   = deriveJsonUrl(URL_PUB)   || URL_PUB;
-  var jProxy = deriveJsonUrl(URL_PROXY) || URL_PROXY;
-  localStorage.setItem('ov_url_pub',URL_PUB);
-  localStorage.setItem('ov_url_proxy',URL_PROXY);
-  localStorage.setItem('ov_url_json_pub',jPub);
-  localStorage.setItem('ov_url_json',jProxy);
-  var cfg={url_pub:URL_PUB,url_proxy:URL_PROXY,url_json_pub:jPub,url_json:jProxy,updatedAt:Date.now()};
-  if(window.db){
-    apiPost({action:'saveConfig',data:cfg},function(err){
-      toast(err?'⚠️ URL local OK, error Firebase':'✅ URLs guardadas y sincronizadas en Firebase','ok');
-    });
-  } else {
-    toast('✅ URLs guardadas localmente','ok');
-  }
+  var jsonPub = deriveJsonUrl(URL_PUB) || URL_PUB;
+  var jsonProxy = deriveJsonUrl(URL_PROXY) || URL_PROXY;
+  localStorage.setItem('ov_url_pub',       URL_PUB);
+  localStorage.setItem('ov_url_proxy',     URL_PROXY);
+  localStorage.setItem('ov_url_json_pub',  jsonPub);
+  localStorage.setItem('ov_url_json',      jsonProxy);
+  toast('✅ URLs guardadas. Las apps cliente y vendedor usarán estas URLs automáticamente.','ok');
   testConexion();
 }
 
 function testConexion(){
-  var res=document.getElementById('urlTestResult');
-  var pubUrl=(document.getElementById('urlPub')?document.getElementById('urlPub').value.trim():'')||URL_PUB;
-  var proxyUrl=(document.getElementById('urlProxy')?document.getElementById('urlProxy').value.trim():'')||URL_PROXY;
-  res.innerHTML='<div class="url-status url-loading">⏳ Probando URL pública...</div>';
-  function tryUrl(url,label,fallback){
-    fetch(url,{cache:'no-store'}).then(function(r){
-      if(!r.ok)throw new Error('HTTP '+r.status);return r.text();
-    }).then(function(txt){
-      var p=parseCSVAdmin(txt);
-      if(!p||!p.length)throw new Error('0 productos');
-      PRODS_CACHE=p;todosProds=p;
-      document.getElementById('statProds').textContent=p.length;
-      res.innerHTML='<div class="url-status url-ok">✅ '+label+' — '+p.length+' productos</div>';
-    }).catch(function(e){
-      if(fallback){res.innerHTML='<div class="url-status url-loading">⚠️ Pública falló ('+e.message+'). Probando proxy...</div>';fallback();}
-      else{res.innerHTML='<div class="url-status url-err">❌ Ambas URLs fallaron: '+e.message+'</div>';}
-    });
-  }
-  tryUrl(pubUrl,'URL pública OK',function(){tryUrl(proxyUrl,'Proxy OK',null);});
+  var res = document.getElementById('urlTestResult');
+  res.innerHTML='<div class="url-status url-loading">⏳ Probando...</div>';
+  fetch(URL_PUB).then(function(r){
+    if(!r.ok) throw new Error();
+    return r.text();
+  }).then(function(txt){
+    var prods=parseCSVAdmin(txt);
+    res.innerHTML='<div class="url-status url-ok">✅ Conexión exitosa — '+prods.length+' productos leídos</div>';
+    PRODS_CACHE=prods; todosProds=prods;
+    document.getElementById('statProds').textContent=prods.length;
+  }).catch(function(){
+    res.innerHTML='<div class="url-status url-err">❌ No se pudo conectar. Verifica la URL pública.</div>';
+  });
 }
 
+// ── PROMOCIONES ──────────────────────────────────────
 function updatePromoPreview(){
   document.getElementById('pvTitle').textContent=document.getElementById('promoTitle').value||'Título';
   document.getElementById('pvTag').textContent=document.getElementById('promoTag').value||'OFERTA';
@@ -1386,6 +1343,5 @@ function toast(msg,type){
   window._toastT=setTimeout(function(){t.className='';},2800);
 }
 </script>
-
-
-</body></html>
+</body>
+</html>
