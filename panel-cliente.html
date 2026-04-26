@@ -553,8 +553,15 @@ function doLogin(){
   err.textContent = '';
 
   var found = null;
+  // Buscar en USUARIOS (Firebase/localStorage)
   for(var i=0;i<USUARIOS.length;i++){
     if(USUARIOS[i].user===u && USUARIOS[i].pass===p){ found=USUARIOS[i]; break; }
+  }
+  // Fallback: siempre buscar también en USUARIOS_DEFAULT
+  if(!found){
+    for(var i=0;i<USUARIOS_DEFAULT.length;i++){
+      if(USUARIOS_DEFAULT[i].user===u && USUARIOS_DEFAULT[i].pass===p){ found=USUARIOS_DEFAULT[i]; break; }
+    }
   }
   if(!found){ err.textContent='Usuario o contraseña incorrectos'; return; }
   if(found.estado==='bloqueado'){ err.textContent='Usuario bloqueado. Contacta a Ferretería Oviedo.'; return; }
