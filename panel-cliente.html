@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<!-- saved from url=(1594)https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/104809708/fb0ce779-23a5-442b-b4d5-58f0e98fcfe7/panel-cliente.html?AWSAccessKeyId=ASIA2F3EMEYEWFXGZJMW&Signature=hDHZoKM%2BOB8vfP9017M56Q4oaBY%3D&x-amz-security-token=IQoJb3JpZ2luX2VjEOf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIDmDKtoZaHtFD%2FfIolhbCSiz6RvEniToHMrJNq0q5%2BFpAiEAlrIF9GcgPJrMk1Rf657gXGPf35auDj25kVvAj7ejr5Qq%2FAQIsP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw2OTk3NTMzMDk3MDUiDBx9botNQMLakkriVCrQBCy3vRgnOx48biWol%2BD%2FSrgdJOlHQkm0ne5vYGBI%2BHhprgXWcdXSJJo9uAbNyt0VkZsY1v9N%2BJAW1%2FwBRp5wAJGKriNM11Za0kb%2BMLX7hHJgofAAKUG0bv0oZN4MeiH%2F6dS55va6NqG%2F1eu%2FW8zxCZE21BhXyZeWZv2gtVHBkvE%2FZF1%2BQP2iB8BONXwJxmbXH9v%2BbPPcOlN2t37IQPWeGTsP82M9s1jCI2ZNPf6cytH4HI5NPZwkBgX5lPD6bpiDp3jjVALtc9FSEx4YzPuJvMWdVLoZ6VlmY8WWXWU6Aj4vGsiSVUoQ4Qt%2Fpu2idGd9tXo2htQ7Jz65WvUByz9nMxLFb%2F9pcDhDysGeeS9TS5ITbOy1HBf%2FSexlZ%2BRniz4KRAIuWyKpLv1kcync%2Fj%2BqcuEr0y8D%2FYSq7Nl4sCR9bZjstEPZnxLWZYhBhTnrzrhRhyc4bT7YtQw304OKaIXCk84tK707GdbH2bPOX2OkeMqFgOQj5gACw3zQwfJqMFC2g8Id3uEtdu4pIR24rihHo3vJmsHsyCG%2Bu6vDyb0IhiiX3JeQ32c73%2Fycnr44JOQ7K4kkNKEny0ls7WdGs%2FAyMgWm%2FEuHfrJZ5fIrqyO1WD%2F7wIVLyewx%2FNkyAa4OnrnqsZ5cHc0F0KzCjDvLOVTsRJ4ZwqURfOEmnBpEs2tfAuaIKEhhvl0BOHbzEOwQzRleqojwwu6dY2ZGOCvB3jqeY%2B1xoHlQnUEBNBVhkGQM8qM1o%2Flsl9EPgKqvkshovc1g3ag31T4x%2FpXiyO3Jxa5p0pUwncC4zwY6mAHUYPHgjM314VU1y%2B0B%2FtEbvyJ%2F%2BTuUHkutoPRqp0DHpulN4JsglxH3Xn3y7kBYzKaw14HCogFd%2FHDXcamFWLU4CTV4nT6qIGgUAH%2BcX8innMDqEfiXvXvZqqbBiuMarKv2vYtgslQKy6lSbf4D7zfPlh%2BIHW%2BfVMl0FpX75gHI0VX6wedh4iChIT%2B6atCZFkDFy2BSeWKl2w%3D%3D&Expires=1777215948 -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ferretería Oviedo — Catálogo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com/">
-<link href="./Ferretería Oviedo — Catálogo_files/css2" rel="stylesheet">
-<script src="./Ferretería Oviedo — Catálogo_files/jspdf.umd.min.js.descargar"></script>
-<script src="./Ferretería Oviedo — Catálogo_files/jspdf.plugin.autotable.min.js.descargar"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>window.db=null;try{if(!firebase.apps.length){firebase.initializeApp({apiKey:"AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",authDomain:"ferreteria-oviedo.firebaseapp.com",projectId:"ferreteria-oviedo",storageBucket:"ferreteria-oviedo.firebasestorage.app",messagingSenderId:"869283555582",appId:"1:869283555582:web:6d5c64b33fd9cf6d861daf"});}window.db=firebase.firestore();}catch(e){console.warn("Firebase init error",e);}</script>
 <style>
 :root{
   --naranja:#E8450A;--naranja2:#c93a08;--naranja-light:#fff3ee;
@@ -473,11 +475,23 @@ var USUARIOS_DEFAULT = [
 
 var USUARIOS = USUARIOS_DEFAULT;
 
-function loadCliUsers(){
+function loadCliUsers(cb){
   try{
-    var s = localStorage.getItem('ov_cli_v2_users');
-    if(s){ var u=JSON.parse(s); if(u&&u.length) USUARIOS=u; }
+    var s=localStorage.getItem('ov_cli_v2_users');
+    if(s){var u=JSON.parse(s);if(u&&u.length)USUARIOS=u;}
   }catch(e){}
+  if(window.db){
+    window.db.collection('users').where('role','==','cliente').get()
+      .then(function(snap){
+        var arr=[];
+        snap.forEach(function(d){
+          var u=d.data();
+          arr.push({user:u.user||u.u,pass:u.pass||u.p,nombre:u.nombre,role:u.role||'cliente',licExpiry:u.licExpiry||new Date(u.exp||Date.now()+30*864e5).toISOString(),estado:u.estado||'activo'});
+        });
+        if(arr.length){USUARIOS=arr;localStorage.setItem('ov_cli_v2_users',JSON.stringify(arr));}
+        if(cb)cb();
+      }).catch(function(){if(cb)cb();});
+  } else { if(cb)cb(); }
 }
 function saveCliUsers(){
   try{ localStorage.setItem('ov_cli_v2_users', JSON.stringify(USUARIOS)); }catch(e){}
@@ -493,13 +507,21 @@ var _sessionInterval = null;
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 function doLogin(){
-  loadCliUsers(); // Refresca siempre desde lo que admin guardó
-  // Refresca URLs por si admin las actualizó
-  SHEETS_CSV  = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
-  JSON_URL    = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
-  CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
+  // Refresca URLs base desde localStorage
+  SHEETS_CSV   = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
+  JSON_URL     = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
+  CSV_URL_PUB  = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
   JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
-
+  if(window.db){
+    window.db.collection('config').doc('main').get().then(function(doc){
+      if(!doc.exists) return; var c=doc.data();
+      if(c.url_pub){localStorage.setItem('ov_url_pub',c.url_pub);CSV_URL_PUB=c.url_pub;}
+      if(c.url_proxy){localStorage.setItem('ov_url_proxy',c.url_proxy);SHEETS_CSV=c.url_proxy;}
+      if(c.url_json_pub){localStorage.setItem('ov_url_json_pub',c.url_json_pub);JSON_URL_PUB=c.url_json_pub;}
+      if(c.url_json){localStorage.setItem('ov_url_json',c.url_json);JSON_URL=c.url_json;}
+    }).catch(function(){});
+  }
+  loadCliUsers(function(){
   var u   = document.getElementById('loginUser').value.trim();
   var p   = document.getElementById('loginPass').value.trim();
   var err = document.getElementById('loginError');
@@ -523,6 +545,7 @@ function doLogin(){
   _sessionInterval = setInterval(function(){ if(currentUser) registerSession(currentUser.nombre,'Cliente'); }, 60000);
 
   iniciarApp();
+  });
 }
 
 function doLogout(){
@@ -537,25 +560,8 @@ function doLogout(){
 }
 
 // ── SESIONES PARA ADMIN ───────────────────────────────────────────────────────
-function registerSession(nombre, app){
-  try{
-    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
-    s = s.filter(function(x){ return Date.now()-x.ts < 30*60*1000; });
-    var device = navigator.userAgent.indexOf('Mobile')>=0 ? '📱 Móvil' : '💻 PC';
-    var ei = -1;
-    for(var i=0;i<s.length;i++){ if(s[i].user===nombre&&s[i].app===app){ei=i;break;} }
-    var en = {user:nombre, app:app, ts:Date.now(), device:device};
-    if(ei>=0) s[ei]=en; else s.push(en);
-    localStorage.setItem('ov_sessions', JSON.stringify(s));
-  }catch(e){}
-}
-function clearSession(nombre, app){
-  try{
-    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
-    s = s.filter(function(x){ return !(x.user===nombre&&x.app===app); });
-    localStorage.setItem('ov_sessions', JSON.stringify(s));
-  }catch(e){}
-}
+
+
 
 // ── CARGA DE CATÁLOGO ───────────────────────────────────────────────────────
 function iniciarApp(){
@@ -619,98 +625,62 @@ function setSyncState(type, text){
 }
 
 // ── FUNCIONES FIREBASE ───────────────────────────────────────────────────────
+// ── FIREBASE COMPAT BRIDGE ───────────────────────────────────────────────────
 function apiGetFirebase(params, cb) {
   if (!window.db) return cb(new Error('Firebase no disponible'), null);
-
-  const { action } = params;
-  switch (action) {
-    case 'getUsers':
-      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
-        .then(({ collection, getDocs }) => {
-          return getDocs(collection(window.db, 'users'));
-        })
-        .then(snapshot => {
-          const users = [];
-          snapshot.forEach(doc => users.push(doc.data()));
-          cb(null, users);
-        })
-        .catch(err => cb(err, null));
-      break;
-    case 'getSessions':
-      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
-        .then(({ collection, query, where, getDocs }) => {
-          const q = query(collection(window.db, 'sessions'), where('ts', '>', Date.now() - 30*60*1000));
-          return getDocs(q);
-        })
-        .then(snapshot => {
-          const sessions = [];
-          snapshot.forEach(doc => sessions.push(doc.data()));
-          cb(null, sessions);
-        })
-        .catch(err => cb(err, null));
-      break;
-    case 'getCotizaciones':
-      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
-        .then(({ collection, query, orderBy, limit, getDocs }) => {
-          const q = query(collection(window.db, 'cotizaciones'), orderBy('ts', 'desc'), limit(parseInt(params.limit) || 50));
-          return getDocs(q);
-        })
-        .then(snapshot => {
-          const cotizaciones = [];
-          snapshot.forEach(doc => cotizaciones.push(doc.data()));
-          cb(null, cotizaciones);
-        })
-        .catch(err => cb(err, null));
-      break;
-    default:
-      cb(new Error('Acción no soportada'), null);
-  }
+  var a = params.action;
+  if (a === 'getUsers') {
+    window.db.collection('users').get()
+      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
+      .catch(function(e){cb(e,null);});
+  } else if (a === 'getSessions') {
+    window.db.collection('sessions').where('ts','>',Date.now()-30*60*1000).get()
+      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
+      .catch(function(e){cb(e,null);});
+  } else if (a === 'getCotizaciones') {
+    window.db.collection('cotizaciones').orderBy('ts','desc').limit(parseInt(params.limit)||200).get()
+      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
+      .catch(function(e){cb(e,null);});
+  } else if (a === 'clearSession') {
+    window.db.collection('sessions').where('user','==',params.user).where('app','==',params.app).get()
+      .then(function(s){var b=window.db.batch();s.forEach(function(d){b.delete(d.ref);});return b.commit();})
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else { cb(null,{}); }
 }
-
 function apiPostFirebase(body, cb) {
   if (!window.db) return cb(new Error('Firebase no disponible'), null);
+  var a=body.action, d=body.data||{};
+  if (a==='saveUser') {
+    window.db.collection('users').doc(d.u||d.user).set(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='deleteUser') {
+    window.db.collection('users').doc(body.u||d.u).delete()
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='logSession') {
+    window.db.collection('sessions').add(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='saveCotizacion') {
+    window.db.collection('cotizaciones').add(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='saveConfig') {
+    window.db.collection('config').doc('main').set(d,{merge:true})
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='savePromo') {
+    window.db.collection('promociones').doc((d.id||d.ts||Date.now()).toString()).set(d)
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else if (a==='deletePromo') {
+    window.db.collection('promociones').doc(body.id).delete()
+      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
+  } else { cb(null,{}); }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const { action, data } = body;
-  switch (action) {
-    case 'saveUser':
-      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
-        .then(({ doc, setDoc }) => {
-          return setDoc(doc(window.db, 'users', data.u), data);
-        })
-        .then(() => cb(null, { success: true }))
-        .catch(err => cb(err, null));
-      break;
-    case 'deleteUser':
-      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
-        .then(({ doc, deleteDoc }) => {
-          return deleteDoc(doc(window.db, 'users', body.u));
-        })
-        .then(() => cb(null, { success: true }))
-        .catch(err => cb(err, null));
-      break;
-    case 'logSession':
-      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
-        .then(({ collection, addDoc }) => {
-          return addDoc(collection(window.db, 'sessions'), data);
-        })
-        .then(() => cb(null, { success: true }))
-        .catch(err => cb(err, null));
-      break;
-    case 'clearSession':
-      // Para simplificar, no implementamos borrado de sesiones
-      cb(null, { success: true });
-      break;
-    case 'saveCotizacion':
-      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
-        .then(({ collection, addDoc }) => {
-          return addDoc(collection(window.db, 'cotizaciones'), data);
-        })
-        .then(() => cb(null, { success: true }))
-        .catch(err => cb(err, null));
-      break;
-    default:
-      cb(new Error('Acción no soportada'), null);
-  }
+// Parsea precios CLP: maneja decimales de Google Sheets (12990.0) y miles chilenos (12.990)
+function num(s){
+  var str=(s||'').toString().replace(/[$\s]/g,'').trim();
+  if(!str||str==='-') return 0;
+  if(/^[0-9]+[.,][0-9]{1,2}$/.test(str)){return Math.round(parseFloat(str.replace(',','.')));}
+  return parseInt(str.replace(/[.,]/g,'').replace(/[^0-9]/g,''))||0;
 }
 
 function parseCSV(text){
@@ -734,7 +704,7 @@ function parseCSV(text){
       Descripcion: (cols[idx.Descripcion]||'').trim(),
       Marca:       (cols[idx.Marca]||'').trim(),
       SubFamilia:  (cols[idx.SubFamilia]||'').trim(),
-      PrecioIVA:   parseInt(((cols[idx.PrecioIVA]||'0')).replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'').replace(/[^0-9]/g,''))||0
+      PrecioIVA:   num(cols[idx.PrecioIVA])
     };
     if(r.Codigo && r.PrecioIVA) rows.push(r);
   }
