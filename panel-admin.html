@@ -138,6 +138,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 @media(min-width:500px){.cotiz-stats-grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:500px){.content{padding:12px}}
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -274,7 +275,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         </div>
       </div>
       <div class="card">
-        <div class="card-title"><span>📄</span> Cotizaciones registradas</div>
+        <div class="card-title"><span>📄</span> Cotizaciones registradas <button id="btnExportXlsx" onclick="exportarExcel()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;margin-left:10px;">📥 Descargar Excel</button></div>
         <div id="tablaCotiz"><p style="color:#9ca3af;font-size:13px">Sin cotizaciones aún.</p></div>
       </div>
       <div class="card">
@@ -628,6 +629,14 @@ function showTab(id, btn){
 
 // ── INIT ─────────────────────────────────────────────
 function initApp(){
+
+  // ── Modo offline ──
+  try{
+    if(window.db){
+      window.db.enablePersistence({synchronizeTabs:true})
+        .catch(function(e){ console.warn('[OV offline]',e.code); });
+    }
+  }catch(e){}
   loadAdminUsers(function(){
     renderDashboard();
     renderUsuarios();
@@ -1398,6 +1407,75 @@ function toast(msg,type){
   clearTimeout(window._toastT);
   window._toastT=setTimeout(function(){t.className='';},2800);
 }
+
+// ── Exportar cotizaciones a Excel ──
+function exportarExcel(){
+  var btn=document.getElementById('btnExportXlsx');
+  if(btn){ btn.textContent='⏳ Exportando...'; btn.disabled=true; }
+  try{
+    window.db.collection('cotizaciones').orderBy('ts','desc').limit(500).get()
+    .then(function(snap){
+      var rows=[];
+      snap.forEach(function(d){
+        var data=d.data();
+        rows.push({
+          'ID':d.id,
+          'Usuario':data.usuario||'',
+          'Rol':data.rol||data.app||'',
+          'Total ($)':data.total||0,
+          'Items':Array.isArray(data.items)?data.items.length:0,
+          'Fecha':data.ts&&data.ts.toDate?data.ts.toDate().toLocaleString('es-CL'):'',
+          'WhatsApp':data.wsp||''
+        });
+      });
+      var ws=XLSX.utils.json_to_sheet(rows);
+      var wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,'Cotizaciones');
+      var fecha=new Date().toLocaleDateString('es-CL').replace(/\//g,'-');
+      XLSX.writeFile(wb,'cotizaciones-oviedo-'+fecha+'.xlsx');
+      if(btn){ btn.textContent='📥 Descargar Excel'; btn.disabled=false; }
+    }).catch(function(e){
+      alert('Error al exportar: '+e.message);
+      if(btn){ btn.textContent='📥 Descargar Excel'; btn.disabled=false; }
+    });
+  }catch(e){
+    alert('SheetJS no disponible: '+e.message);
+    if(btn){ btn.textContent='📥 Descargar Excel'; btn.disabled=false; }
+  }
+}
+
+// ── Cargar historial de sesiones ──
+function cargarHistorialSesiones(){
+  var rol=document.getElementById('filtroRolLog');
+  var filtro=rol?rol.value:'';
+  var el=document.getElementById('tablaSessionLog');
+  if(!el)return;
+  el.innerHTML='<p style="color:#9ca3af;font-size:13px">Cargando...</p>';
+  var q=window.db.collection('sessionLog').orderBy('ts','desc').limit(100);
+  if(filtro) q=q.where('rol','==',filtro);
+  q.get().then(function(snap){
+    if(snap.empty){el.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin registros.</p>';return;}
+    var html='<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    html+='<tr style="background:#1e293b;"><th style="padding:8px;text-align:left;">Usuario</th><th>Rol</th><th>Acción</th><th>Dispositivo</th><th>Fecha</th></tr>';
+    snap.forEach(function(d){
+      var r=d.data();
+      var ts=r.ts&&r.ts.toDate?r.ts.toDate().toLocaleString('es-CL'):'-';
+      var color=r.accion==='login'?'#22c55e':'#f87171';
+      html+='<tr style="border-bottom:1px solid #334155;">';
+      html+='<td style="padding:7px;">'+escHtml(r.usuario||'-')+'</td>';
+      html+='<td style="padding:7px;">'+escHtml(r.rol||'-')+'</td>';
+      html+='<td style="padding:7px;color:'+color+';font-weight:700;">'+escHtml(r.accion||'-')+'</td>';
+      html+='<td style="padding:7px;">'+escHtml(r.dispositivo||'-')+'</td>';
+      html+='<td style="padding:7px;font-size:11px;">'+ts+'</td>';
+      html+='</tr>';
+    });
+    html+='</table>';
+    el.innerHTML=html;
+  }).catch(function(e){
+    el.innerHTML='<p style="color:#f87171;">Error: '+e.message+'</p>';
+  });
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 </body>
 </html>
