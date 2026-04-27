@@ -18,6 +18,11 @@
       messagingSenderId:"869283555582",
       appId:"1:869283555582:web:6d5c64b33fd9cf6d861daf"
     });
+  // ── Modo offline (Las Cabras: zona rural) ──
+  if(window.db){
+    window.db.enablePersistence({synchronizeTabs:true})
+      .catch(function(e){ console.warn('[OV offline]',e.code); });
+  }
   }
   window.db=firebase.firestore();
 }catch(e){console.warn("Firebase init error",e);}</script>
@@ -499,12 +504,38 @@ function login(){
 
   registerSession(found.nombre,'Vendedor');
   if(_sessInterval) clearInterval(_sessInterval);
-  _sessInterval = setInterval(function(){ if(me) registerSession(me.nombre,'Vendedor'); }, 60000);
+  _sessInterval = setInterval(function(){ if(me) 
+  // ── Registro historial sesión ──
+  try{
+    if(window.db && me){
+      window.db.collection('sessionLog').add({
+        usuario: me.nombre || me.user || '',
+        usuario_id: me.user || '',
+        rol: 'Vendedor',
+        accion: 'login',
+        dispositivo: navigator.userAgent.indexOf('Mobile')>=0?'Móvil':'PC',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(){});
+    }
+  }catch(e){}
+  registerSession(me.nombre,'Vendedor'); }, 60000);
 
   startApp();
 }
 
 function logout(){
+
+  // ── Registro historial sesión: logout ──
+  try{
+    if(window.db && me){
+      window.db.collection('sessionLog').add({
+        usuario: me.nombre || me.user || '',
+        rol: 'Vendedor',
+        accion: 'logout',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(){});
+    }
+  }catch(e){}
   if(me) clearSession(me.nombre,'Vendedor');
   if(_sessInterval){ clearInterval(_sessInterval); _sessInterval=null; }
   me=null; PRODS=[]; FILT=[]; CART=[]; MARCA='TODOS';
