@@ -9,7 +9,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script>window.db=null;try{if(!firebase.apps.length){firebase.initializeApp({apiKey:"AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",authDomain:"ferreteria-oviedo.firebaseapp.com",projectId:"ferreteria-oviedo",storageBucket:"ferreteria-oviedo.firebasestorage.app",messagingSenderId:"869283555582",appId:"1:869283555582:web:6d5c64b33fd9cf6d861daf"});}window.db=firebase.firestore();}catch(e){console.warn("Firebase init error",e);}</script>
+<script>window.db=null;try{if(!firebase.apps.length){firebase.initializeApp({apiKey:"AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",authDomain:"ferreteria-oviedo.firebaseapp.com",projectId:"ferreteria-oviedo",storageBucket:"ferreteria-oviedo.firebasestorage.app",messagingSenderId:"869283555582",appId:"1:869283555582:web:6d5c64b33fd9cf6d861daf"});
+  // ── Modo offline (Las Cabras: zona rural) ──
+  if(window.db){
+    window.db.enablePersistence({synchronizeTabs:true})
+      .catch(function(e){ console.warn('[OV offline]',e.code); });
+  }}window.db=firebase.firestore();}catch(e){console.warn("Firebase init error",e);}</script>
 <style>
 :root{
   --naranja:#E8450A;--naranja2:#c93a08;--naranja-light:#fff3ee;
@@ -572,6 +577,20 @@ function doLogin(){
   document.getElementById('mainApp').style.display     = 'block';
   document.getElementById('adminBtn').style.display    = found.role==='admin' ? 'inline-flex' : 'none';
 
+  
+  // ── Registro historial sesión ──
+  try{
+    if(window.db && found){
+      window.db.collection('sessionLog').add({
+        usuario: found.nombre || found.user || '',
+        usuario_id: found.user || '',
+        rol: 'Cliente',
+        accion: 'login',
+        dispositivo: navigator.userAgent.indexOf('Mobile')>=0?'Móvil':'PC',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(){});
+    }
+  }catch(e){}
   registerSession(found.nombre, 'Cliente');
   if(_sessionInterval) clearInterval(_sessionInterval);
   _sessionInterval = setInterval(function(){ if(currentUser) registerSession(currentUser.nombre,'Cliente'); }, 60000);
@@ -581,6 +600,18 @@ function doLogin(){
 }
 
 function doLogout(){
+
+  // ── Registro historial sesión: logout ──
+  try{
+    if(window.db && currentUser){
+      window.db.collection('sessionLog').add({
+        usuario: currentUser.nombre || currentUser.user || '',
+        rol: 'Cliente',
+        accion: 'logout',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(){});
+    }
+  }catch(e){}
   if(currentUser) clearSession(currentUser.nombre,'Cliente');
   if(_sessionInterval){ clearInterval(_sessionInterval); _sessionInterval=null; }
   currentUser=null; PRODUCTOS=[]; filtrados=[]; carrito=[];
