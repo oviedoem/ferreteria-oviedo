@@ -5,12 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ferretería Oviedo — Vendedor</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+function initV16Hooks(){
+  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
+  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
+  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
+function initV16Hooks(){
+  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
+  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
+  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+function initV16Hooks(){
+  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
+  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
+  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+function initV16Hooks(){
+  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
+  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
+  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
+}
+
+</script>
+<script src="firebase-config-V16.js">
+function initV16Hooks(){
+  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
+  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
+  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
+}
+
+</script>
 <style>
 :root{
   --og:#E8450A;--og2:#c93a08;--og-lite:#fff3ee;
@@ -152,12 +186,23 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
 .mcancel{flex:1;padding:12px;background:var(--grl);border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--ff)}
 .mconfirm{flex:2;padding:12px;background:var(--og);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--ff)}
 
-/* TOAST */
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:99999;transition:.3s;opacity:0;pointer-events:none}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#toast.ok{background:var(--vd)}
-#toast.err{background:var(--rd)}
-#toast.warn{background:var(--amarillo)}
+/* ADMIN MODAL */
+.aoverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.abox{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:400px;max-height:90dvh;overflow-y:auto}
+.abox h2{font-size:17px;font-weight:800;color:var(--og);margin-bottom:16px}
+.atable{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+.atable th{background:var(--grl);padding:6px 8px;text-align:left;font-weight:700;color:var(--gr)}
+.atable td{padding:6px 8px;border-bottom:1px solid var(--grb)}
+.lok{color:var(--vd);font-weight:700}
+.lexp{color:var(--rd);font-weight:700}
+.asec{background:var(--grl);border-radius:10px;padding:12px;margin-bottom:10px}
+.aseclbl{font-size:12px;font-weight:700;margin-bottom:8px}
+.asel{width:100%;padding:8px;border:1.5px solid var(--grb);border-radius:6px;margin-bottom:7px;font-family:var(--ff);font-size:13px}
+.ainp{width:100%;padding:8px;border:1.5px solid var(--grb);border-radius:6px;margin-bottom:6px;font-family:var(--ff);font-size:13px;outline:none}
+.ainp:focus{border-color:var(--og)}
+.abtn2{width:100%;padding:9px;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:var(--ff);font-size:13px}
+.abtn2.grn{background:var(--vd)}
+.abtn2.org{background:var(--og)}
 </style>
 </head>
 <body>
@@ -165,222 +210,846 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="lbox">
-    <div class="lbrand">Ferretería Oviedo</div>
-    <div class="lsub">Sistema Vendedor V16</div>
-    <input class="linput" id="lu" type="text" placeholder="Usuario" autocomplete="off">
-    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="lbtn" onclick="doLogin()">Ingresar</button>
+    <svg width="54" height="54" viewBox="0 0 60 60" fill="none" style="display:block;margin:0 auto">
+      <rect width="60" height="60" rx="13" fill="#E8450A"/>
+      <path d="M12 44L22 16H27L20 34H36L29 16H34L44 44H38L34 32H22L18 44Z" fill="white"/>
+      <rect x="12" y="47" width="36" height="4" rx="2" fill="white"/>
+    </svg>
+    <div class="lbrand">FERRETERÍA OVIEDO</div>
+    <div class="lsub">Sucursal El Manzano — Vendedores</div>
+    <input class="linput" id="luser" type="text" placeholder="Usuario" autocomplete="off">
+    <input class="linput" id="lpass" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')login()">
+    <button class="lbtn" onclick="login()">Ingresar</button>
     <div class="lerr" id="lerr"></div>
-    <div class="llic">Licencia: <span id="licInfo">V16 — El Manzano</span></div>
+    <div class="llic" id="llic">Sistema licenciado — Ferretería Oviedo</div>
   </div>
 </div>
 
-<!-- APP -->
-<div id="app" style="display:none;">
-  <header>
-    <div class="htitle">
-      <h1>Ferretería Oviedo</h1>
-      <p>Sistema Vendedor</p>
+<!-- ADMIN MODAL -->
+<div class="aoverlay" id="aoverlay">
+  <div class="abox">
+    <h2>⚙ Administración</h2>
+    <div id="acontent"></div>
+    <button onclick="closeAdmin()" style="width:100%;padding:10px;background:var(--grl);border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:var(--ff);margin-top:8px">Cerrar</button>
+  </div>
+</div>
+
+<!-- MODAL MARGEN UNITARIO -->
+<div class="moverlay" id="moverlay">
+  <div class="mpanel">
+    <div class="mtitle">Margen unitario</div>
+    <div class="msub" id="msubt"></div>
+    <div class="mrow"><span class="mrk">Costo Promedio</span><span class="mrv" id="mcosto"></span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
+      <span style="font-size:13px;font-weight:600;color:var(--gr)">Margen %</span>
+      <input class="mminput" type="number" id="mmargen" value="0" min="0" max="90" oninput="updPrev()">
+      <span style="font-size:16px;font-weight:700;color:var(--og)">%</span>
     </div>
-    <span class="hbadge" id="userBadge"></span>
-    <button class="hout" onclick="doLogout()">Salir</button>
+    <div class="mprev">
+      <div class="mprevlbl">Precio Socio resultante</div>
+      <div class="mprevval" id="mprev">$0</div>
+    </div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeMModal()">Cancelar</button>
+      <button class="mconfirm" onclick="confMargen()">Aplicar y agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+
+  <div class="abar" id="abar">
+    <span>👤 Administrador activo</span>
+    <div style="display:flex;gap:6px">
+      <button class="abtn" onclick="openAdmin()">⚙ Gestionar usuarios</button>
+      <button class="abtn" onclick="document.getElementById('abar').style.display='none'">✕</button>
+    </div>
+  </div>
+
+  <header>
+    <svg width="36" height="36" viewBox="0 0 60 60" fill="none" style="flex-shrink:0">
+      <rect width="60" height="60" rx="12" fill="#E8450A"/>
+      <path d="M12 44L22 16H27L20 34H36L29 16H34L44 44H38L34 32H22L18 44Z" fill="white"/>
+      <rect x="12" y="47" width="36" height="4" rx="2" fill="white"/>
+    </svg>
+    <div class="htitle">
+      <h1>FERRETERÍA OVIEDO</h1>
+      <p>Sucursal El Manzano — <span id="wuser"></span></p>
+    </div>
+    <div class="hbadge">VENDEDOR</div>
+    <button class="hout" onclick="logout()">Salir</button>
   </header>
 
-  <div class="sbar loading" id="sbar">
-    <span class="sdot"></span>
-    <span id="stxt">Cargando catálogo...</span>
-  </div>
-
-  <div class="abar" id="adminBar">
-    <span>Acceso Admin</span>
-    <button class="abtn" onclick="window.open('panel-admin.html', '_blank')">Ir a Admin</button>
-  </div>
+  <div class="sbar loading" id="sbar"><div class="sdot"></div><span id="stxt">Cargando precios...</span></div>
 
   <div class="mbar">
-    <span class="mlbl">Margen:</span>
+    <span class="mlbl">⚙ Margen global Socio:</span>
     <div class="mwrap">
-      <button class="qbtn" onclick="chgMargen(-1)">−</button>
-      <input class="minput" id="mglobal" value="0" onchange="renderProds()">
-      <button class="qbtn" onclick="chgMargen(1)">+</button>
+      <input class="minput" type="number" id="mglobal" value="0" min="0" max="90" step="1" oninput="renderProds()">
+      <span style="font-size:16px;font-weight:700;color:var(--og)">%</span>
     </div>
-    <span class="mfml">% sobre costo</span>
+    <span class="mfml">Precio = CostoPromedio ÷ (1−margen%) × 1.19</span>
   </div>
 
   <div class="ssec">
     <div class="swrap">
-      <input type="text" id="sinput" placeholder="Buscar producto o código..." onkeyup="onSearch()">
       <span class="sico">🔍</span>
+      <input type="text" id="sinput" placeholder="Buscar producto, código o marca..." oninput="onSearch()">
     </div>
     <div class="fbar" id="fbar"></div>
   </div>
 
   <div class="stbar" id="stbar"></div>
-
   <div class="plist" id="plist"></div>
 
-  <!-- CARRITO FAB -->
-  <button class="cfab" onclick="openCart()">
-    🛒 <span class="cbadge" id="cartBadge">0</span>
-  </button>
+  <button class="cfab" onclick="openCart()">🛒<div class="cbadge" id="cbadge">0</div></button>
 
-  <!-- CARRITO PANEL -->
-  <div class="cpanel" id="cpanel">
+  <!-- CARRITO -->
+  <div class="cpanel" id="cpanel" onclick="if(event.target===this)closeCart()">
     <div class="cdrawer">
       <div class="chandle"></div>
       <div class="ctitle">
-        <span>Tu Carrito</span>
-        <button class="brem" onclick="closeCart()">✕</button>
+        🛒 Cotización
+        <button style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--grm)" onclick="closeCart()">✕</button>
       </div>
-      <div id="cartList"></div>
-      <div class="totbox">
-        <div class="trow">Subtotal: <span id="cartSubtotal">$0</span></div>
-        <div class="trow">IVA (19%): <span id="cartIVA">$0</span></div>
-        <div class="trow main">Total: <span id="cartTotal">$0</span></div>
+      <div id="citems"></div>
+      <div id="ctotals"></div>
+      <div class="clibox" style="margin-top:12px">
+        <div class="clitit">📋 Datos del cliente</div>
+        <div class="fg"><label class="fl">Nombre / Razón Social</label><input class="fi" id="cnombre" placeholder="Juan Pérez o Empresa SA"></div>
+        <div class="fgrid">
+          <div class="fg"><label class="fl">RUT</label><input class="fi" id="crut" placeholder="12.345.678-9"></div>
+          <div class="fg"><label class="fl">Teléfono</label><input class="fi" id="ctel" placeholder="+56 9..."></div>
+        </div>
+        <div class="fg"><label class="fl">Dirección</label><input class="fi" id="cdir" placeholder="Calle, número, ciudad"></div>
+        <div class="fg"><label class="fl">Observaciones</label><input class="fi" id="cobs" placeholder="Forma de pago, plazo..."></div>
+        <div class="fg"><label class="fl">Vendedor</label><input class="fi" id="cvend" placeholder="Nombre vendedor"></div>
       </div>
-      <div class="clibox">
-        <div class="clitit">Datos del Cliente</div>
-        <div class="fg"><label class="fl">Nombre</label><input class="fi" id="cliNom"></div>
-        <div class="fg"><label class="fl">Teléfono</label><input class="fi" id="cliTel"></div>
-        <div class="fg"><label class="fl">Notas</label><input class="fi" id="cliNotas"></div>
-      </div>
-      <div class="fgrid">
-        <button class="bpdf" onclick="generarPDF()">Generar PDF</button>
-        <button class="bpdf" onclick="guardarCotizacionFirestore()">Guardar Cotización</button>
-      </div>
-      <button class="bvac" onclick="vaciarCarrito()">Vaciar Carrito</button>
+      <button class="bpdf" onclick="genPDF()">📄 Descargar Cotización PDF</button>
+      <button class="bvac" onclick="vaciar()">🗑 Vaciar carrito</button>
     </div>
   </div>
 
-  <!-- MODAL MARGEN UNITARIO -->
-  <div class="moverlay" id="margenModal">
-    <div class="mpanel">
-      <div class="mtitle">Margen por Producto</div>
-      <div class="msub">Ajusta el margen de <strong id="mprodNom"></strong>.</div>
-      <div class="mrow">
-        <span class="mrk">Costo:</span> <span class="mrv" id="mprodCosto"></span>
-      </div>
-      <div class="mrow">
-        <span class="mrk">P. Público:</span> <span class="mrv" id="mprodPub"></span>
-      </div>
-      <div class="mrow">
-        <span class="mrk">P. Socio:</span> <span class="mrv" id="mprodSocio"></span>
-      </div>
-      <input type="number" class="mminput" id="mprodMargen" value="0" oninput="calcMargenPrev()">
-      <div class="mprev">
-        <div class="mprevlbl">Precio con margen</div>
-        <div class="mprevval" id="mprodPrev"></div>
-      </div>
-      <div class="mbtns">
-        <button class="mcancel" onclick="closeMargenModal()">Cancelar</button>
-        <button class="mconfirm" onclick="setMargenProd()">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-</div>
+</div><!-- /app -->
 
 <script>
-// Variables globales
-var USUARIOS = [];
-var PRODS = [];
-var FILT = [];
-var CART = [];
-var MARCA = 'TODOS';
-var currentUser = null;
-var _sessionInterval = null;
+// ── URLs: lee del admin (ov_url_proxy / ov_url_pub) con fallback ──────────────
+var CSV_URL_DEFAULT      = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
+var JSON_URL_DEFAULT     = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.json';
+var CSV_URL_PUB_DEFAULT  = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
+var JSON_URL_PUB_DEFAULT = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.json';
+var CSV_URL     = localStorage.getItem('ov_url_proxy') || CSV_URL_DEFAULT;
+var JSON_URL    = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
+var CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || CSV_URL_PUB_DEFAULT;
+var JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
+var API_URL = localStorage.getItem('ov_api_url') || 'https://script.google.com/macros/s/TU_ID_AQUI/exec';
+var CK = 'ov_v_prods', CT = 'ov_v_ts';
 
-// Constantes para localStorage
-const USER_KEY = 'ov_currentUser';
-const CART_KEY = 'ov_cart';
-const MARGEN_KEY = 'ov_margenGlobal';
-const PROD_MARGEN_KEY_PREFIX = 'ov_prodMargen_';
+// ── USUARIOS: lee de ov_v2_users (guardado por admin) ────────────────────────
+var USERS_DEFAULT = [
+  {u:'vendedor1', p:'vend2025', nombre:'Ricardo Vidal',   role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'vendedor2', p:'vend2025', nombre:'Rafaela Flores',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'vendedor3', p:'vend2025', nombre:'Gregorio Reyes',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'vendedor4', p:'vend2025', nombre:'Jaime Subiabre',  role:'vendedor', exp:Date.now()+365*864e5, estado:'activo'},
+  {u:'admin',     p:'oviedo2025admin', nombre:'Administrador', role:'admin', exp:Date.now()+365*864e5, estado:'activo'}
+];
+var USERS = USERS_DEFAULT.slice();
 
-// Formateo de moneda
-function fmtCLP(num) { return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(num); }
-
-// Toast de mensajes
-function showToast(msg, type = 'info') {
-  var toastEl = document.getElementById('toast');
-  if (!toastEl) {
-    toastEl = document.createElement('div');
-    toastEl.id = 'toast';
-    document.body.appendChild(toastEl);
+function apiGet(params, cb) {
+  if (window.db) {
+    apiGetFirebase(params, cb);
+    return;
   }
-  toastEl.textContent = msg;
-  toastEl.className = 'toast show ' + type;
-  setTimeout(() => { toastEl.className = 'toast'; }, 3000);
+  var url = API_URL + '?' + Object.keys(params).map(function(k){
+    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+  }).join('&');
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(d){ cb(null, d); })
+    .catch(function(e){ cb(e, null); });
 }
 
-// ============================================================================
-// AUTENTICACIÓN Y SESIÓN (V16 PERSISTENTE)
-// ============================================================================
+function apiPost(body, cb) {
+  if (window.db) {
+    apiPostFirebase(body, cb);
+    return;
+  }
+  fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ cb(null, d); })
+    .catch(function(e){ cb(e, null); });
+}
 
-function loadUsers() {
-  apiGet({ action: 'getUsers' }, (err, users) => {
-    if (err) {
-      console.error('Error al cargar usuarios:', err);
-      try { USUARIOS = JSON.parse(localStorage.getItem('ov_users') || '[]'); } catch (e) { USUARIOS = []; }
-    } else {
-      USUARIOS = users.map(normalizeUserRecord);
-      localStorage.setItem('ov_users', JSON.stringify(USUARIOS));
+function loadUsers(cb){
+  if (window.db) {
+    apiGet({action:'getUsers'}, function(err,data) {
+      if (!err && Array.isArray(data) && data.length) {
+        USERS = data;
+        saveUsers();
+      } else {
+        loadUsersLocal();
+      }
+      if (cb) cb();
+    });
+    return;
+  }
+  loadUsersLocal();
+  if (cb) cb();
+}
+
+function loadUsersLocal(){
+  try{
+    var stored = JSON.parse(localStorage.getItem('ov_v2_users')||'[]');
+    if(Array.isArray(stored) && stored.length){ USERS = stored; }
+    else { USERS = USERS_DEFAULT.slice(); }
+  }catch(e){ USERS = USERS_DEFAULT.slice(); }
+}
+
+function saveUsers(){
+  try{ localStorage.setItem('ov_v2_users', JSON.stringify(USERS)); }catch(e){}
+}
+
+function saveUserRemote(userData, cb){
+  var found = false;
+  for(var i=0;i<USERS.length;i++){
+    if(USERS[i].u===userData.u){ USERS[i]=userData; found=true; break; }
+  }
+  if(!found) USERS.push(userData);
+  saveUsers();
+  if (window.db) {
+    apiPost({action:'saveUser', data:userData}, function(err,res){ if(cb) cb(err,res); });
+    return;
+  }
+  if(cb) cb(null, true);
+}
+
+var me=null, PRODS=[], FILT=[], CART=[], MPROD=null, MARCA='TODOS';
+var _sessInterval=null;
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function login(){
+  loadUsers(); // Refresca siempre antes de validar
+  // Refresca URLs por si admin las actualizó
+  CSV_URL      = localStorage.getItem('ov_url_proxy') || CSV_URL_DEFAULT;
+  JSON_URL     = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
+  CSV_URL_PUB  = localStorage.getItem('ov_url_pub')   || CSV_URL_PUB_DEFAULT;
+  JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
+
+  var u   = document.getElementById('luser').value.trim();
+  var p   = document.getElementById('lpass').value.trim();
+  var err = document.getElementById('lerr');
+  err.textContent = '';
+
+  var found = null;
+  for(var i=0;i<USERS.length;i++){
+    if(USERS[i].u===u && USERS[i].p===p){ found=USERS[i]; break; }
+  }
+  if(!found){ err.textContent='Usuario o contraseña incorrectos'; return; }
+  if(found.estado==='bloqueado'){ err.textContent='Usuario bloqueado. Contacta al administrador.'; return; }
+  if(found.exp < Date.now()){ err.textContent='Licencia vencida. Contacta al administrador.'; return; }
+
+  me = found;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display         = 'block';
+  document.getElementById('wuser').textContent         = found.nombre;
+
+  if(found.role==='admin') document.getElementById('abar').style.display='flex';
+
+  var diasRest = Math.ceil((found.exp-Date.now())/864e5);
+  if(diasRest<=7) showToast('Licencia vence en '+diasRest+' días','warn');
+
+  registerSession(found.nombre,'Vendedor');
+  if(_sessInterval) clearInterval(_sessInterval);
+  _sessInterval = setInterval(function(){ if(me) registerSession(me.nombre,'Vendedor'); }, 60000);
+
+  startApp();
+}
+
+function logout(){
+  if(me) clearSession(me.nombre,'Vendedor');
+  if(_sessInterval){ clearInterval(_sessInterval); _sessInterval=null; }
+  me=null; PRODS=[]; FILT=[]; CART=[]; MARCA='TODOS';
+  document.getElementById('app').style.display         = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('luser').value = '';
+  document.getElementById('lpass').value = '';
+  document.getElementById('lerr').textContent = '';
+  document.getElementById('abar').style.display = 'none';
+}
+
+// ── SESIONES PARA ADMIN ───────────────────────────────────────────────────────
+function registerSession(nombre, app){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return Date.now()-x.ts < 30*60*1000; });
+    var device = navigator.userAgent.indexOf('Mobile')>=0 ? '📱 Móvil' : '💻 PC';
+    var ei = -1;
+    for(var i=0;i<s.length;i++){ if(s[i].user===nombre&&s[i].app===app){ei=i;break;} }
+    var en = {user:nombre, app:app, ts:Date.now(), device:device};
+    if(ei>=0) s[ei]=en; else s.push(en);
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+    if (window.db) {
+      apiPost({action:'logSession', data:en}, function(){});
     }
-    checkSession();
+  }catch(e){}
+}
+function clearSession(nombre, app){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return !(x.user===nombre&&x.app===app); });
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+    if (window.db) {
+      apiGet({action:'clearSession', user:nombre, app:app}, function(){});
+    }
+  }catch(e){}
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+function openAdmin(){
+  if(!me||me.role!=='admin') return;
+  renderAdmin();
+  document.getElementById('aoverlay').style.display='flex';
+}
+function closeAdmin(){ document.getElementById('aoverlay').style.display='none'; }
+
+function renderAdmin(){
+  var now = Date.now();
+  var rows = '';
+  for(var i=0;i<USERS.length;i++){
+    var u = USERS[i];
+    var dias = Math.ceil((u.exp-now)/864e5);
+    var ok = dias>0;
+    var est = u.estado==='bloqueado' ? '<span style="color:var(--rd)">🚫</span>' : '<span style="color:var(--vd)">✅</span>';
+    var btns = u.role!=='admin'
+      ? '<button data-ui="'+u.u+'" class="delbtn" style="background:#e53935;color:#fff;border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-size:11px;margin-right:3px">🗑</button>'+
+        '<button data-ui="'+u.u+'" class="blkbtn" style="background:#f57c00;color:#fff;border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-size:11px">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>'
+      : '—';
+    rows += '<tr><td>'+u.u+'</td><td>'+u.nombre+'</td><td>'+est+'</td><td class="'+(ok?'lok':'lexp')+'">'+(ok?dias+'d':'Vencido')+'</td><td>'+btns+'</td></tr>';
+  }
+
+  var opts = USERS.filter(function(u){return u.role!=='admin';})
+    .map(function(u){return '<option value="'+u.u+'">'+u.nombre+'</option>';}).join('');
+
+  document.getElementById('acontent').innerHTML =
+    '<div style="overflow-x:auto;margin-bottom:12px">'+
+    '<table class="atable"><thead><tr><th>Usuario</th><th>Nombre</th><th>St.</th><th>Lic.</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table></div>'+
+    '<div class="asec"><div class="aseclbl">➕ Agregar usuario</div>'+
+    '<input class="ainp" id="anu" placeholder="Usuario (login)">'+
+    '<input class="ainp" id="ann" placeholder="Nombre completo">'+
+    '<input class="ainp" id="anp" type="password" placeholder="Contraseña">'+
+    '<select id="anr" class="asel"><option value="vendedor">Vendedor</option><option value="admin">Admin</option></select>'+
+    '<button class="abtn2 grn" onclick="addUser()" style="margin-top:4px">+ Agregar</button></div>'+
+    '<div class="asec"><div class="aseclbl">🔄 Renovar licencia</div>'+
+    '<select id="arenov" class="asel">'+opts+'</select>'+
+    '<select id="arenov_dias" class="asel"><option value="30">+30 días</option><option value="90">+90 días</option><option value="180">+180 días</option><option value="365">+365 días</option></select>'+
+    '<button class="abtn2 grn" onclick="renovar()">Renovar</button></div>'+
+    '<div class="asec"><div class="aseclbl">🔑 Cambiar contraseña</div>'+
+    '<input class="ainp" id="acu" placeholder="Usuario">'+
+    '<input class="ainp" id="acp" type="password" placeholder="Nueva contraseña">'+
+    '<button class="abtn2 org" onclick="chgPass()" style="margin-top:4px">Actualizar</button></div>';
+
+  document.getElementById('acontent').querySelectorAll('.delbtn').forEach(function(btn){
+    btn.addEventListener('click',function(){ delUser(this.getAttribute('data-ui')); });
+  });
+  document.getElementById('acontent').querySelectorAll('.blkbtn').forEach(function(btn){
+    btn.addEventListener('click',function(){ toggleBlock(this.getAttribute('data-ui')); });
   });
 }
 
-function checkSession() {
-  try {
-    const storedUser = JSON.parse(localStorage.getItem(USER_KEY));
-    if (storedUser && storedUser.u && storedUser.p) {
-      const found = USUARIOS.find(u => u.u === storedUser.u && u.p === storedUser.p);
-      if (found && found.estado === 'activo') {
-        currentUser = found;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        document.getElementById('userBadge').textContent = currentUser.nombre + ' (' + currentUser.role + ')';
-        document.getElementById('adminBar').style.display = currentUser.role === 'admin' ? 'flex' : 'none';
-        loadGlobalMargen();
-        startApp();
-        registerSession(currentUser.nombre, 'Vendedor');
-        if (_sessionInterval) clearInterval(_sessionInterval);
-        _sessionInterval = setInterval(() => { if (currentUser) registerSession(currentUser.nombre, 'Vendedor'); }, 60000);
-        return;
-      }
+function addUser(){
+  var u = document.getElementById('anu').value.trim();
+  var n = document.getElementById('ann').value.trim();
+  var p = document.getElementById('anp').value.trim();
+  var r = document.getElementById('anr').value;
+  if(!u||!n||!p){ showToast('Completa todos los campos','warn'); return; }
+  for(var i=0;i<USERS.length;i++){ if(USERS[i].u===u){ showToast('Usuario ya existe','err'); return; } }
+  USERS.push({u:u, p:p, nombre:n, role:r, exp:Date.now()+365*864e5, estado:'activo'});
+  saveUsers(); showToast('Usuario '+u+' creado','ok'); renderAdmin();
+}
+
+function delUser(uid){
+  if(!confirm('¿Eliminar usuario "'+uid+'"?')) return;
+  USERS = USERS.filter(function(x){return x.u!==uid;});
+  saveUsers(); showToast('Usuario eliminado','ok'); renderAdmin();
+}
+
+function toggleBlock(uid){
+  for(var i=0;i<USERS.length;i++){
+    if(USERS[i].u===uid){
+      USERS[i].estado = USERS[i].estado==='bloqueado' ? 'activo' : 'bloqueado';
+      saveUserRemote(USERS[i], function(){}); showToast('Usuario '+(USERS[i].estado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
+      renderAdmin(); return;
     }
-  } catch (e) { console.error('Error al verificar sesión:', e); }
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  }
 }
 
-function doLogin() {
-  var u = document.getElementById('lu').value.trim();
-  var p = document.getElementById('lp').value.trim();
-  var err = document.getElementById('lerr');
-  err.textContent = '';
-  const found = USUARIOS.find(user => user.u === u && user.p === p);
-  if (!found) { err.textContent = 'Usuario o contraseña incorrectos'; return; }
-  if (found.estado === 'bloqueado') { err.textContent = 'Usuario bloqueado.'; return; }
-  currentUser = found;
-  localStorage.setItem(USER_KEY, JSON.stringify({ u: currentUser.u, p: currentUser.p }));
-  checkSession();
+function renovar(){
+  var uid  = document.getElementById('arenov').value;
+  var dias = parseInt(document.getElementById('arenov_dias').value)||30;
+  for(var i=0;i<USERS.length;i++){
+    if(USERS[i].u===uid){
+      USERS[i].exp = Math.max(USERS[i].exp, Date.now()) + dias*864e5;
+      saveUserRemote(USERS[i], function(){}); showToast('Licencia renovada +'+dias+' días','ok'); renderAdmin(); return;
+    }
+  }
 }
 
-function doLogout() {
-  if (currentUser) clearSession(currentUser.nombre, 'Vendedor');
-  if (_sessionInterval) { clearInterval(_sessionInterval); _sessionInterval = null; }
-  currentUser = null;
-  localStorage.removeItem(USER_KEY);
-  location.reload();
+function chgPass(){
+  var u = document.getElementById('acu').value.trim();
+  var p = document.getElementById('acp').value.trim();
+  if(!u||!p){ showToast('Completa los campos','warn'); return; }
+  for(var i=0;i<USERS.length;i++){
+    if(USERS[i].u===u){ USERS[i].p=p; saveUserRemote(USERS[i], function(){}); showToast('Contraseña actualizada','ok'); return; }
+  }
+  showToast('Usuario no encontrado','err');
 }
 
-function registerSession(nombre, app) {
-  if (!db) return;
-  const device = navigator.userAgent.indexOf('Mobile') >= 0 ? '📱 Móvil' : '💻 PC';
-  apiPost({ action: 'logSession', data: { user: nombre, app: app, device: device } }, (err, res) => {});
+// ── CARGA DE CATÁLOGO ───────────────────────────────────────────────────────
+function startApp(){
+  setSyncState('loading','Actualizando catálogo desde GitHub...');
+  function loadText(url){
+    return fetch(url, { cache:'no-store' }).then(function(r){
+      if(!r.ok) throw new Error('http-'+r.status);
+      return r.text();
+    });
+  }
+  function normalizeJsonItems(items){
+    return items.map(function(it){
+      return {
+        Codigo: (it.Codigo||it.codigo||it.CODIGO||it.code||'').toString().trim(),
+        Desc:   (it.Desc||it.desc||it.DESCRIPCION||it.descripcion||it.Descripcion||'').toString().trim(),
+        Marca:  (it.Marca||it.marca||it.MARCA||'').toString().trim(),
+        Sub:    (it.Sub||it.sub||it.SUBFAMILIA||it.subfamilia||it.SubFamilia||'').toString().trim(),
+        CP:     num(it.CP || it.cp || it.COSTO_PROMEDIO || it.costopromedio || it.costo_promedio || it.costo || '0'),
+        PIva:   num(it.PIva || it.piva || it.PRECIO_IVA || it.precioiva || it.precio_iva || it.precio || '0'),
+        SIva:   num(it.SIva || it.siva || it.SOCIO_IVA || it.socioiva || it.socio_iva || '0')
+      };
+    }).filter(function(p){ return p.Codigo && (p.PIva||p.SIva); });
+  }
+  function parseCatalog(txt){
+    var trimmed = txt.trim();
+    if(trimmed.charAt(0)==='['){
+      try{ var data = JSON.parse(trimmed); if(Array.isArray(data)){
+          var normalized = normalizeJsonItems(data);
+          if(normalized.length) return normalized;
+        }
+      }catch(e){}
+    }
+    var parsed = parseCSV(txt);
+    if(parsed.length>0) return parsed;
+    throw new Error('invalid-data');
+  }
+  function tryUrl(url){
+    return loadText(url).then(parseCatalog);
+  }
+  tryUrl(JSON_URL)
+    .catch(function(){ return tryUrl(JSON_URL_PUB); })
+    .catch(function(){ return tryUrl(CSV_URL); })
+    .catch(function(){ return tryUrl(CSV_URL_PUB); })
+    .then(function(parsed){
+      PRODS = parsed;
+      try{ localStorage.setItem(CK,JSON.stringify(parsed)); localStorage.setItem(CT,''+Date.now()); }catch(e){}
+      var ts = new Date().toLocaleTimeString('es-CL');
+      setSyncState('ok','✓ Catálogo actualizado — '+parsed.length+' productos — '+ts);
+      initUI();
+    })
+    .catch(function(err){
+      try{
+        var c = localStorage.getItem(CK);
+        if(c){
+          PRODS = JSON.parse(c);
+          var ts_raw = localStorage.getItem(CT);
+          var ts = ts_raw ? new Date(+ts_raw).toLocaleString('es-CL') : '?';
+          setSyncState('warn','Modo offline — Última sync: '+ts+' — '+PRODS.length+' productos');
+          initUI(); return;
+        }
+      }catch(e){}
+      console.error('Carga de catálogo fallida:', err);
+      setSyncState('warn','Sin conexión y sin caché local — Verifica internet o la URL del catálogo');
+    });
 }
 
-function clearSession(nombre, app) {}
+function setSyncState(type,txt){
+  var b = document.getElementById('sbar');
+  b.className = 'sbar '+type;
+  document.getElementById('stxt').textContent = txt;
+}
 
-// ============================================================================
-// CARGA DE CATÁLOGO (V16 FIRESTORE + MAPPING)
-// ======================================
+function parseCSV(txt){
+  var lines = txt.split('\n').filter(function(l){return l.trim();});
+  if(lines.length<2) return [];
+  var hdrs = lines[0].split(',').map(function(h){return h.replace(/"/g,'').trim().toLowerCase().replace(/[^a-z]/g,'');});
+  var idx = {};
+  hdrs.forEach(function(h,i){
+    if(h.indexOf('codigo')>=0)                                    idx.Codigo=i;
+    else if(h.indexOf('descripcion')>=0||h.indexOf('descripcin')>=0) idx.Desc=i;
+    else if(h.indexOf('marca')>=0)                                idx.Marca=i;
+    else if(h.indexOf('subfamilia')>=0||h.indexOf('familia')>=0)  idx.Sub=i;
+    else if(h.indexOf('costopromedio')>=0||h.indexOf('costo')>=0) idx.CP=i;
+    else if(h.indexOf('precioiva')>=0)                            idx.PIva=i;
+    else if(h.indexOf('socioiva')>=0)                             idx.SIva=i;
+  });
+  var rows = [];
+  for(var i=1;i<lines.length;i++){
+    var c = parseLine(lines[i]);
+    var row = {
+      Codigo: gt(c,idx.Codigo),
+      Desc:   gt(c,idx.Desc),
+      Marca:  gt(c,idx.Marca),
+      Sub:    gt(c,idx.Sub),
+      CP:     num(gt(c,idx.CP)),
+      PIva:   num(gt(c,idx.PIva)),
+      SIva:   num(gt(c,idx.SIva))
+    };
+    if(row.Codigo && (row.PIva||row.SIva)) rows.push(row);
+  }
+  return rows;
+}
+function gt(arr,i){ return (arr&&i!=null&&arr[i])?arr[i].trim():''; }
+function num(s){ return parseInt((s||'0').replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'').replace(/[^0-9]/g,''))||0; }
+function parseLine(line){
+  var res=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(ch==='"'){inQ=!inQ;continue;}
+    if(ch===','&&!inQ){res.push(cur);cur='';continue;}
+    cur+=ch;
+  }
+  res.push(cur); return res;
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+function initUI(){
+  FILT = PRODS.slice();
+  buildFilters();
+  renderProds();
+}
+
+function buildFilters(){
+  var marcas=['TODOS'], seen={};
+  PRODS.forEach(function(p){ if(p.Marca&&!seen[p.Marca]){seen[p.Marca]=1;marcas.push(p.Marca);} });
+  marcas.sort(function(a,b){ return a==='TODOS'?-1:a.localeCompare(b,'es'); });
+  document.getElementById('fbar').innerHTML = marcas.slice(0,24).map(function(m){
+    return '<button class="fbtn'+(m==='TODOS'?' on':'')+'" onclick="setMarca(\''+m.replace(/'/g,"\\'")+'\')">'+m+'</button>';
+  }).join('');
+}
+
+function setMarca(m){
+  MARCA=m;
+  document.querySelectorAll('.fbtn').forEach(function(b){ b.classList.toggle('on',b.textContent===m); });
+  onSearch();
+}
+
+function onSearch(){
+  var q = document.getElementById('sinput').value.toLowerCase().trim();
+  FILT = PRODS.filter(function(p){
+    var mm = MARCA==='TODOS' || p.Marca===MARCA;
+    var mq = !q || p.Desc.toLowerCase().indexOf(q)>=0 || p.Codigo.toLowerCase().indexOf(q)>=0 || (p.Marca||'').toLowerCase().indexOf(q)>=0;
+    return mm && mq;
+  });
+  renderProds();
+}
+
+function calcSocio(p, m){
+  var base = p.CP>0 ? p.CP : Math.round(p.SIva/1.19);
+  if(m===0) return p.PIva;
+  return Math.round(base/(1-m/100)*1.19);
+}
+
+function renderProds(){
+  var m = parseInt(document.getElementById('mglobal').value)||0;
+  document.getElementById('stbar').innerHTML =
+    '<div class="chip">Total: <span>'+PRODS.length+'</span></div>'+
+    '<div class="chip">Filtrados: <span>'+FILT.length+'</span></div>'+
+    '<div class="chip">Margen: <span>'+m+'%</span></div>'+
+    '<div class="chip">Carrito: <span>'+CART.reduce(function(a,c){return a+c.qty;},0)+'</span></div>';
+
+  var list = document.getElementById('plist');
+  if(!FILT.length){
+    list.innerHTML='<div class="empty"><p style="font-size:32px">🔍</p><p style="margin-top:8px;font-size:14px">Sin resultados</p></div>';
+    return;
+  }
+  var html='';
+  var shown = FILT.slice(0,80);
+  for(var i=0;i<shown.length;i++){
+    var p = shown[i];
+    var ps  = calcSocio(p,m);
+    var safeCod = p.Codigo.replace(/'/g,"\\'");
+    html +=
+      '<div class="pcard">'+
+      '<div class="phead"><div class="pnom">'+p.Desc+'</div><div class="pcod">'+p.Codigo+'</div></div>'+
+      '<div class="pmarca">'+p.Marca+(p.Sub?' · '+p.Sub:'')+'</div>'+
+      '<div class="pprecios">'+
+        '<div class="pbox pub"><div class="plbl">Precio Público c/IVA</div><div class="pval">'+fmt(p.PIva)+'</div></div>'+
+        '<div class="pbox '+(m!==0?'mod':'soc')+'"><div class="plbl">Precio Socio c/IVA'+(m!==0?' (+'+m+'%)':'')+' </div><div class="pval">'+fmt(ps)+'</div></div>'+
+      '</div>'+
+      '<div class="pacts">'+
+        '<div class="qwrap">'+
+          '<button class="qbtn" onclick="chgQ(\''+safeCod+'\',-1)">−</button>'+
+          '<span class="qval" id="q'+safeCod+'">1</span>'+
+          '<button class="qbtn" onclick="chgQ(\''+safeCod+'\',1)">+</button>'+
+        '</div>'+
+        '<button class="badd" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
+        '<button class="bunit" onclick="openMM(\''+safeCod+'\')">% Unit</button>'+
+      '</div>'+
+      '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString('es-CL'); }
+
+function chgQ(c,d){
+  var el = document.getElementById('q'+c);
+  if(!el) return;
+  var v = parseInt(el.textContent)+d;
+  el.textContent = v<1?1:v;
+}
+
+// ── MODAL MARGEN UNITARIO ─────────────────────────────────────────────────────
+function openMM(cod){
+  var p=null;
+  for(var i=0;i<PRODS.length;i++){ if(PRODS[i].Codigo===cod){p=PRODS[i];break;} }
+  if(!p) return;
+  MPROD = p;
+  document.getElementById('msubt').textContent = p.Desc;
+  var cp = p.CP>0 ? p.CP : Math.round(p.SIva/1.19);
+  document.getElementById('mcosto').textContent = fmt(cp);
+  document.getElementById('mmargen').value = parseInt(document.getElementById('mglobal').value)||0;
+  updPrev();
+  document.getElementById('moverlay').style.display='flex';
+}
+function closeMModal(){ document.getElementById('moverlay').style.display='none'; MPROD=null; }
+function updPrev(){
+  if(!MPROD) return;
+  var m = parseInt(document.getElementById('mmargen').value)||0;
+  document.getElementById('mprev').textContent = fmt(calcSocio(MPROD,m));
+}
+function confMargen(){
+  if(!MPROD) return;
+  var m     = parseInt(document.getElementById('mmargen').value)||0;
+  var precio = calcSocio(MPROD,m);
+  var el    = document.getElementById('q'+MPROD.Codigo);
+  var qty   = el ? parseInt(el.textContent)||1 : 1;
+  addItem(MPROD, precio, qty, m);
+  closeMModal();
+}
+
+// ── CARRITO ───────────────────────────────────────────────────────────────────
+function addCart(cod){
+  var p=null;
+  for(var i=0;i<PRODS.length;i++){ if(PRODS[i].Codigo===cod){p=PRODS[i];break;} }
+  if(!p) return;
+  var m     = parseInt(document.getElementById('mglobal').value)||0;
+  var precio = calcSocio(p,m);
+  var el    = document.getElementById('q'+cod);
+  var qty   = el ? parseInt(el.textContent)||1 : 1;
+  addItem(p, precio, qty, m);
+}
+
+function addItem(p, precio, qty, m){
+  for(var i=0;i<CART.length;i++){
+    if(CART[i].Codigo===p.Codigo && CART[i].m===m){
+      CART[i].qty += qty; updBadge(); showToast('Actualizado en carrito','ok'); return;
+    }
+  }
+  CART.push({Codigo:p.Codigo, Desc:p.Desc, precio:precio, qty:qty, m:m});
+  updBadge(); showToast('Agregado al carrito','ok');
+}
+
+function updBadge(){ document.getElementById('cbadge').textContent = CART.reduce(function(a,c){return a+c.qty;},0); }
+function openCart(){ renderCart(); document.getElementById('cpanel').style.display='block'; }
+function closeCart(){ document.getElementById('cpanel').style.display='none'; }
+
+function renderCart(){
+  var ci = document.getElementById('citems');
+  var ct = document.getElementById('ctotals');
+  if(!CART.length){
+    ci.innerHTML='<div class="empty" style="padding:24px 0"><p style="font-size:28px">🛒</p><p style="font-size:13px;margin-top:6px">Carrito vacío</p></div>';
+    ct.innerHTML=''; return;
+  }
+  var html='';
+  for(var i=0;i<CART.length;i++){
+    var it = CART[i];
+    html += '<div class="citem">'+
+      '<div class="ciinfo">'+
+        '<div class="ciname">'+it.Desc+'</div>'+
+        '<div class="cicod">'+it.Codigo+' · Margen: '+it.m+'%</div>'+
+        '<div class="ciqty">'+it.qty+' × '+fmt(it.precio)+'</div>'+
+      '</div>'+
+      '<div class="ciprice">'+fmt(it.precio*it.qty)+'</div>'+
+      '<button class="brem" onclick="remItem('+i+')">✕</button>'+
+    '</div>';
+  }
+  ci.innerHTML = html;
+  var sub  = CART.reduce(function(a,c){return a+c.precio*c.qty;},0);
+  var neto = Math.round(sub/1.19);
+  var iva  = sub-neto;
+  ct.innerHTML =
+    '<div class="totbox">'+
+      '<div class="trow"><span>Neto</span><span>'+fmt(neto)+'</span></div>'+
+      '<div class="trow"><span>IVA 19%</span><span>'+fmt(iva)+'</span></div>'+
+      '<div class="trow main"><span>TOTAL</span><span>'+fmt(sub)+'</span></div>'+
+    '</div>';
+  var vi = document.getElementById('cvend');
+  if(vi && !vi.value && me) vi.value = me.nombre;
+}
+
+function remItem(i){ CART.splice(i,1); updBadge(); renderCart(); }
+function vaciar(){ if(!confirm('¿Vaciar el carrito?'))return; CART=[]; updBadge(); renderCart(); }
+
+// ── COTIZACIONES: guarda con detalle para el admin ────────────────────────────
+function registrarCotizacion(total){
+  try{
+    var lista = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]');
+    var detalle = CART.map(function(item){
+      return {
+        Codigo:      item.Codigo,
+        Descripcion: item.Desc,
+        qty:         item.qty||0,
+        precio:      item.precio||0,
+        margen:      item.m||0
+      };
+    });
+    lista.push({
+      ts:      Date.now(),
+      user:    me ? me.nombre : 'Vendedor',
+      app:     'Vendedor',
+      items:   CART.reduce(function(a,c){return a+(c.qty||0);},0),
+      total:   total,
+      detalle: detalle
+    });
+    if(lista.length>200) lista=lista.slice(lista.length-200);
+    localStorage.setItem('ov_cotizaciones', JSON.stringify(lista));
+  }catch(e){ console.error('Error guardando cotización',e); }
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+function genPDF(){
+  if(!CART.length){ showToast('Agrega productos primero','warn'); return; }
+  var jsPDF  = window.jspdf.jsPDF;
+  var doc    = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  var og=[232,69,10], dk=[30,30,30], gr=[100,100,100], gl=[245,245,245];
+  var nro    = Math.floor(Math.random()*90000+10000);
+  var fecha  = new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var nombre = document.getElementById('cnombre').value || 'Cliente';
+  var rut    = document.getElementById('crut').value    || '';
+  var dir    = document.getElementById('cdir').value    || '';
+  var tel    = document.getElementById('ctel').value    || '';
+  var obs    = document.getElementById('cobs').value    || '';
+  var vend   = document.getElementById('cvend').value   || (me?me.nombre:'');
+
+  // HEADER
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(0,0,216,28,'F');
+  doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('FERRETERÍA OVIEDO',12,12);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Sucursal El Manzano',12,20);
+  doc.text('Venta Cotización IVA Incluido',120,12);
+  doc.setFont('helvetica','bold'); doc.text('N° '+nro,120,18);
+  doc.setFont('helvetica','normal'); doc.text('Emite: '+vend,120,24);
+
+  doc.setFillColor(gl[0],gl[1],gl[2]); doc.rect(0,28,216,10,'F');
+  doc.setFontSize(9); doc.setTextColor(gr[0],gr[1],gr[2]);
+  doc.text(fecha,12,35); doc.text('Sucursal: El Manzano',130,35);
+
+  // CLIENTE
+  var y=48;
+  var campos=[['Señor(es):',nombre],['RUT:',rut],['Dirección:',dir],['Teléfono:',tel]];
+  doc.setTextColor(dk[0],dk[1],dk[2]);
+  campos.forEach(function(c){
+    if(!c[1]) return;
+    doc.setFont('helvetica','bold'); doc.text(c[0],12,y);
+    doc.setFont('helvetica','normal'); doc.text(c[1],45,y); y+=6;
+  });
+  y+=4;
+  doc.setFont('helvetica','italic'); doc.setTextColor(gr[0],gr[1],gr[2]);
+  doc.text('De acuerdo a lo solicitado, cotizamos lo siguiente:',12,y); y+=8;
+
+  // TABLA
+  var sub  = CART.reduce(function(a,c){return a+c.precio*c.qty;},0);
+  var rows = CART.map(function(it){
+    var desc = it.Desc.length>56 ? it.Desc.substring(0,56)+'...' : it.Desc;
+    return [it.Codigo, desc, it.qty, fmt(it.precio), '0,00', '0,00', fmt(it.precio*it.qty)];
+  });
+
+  doc.autoTable({
+    startY: y,
+    head: [['Código','Descripción','CANT','Precio','Dcto','Dcto%','Valor Total']],
+    body: rows,
+    foot: [[
+      {content:CART.reduce(function(a,c){return a+c.qty;},0)+' unid.',colSpan:3,styles:{halign:'right',fontStyle:'bold'}},
+      {content:'Total',colSpan:3,styles:{halign:'center',fontStyle:'bold'}},
+      {content:fmt(sub),styles:{halign:'right',fontStyle:'bold',textColor:og}}
+    ]],
+    headStyles:{fillColor:og,textColor:[255,255,255],fontSize:8,fontStyle:'bold',halign:'center'},
+    bodyStyles:{fontSize:8,textColor:dk},
+    footStyles:{fillColor:gl,fontSize:8,fontStyle:'bold'},
+    columnStyles:{0:{cellWidth:22},1:{cellWidth:76},2:{cellWidth:12,halign:'center'},3:{cellWidth:24,halign:'right'},4:{cellWidth:15,halign:'right'},5:{cellWidth:15,halign:'right'},6:{cellWidth:28,halign:'right'}},
+    alternateRowStyles:{fillColor:[250,250,250]},
+    margin:{left:12,right:12}
+  });
+
+  var yT   = doc.lastAutoTable.finalY+6;
+  var neto = Math.round(sub/1.19);
+  var iva  = sub-neto;
+
+  doc.setFillColor(gl[0],gl[1],gl[2]); doc.rect(120,yT,84,28,'F');
+  doc.setFontSize(8); doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal');
+  doc.text('Neto:',126,yT+8); doc.text('IVA 19%:',126,yT+15);
+  doc.setFont('helvetica','bold'); doc.setTextColor(dk[0],dk[1],dk[2]);
+  doc.text(fmt(neto),198,yT+8,{align:'right'}); doc.text(fmt(iva),198,yT+15,{align:'right'});
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(120,yT+20,84,10,'F');
+  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('TOTAL:',126,yT+27); doc.text(fmt(sub),198,yT+27,{align:'right'});
+
+  var yF = yT+34;
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(dk[0],dk[1],dk[2]);
+  doc.text('Condiciones de Venta',12,yF);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gr[0],gr[1],gr[2]);
+  if(obs) doc.text(obs,12,yF+6);
+  doc.text('Forma de Pago: TDébito + Efectivo / Transferencia',12,yF+12);
+  doc.text('Esta cotización tiene validez de 7 días hábiles.',12,yF+18);
+  doc.setFont('helvetica','bold'); doc.setTextColor(dk[0],dk[1],dk[2]);
+  doc.text(vend,12,yF+28);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gr[0],gr[1],gr[2]);
+  doc.text('Ferretería Oviedo — Sucursal El Manzano',12,yF+34);
+
+  var pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(0,pageH-12,216,12,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont('helvetica','normal');
+  doc.text('Ferretería Oviedo — Sucursal El Manzano',12,pageH-4);
+  doc.text('Cotización N° '+nro,198,pageH-4,{align:'right'});
+
+  doc.save('Cotizacion_Oviedo_'+nro+'_'+nombre.replace(/\s/g,'_')+'.pdf');
+  showToast('PDF generado exitosamente','ok');
+  registrarCotizacion(sub);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type){
+  var bg = type==='ok'?'#2e7d32':type==='warn'?'#e65100':'#c62828';
+  var t  = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:'+bg+';color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;font-family:var(--ff);max-width:90vw;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2800);
+}
+
+function initV16Hooks(){
+  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
+  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
+  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
+}
+
+</script>
+</body>
+</html>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(typeof initV16Hooks === "function") initV16Hooks(); });</script>
