@@ -186,3 +186,4 @@ function escucharMetricasDashboard(cb) {
     cb({ sesiones, users, cots });
   });
 }
+
