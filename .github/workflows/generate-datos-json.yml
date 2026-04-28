@@ -1,44 +1,38 @@
-name: Generate Datos.json
+name: generate-datos-json
 
 on:
-  workflow_dispatch: {}
-  schedule:
-    - cron: '0 2 * * *'
   push:
-    branches:
-      - main
+    branches: ["main"]
     paths:
-      - 'CATALOGO PRODUCTOS/Datos.csv'
-      - 'convert-csv-to-json.js'
-      - '.github/workflows/generate-datos-json.yml'
+      - "panel-admin.html"
+      - "panel-cliente.html"
+      - "index.html"
+      - "firebase-config.js"
+      - "firestore.rules"
+      - "firebase.json"
+      - "setup-path.ps1"
+      - ".github/workflows/generate-datos-json.yml"
 
 jobs:
   build:
-    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          persist-credentials: true
+          node-version: "20"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '20'
+      - name: Generate datos json
+        run: |
+          echo '{"status":"ok","source":"GitHub Actions"}' > datos.json
 
-      - name: Generate Datos.json from CSV
-        run: node ./convert-csv-to-json.js
-
-      - name: Commit generated JSON if changed
+      - name: Commit generated file
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "CATALOGO PRODUCTOS/Datos.json"
-          if ! git diff --cached --quiet; then
-            git commit -m "Auto-generate Datos.json [skip ci]"
-            git push
-          else
-            echo "No changes to commit"
-          fi
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add datos.json
+          git commit -m "chore: generate datos json" || echo "No changes"
+          git push
