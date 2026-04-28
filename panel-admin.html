@@ -1374,35 +1374,141 @@ function renderMejoras(){
   }).join('');
 }
 
-// ── TOAST ────────────────────────────────────────────
-function toast(msg,type){
-  var t=document.getElementById('toast');
-  t.textContent=msg;
-  t.className='show '+(type||'ok');
-  clearTimeout(window._toastT);
-  window._toastT=setTimeout(function(){t.className='';},2800);
+function normalizeUserData(u, idFallback = "") {
+  const user = u.user || u.u || idFallback;
+  const pass = u.pass || u.p || "";
+  const lic = u.licExpiry || u.exp || new Date(Date.now() + 30 * 864e5).toISOString();
+  return {
+    user,
+    pass,
+    nombre: u.nombre || "",
+    role: u.role || "cliente",
+    estado: u.estado || "activo",
+    licExpiry: typeof lic === "number" ? new Date(lic).toISOString() : lic
+  };
 }
 
-function saveSessionV16(user){
-  try{ localStorage.setItem('ov_session_v16', JSON.stringify({u:user.u||user.user||'', role:user.role||'', nombre:user.nombre||'', t:Date.now()})); }catch(e){}
+async function saveUserRemote(userData) {
+  const payload = normalizeUserData(userData);
+  if (!payload.user) return;
+  await window.db.collection("users").doc(payload.user).set(payload, { merge: true });
 }
-function restoreSessionV16(expectedRole){
-  try{
-    var s = JSON.parse(localStorage.getItem('ov_session_v16')||'null');
-    if(!s) return false;
-    if(expectedRole && s.role !== expectedRole) return false;
-    var ls = document.getElementById('loginScreen');
-    var app = document.getElementById('app');
-    if(ls) ls.style.display='none';
-    if(app) app.style.display='block';
-    return true;
-  }catch(e){ return false; }
+
+async function loadAdminUsers() {
+  const snap = await window.db.collection("users").get();
+  const users = [];
+  snap.forEach((d) => {
+    users.push(normalizeUserData(d.data(), d.id));
+  });
+  return users;
 }
-window.addEventListener('load', function(){
-  if (typeof restoreSessionV16 === 'function') {
-    restoreSessionV16('admin');
+
+async function deleteRemoteUser(uid) {
+  await window.db.collection("users").doc(uid).delete();
+}
+
+async function addCliUser() {
+  const u = document.getElementById("cnu").value.trim();
+  const n = document.getElementById("cnn").value.trim();
+  const p = document.getElementById("cnp").value.trim();
+  const l = parseInt(document.getElementById("cnl").value, 10) || 365;
+
+  if (!u || !n || !p) {
+    toast("Completa todos los campos", "warn");
+    return;
   }
-});
+  if (CLIUSERS.find(x => x.user === u || x.u === u)) {
+    toast("Usuario ya existe", "err");
+    return;
+  }
+
+  const newUser = {
+    user: u,
+    pass: p,
+    nombre: n,
+    role: "cliente",
+    estado: "activo",
+    licExpiry: new Date(Date.now() + l * 864e5).toISOString()
+  };
+
+  CLIUSERS.push(newUser);
+  addLog("Crear", u, "Cliente");
+  saveAll();
+  await saveUserRemote(newUser);
+  renderUsuarios();
+  document.getElementById("cnu").value = "";
+  document.getElementById("cnn").value = "";
+  document.getElementById("cnp").value = "";
+  toast("Usuario creado", "ok");
+}
+
+async function addVendUser() {
+  const u = document.getElementById("vnu").value.trim();
+  const n = document.getElementById("vnn").value.trim();
+  const p = document.getElementById("vnp").value.trim();
+  const r = document.getElementById("vnr").value;
+
+  if (!u || !n || !p) {
+    toast("Completa todos los campos", "warn");
+    return;
+  }
+  if (VENDUSERS.find(x => x.u === u || x.user === u)) {
+    toast("Usuario ya existe", "err");
+    return;
+  }
+
+  const newVend = {
+    user: u,
+    pass: p,
+    nombre: n,
+    role: r || "vendedor",
+    estado: "activo",
+    licExpiry: new Date(Date.now() + 365 * 864e5).toISOString()
+  };
+
+  VENDUSERS.push(newVend);
+  addLog("Crear", u, "Vendedor");
+  saveAll();
+  await saveUserRemote(newVend);
+  renderUsuarios();
+  document.getElementById("vnu").value = "";
+  document.getElementById("vnn").value = "";
+  document.getElementById("vnp").value = "";
+  toast("Usuario creado", "ok");
+}
+
+async function delUser(btn) {
+  const idx = parseInt(btn.getAttribute("data-i"), 10);
+  const tipo = btn.getAttribute("data-t");
+  const arr = tipo === "cli" ? CLIUSERS : VENDUSERS;
+  const target = arr[idx];
+  const uid = target.user || target.u;
+
+  if (!confirm("¿Eliminar usuario " + uid + "?")) return;
+
+  addLog("Eliminar", uid, tipo === "cli" ? "Cliente" : "Vendedor");
+  arr.splice(idx, 1);
+  saveAll();
+  await deleteRemoteUser(uid);
+  renderUsuarios();
+  toast("Usuario eliminado", "ok");
+}
+
+async function toggleBlock(btn) {
+  const idx = parseInt(btn.getAttribute("data-i"), 10);
+  const tipo = btn.getAttribute("data-t");
+  const arr = tipo === "cli" ? CLIUSERS : VENDUSERS;
+  const user = arr[idx];
+  const uid = user.user || user.u;
+
+  user.estado = user.estado === "bloqueado" ? "activo" : "bloqueado";
+
+  addLog(user.estado === "bloqueado" ? "Bloquear" : "Desbloquear", uid, tipo === "cli" ? "Cliente" : "Vendedor");
+  saveAll();
+  await saveUserRemote(user);
+  renderUsuarios();
+  toast(user.estado === "bloqueado" ? "Usuario bloqueado" : "Usuario desbloqueado", "ok");
+}
 
 </script>
 <div id="toastV16" class="toast-v16"></div><div id="connStatusV16" class="status-v16">En línea</div></body>
