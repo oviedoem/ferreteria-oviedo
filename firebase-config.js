@@ -1,15 +1,13 @@
+
 // ============================================================================
 // firebase-config.js - Configuración mejorada de Firebase con Firestore (V16)
-// ============================================================================
-// Este archivo inicializa Firebase y proporciona funciones para sincronizar
-// el catálogo de productos desde Firestore, así como la gestión de usuarios,
-// sesiones, cotizaciones y configuración del negocio.
 // ============================================================================
 
 var db = null;
 var catalogoCache = null;
 var ultimaCargaCatalogo = 0;
-var CACHE_TTL = 5 * 60 * 1000; // 5 minutos en milisegundos
+var CACHE_TTL = 5 * 60 * 1000;
+var presenciaCache = {};
 
 var firebaseConfig = {
   apiKey: "AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",
@@ -20,50 +18,38 @@ var firebaseConfig = {
   appId: "1:869283555582:web:6d5c64b33fd9cf6d861daf"
 };
 
-// Inicializar Firebase (solo si está disponible y no ha sido inicializado)
 if (typeof firebase !== 'undefined' && !firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
-  console.log('[Firebase] Inicializado correctamente. Proyecto:', firebaseConfig.projectId);
 } else if (typeof firebase !== 'undefined' && firebase.apps.length) {
   db = firebase.firestore();
-  console.log('[Firebase] Ya inicializado. Usando instancia existente.');
-} else {
-  console.error('[Firebase] SDK de Firebase no cargado.');
 }
 
-// ============================================================================
-// FUNCIONES DE CATÁLOGO - Sincronización con Firestore
-// ============================================================================
+function nowTs() {
+  return firebase.firestore.FieldValue.serverTimestamp();
+}
 
 function cargarCatalogo(callback) {
   if (!db) return callback(new Error('Firebase no disponible'), null);
   const ahora = Date.now();
   if (catalogoCache && (ahora - ultimaCargaCatalogo) < CACHE_TTL) return callback(null, catalogoCache);
-
-  db.collection('productos').get()
-    .then(snapshot => {
-      const productos = [];
-      snapshot.forEach(doc => productos.push(doc.data()));
-      catalogoCache = { productos: productos, ultimaActualizacion: new Date().toISOString() };
-      ultimaCargaCatalogo = ahora;
-      callback(null, catalogoCache);
-    })
-    .catch(err => callback(err, null));
+  db.collection('productos').get().then(snapshot => {
+    const productos = [];
+    snapshot.forEach(doc => productos.push(doc.data()));
+    catalogoCache = { productos: productos, ultimaActualizacion: new Date().toISOString() };
+    ultimaCargaCatalogo = ahora;
+    callback(null, catalogoCache);
+  }).catch(err => callback(err, null));
 }
 
 function guardarCotizacion(cotizacion, callback) {
   if (!db) return callback(new Error('Firebase no disponible'), null);
   db.collection('cotizaciones').add({
     ...cotizacion,
-    ts: firebase.firestore.FieldValue.serverTimestamp(),
+    ts: nowTs(),
     createdAt: new Date().toISOString()
   }).then(doc => callback(null, { id: doc.id })).catch(err => callback(err, null));
 }
-
-// ============================================================================
-// FUNCIONES DE USUARIOS Y SESIONES
-// ============================================================================
 
 function normalizeUserRecord(data) {
   if (!data) return data;
@@ -72,6 +58,7 @@ function normalizeUserRecord(data) {
   data.nombre = data.nombre || data.name || '';
   data.role = data.role || 'cliente';
   data.estado = data.estado || 'activo';
+  data.app = data.app || data.origen || 'cliente';
   return data;
 }
 
@@ -80,13 +67,23 @@ function apiGet(params, cb) {
   const { action } = params;
   if (action === 'getUsers') {
     db.collection('users').get().then(snap => {
-      const users = []; snap.forEach(doc => users.push(normalizeUserRecord(doc.data())));
+      const users = [];
+      snap.forEach(doc => users.push(normalizeUserRecord(doc.data())));
       cb(null, users);
     }).catch(err => cb(err, null));
   } else if (action === 'getSessions') {
     db.collection('sessions').where('ts', '>', new Date(Date.now() - 30 * 60000)).get().then(snap => {
-      const sessions = []; snap.forEach(doc => sessions.push(doc.data()));
+      const sessions = [];
+      snap.forEach(doc => sessions.push(doc.data()));
       cb(null, sessions);
+    }).catch(err => cb(err, null));
+  } else if (action === 'getConfigUrls') {
+    db.collection('config').doc('urls').get().then(doc => cb(null, doc.exists ? doc.data() : null)).catch(err => cb(err, null));
+  } else if (action === 'getSesionesActivas') {
+    db.collection('sesiones_activas').get().then(snap => {
+      const items = [];
+      snap.forEach(doc => items.push(doc.data()));
+      cb(null, items);
     }).catch(err => cb(err, null));
   }
 }
@@ -99,27 +96,93 @@ function apiPost(body, cb) {
   } else if (action === 'deleteUser') {
     db.collection('users').doc(body.u).delete().then(() => cb(null, { success: true })).catch(err => cb(err, null));
   } else if (action === 'logSession') {
-    db.collection('sessions').add({ ...data, ts: firebase.firestore.FieldValue.serverTimestamp() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
+    db.collection('sessions').add({ ...data, ts: nowTs() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
   } else if (action === 'savePromo') {
-    db.collection('promos').add({ ...data, ts: firebase.firestore.FieldValue.serverTimestamp() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
+    db.collection('promos').add({ ...data, ts: nowTs() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
   } else if (action === 'deletePromo') {
     db.collection('promos').doc(body.id).delete().then(() => cb(null, { success: true })).catch(err => cb(err, null));
+  } else if (action === 'guardarConfigUrls') {
+    db.collection('config').doc('urls').set({ pub: data.pub || '', proxy: data.proxy || '', ts: nowTs() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
+  } else if (action === 'promoverConexion') {
+    db.collection('config').doc('broadcast').set({ msg: data.msg || 'Actualización detectada', ts: nowTs() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
+  } else if (action === 'registrarSesionActiva') {
+    db.collection('sesiones_activas').doc(data.uid).set({ ...data, ts: nowTs() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
+  } else if (action === 'guardarNotificacion') {
+    db.collection('notificaciones').add({ ...data, ts: nowTs() }).then(() => cb(null, { success: true })).catch(err => cb(err, null));
   }
 }
 
-// ============================================================================
-// HERRAMIENTAS DE CONFIGURACIÓN
-// ============================================================================
-
 function guardarURLWebhook(url, cb) {
   if (!db) return cb(new Error('Firebase no disponible'));
-  db.collection('config').doc('webhook').set({ url: url, ts: firebase.firestore.FieldValue.serverTimestamp() })
-    .then(() => cb(null)).catch(err => cb(err));
+  db.collection('config').doc('webhook').set({ url: url, ts: nowTs() }).then(() => cb(null)).catch(err => cb(err));
 }
 
 function probarConexionFirebase(cb) {
   if (!db) return cb(new Error('Firebase no disponible'));
-  db.collection('config').doc('test').set({ ping: Date.now() })
-    .then(() => cb(null, { proyecto: firebaseConfig.projectId }))
-    .catch(err => cb(err));
+  db.collection('config').doc('test').set({ ping: Date.now() }).then(() => cb(null, { proyecto: firebaseConfig.projectId })).catch(err => cb(err));
+}
+
+function guardarConfigUrls(pub, proxy, cb) {
+  apiPost({ action: 'guardarConfigUrls', data: { pub: pub, proxy: proxy } }, cb);
+}
+
+function promoverConexion(msg, cb) {
+  apiPost({ action: 'promoverConexion', data: { msg: msg } }, cb);
+}
+
+function registrarSesionActiva(uid, nombre, app, dispositivo, cb) {
+  apiPost({ action: 'registrarSesionActiva', data: { uid: uid, nombre: nombre, app: app, dispositivo: dispositivo } }, cb);
+}
+
+function guardarNotificacion(msg, cb) {
+  apiPost({ action: 'guardarNotificacion', data: { msg: msg } }, cb);
+}
+
+function escucharConfigUrls(cb) {
+  if (!db) return;
+  db.collection('config').doc('urls').onSnapshot(doc => {
+    cb(doc.exists ? doc.data() : null);
+  });
+}
+
+function escucharBroadcast(cb) {
+  if (!db) return;
+  db.collection('config').doc('broadcast').onSnapshot(doc => {
+    cb(doc.exists ? doc.data() : null);
+  });
+}
+
+function escucharSesionesActivas(cb) {
+  if (!db) return;
+  db.collection('sesiones_activas').onSnapshot(snap => {
+    const items = [];
+    snap.forEach(doc => items.push(doc.data()));
+    cb(items);
+  });
+}
+
+function escucharNotificaciones(cb) {
+  if (!db) return;
+  db.collection('notificaciones').orderBy('ts', 'desc').limit(20).onSnapshot(snap => {
+    const items = [];
+    snap.forEach(doc => items.push(doc.data()));
+    cb(items);
+  });
+}
+
+function escucharMetricasDashboard(cb) {
+  if (!db) return;
+  Promise.all([
+    db.collection('sesiones_activas').get(),
+    db.collection('users').get(),
+    db.collection('cotizaciones').get()
+  ]).then(([sesSnap, userSnap, cotSnap]) => {
+    const sesiones = [];
+    sesSnap.forEach(doc => sesiones.push(doc.data()));
+    const users = [];
+    userSnap.forEach(doc => users.push(normalizeUserRecord(doc.data())));
+    const cots = [];
+    cotSnap.forEach(doc => cots.push(doc.data()));
+    cb({ sesiones, users, cots });
+  });
 }
