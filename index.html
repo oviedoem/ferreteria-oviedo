@@ -28,6 +28,28 @@ function startAppV16(){
   }
 }
 
+
+function saveSessionV16(user){
+  try{ localStorage.setItem('ov_session_v16', JSON.stringify({u:user.u||user.user||'', role:user.role||'', nombre:user.nombre||'', t:Date.now()})); }catch(e){}
+}
+function restoreSessionV16(expectedRole){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_session_v16')||'null');
+    if(!s) return false;
+    if(expectedRole && s.role !== expectedRole) return false;
+    var ls = document.getElementById('loginScreen');
+    var app = document.getElementById('app');
+    if(ls) ls.style.display='none';
+    if(app) app.style.display='block';
+    return true;
+  }catch(e){ return false; }
+}
+window.addEventListener('load', function(){
+  if (typeof restoreSessionV16 === 'function') {
+    restoreSessionV16('admin');
+  }
+});
+
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
 function startAppV16(){
@@ -51,6 +73,28 @@ function startAppV16(){
     } catch(e) {}
   }
 }
+
+
+function saveSessionV16(user){
+  try{ localStorage.setItem('ov_session_v16', JSON.stringify({u:user.u||user.user||'', role:user.role||'', nombre:user.nombre||'', t:Date.now()})); }catch(e){}
+}
+function restoreSessionV16(expectedRole){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_session_v16')||'null');
+    if(!s) return false;
+    if(expectedRole && s.role !== expectedRole) return false;
+    var ls = document.getElementById('loginScreen');
+    var app = document.getElementById('app');
+    if(ls) ls.style.display='none';
+    if(app) app.style.display='block';
+    return true;
+  }catch(e){ return false; }
+}
+window.addEventListener('load', function(){
+  if (typeof restoreSessionV16 === 'function') {
+    restoreSessionV16('admin');
+  }
+});
 
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
@@ -76,6 +120,28 @@ function startAppV16(){
   }
 }
 
+
+function saveSessionV16(user){
+  try{ localStorage.setItem('ov_session_v16', JSON.stringify({u:user.u||user.user||'', role:user.role||'', nombre:user.nombre||'', t:Date.now()})); }catch(e){}
+}
+function restoreSessionV16(expectedRole){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_session_v16')||'null');
+    if(!s) return false;
+    if(expectedRole && s.role !== expectedRole) return false;
+    var ls = document.getElementById('loginScreen');
+    var app = document.getElementById('app');
+    if(ls) ls.style.display='none';
+    if(app) app.style.display='block';
+    return true;
+  }catch(e){ return false; }
+}
+window.addEventListener('load', function(){
+  if (typeof restoreSessionV16 === 'function') {
+    restoreSessionV16('admin');
+  }
+});
+
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
 function startAppV16(){
@@ -100,6 +166,28 @@ function startAppV16(){
   }
 }
 
+
+function saveSessionV16(user){
+  try{ localStorage.setItem('ov_session_v16', JSON.stringify({u:user.u||user.user||'', role:user.role||'', nombre:user.nombre||'', t:Date.now()})); }catch(e){}
+}
+function restoreSessionV16(expectedRole){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_session_v16')||'null');
+    if(!s) return false;
+    if(expectedRole && s.role !== expectedRole) return false;
+    var ls = document.getElementById('loginScreen');
+    var app = document.getElementById('app');
+    if(ls) ls.style.display='none';
+    if(app) app.style.display='block';
+    return true;
+  }catch(e){ return false; }
+}
+window.addEventListener('load', function(){
+  if (typeof restoreSessionV16 === 'function') {
+    restoreSessionV16('admin');
+  }
+});
+
 </script>
 <script src="firebase-config-V16-FINAL.js">
 function startAppV16(){
@@ -123,6 +211,28 @@ function startAppV16(){
     } catch(e) {}
   }
 }
+
+
+function saveSessionV16(user){
+  try{ localStorage.setItem('ov_session_v16', JSON.stringify({u:user.u||user.user||'', role:user.role||'', nombre:user.nombre||'', t:Date.now()})); }catch(e){}
+}
+function restoreSessionV16(expectedRole){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_session_v16')||'null');
+    if(!s) return false;
+    if(expectedRole && s.role !== expectedRole) return false;
+    var ls = document.getElementById('loginScreen');
+    var app = document.getElementById('app');
+    if(ls) ls.style.display='none';
+    if(app) app.style.display='block';
+    return true;
+  }catch(e){ return false; }
+}
+window.addEventListener('load', function(){
+  if (typeof restoreSessionV16 === 'function') {
+    restoreSessionV16('admin');
+  }
+});
 
 </script>
 <style>
@@ -284,7 +394,7 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
 .abtn2.grn{background:var(--vd)}
 .abtn2.org{background:var(--og)}
 </style>
-</head>
+<style>.toast-v16{position:fixed;right:16px;bottom:16px;z-index:99999;padding:12px 14px;border-radius:10px;color:#fff;font:600 13px/1.2 system-ui;display:none}.toast-v16.info{background:#2563eb}.toast-v16.ok{background:#16a34a}.toast-v16.err{background:#dc2626}.status-v16{position:fixed;left:16px;bottom:16px;z-index:99999;padding:8px 10px;border-radius:999px;background:#111;color:#fff;font:600 12px system-ui}</style></head>
 <body>
 
 <!-- LOGIN -->
@@ -1144,6 +1254,28 @@ function startAppV16(){
   }
 }
 
+
+function saveSessionV16(user){
+  try{ localStorage.setItem('ov_session_v16', JSON.stringify({u:user.u||user.user||'', role:user.role||'', nombre:user.nombre||'', t:Date.now()})); }catch(e){}
+}
+function restoreSessionV16(expectedRole){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_session_v16')||'null');
+    if(!s) return false;
+    if(expectedRole && s.role !== expectedRole) return false;
+    var ls = document.getElementById('loginScreen');
+    var app = document.getElementById('app');
+    if(ls) ls.style.display='none';
+    if(app) app.style.display='block';
+    return true;
+  }catch(e){ return false; }
+}
+window.addEventListener('load', function(){
+  if (typeof restoreSessionV16 === 'function') {
+    restoreSessionV16('admin');
+  }
+});
+
 </script>
-</body>
+<div id="toastV16" class="toast-v16"></div><div id="connStatusV16" class="status-v16">En línea</div></body>
 </html>
