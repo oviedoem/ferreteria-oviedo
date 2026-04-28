@@ -1,106 +1,41 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper: obtener rol del usuario actual
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
 
-    function isAdmin() {
-      return getUserRole() == 'admin';
-    }
-
-    function isVendor() {
-      return getUserRole() == 'vendedor';
-    }
-
-    function isClient() {
-      return getUserRole() == 'cliente';
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // COLECCIÓN: users (gestión de usuarios)
-    // ─────────────────────────────────────────────────────────
     match /users/{userId} {
-      // Admin puede leer/escribir todos los usuarios
-      allow read, write: if isAdmin();
-      
-      // Un usuario puede leer su propio perfil
-      allow read: if request.auth.uid == userId;
-      
-      // Un usuario puede actualizar su propio perfil (sin cambiar rol)
-      allow update: if request.auth.uid == userId 
-        && !request.resource.data.diff(resource.data).affectedKeys().contains('role')
-        && !request.resource.data.diff(resource.data).affectedKeys().contains('estado')
-        && !request.resource.data.diff(resource.data).affectedKeys().contains('exp')
-        && !request.resource.data.diff(resource.data).affectedKeys().contains('licExpiry');
-      
-      // No permitir creación de usuarios desde cliente (solo admin)
-      allow create: if isAdmin();
-      
-      // No permitir eliminar usuarios desde cliente (solo admin)
-      allow delete: if isAdmin();
-
-      // Ocultar campos sensibles en lecturas
-      function publicFields() {
-        return request.method == 'get' || request.method == 'list';
-      }
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    // ─────────────────────────────────────────────────────────
-    // COLECCIÓN: cotizaciones
-    // ─────────────────────────────────────────────────────────
-    match /cotizaciones/{cotizacionId} {
-      // Admin: lectura total
-      allow read: if isAdmin();
-      
-      // Clientes y vendedores pueden ver sus propias cotizaciones
-      allow read: if (isClient() || isVendor()) 
-        && resource.data.usuario == request.auth.uid;
-      
-      // Crear cotización: cliente o vendedor
-      allow create: if (isClient() || isVendor())
-        && request.resource.data.usuario == request.auth.uid
-        && request.resource.data.ts != null;
-      
-      // Actualizar cotización: solo el propietario o admin
-      allow update: if isAdmin() 
-        || (request.auth.uid == resource.data.usuario);
-      
-      // Eliminar cotización: solo admin
-      allow delete: if isAdmin();
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // COLECCIÓN: sessions (registro de sesiones)
-    // ─────────────────────────────────────────────────────────
     match /sessions/{sessionId} {
-      // Admin: lectura total
-      allow read: if isAdmin();
-      
-      // Todos los usuarios pueden crear su propia sesión
-      allow create: if request.resource.data.user == request.auth.uid;
-      
-      // No se pueden modificar ni eliminar sesiones
-      allow update, delete: if false;
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────
-    // COLECCIÓN: catalogo (productos)
-    // ─────────────────────────────────────────────────────────
-    match /catalogo/{productoId} {
-      // Todos pueden leer catálogo
-      allow read: if request.auth != null;
-      
-      // Solo admin puede escribir
-      allow write: if isAdmin();
+    match /sesiones_activas/{sesId} {
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────
-    // REGLA POR DEFECTO: denegar todo
-    // ─────────────────────────────────────────────────────────
-    match /{document=**} {
-      allow read, write: if false;
+    match /cotizaciones/{cotizId} {
+      allow read, write: if true;
+    }
+
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /promos/{promoId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /notificaciones/{notiId} {
+      allow read, write: if true;
+    }
+
+    match /productos/{prodId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
