@@ -5,30 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Ferretería Oviedo</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
-function initV16Hooks(){
-  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
-  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
-  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
-}
-
-</script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
-function initV16Hooks(){
-  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
-  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
-  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
-}
-
-</script>
-<script src="firebase-config-V16.js">
-function initV16Hooks(){
-  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
-  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
-  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
-}
-
-</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config-V16.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
@@ -1325,15 +1304,6 @@ function toast(msg,type){
   clearTimeout(window._toastT);
   window._toastT=setTimeout(function(){t.className='';},2800);
 }
-
-function initV16Hooks(){
-  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
-  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
-  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
-}
-
 </script>
 </body>
 </html>
-
-<script>document.addEventListener("DOMContentLoaded", function(){ if(typeof initV16Hooks === "function") initV16Hooks(); });</script>
