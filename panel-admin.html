@@ -1028,106 +1028,151 @@ function descargarCotizacionPDF(idx){
 }
 
 // ── USUARIOS ─────────────────────────────────────────
-function renderUsuarios(){
+function normalizeUserData(u, idFallback) {
+  var user = u.user || u.u || idFallback || '';
+  var pass = u.pass || u.p || '';
+  var lic = u.licExpiry || u.exp || new Date(Date.now() + 30 * 864e5).toISOString();
+  return {
+    user: user,
+    pass: pass,
+    nombre: u.nombre || '',
+    role: u.role || 'cliente',
+    estado: u.estado || 'activo',
+    licExpiry: typeof lic === 'number' ? new Date(lic).toISOString() : lic
+  };
+}
+
+async function saveUserRemote(userData) {
+  if (!window.db) return;
+  var payload = normalizeUserData(userData);
+  if (!payload.user) return;
+  await window.db.collection('users').doc(payload.user).set(payload, { merge: true });
+}
+
+async function deleteRemoteUser(uid) {
+  if (!window.db) return;
+  await window.db.collection('users').doc(uid).delete();
+}
+
+function renderUsuarios() {
   var div = document.getElementById('tablaCliUsuarios');
-  if(CLI_USERS.length===0){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin usuarios.</p>'; }
-  else {
-    div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Licencia</th><th>Estado</th><th>Acciones</th></tr>'+
-      CLI_USERS.map(function(u,idx){
-        var dias=Math.ceil((new Date(u.licExpiry).getTime()-Date.now())/864e5);
-        var licBadge=dias>0?'<span class="badge badge-verde">'+dias+'d</span>':'<span class="badge badge-rojo">Vencido</span>';
-        var estBadge=u.estado==='activo'?'<span class="badge badge-verde">Activo</span>':u.estado==='bloqueado'?'<span class="badge badge-rojo">Bloqueado</span>':'<span class="badge badge-gris">—</span>';
-        var acc=u.role!=='admin'?
-          '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="cli" onclick="delUser(this)">🗑</button> '+
-          '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="cli" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>':'—';
-        return '<tr><td><b>'+u.user+'</b></td><td>'+u.nombre+'</td><td><span class="badge badge-azul">'+u.role+'</span></td><td>'+licBadge+'</td><td>'+estBadge+'</td><td>'+acc+'</td></tr>';
-      }).join('')+
+  if (CLIUSERS.length === 0) {
+    div.innerHTML = '<p style="color:#9ca3af;font-size:13px">Sin usuarios.</p>';
+  } else {
+    div.innerHTML = '<div style="overflow-x:auto"><table class="tbl">' +
+      '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Licencia</th><th>Estado</th><th>Acciones</th></tr>' +
+      CLIUSERS.map(function(u, idx) {
+        u = normalizeUserData(u, u.user || u.u);
+        var dias = Math.ceil((new Date(u.licExpiry).getTime() - Date.now()) / 864e5);
+        var licBadge = dias > 0 ? '<span class="badge badge-verde">' + dias + 'd</span>' : '<span class="badge badge-rojo">Vencido</span>';
+        var estBadge = u.estado === 'activo' ? '<span class="badge badge-verde">Activo</span>' : u.estado === 'bloqueado' ? '<span class="badge badge-rojo">Bloqueado</span>' : '<span class="badge badge-gris">—</span>';
+        var acc = u.role !== 'admin'
+          ? '<button class="btn btn-sm btn-danger" data-i="' + idx + '" data-t="cli" onclick="delUser(this)">🗑</button> ' +
+            '<button class="btn btn-sm ' + (u.estado === 'bloqueado' ? 'btn-success' : 'btn-warn') + '" data-i="' + idx + '" data-t="cli" onclick="toggleBlock(this)">' + (u.estado === 'bloqueado' ? '✅' : '🚫') + '</button>'
+          : '—';
+        return '<tr><td><b>' + u.user + '</b></td><td>' + u.nombre + '</td><td><span class="badge badge-azul">' + u.role + '</span></td><td>' + licBadge + '</td><td>' + estBadge + '</td><td>' + acc + '</td></tr>';
+      }).join('') +
     '</table></div>';
   }
 
   var div2 = document.getElementById('tablaVendUsuarios');
-  div2.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-    '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>'+
-    VEND_USERS.map(function(u,idx){
-      var estBadge=u.estado==='bloqueado'?'<span class="badge badge-rojo">Bloqueado</span>':'<span class="badge badge-verde">Activo</span>';
-      var acc=u.role!=='admin'?
-        '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="vend" onclick="delUser(this)">🗑</button> '+
-        '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="vend" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>':'—';
-      return '<tr><td><b>'+u.u+'</b></td><td>'+u.nombre+'</td><td><span class="badge badge-azul">'+u.role+'</span></td><td>'+estBadge+'</td><td>'+acc+'</td></tr>';
-    }).join('')+
+  div2.innerHTML = '<div style="overflow-x:auto"><table class="tbl">' +
+    '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>' +
+    VENDUSERS.map(function(u, idx) {
+      u = normalizeUserData(u, u.user || u.u);
+      var estBadge = u.estado === 'bloqueado' ? '<span class="badge badge-rojo">Bloqueado</span>' : '<span class="badge badge-verde">Activo</span>';
+      var acc = u.role !== 'admin'
+        ? '<button class="btn btn-sm btn-danger" data-i="' + idx + '" data-t="vend" onclick="delUser(this)">🗑</button> ' +
+          '<button class="btn btn-sm ' + (u.estado === 'bloqueado' ? 'btn-success' : 'btn-warn') + '" data-i="' + idx + '" data-t="vend" onclick="toggleBlock(this)">' + (u.estado === 'bloqueado' ? '✅' : '🚫') + '</button>'
+        : '—';
+      return '<tr><td><b>' + u.user + '</b></td><td>' + u.nombre + '</td><td><span class="badge badge-azul">' + u.role + '</span></td><td>' + estBadge + '</td><td>' + acc + '</td></tr>';
+    }).join('') +
   '</table></div>';
 
   var logDiv = document.getElementById('logUsuarios');
-  if(LOG.length===0){ logDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cambios.</p>'; return; }
-  logDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-    '<tr><th>Fecha</th><th>Acción</th><th>Usuario</th><th>App</th></tr>'+
-    LOG.slice(-30).reverse().map(function(l){
-      return '<tr><td>'+new Date(l.ts).toLocaleString('es-CL')+'</td><td>'+l.accion+'</td><td>'+l.user+'</td><td>'+l.app+'</td></tr>';
-    }).join('')+
+  if (LOG.length === 0) {
+    logDiv.innerHTML = '<p style="color:#9ca3af;font-size:13px">Sin cambios.</p>';
+    return;
+  }
+  logDiv.innerHTML = '<div style="overflow-x:auto"><table class="tbl">' +
+    '<tr><th>Fecha</th><th>Acción</th><th>Usuario</th><th>App</th></tr>' +
+    LOG.slice(-30).reverse().map(function(l) {
+      return '<tr><td>' + new Date(l.ts).toLocaleString('es-CL') + '</td><td>' + l.accion + '</td><td>' + l.user + '</td><td>' + l.app + '</td></tr>';
+    }).join('') +
   '</table></div>';
 }
 
-function addLog(accion,user,app){
-  LOG.push({ts:Date.now(),accion:accion,user:user,app:app});
-  if(LOG.length>100) LOG.shift();
+function addLog(accion, user, app) {
+  LOG.push({ ts: Date.now(), accion: accion, user: user, app: app });
+  if (LOG.length > 100) LOG.shift();
   saveAll();
 }
 
-function addCliUser(){
-  var u=document.getElementById('cnu').value.trim();
-  var n=document.getElementById('cnn').value.trim();
-  var p=document.getElementById('cnp').value.trim();
-  var l=parseInt(document.getElementById('cnl').value)||365;
-  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
-  if(CLI_USERS.find(function(x){return x.user===u;})){toast('Usuario ya existe','err');return;}
-  var newUser = {user:u,pass:p,nombre:n,role:'cliente',licExpiry:new Date(Date.now()+l*864e5).toISOString(),estado:'activo'};
-  CLI_USERS.push(newUser);
-  addLog('Crear',u,'Cliente');
-  saveAll(); saveRemoteUser(newUser); renderUsuarios();
-  document.getElementById('cnu').value=''; document.getElementById('cnn').value=''; document.getElementById('cnp').value='';
-  toast('Usuario '+u+' creado','ok');
-}
-
-function addVendUser(){
-  var u=document.getElementById('vnu').value.trim();
-  var n=document.getElementById('vnn').value.trim();
-  var p=document.getElementById('vnp').value.trim();
-  var r=document.getElementById('vnr').value;
-  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
-  if(VEND_USERS.find(function(x){return x.u===u;})){toast('Usuario ya existe','err');return;}
-  var newVend = {u:u,p:p,nombre:n,role:r,exp:Date.now()+365*864e5,estado:'activo'};
-  VEND_USERS.push(newVend);
-  addLog('Crear',u,'Vendedor');
-  saveAll(); saveRemoteUser(newVend); renderUsuarios();
-  document.getElementById('vnu').value=''; document.getElementById('vnn').value=''; document.getElementById('vnp').value='';
-  toast('Usuario '+u+' creado','ok');
-}
-
-function delUser(btn){
-  var idx=parseInt(btn.getAttribute('data-i'));
-  var tipo=btn.getAttribute('data-t');
-  var arr=tipo==='cli'?CLI_USERS:VEND_USERS;
-  var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
-  if(!confirm('¿Eliminar usuario "'+uname+'"?')) return;
-  addLog('Eliminar',uname,tipo==='cli'?'Cliente':'Vendedor');
-  var target = arr[idx];
-  arr.splice(idx,1);
-  saveAll(); if (tipo==='cli') deleteRemoteUser(target.user); else deleteRemoteUser(target.u);
+async function addCliUser() {
+  var u = document.getElementById('cnu').value.trim();
+  var n = document.getElementById('cnn').value.trim();
+  var p = document.getElementById('cnp').value.trim();
+  var l = parseInt(document.getElementById('cnl').value) || 365;
+  if (!u || !n || !p) { toast('Completa todos los campos', 'warn'); return; }
+  if (CLIUSERS.find(function(x) { return (x.user || x.u) === u; })) { toast('Usuario ya existe', 'err'); return; }
+  var newUser = { user: u, pass: p, nombre: n, role: 'cliente', licExpiry: new Date(Date.now() + l * 864e5).toISOString(), estado: 'activo' };
+  CLIUSERS.push(newUser);
+  addLog('Crear', u, 'Cliente');
+  saveAll();
+  await saveUserRemote(newUser);
   renderUsuarios();
-  toast('Usuario eliminado','ok');
+  document.getElementById('cnu').value = '';
+  document.getElementById('cnn').value = '';
+  document.getElementById('cnp').value = '';
+  toast('Usuario ' + u + ' creado', 'ok');
 }
 
-function toggleBlock(btn){
-  var idx=parseInt(btn.getAttribute('data-i'));
-  var tipo=btn.getAttribute('data-t');
-  var arr=tipo==='cli'?CLI_USERS:VEND_USERS;
-  var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
-  var nuevoEstado=arr[idx].estado==='bloqueado'?'activo':'bloqueado';
-  arr[idx].estado=nuevoEstado;
-  addLog(nuevoEstado==='bloqueado'?'Bloquear':'Desbloquear',uname,tipo==='cli'?'Cliente':'Vendedor');
-  saveAll(); if (window.db) saveRemoteUser(arr[idx]); renderUsuarios();
-  toast('Usuario '+(nuevoEstado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
+async function addVendUser() {
+  var u = document.getElementById('vnu').value.trim();
+  var n = document.getElementById('vnn').value.trim();
+  var p = document.getElementById('vnp').value.trim();
+  var r = document.getElementById('vnr').value;
+  if (!u || !n || !p) { toast('Completa todos los campos', 'warn'); return; }
+  if (VENDUSERS.find(function(x) { return (x.user || x.u) === u; })) { toast('Usuario ya existe', 'err'); return; }
+  var newVend = { user: u, pass: p, nombre: n, role: r || 'vendedor', licExpiry: new Date(Date.now() + 365 * 864e5).toISOString(), estado: 'activo' };
+  VENDUSERS.push(newVend);
+  addLog('Crear', u, 'Vendedor');
+  saveAll();
+  await saveUserRemote(newVend);
+  renderUsuarios();
+  document.getElementById('vnu').value = '';
+  document.getElementById('vnn').value = '';
+  document.getElementById('vnp').value = '';
+  toast('Usuario ' + u + ' creado', 'ok');
+}
+
+async function delUser(btn) {
+  var idx = parseInt(btn.getAttribute('data-i'));
+  var tipo = btn.getAttribute('data-t');
+  var arr = tipo === 'cli' ? CLIUSERS : VENDUSERS;
+  var target = arr[idx];
+  var uname = target.user || target.u;
+  if (!confirm('¿Eliminar usuario "' + uname + '"?')) return;
+  addLog('Eliminar', uname, tipo === 'cli' ? 'Cliente' : 'Vendedor');
+  arr.splice(idx, 1);
+  saveAll();
+  await deleteRemoteUser(uname);
+  renderUsuarios();
+  toast('Usuario eliminado', 'ok');
+}
+
+async function toggleBlock(btn) {
+  var idx = parseInt(btn.getAttribute('data-i'));
+  var tipo = btn.getAttribute('data-t');
+  var arr = tipo === 'cli' ? CLIUSERS : VENDUSERS;
+  var uname = arr[idx].user || arr[idx].u;
+  var nuevoEstado = arr[idx].estado === 'bloqueado' ? 'activo' : 'bloqueado';
+  arr[idx].estado = nuevoEstado;
+  addLog(nuevoEstado === 'bloqueado' ? 'Bloquear' : 'Desbloquear', uname, tipo === 'cli' ? 'Cliente' : 'Vendedor');
+  saveAll();
+  await saveUserRemote(arr[idx]);
+  renderUsuarios();
+  toast('Usuario ' + (nuevoEstado === 'bloqueado' ? 'bloqueado' : 'desbloqueado'), 'ok');
 }
 
 // ── PRECIOS ──────────────────────────────────────────
