@@ -6,22 +6,8 @@
 <title>Ferretería Oviedo — Catálogo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-function initV16Hooks(){
-  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
-  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
-  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
-}
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
-function initV16Hooks(){
-  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
-  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
-  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
   --naranja:#E8450A;--naranja2:#c93a08;--naranja-light:#fff3ee;
@@ -1111,15 +1097,6 @@ function cliAddUser(){
   saveCliUsers(); renderAdminCli();
   toast('Usuario '+u+' creado','ok');
 }
-
-function initV16Hooks(){
-  if (typeof iniciarMonitoreoV16 === 'function') iniciarMonitoreoV16();
-  if (typeof iniciarDashboardV16 === 'function') iniciarDashboardV16();
-  if (typeof registrarPresenciaInicial === 'function') registrarPresenciaInicial();
-}
-
 </script>
 </body>
 </html>
-
-<script>document.addEventListener("DOMContentLoaded", function(){ if(typeof initV16Hooks === "function") initV16Hooks(); });</script>
