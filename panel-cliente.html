@@ -1,20 +1,17 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="es">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ferretería Oviedo — Catálogo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script>window.db=null;try{if(!firebase.apps.length){firebase.initializeApp({apiKey:"AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",authDomain:"ferreteria-oviedo.firebaseapp.com",projectId:"ferreteria-oviedo",storageBucket:"ferreteria-oviedo.firebasestorage.app",messagingSenderId:"869283555582",appId:"1:869283555582:web:6d5c64b33fd9cf6d861daf"});
-  // ── Modo offline (Las Cabras: zona rural) ──
-  if(window.db){
-    window.db.enablePersistence({synchronizeTabs:true})
-      .catch(function(e){ console.warn('[OV offline]',e.code); });
-  }}window.db=firebase.firestore();}catch(e){console.warn("Firebase init error",e);}</script>
+<script src="firebase-config.js"></script>
 <style>
 :root{
   --naranja:#E8450A;--naranja2:#c93a08;--naranja-light:#fff3ee;
@@ -29,16 +26,12 @@ body{font-family:var(--font);background:var(--gris-light);color:var(--gris-dark)
 /* LOGIN */
 #loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1a1a1a 0%,#E8450A 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
 .login-box{background:white;border-radius:20px;padding:40px;width:360px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-.login-logo-img{margin:0 auto 12px;display:block}
 .login-brand{font-size:22px;font-weight:800;color:var(--naranja);margin-bottom:2px;letter-spacing:-0.5px}
-.login-sucursal{font-size:13px;font-weight:600;color:var(--gris-dark);margin-bottom:4px}
 .login-sub{font-size:12px;color:var(--gris-mid);margin-bottom:28px}
 .login-input{width:100%;padding:14px 16px;border:2px solid var(--gris-border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;transition:border .2s;margin-bottom:12px}
 .login-input:focus{border-color:var(--naranja)}
 .login-btn{width:100%;padding:14px;background:var(--naranja);color:white;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;cursor:pointer;transition:background .2s;font-family:var(--font)}
-.login-btn:hover{background:var(--naranja2)}
 .login-error{color:var(--rojo);font-size:13px;margin-top:8px;min-height:18px}
-.license-info{font-size:11px;color:var(--gris-mid);margin-top:14px;padding-top:14px;border-top:1px solid var(--gris-border)}
 
 /* HEADER */
 header{background:white;border-bottom:3px solid var(--naranja);padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
@@ -55,23 +48,16 @@ header{background:white;border-bottom:3px solid var(--naranja);padding:10px 16px
 .sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* VENDEDORES */
-.vend-section{background:linear-gradient(135deg,#fff8f5 0%,#fff 100%);border-bottom:2px solid #f0e0d8;padding:16px 16px 10px}
-.vend-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.vend-header-icon{width:32px;height:32px;background:var(--naranja);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.vend-header-text{font-size:13px;font-weight:800;color:var(--gris-dark);letter-spacing:-.2px}
-.vend-header-sub{font-size:11px;color:var(--gris-mid);margin-top:1px}
-.vend-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media(max-width:420px){.vend-grid{grid-template-columns:1fr}}
-.vend-card{background:white;border-radius:12px;padding:11px 12px;box-shadow:0 2px 8px rgba(232,69,10,.08);border:1px solid #f0e0d8;display:flex;flex-direction:column;gap:6px}
-.vend-card-top{display:flex;align-items:center;gap:9px}
-.vend-avatar{width:36px;height:36px;border-radius:50%;background:var(--naranja);color:white;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:-.5px}
-.vend-name{font-size:13px;font-weight:700;color:var(--gris-dark);line-height:1.2}
-.vend-email{font-size:10px;color:var(--gris-mid);margin-top:1px}
-.vend-email a{color:var(--gris-mid);text-decoration:none}
-.vend-wa{display:flex;align-items:center;justify-content:center;gap:5px;background:#25D366;color:white;border:none;border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;font-family:var(--font);width:100%;transition:background .15s}
-.vend-wa:hover{background:#1da851}
-.vend-wa svg{width:14px;height:14px;fill:white;flex-shrink:0}
+/* PROMOS SECTION */
+.promos-section{padding:16px;background:var(--blanco);border-bottom:1px solid var(--gris-border);display:none;}
+.promos-title{font-size:14px;font-weight:800;color:var(--naranja);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.promos-container{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;}
+.promos-container::-webkit-scrollbar{display:none;}
+.promo-card{min-width:260px;background:linear-gradient(135deg,#E8450A,#ff6b35);color:white;border-radius:12px;padding:14px;flex-shrink:0;box-shadow:0 4px 12px rgba(232,69,10,0.2);}
+.promo-tag{background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-bottom:6px;display:inline-block;}
+.promo-name{font-size:15px;font-weight:800;margin-bottom:4px;}
+.promo-desc{font-size:12px;opacity:0.9;margin-bottom:8px;}
+.promo-price{font-size:18px;font-weight:800;}
 
 /* SEARCH */
 .search-section{padding:10px 14px;background:white;border-bottom:1px solid var(--gris-border)}
@@ -84,15 +70,9 @@ header{background:white;border-bottom:3px solid var(--naranja);padding:10px 16px
 .filter-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--gris-border);font-size:11px;background:white;cursor:pointer;color:var(--gris);font-family:var(--font);white-space:nowrap;flex-shrink:0;transition:all .15s}
 .filter-btn.active{background:var(--naranja);border-color:var(--naranja);color:white;font-weight:600}
 
-/* STATS */
-.stats-bar{display:flex;gap:6px;padding:8px 14px;background:var(--gris-light);flex-wrap:wrap}
-.stat-chip{background:white;border-radius:8px;padding:5px 10px;font-size:11px;color:var(--gris);border:1px solid var(--gris-border)}
-.stat-chip span{font-weight:700;color:var(--naranja)}
-
 /* PRODUCTOS */
 .productos-list{padding:8px 14px;display:flex;flex-direction:column;gap:8px;max-width:700px;margin:0 auto;padding-bottom:90px}
-.prod-card{background:white;border-radius:var(--radius);box-shadow:0 1px 5px rgba(0,0,0,.05);overflow:hidden;transition:box-shadow .15s}
-.prod-card:hover{box-shadow:0 3px 14px rgba(0,0,0,.1)}
+.prod-card{background:white;border-radius:var(--radius);box-shadow:0 1px 5px rgba(0,0,0,.05);overflow:hidden}
 .prod-header{padding:12px 14px 6px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .prod-nombre{font-size:13px;font-weight:600;color:var(--gris-dark);line-height:1.35;flex:1}
 .prod-codigo{font-size:10px;color:var(--gris-mid);background:var(--gris-light);padding:3px 7px;border-radius:6px;white-space:nowrap}
@@ -101,12 +81,10 @@ header{background:white;border-bottom:3px solid var(--naranja);padding:10px 16px
 .precio-publico{background:var(--naranja-light);border-radius:8px;padding:8px 14px;display:flex;flex-direction:column;align-items:center}
 .precio-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--naranja);margin-bottom:1px}
 .precio-val{font-size:18px;font-weight:800;color:var(--naranja)}
-.prod-actions{display:flex;align-items:center;gap:6px}
 .qty-wrap{display:flex;align-items:center;gap:3px;background:var(--gris-light);border-radius:8px;padding:3px 6px}
 .qty-btn{width:26px;height:26px;border:none;background:var(--naranja);color:white;border-radius:5px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
 .qty-val{width:30px;text-align:center;font-size:15px;font-weight:700}
-.btn-add{padding:9px 16px;background:var(--naranja);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s;white-space:nowrap}
-.btn-add:hover{background:var(--naranja2)}
+.btn-add{padding:9px 16px;background:var(--naranja);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap}
 
 /* CARRITO FAB */
 .cart-fab{position:fixed;bottom:20px;right:20px;width:58px;height:58px;background:var(--naranja);color:white;border-radius:50%;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 20px rgba(232,69,10,.5);display:flex;align-items:center;justify-content:center;z-index:200}
@@ -122,1015 +100,278 @@ header{background:white;border-bottom:3px solid var(--naranja);padding:10px 16px
 .cart-item-name{font-size:13px;font-weight:600;line-height:1.3}
 .cart-item-codigo{font-size:10px;color:var(--gris-mid);margin-top:1px}
 .cart-item-price{font-size:14px;font-weight:700;color:var(--naranja);white-space:nowrap}
-.cart-item-qty{font-size:11px;color:var(--gris-mid)}
 .btn-remove{color:var(--rojo);font-size:18px;cursor:pointer;padding:4px;background:none;border:none}
-.totales-box{margin:12px 0;border:1px solid var(--gris-border);border-radius:10px;overflow:hidden}
-.total-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-size:14px}
-.total-row:not(:last-child){border-bottom:1px solid var(--gris-border)}
-.total-row.main{background:var(--naranja);color:white;font-size:17px;font-weight:800}
-.cliente-form{margin-bottom:12px}
-.form-tit{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--gris-dark)}
-.form-group{margin-bottom:8px}
-.form-label{font-size:11px;font-weight:600;color:var(--gris-mid);margin-bottom:3px;display:block}
-.form-input{width:100%;padding:9px 11px;border:1.5px solid var(--gris-border);border-radius:8px;font-size:14px;font-family:var(--font);outline:none;transition:border .2s}
-.form-input:focus{border-color:var(--naranja)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.btn-pdf{width:100%;padding:14px;background:var(--naranja);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .2s}
-.btn-pdf:hover{background:var(--naranja2)}
-.btn-vaciar{width:100%;padding:10px;background:white;color:var(--rojo);border:1px solid var(--rojo);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:7px}
-.empty-state{text-align:center;padding:50px 20px;color:var(--gris-mid)}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:12px;font-size:18px;font-weight:800;background:var(--naranja);color:white;border-radius:10px;margin:16px 0}
+.btn-send{width:100%;padding:14px;background:var(--verde);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
+.btn-pdf{width:100%;padding:12px;background:var(--azul);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:8px}
 
-/* ADMIN OVERLAY */
-#cliAdminOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;padding:16px}
+/* TOAST */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transition:.3s;opacity:0;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{background:var(--verde)}
+#toast.err{background:var(--rojo)}
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
-<div id="loginScreen" style="display: none;">
+<div id="loginScreen">
   <div class="login-box">
-    <svg class="login-logo-img" width="60" height="60" viewBox="0 0 60 60" fill="none">
-      <rect width="60" height="60" rx="14" fill="#E8450A"></rect>
-      <path d="M12 42L22 17H27L20 33H36L29 17H34L44 42H38L34 32H22L18 42H12Z" fill="white"></path>
-      <rect x="12" y="45" width="36" height="4" rx="2" fill="white"></rect>
-    </svg>
-    <div class="login-brand">FERRETERÍA OVIEDO</div>
-    <div class="login-sucursal">Sucursal El Manzano</div>
-    <div class="login-sub">Catálogo de productos y precios</div>
-    <input type="text" class="login-input" id="loginUser" placeholder="Usuario" autocomplete="off">
-    <input type="password" class="login-input" id="loginPass" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()">
-    <button class="login-btn" onclick="doLogin()">Ver precios</button>
-    <div class="login-error" id="loginError"></div>
-    <div class="license-info" id="licInfo">Acceso autorizado solo para clientes registrados</div>
+    <div class="login-brand">Ferretería Oviedo</div>
+    <div class="login-sub">Catálogo Digital Clientes</div>
+    <input class="login-input" id="lu" type="text" placeholder="Tu Usuario" autocomplete="off">
+    <input class="login-input" id="lp" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Ingresar al Catálogo</button>
+    <div class="login-error" id="lerr"></div>
   </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="mainApp" style="display: block;">
-
-<header>
-  <svg width="38" height="38" viewBox="0 0 60 60" fill="none" style="flex-shrink:0">
-    <rect width="60" height="60" rx="12" fill="#E8450A"></rect>
-    <path d="M12 42L22 17H27L20 33H36L29 17H34L44 42H38L34 32H22L18 42H12Z" fill="white"></path>
-    <rect x="12" y="45" width="36" height="4" rx="2" fill="white"></rect>
-  </svg>
-  <div class="header-title">
-    <h1>FERRETERÍA OVIEDO</h1>
-    <p>Sucursal El Manzano</p>
-  </div>
-  <div class="header-spacer"></div>
-  <button id="adminBtn" class="btn-logout" onclick="openAdminCli()" style="display:none;background:#333;color:white;margin-right:6px">⚙ Usuarios</button>
-  <button class="btn-logout" onclick="doLogout()">Salir</button>
-</header>
-
-<div class="sync-bar ok" id="syncBar">
-  <div class="sync-dot"></div>
-  <span id="syncText">✓ Precios vigentes · 9000 productos · Actualizado: 11:05:31 a.&nbsp;m.</span>
-</div>
-
-<!-- VENDEDORES -->
-<div class="vend-section">
-  <div class="vend-header">
-    <div class="vend-header-icon">📞</div>
-    <div>
-      <div class="vend-header-text">Ejecutivos de ventas</div>
-      <div class="vend-header-sub">Contáctanos directamente por WhatsApp</div>
+<!-- APP -->
+<div id="app" style="display:none;">
+  <header>
+    <div class="header-title">
+      <h1>Ferretería Oviedo</h1>
+      <p>Catálogo de Productos</p>
     </div>
+    <div class="header-spacer"></div>
+    <button class="btn-logout" onclick="doLogout()">Salir</button>
+  </header>
+
+  <div class="sync-bar loading" id="sbar">
+    <span class="sync-dot"></span>
+    <span id="stxt">Cargando catálogo...</span>
   </div>
-  <div class="vend-grid" id="vendGrid">
-    <!-- Ricardo -->
-    <div class="vend-card">
-      <div class="vend-card-top">
-        <div class="vend-avatar">RV</div>
-        <div>
-          <div class="vend-name">Ricardo Vidal</div>
-          <div class="vend-email"><a href="mailto:ricardo.vidal@oviedo.cl">ricardo.vidal@oviedo.cl</a></div>
-        </div>
+
+  <div class="promos-section" id="promosSection">
+    <div class="promos-title">🔥 Ofertas Destacadas</div>
+    <div class="promos-container" id="promosList"></div>
+  </div>
+
+  <div class="search-section">
+    <div class="search-wrap">
+      <input type="text" id="sinput" placeholder="Buscar por nombre o código..." onkeyup="onSearch()">
+      <span class="search-icon">🔍</span>
+    </div>
+    <div class="filters" id="fbar"></div>
+  </div>
+
+  <div class="productos-list" id="plist"></div>
+
+  <button class="cart-fab" onclick="openCart()">
+    🛒 <span class="cart-badge" id="cartBadge">0</span>
+  </button>
+
+  <div class="cart-panel" id="cpanel">
+    <div class="cart-drawer">
+      <div class="cart-handle"></div>
+      <div class="cart-title">
+        <span>Tu Carrito</span>
+        <button class="btn-remove" onclick="closeCart()">✕</button>
       </div>
-      <a class="vend-wa" href="https://wa.me/56968410852" target="_blank">
-        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"></path><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"></path></svg>
-        WhatsApp +56 968410852
-      </a>
-    </div>
-    <!-- Rafaela -->
-    <div class="vend-card">
-      <div class="vend-card-top">
-        <div class="vend-avatar">RF</div>
-        <div>
-          <div class="vend-name">Rafaela Flores</div>
-          <div class="vend-email"><a href="mailto:rflores@oviedo.cl">rflores@oviedo.cl</a></div>
-        </div>
+      <div id="cartList"></div>
+      <div class="total-row">
+        <span>Total:</span>
+        <span id="cartTotal">$0</span>
       </div>
-      <a class="vend-wa" href="https://wa.me/56974624064" target="_blank">
-        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"></path><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"></path></svg>
-        WhatsApp +56 974624064
-      </a>
-    </div>
-    <!-- Gregorio -->
-    <div class="vend-card">
-      <div class="vend-card-top">
-        <div class="vend-avatar">GR</div>
-        <div>
-          <div class="vend-name">Gregorio Reyes</div>
-          <div class="vend-email"><a href="mailto:gregorio.reyes@oviedo.cl">gregorio.reyes@oviedo.cl</a></div>
-        </div>
-      </div>
-      <a class="vend-wa" href="https://wa.me/56998693554" target="_blank">
-        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"></path><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"></path></svg>
-        WhatsApp +56 998693554
-      </a>
-    </div>
-    <!-- Jaime -->
-    <div class="vend-card">
-      <div class="vend-card-top">
-        <div class="vend-avatar">JS</div>
-        <div>
-          <div class="vend-name">Jaime Subiabre</div>
-          <div class="vend-email"><a href="mailto:jaime.subiabre@oviedo.cl">jaime.subiabre@oviedo.cl</a></div>
-        </div>
-      </div>
-      <a class="vend-wa" href="https://wa.me/56998962590" target="_blank">
-        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"></path><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"></path></svg>
-        WhatsApp +56 998962590
-      </a>
+      <button class="btn-send" onclick="guardarCotizacionFirestore()">
+        <span>🚀</span> Enviar Cotización
+      </button>
+      <button class="btn-pdf" onclick="generarPDF()">Descargar PDF</button>
+      <button class="btn-vaciar" onclick="vaciarCarrito()" style="width:100%;padding:10px;background:white;color:var(--rojo);border:1px solid var(--rojo);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">Vaciar Carrito</button>
     </div>
   </div>
 </div>
 
-<!-- BÚSQUEDA -->
-<div class="search-section">
-  <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="Buscar producto, código o marca..." oninput="onSearch()">
-  </div>
-  <div class="filters" id="filtersBar"><button class="filter-btn active" onclick="setMarca(&#39;TODOS&#39;)">TODOS</button><button class="filter-btn " onclick="setMarca(&#39;3M&#39;)">3M</button><button class="filter-btn " onclick="setMarca(&#39;ACETOGEN&#39;)">ACETOGEN</button><button class="filter-btn " onclick="setMarca(&#39;ACMA&#39;)">ACMA</button><button class="filter-btn " onclick="setMarca(&#39;ADAF&#39;)">ADAF</button><button class="filter-btn " onclick="setMarca(&#39;ADISOL&#39;)">ADISOL</button><button class="filter-btn " onclick="setMarca(&#39;AISLANTES NACIONALES&#39;)">AISLANTES NACIONALES</button><button class="filter-btn " onclick="setMarca(&#39;AISLAPOL&#39;)">AISLAPOL</button><button class="filter-btn " onclick="setMarca(&#39;ALBALUX&#39;)">ALBALUX</button><button class="filter-btn " onclick="setMarca(&#39;ALCAZAR&#39;)">ALCAZAR</button><button class="filter-btn " onclick="setMarca(&#39;ALEMAN&#39;)">ALEMAN</button><button class="filter-btn " onclick="setMarca(&#39;ALTUNA&#39;)">ALTUNA</button><button class="filter-btn " onclick="setMarca(&#39;AMESTI&#39;)">AMESTI</button><button class="filter-btn " onclick="setMarca(&#39;ANASAC&#39;)">ANASAC</button><button class="filter-btn " onclick="setMarca(&#39;ARAUCO&#39;)">ARAUCO</button><button class="filter-btn " onclick="setMarca(&#39;ARAUCO ELABORADO&#39;)">ARAUCO ELABORADO</button><button class="filter-btn " onclick="setMarca(&#39;ARAUCO MOLDURAS&#39;)">ARAUCO MOLDURAS</button><button class="filter-btn " onclick="setMarca(&#39;ARAUCO VERDE&#39;)">ARAUCO VERDE</button><button class="filter-btn " onclick="setMarca(&#39;ARIRANG&#39;)">ARIRANG</button><button class="filter-btn " onclick="setMarca(&#39;ARTECOLA&#39;)">ARTECOLA</button><button class="filter-btn " onclick="setMarca(&#39;ARTEFERRO&#39;)">ARTEFERRO</button><button class="filter-btn " onclick="setMarca(&#39;ASTEEL&#39;)">ASTEEL</button></div>
-</div>
-
-<div class="stats-bar" id="statsBar"><div class="stat-chip">Total: <span>9000</span></div><div class="stat-chip">Filtrados: <span>9000</span></div><div class="stat-chip">Carrito: <span>0 items</span></div></div>
-<div class="productos-list" id="productosList"><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PITILLA RAFIA OVILLO 100 GRS KRAUSER  (E-50) (213-200103)</div><div class="prod-codigo">10157</div></div><div class="prod-marca">KRAUSSER · CORDELES</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$23.100</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10157&#39;,-1)">−</button><span class="qty-val" id="qty_10157">1</span><button class="qty-btn" onclick="chgQty(&#39;10157&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10157&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TUBO CONDUIT CIV 16MM 6MT C/CAMPANA  (E20)</div><div class="prod-codigo">10194</div></div><div class="prod-marca">Hoffens · CANALETAS Y PVC ELECTRICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$18.100</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10194&#39;,-1)">−</button><span class="qty-val" id="qty_10194">1</span><button class="qty-btn" onclick="chgQty(&#39;10194&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10194&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TUBO CONDUIT CIII 25MM 6MT NOVOPLAST (01.03.030)(50572)(E1)</div><div class="prod-codigo">10196</div></div><div class="prod-marca">Hoffens · CANALETAS Y PVC ELECTRICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$34.400</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10196&#39;,-1)">−</button><span class="qty-val" id="qty_10196">1</span><button class="qty-btn" onclick="chgQty(&#39;10196&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10196&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TUBO CONDUIT CIII 32MM 6MT NOVOPLAST (01.03.040)(50573)(E1)</div><div class="prod-codigo">10197</div></div><div class="prod-marca">Hoffens · CANALETAS Y PVC ELECTRICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$57.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10197&#39;,-1)">−</button><span class="qty-val" id="qty_10197">1</span><button class="qty-btn" onclick="chgQty(&#39;10197&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10197&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) ABRIGO IMPERMEABLE PVC AZUL M</div><div class="prod-codigo">1020500</div></div><div class="prod-marca">GARMENDIA · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$10.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1020500&#39;,-1)">−</button><span class="qty-val" id="qty_1020500">1</span><button class="qty-btn" onclick="chgQty(&#39;1020500&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1020500&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TUBO PVC HIDRAULICO C/10 (40 MM) X TIRA 6 MTS  (45041) (E1)</div><div class="prod-codigo">10212</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$47.800</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10212&#39;,-1)">−</button><span class="qty-val" id="qty_10212">1</span><button class="qty-btn" onclick="chgQty(&#39;10212&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10212&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) PVC HIDRAULICO C/10 63 MM x TIRA</div><div class="prod-codigo">10214</div></div><div class="prod-marca">SA TIGRE · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$189.500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10214&#39;,-1)">−</button><span class="qty-val" id="qty_10214">1</span><button class="qty-btn" onclick="chgQty(&#39;10214&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10214&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) LENTE MIRAGE CLARO</div><div class="prod-codigo">1029704</div></div><div class="prod-marca">GARMENDIA · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$12.200</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1029704&#39;,-1)">−</button><span class="qty-val" id="qty_1029704">1</span><button class="qty-btn" onclick="chgQty(&#39;1029704&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1029704&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) TRAJE AGUA EJEC. AUSTRAL VERDE FLUOR XL</div><div class="prod-codigo">1033268</div></div><div class="prod-marca">GARMENDIA · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$10.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1033268&#39;,-1)">−</button><span class="qty-val" id="qty_1033268">1</span><button class="qty-btn" onclick="chgQty(&#39;1033268&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1033268&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) PARKA TERMICA AZUL PROMAX L</div><div class="prod-codigo">1034894</div></div><div class="prod-marca">GARMENDIA · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$11.400</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1034894&#39;,-1)">−</button><span class="qty-val" id="qty_1034894">1</span><button class="qty-btn" onclick="chgQty(&#39;1034894&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1034894&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) GUANTE LATEX DOMESTICO AMAR. PROMAX XL</div><div class="prod-codigo">1036994</div></div><div class="prod-marca">GARMENDIA · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$12.200</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1036994&#39;,-1)">−</button><span class="qty-val" id="qty_1036994">1</span><button class="qty-btn" onclick="chgQty(&#39;1036994&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1036994&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">AGOREX 60 ADHESIVO CONTACTO 1 GL HENKEL (284617) (E6)</div><div class="prod-codigo">10437</div></div><div class="prod-marca">Henkel · ADHESIVO CONTACTO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$626.600</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10437&#39;,-1)">−</button><span class="qty-val" id="qty_10437">1</span><button class="qty-btn" onclick="chgQty(&#39;10437&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10437&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">AGOREX TAPAGOTERAS 1 GL HENKEL (2300255) (E4)</div><div class="prod-codigo">10450</div></div><div class="prod-marca">Henkel · ADHESIVO CONTACTO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$679.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10450&#39;,-1)">−</button><span class="qty-val" id="qty_10450">1</span><button class="qty-btn" onclick="chgQty(&#39;10450&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10450&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) POLERA PIQUE MANGA CORTA GRIS PROMAX M</div><div class="prod-codigo">1045231</div></div><div class="prod-marca">GARMENDIA · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$11.400</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1045231&#39;,-1)">−</button><span class="qty-val" id="qty_1045231">1</span><button class="qty-btn" onclick="chgQty(&#39;1045231&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1045231&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) POLERA PIQUE MANGA CORTA GRIS PROMAX L</div><div class="prod-codigo">1045232</div></div><div class="prod-marca">GARMENDIA · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$10.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1045232&#39;,-1)">−</button><span class="qty-val" id="qty_1045232">1</span><button class="qty-btn" onclick="chgQty(&#39;1045232&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1045232&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) CLAVO CTE 1 GRANEL X KG PRODA (CL0123)</div><div class="prod-codigo">10758</div></div><div class="prod-marca">Prodalam · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$56.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10758&#39;,-1)">−</button><span class="qty-val" id="qty_10758">1</span><button class="qty-btn" onclick="chgQty(&#39;10758&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10758&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">CLAVO CTE 1 1/2  BOLSA DE 1 KG  (E-25) (CL5514)</div><div class="prod-codigo">10760</div></div><div class="prod-marca">Prodalam · CLAVOS MULTIUSO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$35.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10760&#39;,-1)">−</button><span class="qty-val" id="qty_10760">1</span><button class="qty-btn" onclick="chgQty(&#39;10760&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10760&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">IGOL DENSO TINETA 16 LT. SIKA (463546)(E4)</div><div class="prod-codigo">10803</div></div><div class="prod-marca">Sika · IMPERMEABILIZANTES</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$1.028.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10803&#39;,-1)">−</button><span class="qty-val" id="qty_10803">1</span><button class="qty-btn" onclick="chgQty(&#39;10803&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10803&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">ANTICORROSIVO ROJO MAESTRANZA LATA SOQUINA (20433405)(E1)</div><div class="prod-codigo">10878</div></div><div class="prod-marca">Soquina · ANTICORROSIVOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$965.300</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;10878&#39;,-1)">−</button><span class="qty-val" id="qty_10878">1</span><button class="qty-btn" onclick="chgQty(&#39;10878&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;10878&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">GOLILLA PLANA CTE. 3/8 (E200) (PGCE-200)</div><div class="prod-codigo">11106</div></div><div class="prod-marca">FERROMAT · TUERCAS, GOLILLAS Y GOMAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;11106&#39;,-1)">−</button><span class="qty-val" id="qty_11106">1</span><button class="qty-btn" onclick="chgQty(&#39;11106&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;11106&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">GOLILLA PLANA CTE. 1/2(E200) (PGCB-200)</div><div class="prod-codigo">11111</div></div><div class="prod-marca">FERROMAT · TUERCAS, GOLILLAS Y GOMAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$600</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;11111&#39;,-1)">−</button><span class="qty-val" id="qty_11111">1</span><button class="qty-btn" onclick="chgQty(&#39;11111&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;11111&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">MASILLA JUNTURAS 1 KG WEBER (E18) (QUI098)</div><div class="prod-codigo">11421</div></div><div class="prod-marca">WEBER · CINTAS Y PASTAS PARA JUNTURAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$73.390</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;11421&#39;,-1)">−</button><span class="qty-val" id="qty_11421">1</span><button class="qty-btn" onclick="chgQty(&#39;11421&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;11421&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) GOLILLA PLANA CALIB 3/8 COLLINS</div><div class="prod-codigo">11457</div></div><div class="prod-marca">Collins · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$100</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;11457&#39;,-1)">−</button><span class="qty-val" id="qty_11457">1</span><button class="qty-btn" onclick="chgQty(&#39;11457&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;11457&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TARUGO PLASTICO #  6  POR UN. (E-1000)  (FUAM-110)</div><div class="prod-codigo">11591</div></div><div class="prod-marca">FERROMAT · TARUGOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$200</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;11591&#39;,-1)">−</button><span class="qty-val" id="qty_11591">1</span><button class="qty-btn" onclick="chgQty(&#39;11591&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;11591&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TARUGO PLASTICO  # 10 POR UN. (E-1000) (FUAO-110)</div><div class="prod-codigo">11593</div></div><div class="prod-marca">FERROMAT · TARUGOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$600</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;11593&#39;,-1)">−</button><span class="qty-val" id="qty_11593">1</span><button class="qty-btn" onclick="chgQty(&#39;11593&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;11593&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA CORONA 1.1/8 CROSS (257764)</div><div class="prod-codigo">116679</div></div><div class="prod-marca">Crossman · LLAVES PUNTA CORONA</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$251.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;116679&#39;,-1)">−</button><span class="qty-val" id="qty_116679">1</span><button class="qty-btn" onclick="chgQty(&#39;116679&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;116679&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">BATERIA DURACELL MN1604 9 V ADEL (1003106621) (E=48 BL)</div><div class="prod-codigo">11814</div></div><div class="prod-marca">Duracell · LINTERNAS Y PILAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$55.200</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;11814&#39;,-1)">−</button><span class="qty-val" id="qty_11814">1</span><button class="qty-btn" onclick="chgQty(&#39;11814&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;11814&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) NYLON ORILLADORA 2.4 X 15 MT VIMAK</div><div class="prod-codigo">12593</div></div><div class="prod-marca">Vimak · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$68.500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12593&#39;,-1)">−</button><span class="qty-val" id="qty_12593">1</span><button class="qty-btn" onclick="chgQty(&#39;12593&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12593&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">CADENA MOTOSIERRA 14 MOD-MS-170 50ESLABON STHIL(1136360000050)</div><div class="prod-codigo">12602</div></div><div class="prod-marca">STHIL MOTOSIERRA · MOTOSIERRAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$309.280</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12602&#39;,-1)">−</button><span class="qty-val" id="qty_12602">1</span><button class="qty-btn" onclick="chgQty(&#39;12602&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12602&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">COPLA PVC HIDRAULICO 50 MM  (20170) (E10)</div><div class="prod-codigo">12615</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$7.660</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12615&#39;,-1)">−</button><span class="qty-val" id="qty_12615">1</span><button class="qty-btn" onclick="chgQty(&#39;12615&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12615&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE PVC (CEM) HIDRAULICO 25 MM  (20144) (E60)</div><div class="prod-codigo">12639</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$4.550</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12639&#39;,-1)">−</button><span class="qty-val" id="qty_12639">1</span><button class="qty-btn" onclick="chgQty(&#39;12639&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12639&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE PVC (CEM) HIDRAULICO 110 MM  (60143) (E1)</div><div class="prod-codigo">12646</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$106.010</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12646&#39;,-1)">−</button><span class="qty-val" id="qty_12646">1</span><button class="qty-btn" onclick="chgQty(&#39;12646&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12646&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE PVC HI (CEM) HIDRAULICO 20 MM X 1/2  (20134) (E30)</div><div class="prod-codigo">12647</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$5.000</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12647&#39;,-1)">−</button><span class="qty-val" id="qty_12647">1</span><button class="qty-btn" onclick="chgQty(&#39;12647&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12647&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">CODO PVC (CEM) HIDRAULICO 75 MM  (60172) (E1)</div><div class="prod-codigo">12655</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$58.390</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12655&#39;,-1)">−</button><span class="qty-val" id="qty_12655">1</span><button class="qty-btn" onclick="chgQty(&#39;12655&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12655&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TAPAGORRO PVC (CEM) HIDRAULICO 20 MM  (20285)(E30)</div><div class="prod-codigo">12667</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$1.440</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12667&#39;,-1)">−</button><span class="qty-val" id="qty_12667">1</span><button class="qty-btn" onclick="chgQty(&#39;12667&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12667&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">UNION AMERICANA PVC HIDRAULICO 40 MM (60220) (E1)</div><div class="prod-codigo">12692</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$25.200</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12692&#39;,-1)">−</button><span class="qty-val" id="qty_12692">1</span><button class="qty-btn" onclick="chgQty(&#39;12692&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12692&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">BUJE CORTO PVC HIDRA 32 X 25 MM (20154) (E15)</div><div class="prod-codigo">12702</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$1.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12702&#39;,-1)">−</button><span class="qty-val" id="qty_12702">1</span><button class="qty-btn" onclick="chgQty(&#39;12702&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12702&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">BUJE CORTO PVC HIDRA 63 X 50 MM (60140)(E10)</div><div class="prod-codigo">12705</div></div><div class="prod-marca">Hoffens · PVC HIDRAULICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$8.770</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12705&#39;,-1)">−</button><span class="qty-val" id="qty_12705">1</span><button class="qty-btn" onclick="chgQty(&#39;12705&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12705&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">CURVA PVC CONDUIT 20MM C-III NOVOPLAST (FT505866)(50494)(E100)</div><div class="prod-codigo">12732</div></div><div class="prod-marca">Hoffens · CANALETAS Y PVC ELECTRICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$3.000</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12732&#39;,-1)">−</button><span class="qty-val" id="qty_12732">1</span><button class="qty-btn" onclick="chgQty(&#39;12732&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12732&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">COPLA PVC CONDUIT C-III 25MM NOVOPLAST (FT1503040)(E50)</div><div class="prod-codigo">12736</div></div><div class="prod-marca">Hoffens · CANALETAS Y PVC ELECTRICO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$1.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12736&#39;,-1)">−</button><span class="qty-val" id="qty_12736">1</span><button class="qty-btn" onclick="chgQty(&#39;12736&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12736&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">**CANERIA COBRE  1/2 TIPO M TIRA 6 MTS (E1) (1000388392)</div><div class="prod-codigo">12891</div></div><div class="prod-marca">Impovar · BRONCE Y COBRE</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$359.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;12891&#39;,-1)">−</button><span class="qty-val" id="qty_12891">1</span><button class="qty-btn" onclick="chgQty(&#39;12891&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;12891&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) COPLA BRONCE SO - SO  1/2 X 3/8 (10CX1011102) (E1)</div><div class="prod-codigo">13044</div></div><div class="prod-marca">PLUMBER · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$11.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13044&#39;,-1)">−</button><span class="qty-val" id="qty_13044">1</span><button class="qty-btn" onclick="chgQty(&#39;13044&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13044&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) COPLA SO - SO 701 1 1/2 X 1 NIB</div><div class="prod-codigo">13053</div></div><div class="prod-marca">SA TIGRE · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$16.600</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13053&#39;,-1)">−</button><span class="qty-val" id="qty_13053">1</span><button class="qty-btn" onclick="chgQty(&#39;13053&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13053&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) ESCUADRA SILLA LIOI 2 AC. ZINCADO UN. (E-48I) (51051228)</div><div class="prod-codigo">130592</div></div><div class="prod-marca">Lioi · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$4.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;130592&#39;,-1)">−</button><span class="qty-val" id="qty_130592">1</span><button class="qty-btn" onclick="chgQty(&#39;130592&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;130592&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TERMINAL BRONCE SO - HE 1 (10PL0513250)(E1)</div><div class="prod-codigo">13091</div></div><div class="prod-marca">MOSAICO · BRONCE Y COBRE</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$38.560</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13091&#39;,-1)">−</button><span class="qty-val" id="qty_13091">1</span><button class="qty-btn" onclick="chgQty(&#39;13091&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13091&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE BRONCE SO - SO  3/4 (10PL15111150) (E1)</div><div class="prod-codigo">13150</div></div><div class="prod-marca">MOSAICO · BRONCE Y COBRE</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$34.000</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13150&#39;,-1)">−</button><span class="qty-val" id="qty_13150">1</span><button class="qty-btn" onclick="chgQty(&#39;13150&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13150&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) PUNTA PHILLIPS PH 3 TOMA 1/4</div><div class="prod-codigo">131907</div></div><div class="prod-marca">Force · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$3.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;131907&#39;,-1)">−</button><span class="qty-val" id="qty_131907">1</span><button class="qty-btn" onclick="chgQty(&#39;131907&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;131907&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">SET PUNTA ATORNILLADOR PHILLIPS PH2 CRUZ 25MM X 10 UN. TOMA 1/4 (APAB-010) (E10)</div><div class="prod-codigo">131917</div></div><div class="prod-marca">FERROMAT · TORNILLOS MULTIUSO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$59.500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;131917&#39;,-1)">−</button><span class="qty-val" id="qty_131917">1</span><button class="qty-btn" onclick="chgQty(&#39;131917&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;131917&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA ATORNILLADOR TORX-20 50MM TOMA 1/4 HEMIC(8834T2050)(E10)</div><div class="prod-codigo">131918</div></div><div class="prod-marca">HEMIC · REMACHADORAS Y ENGRAPADORAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$13.500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;131918&#39;,-1)">−</button><span class="qty-val" id="qty_131918">1</span><button class="qty-btn" onclick="chgQty(&#39;131918&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;131918&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">BROCA METAL 6MM HSS LINEA-SETTER ECEF(460600)(E10)</div><div class="prod-codigo">131946</div></div><div class="prod-marca">HEMIC · BROCAS, CINCELES Y PUNTOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$19.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;131946&#39;,-1)">−</button><span class="qty-val" id="qty_131946">1</span><button class="qty-btn" onclick="chgQty(&#39;131946&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;131946&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">DADOS 1/2 15/16MM STANLEY COD.88820(1003023909)(E4)</div><div class="prod-codigo">132819</div></div><div class="prod-marca">STANLEY-MANUALES · DADOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$48.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;132819&#39;,-1)">−</button><span class="qty-val" id="qty_132819">1</span><button class="qty-btn" onclick="chgQty(&#39;132819&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;132819&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) LLAVE BOLA DE PASO HI-HI 3/8 MOSAICO/TAUMM (060122000-T)</div><div class="prod-codigo">13295</div></div><div class="prod-marca">MOSAICO · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$31.800</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13295&#39;,-1)">−</button><span class="qty-val" id="qty_13295">1</span><button class="qty-btn" onclick="chgQty(&#39;13295&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13295&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">LLAVE BOLA DE PASO HI-HI 3/4 MOSAICO/TAUMM (060144000-T)</div><div class="prod-codigo">13297</div></div><div class="prod-marca">Paradiso · LLAVES DE PASO Y VALVULAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$62.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13297&#39;,-1)">−</button><span class="qty-val" id="qty_13297">1</span><button class="qty-btn" onclick="chgQty(&#39;13297&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13297&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">COPLA PVC SANITARIA GRIS 40 MM  (20447) (E40)</div><div class="prod-codigo">13349</div></div><div class="prod-marca">Hoffens · PVC SANITARIO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$6.110</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13349&#39;,-1)">−</button><span class="qty-val" id="qty_13349">1</span><button class="qty-btn" onclick="chgQty(&#39;13349&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13349&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">COPLA PVC SANITARIA GRIS 75 MM  (20438) (E20)</div><div class="prod-codigo">13351</div></div><div class="prod-marca">Hoffens · PVC SANITARIO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$13.200</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13351&#39;,-1)">−</button><span class="qty-val" id="qty_13351">1</span><button class="qty-btn" onclick="chgQty(&#39;13351&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13351&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE PVC SAN GRIS 40 MM  (20442) (E20)</div><div class="prod-codigo">13361</div></div><div class="prod-marca">Hoffens · PVC SANITARIO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$11.100</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13361&#39;,-1)">−</button><span class="qty-val" id="qty_13361">1</span><button class="qty-btn" onclick="chgQty(&#39;13361&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13361&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE PVC SAN GRIS 110 X 50 MM  (20445) (E10)</div><div class="prod-codigo">13368</div></div><div class="prod-marca">Hoffens · PVC SANITARIO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$36.800</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13368&#39;,-1)">−</button><span class="qty-val" id="qty_13368">1</span><button class="qty-btn" onclick="chgQty(&#39;13368&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13368&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE PVC SAN GRIS 110 X 75 MM  (20443) (E10)</div><div class="prod-codigo">13369</div></div><div class="prod-marca">Hoffens · PVC SANITARIO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$37.500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13369&#39;,-1)">−</button><span class="qty-val" id="qty_13369">1</span><button class="qty-btn" onclick="chgQty(&#39;13369&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13369&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TEE PVC SAN GRIS 110 MM (20440) (E20)</div><div class="prod-codigo">13370</div></div><div class="prod-marca">Hoffens · PVC SANITARIO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$26.800</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13370&#39;,-1)">−</button><span class="qty-val" id="qty_13370">1</span><button class="qty-btn" onclick="chgQty(&#39;13370&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13370&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">FORMON CARPINTERO 3/8 STANLEY COD.16106(1003023930)(E12)</div><div class="prod-codigo">13509</div></div><div class="prod-marca">STANLEY-MANUALES · ABRASIVOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$101.830</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13509&#39;,-1)">−</button><span class="qty-val" id="qty_13509">1</span><button class="qty-btn" onclick="chgQty(&#39;13509&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13509&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">DADO 1/2 X 22 MM HEXAGONAL CROSS (257964)</div><div class="prod-codigo">13960</div></div><div class="prod-marca">Crossman · DADOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$41.500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13960&#39;,-1)">−</button><span class="qty-val" id="qty_13960">1</span><button class="qty-btn" onclick="chgQty(&#39;13960&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13960&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">DADO 3/4 X 24 MM CROSS (258603)</div><div class="prod-codigo">13972</div></div><div class="prod-marca">Crossman · DADOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$104.000</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13972&#39;,-1)">−</button><span class="qty-val" id="qty_13972">1</span><button class="qty-btn" onclick="chgQty(&#39;13972&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13972&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">DADO 3/4 X 50 MM CROSS (258615)</div><div class="prod-codigo">13984</div></div><div class="prod-marca">Crossman · DADOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$274.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13984&#39;,-1)">−</button><span class="qty-val" id="qty_13984">1</span><button class="qty-btn" onclick="chgQty(&#39;13984&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13984&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">DADO LARGO 1/2 X 17 MM CROSS (258127)</div><div class="prod-codigo">13999</div></div><div class="prod-marca">Crossman · DADOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$57.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;13999&#39;,-1)">−</button><span class="qty-val" id="qty_13999">1</span><button class="qty-btn" onclick="chgQty(&#39;13999&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;13999&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TORX DADO 1/2 X T50 CROSS (258246)</div><div class="prod-codigo">14008</div></div><div class="prod-marca">Crossman · DADOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$58.200</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14008&#39;,-1)">−</button><span class="qty-val" id="qty_14008">1</span><button class="qty-btn" onclick="chgQty(&#39;14008&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14008&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">TORX DADO 1/2 X T60 CROSS (258248)</div><div class="prod-codigo">14010</div></div><div class="prod-marca">Crossman · DADOS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$71.100</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14010&#39;,-1)">−</button><span class="qty-val" id="qty_14010">1</span><button class="qty-btn" onclick="chgQty(&#39;14010&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14010&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">EXTENSION CORTA 3/4 X 8 CROSS (257854)</div><div class="prod-codigo">14013</div></div><div class="prod-marca">Crossman · CHICHARRAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$209.600</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14013&#39;,-1)">−</button><span class="qty-val" id="qty_14013">1</span><button class="qty-btn" onclick="chgQty(&#39;14013&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14013&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA Y CORONA 7 MM CROSS (257607)</div><div class="prod-codigo">14024</div></div><div class="prod-marca">Crossman · LLAVES PUNTA CORONA</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$47.100</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14024&#39;,-1)">−</button><span class="qty-val" id="qty_14024">1</span><button class="qty-btn" onclick="chgQty(&#39;14024&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14024&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA Y CORONA 11 MM CROSS (257611)</div><div class="prod-codigo">14028</div></div><div class="prod-marca">Crossman · LLAVES PUNTA CORONA</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$59.600</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14028&#39;,-1)">−</button><span class="qty-val" id="qty_14028">1</span><button class="qty-btn" onclick="chgQty(&#39;14028&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14028&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA Y CORONA 20 MM CROSS (257620)</div><div class="prod-codigo">14037</div></div><div class="prod-marca">Crossman · LLAVES PUNTA CORONA</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$141.300</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14037&#39;,-1)">−</button><span class="qty-val" id="qty_14037">1</span><button class="qty-btn" onclick="chgQty(&#39;14037&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14037&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA Y CORONA 22 MM CROSS (257622)</div><div class="prod-codigo">14039</div></div><div class="prod-marca">Crossman · LLAVES PUNTA CORONA</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$147.300</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14039&#39;,-1)">−</button><span class="qty-val" id="qty_14039">1</span><button class="qty-btn" onclick="chgQty(&#39;14039&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14039&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) BROCA CILINDRICA 9.0 MM TITANIUM</div><div class="prod-codigo">14346</div></div><div class="prod-marca">Titanium · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$14.300</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14346&#39;,-1)">−</button><span class="qty-val" id="qty_14346">1</span><button class="qty-btn" onclick="chgQty(&#39;14346&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14346&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) GRATA COPA-CON ONDULADA M14 3.1/4 # 42020 - #C503</div><div class="prod-codigo">14470</div></div><div class="prod-marca">Faesin · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$107.500</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14470&#39;,-1)">−</button><span class="qty-val" id="qty_14470">1</span><button class="qty-btn" onclick="chgQty(&#39;14470&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14470&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) BOLSA 10 UN BROCA CILINDRICA 3.5 MM TITANIUM</div><div class="prod-codigo">14534</div></div><div class="prod-marca">Titanium · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$41.400</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14534&#39;,-1)">−</button><span class="qty-val" id="qty_14534">1</span><button class="qty-btn" onclick="chgQty(&#39;14534&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14534&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) BOLSA 10 UN BROCA CILINDRICA 3.0 MM TITANIUM</div><div class="prod-codigo">14555</div></div><div class="prod-marca">Titanium · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$14.600</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;14555&#39;,-1)">−</button><span class="qty-val" id="qty_14555">1</span><button class="qty-btn" onclick="chgQty(&#39;14555&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;14555&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">(DD) PERNO COCINA CAB. RED 181 3/16 X 1 C/U AMER</div><div class="prod-codigo">1471</div></div><div class="prod-marca">Collins · OUTLET</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$300</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;1471&#39;,-1)">−</button><span class="qty-val" id="qty_1471">1</span><button class="qty-btn" onclick="chgQty(&#39;1471&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;1471&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">ELEVADOR DE REGISTRO PARA FOSA 620 x 500 MM (EDR060500)</div><div class="prod-codigo">153630</div></div><div class="prod-marca">MATRIPLAS · FOSAS SEPTICAS</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$468.700</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;153630&#39;,-1)">−</button><span class="qty-val" id="qty_153630">1</span><button class="qty-btn" onclick="chgQty(&#39;153630&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;153630&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">HILO CORRIDO X METRO G-2 044 7/8 POR UN. (E-1)  (PHAJ-001)</div><div class="prod-codigo">15821</div></div><div class="prod-marca">FERROMAT · TORNILLOS MULTIUSO</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$205.300</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;15821&#39;,-1)">−</button><span class="qty-val" id="qty_15821">1</span><button class="qty-btn" onclick="chgQty(&#39;15821&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;15821&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA Y CORONA 32 MM CROSS(257632)</div><div class="prod-codigo">15980</div></div><div class="prod-marca">Crossman · LLAVES PUNTA CORONA</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$370.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;15980&#39;,-1)">−</button><span class="qty-val" id="qty_15980">1</span><button class="qty-btn" onclick="chgQty(&#39;15980&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;15980&#39;)">+ Agregar</button></div></div></div><div class="prod-card"><div class="prod-header"><div class="prod-nombre">PUNTA Y CORONA 35 MM CROSS (257635)</div><div class="prod-codigo">15981</div></div><div class="prod-marca">Crossman · LLAVES PUNTA CORONA</div><div class="prod-bottom"><div class="precio-publico"><div class="precio-label">Precio IVA incl.</div><div class="precio-val">$420.900</div></div><div class="prod-actions"><div class="qty-wrap"><button class="qty-btn" onclick="chgQty(&#39;15981&#39;,-1)">−</button><span class="qty-val" id="qty_15981">1</span><button class="qty-btn" onclick="chgQty(&#39;15981&#39;,1)">+</button></div><button class="btn-add" onclick="addCart(&#39;15981&#39;)">+ Agregar</button></div></div></div></div>
-
-<button class="cart-fab" onclick="openCart()">
-  🛒<div class="cart-badge" id="cartBadge">0</div>
-</button>
-
-<!-- CARRITO -->
-<div class="cart-panel" id="cartPanel" onclick="if(event.target===this)closeCart()">
-  <div class="cart-drawer">
-    <div class="cart-handle"></div>
-    <div class="cart-title">
-      🛒 Mi Cotización
-      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gris-mid)" onclick="closeCart()">✕</button>
-    </div>
-    <div id="cartItems"></div>
-    <div id="cartTotals"></div>
-    <div class="cliente-form" style="margin-top:12px">
-      <div class="form-tit">📋 Tus datos</div>
-      <div class="form-group"><label class="form-label">Nombre completo / Empresa</label><input class="form-input" id="cliNombre" placeholder="Ej: Juan Pérez o Constructora SA"></div>
-      <div class="form-grid">
-        <div class="form-group"><label class="form-label">RUT</label><input class="form-input" id="cliRut" placeholder="12.345.678-9"></div>
-        <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="cliTel" placeholder="+56 9..."></div>
-      </div>
-      <div class="form-group"><label class="form-label">Dirección / Ciudad</label><input class="form-input" id="cliDir" placeholder="Calle, número, ciudad"></div>
-      <div class="form-group"><label class="form-label">Observaciones</label><input class="form-input" id="cliObs" placeholder="Forma de pago, plazo entrega..."></div>
-    </div>
-    <button class="btn-pdf" onclick="generarPDF()">📄 Descargar cotización PDF</button>
-    <button class="btn-vaciar" onclick="vaciarCarrito()">🗑 Vaciar carrito</button>
-  </div>
-</div>
-
-</div><!-- /mainApp -->
-
-<!-- ADMIN OVERLAY -->
-<div id="cliAdminOverlay">
-  <div style="background:white;border-radius:16px;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:16px;font-weight:800">⚙ Gestión de Usuarios</div>
-      <button onclick="closeAdminCli()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#888">✕</button>
-    </div>
-    <div id="cliAdminContent"></div>
-  </div>
-</div>
+<div id="toast"></div>
 
 <script>
+var USUARIOS = [], PRODS = [], FILT = [], CART = [], PROMOS = [], MARCA = 'TODOS', currentUser = null;
+const USER_KEY = 'ov_clientUser', CART_KEY = 'ov_clientCart';
 
-// ============================================================
-//  MÓDULO API CENTRAL — Ferretería Oviedo
-//  Sincronización multi-dispositivo via Firebase
-// ============================================================
-var API_URL = localStorage.getItem('ov_api_url') || 'https://script.google.com/macros/s/TU_ID_AQUI/exec';
+function fmtCLP(n) { return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(n); }
 
-function apiGet(params, cb) {
-  if (window.db) {
-    // Usar Firebase
-    apiGetFirebase(params, cb);
-  } else {
-    // Fallback a Google Apps Script
-    var url = API_URL + '?' + Object.keys(params).map(function(k){
-      return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
-    }).join('&');
-    fetch(url)
-      .then(function(r){ return r.json(); })
-      .then(function(d){ cb(null, d); })
-      .catch(function(e){ cb(e, null); });
-  }
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3000);
 }
 
-function apiPost(body, cb) {
-  if (window.db) {
-    // Usar Firebase
-    apiPostFirebase(body, cb);
-  } else {
-    // Fallback a Google Apps Script
-    fetch(API_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    })
-      .then(function(r){ return r.json(); })
-      .then(function(d){ cb(null, d); })
-      .catch(function(e){ cb(e, null); });
-  }
-}
-
-function loadUsers(cb) {
-  apiGet({action:'getUsers'}, function(err, data) {
-    if(!err && Array.isArray(data) && data.length) {
-      USERS = data.map(function(u){
-        return {
-          user: u.user || u.u || '',
-          pass: u.pass || u.p || '',
-          nombre: u.nombre || '',
-          role: u.role || 'cliente',
-          licExpiry: u.licExpiry || (u.exp?new Date(u.exp).toISOString():new Date(Date.now()+30*864e5).toISOString()),
-          estado: u.estado || 'activo'
-        };
-      });
-      try{ localStorage.setItem('ov_v2_users', JSON.stringify(USERS)); }catch(e){}
-    } else {
-      try{
-        var s = localStorage.getItem('ov_v2_users');
-        if(s){ var u=JSON.parse(s); if(u&&u.length) USERS=u; }
-      }catch(e){}
-    }
-    if(cb) cb();
+// AUTH
+function loadUsers() {
+  apiGet({ action: 'getUsers' }, (err, users) => {
+    if (!err) { USUARIOS = users.map(normalizeUserRecord); checkSession(); }
   });
 }
 
-function saveUserRemote(userData, cb) {
-  var found = false;
-  for(var i=0;i<USERS.length;i++){
-    if(USERS[i].user===userData.user || USERS[i].user===userData.u){
-      for(var k in userData){ if(userData.hasOwnProperty(k)) USERS[i][k]=userData[k]; }
-      found=true; break;
+function checkSession() {
+  const stored = JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+  if (stored) {
+    const found = USUARIOS.find(u => u.u === stored.u && u.p === stored.p);
+    if (found && found.estado === 'activo') {
+      currentUser = found;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      startApp(); return;
     }
   }
-  if(!found) USERS.push(userData);
-  try{ localStorage.setItem('ov_v2_users', JSON.stringify(USERS)); }catch(e){}
-  userData.u = userData.u || userData.user || '';
-  userData.user = userData.user || userData.u || '';
-  userData.p = userData.p || userData.pass || '';
-  userData.pass = userData.pass || userData.p || '';
-  userData.licExpiry = userData.licExpiry || (userData.exp?new Date(userData.exp).toISOString():new Date(Date.now()+30*864e5).toISOString());
-  userData.exp = userData.exp || (userData.licExpiry?new Date(userData.licExpiry).getTime():Date.now()+30*864e5);
-  apiPost({action:'saveUser', data:userData}, function(err,res){ if(cb) cb(err,res); });
-}
-
-function deleteUserRemote(uid, cb) {
-  USERS = USERS.filter(function(x){ return x.u!==uid; });
-  try{ localStorage.setItem('ov_v2_users', JSON.stringify(USERS)); }catch(e){}
-  apiGet({action:'deleteUser', u:uid}, function(err,res){ if(cb) cb(err,res); });
-}
-
-function registerSession(nombre, app) {
-  var device = navigator.userAgent.indexOf('Mobile')>=0 ? 'Móvil' : 'PC';
-  apiPost({action:'logSession', data:{user:nombre, app:app, ts:Date.now(), device:device}}, function(){});
-  try{
-    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
-    s = s.filter(function(x){ return Date.now()-x.ts < 30*60*1000; });
-    var ei=-1;
-    for(var i=0;i<s.length;i++){ if(s[i].user===nombre&&s[i].app===app){ei=i;break;} }
-    var en={user:nombre,app:app,ts:Date.now(),device:device};
-    if(ei>=0) s[ei]=en; else s.push(en);
-    localStorage.setItem('ov_sessions', JSON.stringify(s));
-  }catch(e){}
-}
-
-function clearSession(nombre, app) {
-  apiGet({action:'clearSession', user:nombre, app:app}, function(){});
-  try{
-    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
-    s = s.filter(function(x){ return !(x.user===nombre&&x.app===app); });
-    localStorage.setItem('ov_sessions', JSON.stringify(s));
-  }catch(e){}
-}
-
-function registrarCotizacion(total) {
-  try{
-    var detalle = (typeof CART !== 'undefined' ? CART : []).map(function(item){
-      return {Codigo:item.Codigo||'', Descripcion:item.Desc||'', qty:item.qty||0, precio:item.precio||0, margen:item.m||0};
-    });
-    var cot = {
-      ts:      Date.now(),
-      user:    (typeof me !== 'undefined' && me) ? me.nombre : 'Vendedor',
-      app:     'Vendedor',
-      items:   (typeof CART !== 'undefined' ? CART : []).reduce(function(a,c){ return a+(c.qty||0); },0),
-      total:   total,
-      detalle: detalle
-    };
-    var lista = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]');
-    lista.push(cot);
-    if(lista.length>200) lista=lista.slice(lista.length-200);
-    localStorage.setItem('ov_cotizaciones', JSON.stringify(lista));
-    apiPost({action:'saveCotizacion', data:cot}, function(){});
-  }catch(e){ console.error('Error guardando cotización',e); }
-}
-
-function loadAdminData(cb) {
-  var sesiones=[], cotizaciones=[];
-  apiGet({action:'getSessions'}, function(err, data) {
-    if(!err && Array.isArray(data)) sesiones=data;
-    apiGet({action:'getCotizaciones', limit:'50'}, function(err2, data2) {
-      if(!err2 && Array.isArray(data2)) cotizaciones=data2;
-      cb(sesiones, cotizaciones);
-    });
-  });
-}
-// ============================================================
-
-// ── URLs de catálogo: GitHub raw + fallback ─────────────────────────────────
-var SHEETS_CSV_DEFAULT  = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
-var JSON_URL_DEFAULT    = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.json';
-var SHEETS_PUB_DEFAULT  = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
-var JSON_URL_PUB_DEFAULT = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.json';
-var SHEETS_CSV  = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
-var JSON_URL    = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
-var CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
-var JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
-
-var CACHE_KEY    = 'ov_cli_productos';
-var CACHE_TS_KEY = 'ov_cli_ts';
-
-// ── USUARIOS: siempre lee primero de ov_cli_v2_users (guardado por admin) ───
-var USUARIOS_DEFAULT = [
-  {user:'admin',   pass:'oviedo2025admin', nombre:'Administrador', role:'admin',   licExpiry:new Date(Date.now()+365*864e5).toISOString(), estado:'activo'},
-  {user:'cliente1',pass:'cli2025',         nombre:'Cliente 1',     role:'cliente', licExpiry:new Date(Date.now()+30*864e5).toISOString(),  estado:'activo'},
-  {user:'cliente2',pass:'cli2025',         nombre:'Cliente 2',     role:'cliente', licExpiry:new Date(Date.now()+30*864e5).toISOString(),  estado:'activo'},
-  {user:'demo',    pass:'demo123',         nombre:'Demo',          role:'cliente', licExpiry:new Date(Date.now()+30*864e5).toISOString(),  estado:'activo'}
-];
-
-var USUARIOS = USUARIOS_DEFAULT;
-
-function loadCliUsers(cb){
-  // 1. Cargar desde localStorage si existe
-  try{
-    var s=localStorage.getItem('ov_cli_v2_users');
-    if(s){var u=JSON.parse(s);if(u&&u.length)USUARIOS=u;}
-  }catch(e){}
-  if(window.db){
-    // 2. Leer todos los usuarios desde Firebase (sin filtro para no depender de rol exacto)
-    window.db.collection('users').get()
-      .then(function(snap){
-        var arr=[];
-        snap.forEach(function(d){
-          var u=d.data();
-          if(!u.role||u.role==='cliente'||u.role==='admin'){
-            arr.push({
-              user:u.user||u.u||'',
-              pass:u.pass||u.p||'',
-              nombre:u.nombre||u.user||'',
-              role:u.role||'cliente',
-              licExpiry:u.licExpiry||new Date(u.exp||Date.now()+30*864e5).toISOString(),
-              estado:u.estado||'activo'
-            });
-          }
-        });
-        // 3. Si Firebase tiene usuarios → usarlos; si no → mantener DEFAULT
-        if(arr.length){
-          USUARIOS=arr;
-          localStorage.setItem('ov_cli_v2_users',JSON.stringify(arr));
-        } else if(USUARIOS.length===0){
-          USUARIOS=USUARIOS_DEFAULT; // Fallback: usar usuarios por defecto
-        }
-        if(cb)cb();
-      }).catch(function(){
-        // Firebase falló: usar localStorage o DEFAULT
-        if(USUARIOS.length===0) USUARIOS=USUARIOS_DEFAULT;
-        if(cb)cb();
-      });
-  } else {
-    // Sin Firebase: usar localStorage o DEFAULT
-    if(USUARIOS.length===0) USUARIOS=USUARIOS_DEFAULT;
-    if(cb)cb();
-  }
-}
-function saveCliUsers(){
-  try{ localStorage.setItem('ov_cli_v2_users', JSON.stringify(USUARIOS)); }catch(e){}
-}
-loadCliUsers();
-
-var currentUser = null;
-var PRODUCTOS   = [];
-var filtrados   = [];
-var carrito     = [];
-var marcaFiltro = 'TODOS';
-var _sessionInterval = null;
-
-// ── LOGIN ─────────────────────────────────────────────────────────────────────
-function doLogin(){
-  // Refresca URLs base desde localStorage
-  SHEETS_CSV   = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
-  JSON_URL     = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
-  CSV_URL_PUB  = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
-  JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
-  if(window.db){
-    window.db.collection('config').doc('main').get().then(function(doc){
-      if(!doc.exists) return; var c=doc.data();
-      if(c.url_pub){localStorage.setItem('ov_url_pub',c.url_pub);CSV_URL_PUB=c.url_pub;}
-      if(c.url_proxy){localStorage.setItem('ov_url_proxy',c.url_proxy);SHEETS_CSV=c.url_proxy;}
-      if(c.url_json_pub){localStorage.setItem('ov_url_json_pub',c.url_json_pub);JSON_URL_PUB=c.url_json_pub;}
-      if(c.url_json){localStorage.setItem('ov_url_json',c.url_json);JSON_URL=c.url_json;}
-    }).catch(function(){});
-  }
-  loadCliUsers(function(){
-  var u   = document.getElementById('loginUser').value.trim();
-  var p   = document.getElementById('loginPass').value.trim();
-  var err = document.getElementById('loginError');
-  err.textContent = '';
-
-  var found = null;
-  // Buscar en USUARIOS (Firebase/localStorage)
-  for(var i=0;i<USUARIOS.length;i++){
-    if(USUARIOS[i].user===u && USUARIOS[i].pass===p){ found=USUARIOS[i]; break; }
-  }
-  // Fallback: siempre buscar también en USUARIOS_DEFAULT
-  if(!found){
-    for(var i=0;i<USUARIOS_DEFAULT.length;i++){
-      if(USUARIOS_DEFAULT[i].user===u && USUARIOS_DEFAULT[i].pass===p){ found=USUARIOS_DEFAULT[i]; break; }
-    }
-  }
-  if(!found){ err.textContent='Usuario o contraseña incorrectos'; return; }
-  if(found.estado==='bloqueado'){ err.textContent='Usuario bloqueado. Contacta a Ferretería Oviedo.'; return; }
-  if(new Date(found.licExpiry) < new Date()){ err.textContent='Acceso vencido. Contacta a Ferretería Oviedo.'; return; }
-
-  currentUser = found;
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('mainApp').style.display     = 'block';
-  document.getElementById('adminBtn').style.display    = found.role==='admin' ? 'inline-flex' : 'none';
-
-  
-  // ── Registro historial sesión ──
-  try{
-    if(window.db && found){
-      window.db.collection('sessionLog').add({
-        usuario: found.nombre || found.user || '',
-        usuario_id: found.user || '',
-        rol: 'Cliente',
-        accion: 'login',
-        dispositivo: navigator.userAgent.indexOf('Mobile')>=0?'Móvil':'PC',
-        ts: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(function(){});
-    }
-  }catch(e){}
-  registerSession(found.nombre, 'Cliente');
-  if(_sessionInterval) clearInterval(_sessionInterval);
-  _sessionInterval = setInterval(function(){ if(currentUser) registerSession(currentUser.nombre,'Cliente'); }, 60000);
-
-  iniciarApp();
-  });
-}
-
-function doLogout(){
-
-  // ── Registro historial sesión: logout ──
-  try{
-    if(window.db && currentUser){
-      window.db.collection('sessionLog').add({
-        usuario: currentUser.nombre || currentUser.user || '',
-        rol: 'Cliente',
-        accion: 'logout',
-        ts: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(function(){});
-    }
-  }catch(e){}
-  if(currentUser) clearSession(currentUser.nombre,'Cliente');
-  if(_sessionInterval){ clearInterval(_sessionInterval); _sessionInterval=null; }
-  currentUser=null; PRODUCTOS=[]; filtrados=[]; carrito=[];
-  document.getElementById('mainApp').style.display    = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('loginUser').value='';
-  document.getElementById('loginPass').value='';
-  document.getElementById('loginError').textContent='';
 }
 
-// ── SESIONES PARA ADMIN ───────────────────────────────────────────────────────
+function doLogin() {
+  const u = document.getElementById('lu').value.trim(), p = document.getElementById('lp').value.trim();
+  const found = USUARIOS.find(x => x.u === u && x.p === p);
+  if (found && found.estado === 'activo') { localStorage.setItem(USER_KEY, JSON.stringify({u:found.u, p:found.p})); checkSession(); }
+  else showToast('Acceso denegado', 'err');
+}
 
+function doLogout() { localStorage.removeItem(USER_KEY); location.reload(); }
 
-
-// ── CARGA DE CATÁLOGO ───────────────────────────────────────────────────────
-function iniciarApp(){
-  setSyncState('loading','Actualizando catálogo desde GitHub...');
-  function normalizeJsonItems(items){
-    return items.map(function(it){
-      return {
-        Codigo: (it.Codigo||it.codigo||it.CODIGO||it.code||'').toString().trim(),
-        Descripcion: (it.Descripcion||it.descripcion||it.DESCRIPCION||it.Desc||it.desc||'').toString().trim(),
-        Marca: (it.Marca||it.marca||it.MARCA||'').toString().trim(),
-        SubFamilia: (it.SubFamilia||it.subfamilia||it.SUBFAMILIA||it.Sub||it.sub||'').toString().trim(),
-        PrecioIVA: num(it.PrecioIVA||it.precioiva||it.PRECIO_IVA||it.precioiva||it.precio_iva||it.precio||'0'),
-        SocioIVA: num(it.SocioIVA||it.socioiva||it.SOCIO_IVA||it.socioiva||it.socio_iva||'0')
-      };
-    }).filter(function(p){ return p.Codigo && (p.PrecioIVA||p.SocioIVA); });
-  }
-  function tryFetch(url){
-    return fetch(url).then(function(r){
-      if(!r.ok) throw new Error('http');
-      return r.text();
-    }).then(function(txt){
-      var trimmed = txt.trim();
-      if(trimmed.charAt(0)==='['){
-        try{ var data = JSON.parse(trimmed); if(Array.isArray(data)) return normalizeJsonItems(data); }catch(e){}
-      }
-      var parsed = parseCSV(txt);
-      if(parsed.length<1) throw new Error('empty');
-      return parsed;
-    });
-  }
-  tryFetch(JSON_URL_PUB)
-    .catch(function(){ return tryFetch(CSV_URL_PUB); })
-    .catch(function(){ return tryFetch(JSON_URL); })
-    .catch(function(){ return tryFetch(SHEETS_CSV); })
-    .then(function(parsed){
-      PRODUCTOS = parsed;
-      try{ localStorage.setItem(CACHE_KEY,JSON.stringify(parsed)); localStorage.setItem(CACHE_TS_KEY,Date.now()); }catch(e){}
-      var ts = new Date().toLocaleTimeString('es-CL');
-      setSyncState('ok','✓ Precios vigentes · '+parsed.length+' productos · Actualizado: '+ts);
+// APP
+function startApp() {
+  setSyncState('loading', 'Sincronizando catálogo...');
+  cargarCatalogo((err, data) => {
+    if (!err) {
+      PRODS = data.productos.map(p => ({
+        codigo: p.codigo,
+        descripcion: p.descripcion,
+        marca: p.marca || 'VARIOS',
+        precio: p.precioiva || 0
+      }));
+      setSyncState('ok', '✓ Catálogo actualizado');
       initUI();
-    })
-    .catch(function(){
-      try{
-        var c = localStorage.getItem(CACHE_KEY);
-        if(c){
-          PRODUCTOS = JSON.parse(c);
-          var tsRaw = localStorage.getItem(CACHE_TS_KEY);
-          var ts = tsRaw ? new Date(parseInt(tsRaw)).toLocaleString('es-CL') : '—';
-          setSyncState('warn','Sin conexión · Precios del '+ts+' · '+PRODUCTOS.length+' productos');
-          initUI(); return;
-        }
-      }catch(e){}
-      setSyncState('warn','Sin conexión. Verifica la URL del catálogo y recarga la página.');
-    });
-}
-
-function setSyncState(type, text){
-  var bar = document.getElementById('syncBar');
-  bar.className = 'sync-bar '+type;
-  document.getElementById('syncText').textContent = text;
-}
-
-// ── FUNCIONES FIREBASE ───────────────────────────────────────────────────────
-// ── FIREBASE COMPAT BRIDGE ───────────────────────────────────────────────────
-function apiGetFirebase(params, cb) {
-  if (!window.db) return cb(new Error('Firebase no disponible'), null);
-  var a = params.action;
-  if (a === 'getUsers') {
-    window.db.collection('users').get()
-      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
-      .catch(function(e){cb(e,null);});
-  } else if (a === 'getSessions') {
-    window.db.collection('sessions').where('ts','>',Date.now()-30*60*1000).get()
-      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
-      .catch(function(e){cb(e,null);});
-  } else if (a === 'getCotizaciones') {
-    window.db.collection('cotizaciones').orderBy('ts','desc').limit(parseInt(params.limit)||200).get()
-      .then(function(s){var r=[];s.forEach(function(d){r.push(d.data());});cb(null,r);})
-      .catch(function(e){cb(e,null);});
-  } else if (a === 'clearSession') {
-    window.db.collection('sessions').where('user','==',params.user).where('app','==',params.app).get()
-      .then(function(s){var b=window.db.batch();s.forEach(function(d){b.delete(d.ref);});return b.commit();})
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else { cb(null,{}); }
-}
-function apiPostFirebase(body, cb) {
-  if (!window.db) return cb(new Error('Firebase no disponible'), null);
-  var a=body.action, d=body.data||{};
-  if (a==='saveUser') {
-    window.db.collection('users').doc(d.u||d.user).set(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='deleteUser') {
-    window.db.collection('users').doc(body.u||d.u).delete()
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='logSession') {
-    window.db.collection('sessions').add(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='saveCotizacion') {
-    window.db.collection('cotizaciones').add(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='saveConfig') {
-    window.db.collection('config').doc('main').set(d,{merge:true})
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='savePromo') {
-    window.db.collection('promociones').doc((d.id||d.ts||Date.now()).toString()).set(d)
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else if (a==='deletePromo') {
-    window.db.collection('promociones').doc(body.id).delete()
-      .then(function(){cb(null,{ok:true});}).catch(function(e){cb(e,null);});
-  } else { cb(null,{}); }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Parsea precios CLP: maneja decimales de Google Sheets (12990.0) y miles chilenos (12.990)
-function num(s){
-  var str=(s||'').toString().replace(/[$\s]/g,'').trim();
-  if(!str||str==='-') return 0;
-  if(/^[0-9]+[.,][0-9]{1,2}$/.test(str)){return Math.round(parseFloat(str.replace(',','.')));}
-  return parseInt(str.replace(/[.,]/g,'').replace(/[^0-9]/g,''))||0;
-}
-
-function parseCSV(text){
-  var lines = text.split('\n').filter(function(l){return l.trim();});
-  if(lines.length<2) return [];
-  var headers = lines[0].split(',').map(function(h){return h.replace(/"/g,'').trim();});
-  var idx = {};
-  headers.forEach(function(h,i){
-    var hl = h.toLowerCase().replace(/[^a-z]/g,'');
-    if(hl.includes('codigo'))                                    idx.Codigo=i;
-    else if(hl.includes('descripcion')||hl.includes('descripción')) idx.Descripcion=i;
-    else if(hl.includes('marca'))                                idx.Marca=i;
-    else if(hl.includes('subfamilia')||hl.includes('familia'))   idx.SubFamilia=i;
-    else if(hl.includes('precioiva'))                            idx.PrecioIVA=i;
+    }
   });
-  var rows=[];
-  for(var i=1;i<lines.length;i++){
-    var cols = parseLine(lines[i]);
-    var r = {
-      Codigo:      (cols[idx.Codigo]||'').trim(),
-      Descripcion: (cols[idx.Descripcion]||'').trim(),
-      Marca:       (cols[idx.Marca]||'').trim(),
-      SubFamilia:  (cols[idx.SubFamilia]||'').trim(),
-      PrecioIVA:   num(cols[idx.PrecioIVA])
-    };
-    if(r.Codigo && r.PrecioIVA) rows.push(r);
+  if (db) {
+    db.collection('promos').orderBy('ts', 'desc').onSnapshot(snap => {
+      PROMOS = snap.docs.map(d => d.data());
+      renderPromos();
+    });
   }
-  return rows;
 }
 
-function parseLine(line){
-  var result=[],cur='',inQ=false;
-  for(var i=0;i<line.length;i++){
-    var ch=line[i];
-    if(ch==='"'){inQ=!inQ;continue;}
-    if(ch===','&&!inQ){result.push(cur);cur='';continue;}
-    cur+=ch;
-  }
-  result.push(cur); return result;
+function setSyncState(type, txt) {
+  const b = document.getElementById('sbar');
+  b.className = 'sync-bar ' + type;
+  document.getElementById('stxt').textContent = txt;
 }
 
-// ── UI ────────────────────────────────────────────────────────────────────────
-function initUI(){
-  filtrados = PRODUCTOS.slice();
+function initUI() {
+  FILT = PRODS.slice();
   buildFilters();
-  renderProductos();
+  renderProds();
+  loadCart();
 }
 
-function buildFilters(){
-  var marcas = ['TODOS'];
-  var seen = {};
-  PRODUCTOS.forEach(function(p){ if(p.Marca && !seen[p.Marca]){seen[p.Marca]=1;marcas.push(p.Marca);} });
-  marcas.sort(function(a,b){ return a==='TODOS'?-1:b==='TODOS'?1:a.localeCompare(b); });
-  document.getElementById('filtersBar').innerHTML = marcas.slice(0,22).map(function(m){
-    return '<button class="filter-btn '+(m==='TODOS'?'active':'')+'" onclick="setMarca(\''+m.replace(/'/g,"\\'")+'\')">' + m + '</button>';
-  }).join('');
+function buildFilters() {
+  const marcas = ['TODOS', ...new Set(PRODS.map(p => p.marca))].sort();
+  document.getElementById('fbar').innerHTML = marcas.map(m => `<button class="filter-btn${m==='TODOS'?' active':''}" onclick="setMarca('${m}')">${m}</button>`).join('');
 }
 
-function setMarca(m){
-  marcaFiltro = m;
-  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.toggle('active', b.textContent===m); });
+function setMarca(m) {
+  MARCA = m;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent === m));
   onSearch();
 }
 
-function onSearch(){
-  var q = document.getElementById('searchInput').value.toLowerCase().trim();
-  filtrados = PRODUCTOS.filter(function(p){
-    var mm = marcaFiltro==='TODOS' || p.Marca===marcaFiltro;
-    var mq = !q || p.Descripcion.toLowerCase().includes(q) || p.Codigo.toLowerCase().includes(q) || (p.Marca||'').toLowerCase().includes(q);
-    return mm && mq;
+function onSearch() {
+  const q = document.getElementById('sinput').value.toLowerCase().trim();
+  FILT = PRODS.filter(p => (MARCA === 'TODOS' || p.marca === MARCA) && (p.descripcion.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q)));
+  renderProds();
+}
+
+function renderProds() {
+  document.getElementById('plist').innerHTML = FILT.slice(0, 50).map(p => `
+    <div class="prod-card">
+      <div class="prod-header"><div class="prod-nombre">${p.descripcion}</div><div class="prod-codigo">${p.codigo}</div></div>
+      <div class="prod-marca">${p.marca}</div>
+      <div class="prod-bottom">
+        <div class="precio-publico"><span class="precio-label">P. Público</span><span class="precio-val">${fmtCLP(p.precio)}</span></div>
+        <div class="prod-actions">
+          <div class="qty-wrap">
+            <button class="qty-btn" onclick="chgQty('${p.codigo}', -1)">−</button>
+            <span class="qty-val" id="qty_${p.codigo}">${getCartQty(p.codigo)}</span>
+            <button class="qty-btn" onclick="chgQty('${p.codigo}', 1)">+</button>
+          </div>
+          <button class="btn-add" onclick="addToCart('${p.codigo}')">Agregar</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderPromos() {
+  const s = document.getElementById('promosSection');
+  if (!PROMOS.length) { s.style.display = 'none'; return; }
+  s.style.display = 'block';
+  document.getElementById('promosList').innerHTML = PROMOS.map(p => `
+    <div class="promo-card">
+      <div class="promo-tag">${p.tag || 'OFERTA'}</div>
+      <div class="promo-name">${p.titulo}</div>
+      <div class="promo-desc">${p.desc}</div>
+      <div class="promo-price">${p.precio}</div>
+    </div>`).join('');
+}
+
+// CARRITO
+function loadCart() { try { CART = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch(e) { CART = []; } updateCartBadge(); }
+function saveCart() { localStorage.setItem(CART_KEY, JSON.stringify(CART)); updateCartBadge(); }
+function updateCartBadge() { document.getElementById('cartBadge').textContent = CART.reduce((a,b)=>a+b.qty, 0); }
+function getCartQty(c) { const i = CART.find(x => x.codigo === c); return i ? i.qty : 0; }
+
+function chgQty(c, d) {
+  const i = CART.find(x => x.codigo === c);
+  if (i) { i.qty += d; if (i.qty <= 0) CART = CART.filter(x => x.codigo !== c); }
+  else if (d > 0) { const p = PRODS.find(x => x.codigo === c); if (p) CART.push({ ...p, qty: d }); }
+  saveCart(); renderProds();
+}
+
+function addToCart(c) {
+  const i = CART.find(x => x.codigo === c);
+  if (i) i.qty++; else { const p = PRODS.find(x => x.codigo === c); if (p) CART.push({ ...p, qty: 1 }); }
+  saveCart(); renderProds(); showToast('Agregado');
+}
+
+function openCart() { document.getElementById('cpanel').style.display = 'flex'; renderCart(); }
+function closeCart() { document.getElementById('cpanel').style.display = 'none'; }
+
+function renderCart() {
+  const l = document.getElementById('cartList');
+  if (!CART.length) { l.innerHTML = '<div style="text-align:center;padding:20px;">Vacío</div>'; document.getElementById('cartTotal').textContent = '$0'; return; }
+  l.innerHTML = CART.map(i => `
+    <div class="cart-item">
+      <div class="cart-item-info"><div class="cart-item-name">${i.descripcion}</div><div class="cart-item-codigo">${i.codigo}</div></div>
+      <div class="cart-item-price">${fmtCLP(i.precio)}</div><div class="cart-item-qty">x${i.qty}</div>
+      <button class="btn-remove" onclick="chgQty('${i.codigo}', -1)">🗑</button>
+    </div>`).join('');
+  document.getElementById('cartTotal').textContent = fmtCLP(CART.reduce((a,b)=>a+(b.precio*b.qty), 0));
+}
+
+function vaciarCarrito() { if(confirm('¿Vaciar?')) { CART = []; saveCart(); renderCart(); renderProds(); } }
+
+function guardarCotizacionFirestore() {
+  if (!CART.length) return;
+  const c = {
+    vendedor: currentUser.u,
+    vendedorNombre: currentUser.nombre,
+    clienteNombre: currentUser.nombre,
+    items: CART.map(i => ({ codigo: i.codigo, descripcion: i.descripcion, cantidad: i.qty, precioUnitario: i.precio, precioTotal: i.precio * i.qty })),
+    total: CART.reduce((a,b)=>a+(b.precio*b.qty), 0),
+    estado: 'pendiente',
+    ts: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  guardarCotizacion(c, (err) => {
+    if (err) showToast('Error', 'err'); else { showToast('Enviada', 'ok'); CART = []; saveCart(); closeCart(); renderProds(); }
   });
-  renderProductos();
 }
 
-function renderProductos(){
-  var stats = document.getElementById('statsBar');
-  stats.innerHTML =
-    '<div class="stat-chip">Total: <span>'+PRODUCTOS.length+'</span></div>'+
-    '<div class="stat-chip">Filtrados: <span>'+filtrados.length+'</span></div>'+
-    '<div class="stat-chip">Carrito: <span>'+carrito.reduce(function(a,c){return a+c.qty;},0)+' items</span></div>';
-
-  var list = document.getElementById('productosList');
-  if(!filtrados.length){
-    list.innerHTML='<div class="empty-state"><div style="font-size:40px">🔍</div><p style="margin-top:8px;font-size:14px">Sin resultados</p></div>';
-    return;
-  }
-  list.innerHTML = filtrados.slice(0,80).map(function(p){
-    var safeCod = p.Codigo.replace(/'/g,"\\'");
-    return '<div class="prod-card">'+
-      '<div class="prod-header">'+
-        '<div class="prod-nombre">'+p.Descripcion+'</div>'+
-        '<div class="prod-codigo">'+p.Codigo+'</div>'+
-      '</div>'+
-      '<div class="prod-marca">'+(p.Marca||'')+(p.SubFamilia?' · '+p.SubFamilia:'')+'</div>'+
-      '<div class="prod-bottom">'+
-        '<div class="precio-publico">'+
-          '<div class="precio-label">Precio IVA incl.</div>'+
-          '<div class="precio-val">'+fmt(p.PrecioIVA)+'</div>'+
-        '</div>'+
-        '<div class="prod-actions">'+
-          '<div class="qty-wrap">'+
-            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',-1)">−</button>'+
-            '<span class="qty-val" id="qty_'+safeCod+'">1</span>'+
-            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',1)">+</button>'+
-          '</div>'+
-          '<button class="btn-add" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
+function generarPDF() {
+  if (!CART.length) return;
+  const doc = new jspdf.jsPDF();
+  doc.text('Cotización - ' + currentUser.nombre, 14, 20);
+  doc.autoTable(['Código', 'Descripción', 'Cant', 'Total'], CART.map(i => [i.codigo, i.descripcion, i.qty, fmtCLP(i.precio*i.qty)]), { startY: 30 });
+  doc.save('cotizacion.pdf');
 }
 
-function fmt(n){ return '$'+Math.round(n).toLocaleString('es-CL'); }
-
-function chgQty(c,d){
-  var el = document.getElementById('qty_'+c);
-  if(!el) return;
-  var v = parseInt(el.textContent)+d;
-  if(v<1) v=1;
-  el.textContent = v;
-}
-
-function addCart(codigo){
-  var p = null;
-  for(var i=0;i<PRODUCTOS.length;i++){ if(PRODUCTOS[i].Codigo===codigo){p=PRODUCTOS[i];break;} }
-  if(!p) return;
-  var qtyEl = document.getElementById('qty_'+codigo);
-  var qty = qtyEl ? parseInt(qtyEl.textContent)||1 : 1;
-  var idx = -1;
-  for(var j=0;j<carrito.length;j++){ if(carrito[j].Codigo===codigo){idx=j;break;} }
-  if(idx>=0) carrito[idx].qty += qty;
-  else carrito.push({Codigo:p.Codigo, Descripcion:p.Descripcion, Marca:p.Marca||'', SubFamilia:p.SubFamilia||'', PrecioIVA:p.PrecioIVA, qty:qty});
-  updateBadge();
-  toast('✅ Agregado al carrito','ok');
-}
-
-function updateBadge(){ document.getElementById('cartBadge').textContent = carrito.reduce(function(a,c){return a+c.qty;},0); }
-function openCart(){ renderCart(); document.getElementById('cartPanel').style.display='block'; }
-function closeCart(){ document.getElementById('cartPanel').style.display='none'; }
-
-function renderCart(){
-  var items  = document.getElementById('cartItems');
-  var totals = document.getElementById('cartTotals');
-  if(!carrito.length){
-    items.innerHTML='<div class="empty-state" style="padding:24px 0"><div style="font-size:32px">🛒</div><p style="margin-top:6px;font-size:13px">Carrito vacío</p></div>';
-    totals.innerHTML=''; return;
-  }
-  items.innerHTML = carrito.map(function(item,i){
-    return '<div class="cart-item">'+
-      '<div class="cart-item-info">'+
-        '<div class="cart-item-name">'+item.Descripcion+'</div>'+
-        '<div class="cart-item-codigo">'+item.Codigo+'</div>'+
-        '<div class="cart-item-qty">'+item.qty+' × '+fmt(item.PrecioIVA)+'</div>'+
-      '</div>'+
-      '<div class="cart-item-price">'+fmt(item.PrecioIVA*item.qty)+'</div>'+
-      '<button class="btn-remove" onclick="removeItem('+i+')">✕</button>'+
-    '</div>';
-  }).join('');
-  var subtotal = carrito.reduce(function(a,c){return a+c.PrecioIVA*c.qty;},0);
-  var neto = Math.round(subtotal/1.19);
-  var iva  = subtotal - neto;
-  totals.innerHTML =
-    '<div class="totales-box">'+
-      '<div class="total-row"><span>Neto</span><span>'+fmt(neto)+'</span></div>'+
-      '<div class="total-row"><span>IVA 19%</span><span>'+fmt(iva)+'</span></div>'+
-      '<div class="total-row main"><span>TOTAL</span><span>'+fmt(subtotal)+'</span></div>'+
-    '</div>';
-}
-
-function removeItem(i){ carrito.splice(i,1); updateBadge(); renderCart(); }
-function vaciarCarrito(){ if(!confirm('¿Vaciar el carrito?'))return; carrito=[]; updateBadge(); renderCart(); }
-
-// ── COTIZACIONES: guarda con detalle completo para el admin ───────────────────
-function registrarCotizacionResumen(total){
-  try{
-    var lista = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]');
-    var detalle = carrito.map(function(item){
-      return {
-        Codigo:      item.Codigo,
-        Descripcion: item.Descripcion,
-        Marca:       item.Marca||'',
-        qty:         item.qty||0,
-        PrecioIVA:   item.PrecioIVA||0
-      };
-    });
-    lista.push({
-      ts:      Date.now(),
-      user:    currentUser ? currentUser.nombre : 'Cliente',
-      app:     'Cliente',
-      items:   carrito.reduce(function(a,c){return a+(c.qty||0);},0),
-      total:   total,
-      detalle: detalle
-    });
-    if(lista.length>200) lista=lista.slice(lista.length-200);
-    localStorage.setItem('ov_cotizaciones', JSON.stringify(lista));
-  }catch(e){ console.error('Error guardando cotización',e); }
-}
-
-// ── PDF ───────────────────────────────────────────────────────────────────────
-function generarPDF(){
-  if(!carrito.length){ toast('Agrega productos primero','warn'); return; }
-  var jsPDF  = window.jspdf.jsPDF;
-  var doc    = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
-  var naranja=[232,69,10], negro=[30,30,30], gris=[100,100,100], grisClaro=[245,245,245];
-  var nro    = Math.floor(Math.random()*90000)+10000;
-  var fecha  = new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  var nombre = document.getElementById('cliNombre').value||'Cliente';
-  var rut    = document.getElementById('cliRut').value||'';
-  var dir    = document.getElementById('cliDir').value||'';
-  var tel    = document.getElementById('cliTel').value||'';
-  var obs    = document.getElementById('cliObs').value||'';
-
-  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(0,0,216,28,'F');
-  doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
-  doc.text('FERRETERÍA OVIEDO',12,12);
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text('Sucursal El Manzano',12,20);
-  doc.text('Venta Cotización IVA Incluido',120,12);
-  doc.setFont('helvetica','bold'); doc.text('N° '+nro,120,18);
-  doc.setFont('helvetica','normal'); doc.text('Ferretería Oviedo El Manzano',120,24);
-
-  doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(0,28,216,10,'F');
-  doc.setFontSize(9); doc.setTextColor(gris[0],gris[1],gris[2]);
-  doc.text(fecha,12,35); doc.text('Sucursal: El Manzano',130,35);
-
-  var y=48;
-  doc.setTextColor(negro[0],negro[1],negro[2]); doc.setFontSize(9);
-  var campos=[['Señor(es):',nombre],['RUT:',rut],['Dirección:',dir],['Teléfono:',tel]];
-  campos.forEach(function(row){
-    if(!row[1]) return;
-    doc.setFont('helvetica','bold'); doc.text(row[0],12,y);
-    doc.setFont('helvetica','normal'); doc.text(row[1],45,y); y+=6;
-  });
-  y+=4;
-  doc.setFont('helvetica','italic'); doc.setTextColor(gris[0],gris[1],gris[2]);
-  doc.text('De acuerdo a lo solicitado, presentamos la siguiente cotización:',12,y); y+=8;
-
-  var subtotal = carrito.reduce(function(a,c){return a+c.PrecioIVA*c.qty;},0);
-  var rows = carrito.map(function(item){
-    var desc = item.Descripcion.length>58 ? item.Descripcion.substring(0,58)+'...' : item.Descripcion;
-    return [item.Codigo, desc, item.qty, fmt(item.PrecioIVA), '0,00', '0,00', fmt(item.PrecioIVA*item.qty)];
-  });
-
-  doc.autoTable({
-    startY: y,
-    head: [['Código','Descripción','CANT','Precio','Dcto','Dcto%','Valor Total']],
-    body: rows,
-    foot: [[
-      {content:carrito.reduce(function(a,c){return a+c.qty;},0)+' unid.',colSpan:3,styles:{halign:'right',fontStyle:'bold'}},
-      {content:'Total',colSpan:3,styles:{halign:'center',fontStyle:'bold'}},
-      {content:fmt(subtotal),styles:{halign:'right',fontStyle:'bold',textColor:naranja}}
-    ]],
-    headStyles:{fillColor:naranja,textColor:[255,255,255],fontSize:8,fontStyle:'bold',halign:'center'},
-    bodyStyles:{fontSize:8,textColor:negro},
-    footStyles:{fillColor:grisClaro,fontSize:8,fontStyle:'bold'},
-    columnStyles:{0:{cellWidth:22},1:{cellWidth:76},2:{cellWidth:12,halign:'center'},3:{cellWidth:24,halign:'right'},4:{cellWidth:15,halign:'right'},5:{cellWidth:15,halign:'right'},6:{cellWidth:28,halign:'right'}},
-    alternateRowStyles:{fillColor:[250,250,250]},
-    margin:{left:12,right:12}
-  });
-
-  var yT   = doc.lastAutoTable.finalY+6;
-  var neto = Math.round(subtotal/1.19);
-  var iva  = subtotal-neto;
-
-  doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(120,yT,84,28,'F');
-  doc.setFontSize(8); doc.setTextColor(gris[0],gris[1],gris[2]); doc.setFont('helvetica','normal');
-  doc.text('Neto:',126,yT+8); doc.text('IVA 19%:',126,yT+15);
-  doc.setTextColor(negro[0],negro[1],negro[2]); doc.setFont('helvetica','bold');
-  doc.text(fmt(neto),198,yT+8,{align:'right'}); doc.text(fmt(iva),198,yT+15,{align:'right'});
-  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(120,yT+20,84,10,'F');
-  doc.setFontSize(11); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
-  doc.text('TOTAL:',126,yT+27); doc.text(fmt(subtotal),198,yT+27,{align:'right'});
-
-  var yF=yT+34;
-  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(negro[0],negro[1],negro[2]);
-  doc.text('Condiciones de Venta',12,yF);
-  doc.setFont('helvetica','normal'); doc.setTextColor(gris[0],gris[1],gris[2]);
-  if(obs) doc.text(obs,12,yF+6);
-  doc.text('Forma de Pago: TDébito + Efectivo / Transferencia',12,yF+12);
-  doc.text('Esta cotización tiene validez de 7 días hábiles.',12,yF+18);
-  doc.setFont('helvetica','bold'); doc.setTextColor(negro[0],negro[1],negro[2]);
-  doc.text('Ferretería Oviedo — Sucursal El Manzano',12,yF+28);
-  doc.setFont('helvetica','normal'); doc.setTextColor(gris[0],gris[1],gris[2]);
-  doc.text('Página 1 de 1',198,272,{align:'right'});
-
-  var pageH = doc.internal.pageSize.getHeight();
-  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(0,pageH-12,216,12,'F');
-  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont('helvetica','normal');
-  doc.text('Ferretería Oviedo — Sucursal El Manzano',12,pageH-4);
-  doc.text('Cotización N° '+nro,198,pageH-4,{align:'right'});
-
-  doc.save('Cotizacion_Oviedo_'+nro+'.pdf');
-  toast('📄 PDF generado correctamente','ok');
-  registrarCotizacionResumen(subtotal);
-}
-
-// ── TOAST ─────────────────────────────────────────────────────────────────────
-function toast(msg, type){
-  type = type||'ok';
-  var t = document.createElement('div');
-  var bg = type==='ok' ? '#2e7d32' : type==='warn' ? '#e65100' : '#c62828';
-  t.style.cssText = 'position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:'+bg+';color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;font-family:var(--font);max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3)';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(function(){ t.remove(); }, 2800);
-}
-
-// ── GESTIÓN DE USUARIOS EN APP (solo admin) ───────────────────────────────────
-function openAdminCli(){
-  if(!currentUser || currentUser.role!=='admin') return;
-  renderAdminCli();
-  document.getElementById('cliAdminOverlay').style.display = 'flex';
-}
-function closeAdminCli(){ document.getElementById('cliAdminOverlay').style.display = 'none'; }
-
-function renderAdminCli(){
-  var now = Date.now();
-  var rows = '';
-  for(var i=0;i<USUARIOS.length;i++){
-    var u = USUARIOS[i];
-    var exp   = new Date(u.licExpiry).getTime();
-    var dias  = Math.ceil((exp-now)/864e5);
-    var licTxt = dias>0 ? dias+' días' : 'VENCIDO';
-    var licCol = dias>0 ? '#2e7d32' : '#c62828';
-    var estTxt = u.estado==='bloqueado' ? '🚫 Bloqueado' : '✅ Activo';
-    var btns = u.role!=='admin' ?
-      '<button onclick="cliDelUser('+i+')" style="background:#fee2e2;color:#c62828;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">🗑</button> '+
-      '<button onclick="cliToggleBlock('+i+')" style="background:#fef3c7;color:#d97706;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>' : '—';
-    rows += '<tr style="border-bottom:1px solid #f3f4f6">'+
-      '<td style="padding:8px 6px;font-size:12px;font-weight:600">'+u.user+'</td>'+
-      '<td style="padding:8px 6px;font-size:12px">'+u.nombre+'</td>'+
-      '<td style="padding:8px 6px;font-size:12px;color:'+licCol+'">'+licTxt+'</td>'+
-      '<td style="padding:8px 6px;font-size:12px">'+estTxt+'</td>'+
-      '<td style="padding:8px 6px">'+btns+'</td>'+
-    '</tr>';
-  }
-  var html =
-    '<div style="overflow-x:auto;margin-bottom:14px">'+
-      '<table style="width:100%;border-collapse:collapse">'+
-        '<thead><tr style="background:#f9fafb;font-size:11px;color:#6b7280">'+
-          '<th style="padding:8px 6px;text-align:left">Usuario</th>'+
-          '<th style="padding:8px 6px;text-align:left">Nombre</th>'+
-          '<th style="padding:8px 6px;text-align:left">Licencia</th>'+
-          '<th style="padding:8px 6px;text-align:left">Estado</th>'+
-          '<th style="padding:8px 6px;text-align:left">Acc.</th>'+
-        '</tr></thead>'+
-        '<tbody>'+rows+'</tbody>'+
-      '</table>'+
-    '</div>'+
-    '<div style="font-size:13px;font-weight:700;margin-bottom:8px">➕ Agregar usuario</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
-      '<input id="nuU" class="form-input" placeholder="Usuario">'+
-      '<input id="nuN" class="form-input" placeholder="Nombre completo">'+
-      '<input id="nuP" class="form-input" type="password" placeholder="Contraseña">'+
-      '<select id="nuL" class="form-input"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected>1 año</option></select>'+
-    '</div>'+
-    '<button onclick="cliAddUser()" style="width:100%;padding:10px;background:#E8450A;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">+ Agregar usuario</button>';
-  document.getElementById('cliAdminContent').innerHTML = html;
-}
-
-function cliDelUser(i){
-  if(!confirm('¿Eliminar usuario "'+USUARIOS[i].user+'"?')) return;
-  USUARIOS.splice(i,1);
-  saveCliUsers(); renderAdminCli();
-  toast('Usuario eliminado','ok');
-}
-
-function cliToggleBlock(i){
-  USUARIOS[i].estado = USUARIOS[i].estado==='bloqueado' ? 'activo' : 'bloqueado';
-  saveCliUsers(); renderAdminCli();
-  toast('Usuario '+(USUARIOS[i].estado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
-}
-
-function cliAddUser(){
-  var u = document.getElementById('nuU').value.trim();
-  var n = document.getElementById('nuN').value.trim();
-  var p = document.getElementById('nuP').value.trim();
-  var l = parseInt(document.getElementById('nuL').value)||365;
-  if(!u||!n||!p){ toast('Completa todos los campos','warn'); return; }
-  var existe = false;
-  for(var i=0;i<USUARIOS.length;i++){ if(USUARIOS[i].user===u){existe=true;break;} }
-  if(existe){ toast('Usuario ya existe','warn'); return; }
-  USUARIOS.push({user:u, pass:p, nombre:n, role:'cliente', licExpiry:new Date(Date.now()+l*864e5).toISOString(), estado:'activo'});
-  saveCliUsers(); renderAdminCli();
-  toast('Usuario '+u+' creado','ok');
-}
+document.addEventListener('DOMContentLoaded', loadUsers);
 </script>
-
-
-</body></html>
+</body>
+</html>
