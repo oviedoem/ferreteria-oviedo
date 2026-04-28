@@ -6,54 +6,8 @@
 <title>Ferretería Oviedo — Catálogo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-function startAppV16(){
-  if (typeof escucharConfigUrls === 'function') {
-    escucharConfigUrls(function(cfg){
-      if (cfg) {
-        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
-        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
-      }
-    });
-  }
-  if (typeof escucharBroadcast === 'function') {
-    escucharBroadcast(function(data){
-      if (data && data.msg) console.log('[OV] ' + data.msg);
-    });
-  }
-  if (typeof registrarSesionActiva === 'function') {
-    try {
-      var u = firebase.auth().currentUser;
-      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
-    } catch(e) {}
-  }
-}
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
-function startAppV16(){
-  if (typeof escucharConfigUrls === 'function') {
-    escucharConfigUrls(function(cfg){
-      if (cfg) {
-        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
-        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
-      }
-    });
-  }
-  if (typeof escucharBroadcast === 'function') {
-    escucharBroadcast(function(data){
-      if (data && data.msg) console.log('[OV] ' + data.msg);
-    });
-  }
-  if (typeof registrarSesionActiva === 'function') {
-    try {
-      var u = firebase.auth().currentUser;
-      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
-    } catch(e) {}
-  }
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
   --naranja:#E8450A;--naranja2:#c93a08;--naranja-light:#fff3ee;
@@ -780,7 +734,7 @@ function parseCSV(text){
       Descripcion: (cols[idx.Descripcion]||'').trim(),
       Marca:       (cols[idx.Marca]||'').trim(),
       SubFamilia:  (cols[idx.SubFamilia]||'').trim(),
-      PrecioIVA:   parseInt(((cols[idx.PrecioIVA]||'0')).replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'').replace(/[^0-9]/g,''))||0
+      PrecioIVA:   Math.round(parseFloat(((cols[idx.PrecioIVA]||'0')).replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.]/g,''))||0)
     };
     if(r.Codigo && r.PrecioIVA) rows.push(r);
   }
@@ -1143,29 +1097,6 @@ function cliAddUser(){
   saveCliUsers(); renderAdminCli();
   toast('Usuario '+u+' creado','ok');
 }
-
-function startAppV16(){
-  if (typeof escucharConfigUrls === 'function') {
-    escucharConfigUrls(function(cfg){
-      if (cfg) {
-        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
-        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
-      }
-    });
-  }
-  if (typeof escucharBroadcast === 'function') {
-    escucharBroadcast(function(data){
-      if (data && data.msg) console.log('[OV] ' + data.msg);
-    });
-  }
-  if (typeof registrarSesionActiva === 'function') {
-    try {
-      var u = firebase.auth().currentUser;
-      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
-    } catch(e) {}
-  }
-}
-
 </script>
 </body>
 </html>
