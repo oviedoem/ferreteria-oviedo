@@ -5,11 +5,126 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ferretería Oviedo — Vendedor</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config-V16.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
+</script>
+<script src="firebase-config-V16-FINAL.js">
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
+</script>
 <style>
 :root{
   --og:#E8450A;--og2:#c93a08;--og-lite:#fff3ee;
@@ -1006,6 +1121,29 @@ function showToast(msg, type){
   document.body.appendChild(t);
   setTimeout(function(){ t.remove(); }, 2800);
 }
+
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
 </script>
 </body>
 </html>
