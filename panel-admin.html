@@ -471,21 +471,16 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 
 <script>
 // ── DATOS BASE ──────────────────────────────────────
-var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
+var ADMIN_USER = {u:'admin', p:'admin2026'}; // actualizado V16-FINAL
 
-var CLI_USERS = JSON.parse(localStorage.getItem('ov_cli_v2_users') || 'null') || [
-  {user:'admin',pass:'oviedo2025admin',nombre:'Administrador',role:'admin',licExpiry:new Date(Date.now()+365*864e5).toISOString(),estado:'activo'},
-  {user:'cliente1',pass:'cli2025',nombre:'Cliente 1',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'cliente2',pass:'cli2025',nombre:'Cliente 2',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'demo',pass:'demo123',nombre:'Demo',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'}
-];
+var CLI_USERS = [];
 
 var VEND_USERS = JSON.parse(localStorage.getItem('ov_v2_users') || 'null') || [
   {u:'vendedor1',p:'vend2025',nombre:'Ricardo Vidal',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
   {u:'vendedor2',p:'vend2025',nombre:'Rafaela Flores',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
   {u:'vendedor3',p:'vend2025',nombre:'Gregorio Reyes',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
   {u:'vendedor4',p:'vend2025',nombre:'Jaime Subiabre',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'admin',p:'oviedo2025admin',nombre:'Administrador',role:'admin',exp:Date.now()+365*864e5,estado:'activo'}
+  {u:'admin',p:'admin2026',nombre:'Administrador',role:'admin',exp:Date.now()+365*864e5,estado:'activo'}
 ];
 
 var PROMOS = JSON.parse(localStorage.getItem('ov_promos') || '[]');
@@ -577,12 +572,33 @@ function apiPost(body, cb) {
 function doLogin(){
   var u=document.getElementById('lu').value.trim();
   var p=document.getElementById('lp').value.trim();
-  if(u===ADMIN_USER.u && p===ADMIN_USER.p){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    initApp();
+  if(!u||!p){ document.getElementById('lerr').textContent='Ingresa usuario y contraseña'; return; }
+  document.getElementById('lerr').textContent='Verificando...';
+  if(typeof validarCredencialesFirebase === 'function'){
+    validarCredencialesFirebase(u, p, 'admin', function(err, res){
+      if(err || !res || !res.ok){
+        // Fallback: verificar localmente solo admin principal
+        if(u===ADMIN_USER.u && p===ADMIN_USER.p){
+          document.getElementById('loginScreen').style.display='none';
+          document.getElementById('app').style.display='block';
+          initApp();
+        } else {
+          document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
+        }
+        return;
+      }
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('app').style.display='block';
+      initApp();
+    });
   } else {
-    document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
+    if(u===ADMIN_USER.u && p===ADMIN_USER.p){
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('app').style.display='block';
+      initApp();
+    } else {
+      document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
+    }
   }
 }
 function doLogout(){
@@ -1108,7 +1124,7 @@ function parseCSVAdmin(text){
       Codigo:(cols[idx.Codigo]||'').trim(),
       Descripcion:(cols[idx.Descripcion]||'').trim(),
       Marca:(cols[idx.Marca]||'').trim(),
-      PrecioIVA:parseInt(((cols[idx.PrecioIVA]||'0')).replace(/[^0-9]/g,''))||0,
+      PrecioIVA:Math.round(parseFloat(((cols[idx.PrecioIVA]||'0')).replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.]/g,''))||0),
       SocioIVA:parseInt(((cols[idx.SocioIVA]||'0')).replace(/[^0-9]/g,''))||0
     };
     if(r.Codigo&&r.PrecioIVA) rows.push(r);
