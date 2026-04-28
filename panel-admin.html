@@ -3,140 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — Ferretería Oviedo</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config-V16.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
-:root{
-  --naranja:#E8450A;--naranja2:#c93a08;--dark:#111827;--card:#fff;
-  --border:#e5e7eb;--gris:#6b7280;--verde:#059669;--rojo:#dc2626;--azul:#2563eb;--amarillo:#d97706;
+<title>Ferretería Oviedo — Catálogo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
 }
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
+</script>
+<style>
+:root{
+  --naranja:#E8450A;--naranja2:#c93a08;--naranja-light:#fff3ee;
+  --gris-dark:#1a1a1a;--gris:#4a4a4a;--gris-mid:#888;--gris-light:#f5f5f5;--gris-border:#e0e0e0;
+  --blanco:#fff;--verde:#2e7d32;--rojo:#c62828;--azul:#1565c0;
+  --radius:14px;--radius-sm:8px;--shadow:0 2px 12px rgba(0,0,0,.1);
+  --font:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--gris-light);color:var(--gris-dark);min-height:100dvh}
+
 /* LOGIN */
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#111827,#E8450A);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:white;border-radius:20px;padding:36px 32px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
-.login-logo{width:60px;height:60px;background:var(--naranja);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:white;margin:0 auto 16px;letter-spacing:-1px}
-.login-title{font-size:20px;font-weight:800;color:var(--dark);margin-bottom:4px}
-.login-sub{font-size:12px;color:var(--gris);margin-bottom:24px}
-.linput{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:10px;outline:none;transition:.2s}
-.linput:focus{border-color:var(--naranja);box-shadow:0 0 0 3px rgba(232,69,10,.1)}
-.lbtn{width:100%;padding:13px;background:var(--naranja);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
-.lbtn:hover{background:var(--naranja2)}
-.lerr{color:var(--rojo);font-size:12px;margin-top:6px;min-height:18px}
-/* LAYOUT */
-#app{display:none;min-height:100vh}
-.topbar{background:var(--dark);color:white;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.topbar-left{display:flex;align-items:center;gap:12px}
-.top-logo{width:34px;height:34px;background:var(--naranja);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:white}
-.top-title{font-size:15px;font-weight:700}
-.top-sub{font-size:11px;color:#9ca3af}
-.top-right{display:flex;align-items:center;gap:10px}
-.badge-online{background:#059669;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.btn-logout{background:rgba(255,255,255,.1);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-/* NAV TABS */
-.nav{background:white;border-bottom:1px solid var(--border);padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
-.nav::-webkit-scrollbar{display:none}
-.nav-btn{background:none;border:none;padding:14px 14px 12px;font-size:13px;font-weight:600;color:var(--gris);cursor:pointer;font-family:inherit;border-bottom:2.5px solid transparent;white-space:nowrap;transition:.15s}
-.nav-btn.active{color:var(--naranja);border-bottom-color:var(--naranja)}
-/* CONTENT */
-.content{padding:20px;max-width:960px;margin:0 auto}
-.tab-pane{display:none}
-.tab-pane.active{display:block}
-/* CARDS */
-.card{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:1px solid var(--border);margin-bottom:16px}
-.card-title{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.card-title span{font-size:18px}
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1a1a1a 0%,#E8450A 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:white;border-radius:20px;padding:40px;width:360px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-logo-img{margin:0 auto 12px;display:block}
+.login-brand{font-size:22px;font-weight:800;color:var(--naranja);margin-bottom:2px;letter-spacing:-0.5px}
+.login-sucursal{font-size:13px;font-weight:600;color:var(--gris-dark);margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--gris-mid);margin-bottom:28px}
+.login-input{width:100%;padding:14px 16px;border:2px solid var(--gris-border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;transition:border .2s;margin-bottom:12px}
+.login-input:focus{border-color:var(--naranja)}
+.login-btn{width:100%;padding:14px;background:var(--naranja);color:white;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;cursor:pointer;transition:background .2s;font-family:var(--font)}
+.login-btn:hover{background:var(--naranja2)}
+.login-error{color:var(--rojo);font-size:13px;margin-top:8px;min-height:18px}
+.license-info{font-size:11px;color:var(--gris-mid);margin-top:14px;padding-top:14px;border-top:1px solid var(--gris-border)}
+
+/* HEADER */
+header{background:white;border-bottom:3px solid var(--naranja);padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.header-title h1{font-size:15px;font-weight:800;color:var(--naranja);line-height:1.1}
+.header-title p{font-size:10px;color:var(--gris-mid)}
+.header-spacer{flex:1}
+.btn-logout{font-size:11px;color:var(--gris-mid);cursor:pointer;padding:6px 10px;border:1px solid var(--gris-border);border-radius:6px;background:white;font-family:var(--font)}
+
+/* SYNC BAR */
+.sync-bar{padding:7px 16px;font-size:11px;display:flex;align-items:center;gap:6px}
+.sync-bar.ok{background:#e8f5e9;color:#2e7d32}
+.sync-bar.warn{background:#fff3e0;color:#e65100}
+.sync-bar.loading{background:#e3f2fd;color:#1565c0}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* VENDEDORES */
+.vend-section{background:linear-gradient(135deg,#fff8f5 0%,#fff 100%);border-bottom:2px solid #f0e0d8;padding:16px 16px 10px}
+.vend-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.vend-header-icon{width:32px;height:32px;background:var(--naranja);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.vend-header-text{font-size:13px;font-weight:800;color:var(--gris-dark);letter-spacing:-.2px}
+.vend-header-sub{font-size:11px;color:var(--gris-mid);margin-top:1px}
+.vend-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:420px){.vend-grid{grid-template-columns:1fr}}
+.vend-card{background:white;border-radius:12px;padding:11px 12px;box-shadow:0 2px 8px rgba(232,69,10,.08);border:1px solid #f0e0d8;display:flex;flex-direction:column;gap:6px}
+.vend-card-top{display:flex;align-items:center;gap:9px}
+.vend-avatar{width:36px;height:36px;border-radius:50%;background:var(--naranja);color:white;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:-.5px}
+.vend-name{font-size:13px;font-weight:700;color:var(--gris-dark);line-height:1.2}
+.vend-email{font-size:10px;color:var(--gris-mid);margin-top:1px}
+.vend-email a{color:var(--gris-mid);text-decoration:none}
+.vend-wa{display:flex;align-items:center;justify-content:center;gap:5px;background:#25D366;color:white;border:none;border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;font-family:var(--font);width:100%;transition:background .15s}
+.vend-wa:hover{background:#1da851}
+.vend-wa svg{width:14px;height:14px;fill:white;flex-shrink:0}
+
+/* SEARCH */
+.search-section{padding:10px 14px;background:white;border-bottom:1px solid var(--gris-border)}
+.search-wrap{position:relative;margin-bottom:8px}
+.search-wrap input{width:100%;padding:11px 16px 11px 40px;border:2px solid var(--gris-border);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);outline:none;transition:border .2s}
+.search-wrap input:focus{border-color:var(--naranja)}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:17px}
+.filters{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+.filters::-webkit-scrollbar{height:0}
+.filter-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--gris-border);font-size:11px;background:white;cursor:pointer;color:var(--gris);font-family:var(--font);white-space:nowrap;flex-shrink:0;transition:all .15s}
+.filter-btn.active{background:var(--naranja);border-color:var(--naranja);color:white;font-weight:600}
+
 /* STATS */
-.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
-@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
-.stat-card{background:white;border-radius:12px;padding:16px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.stat-val{font-size:28px;font-weight:800;color:var(--dark)}
-.stat-lbl{font-size:11px;color:var(--gris);margin-top:3px}
-.stat-icon{font-size:20px;margin-bottom:6px}
-/* TABLES */
-.tbl{width:100%;border-collapse:collapse;font-size:13px}
-.tbl th{background:#f9fafb;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
-.tbl td{padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#fafafa}
-/* BADGES */
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
-.badge-verde{background:#d1fae5;color:#065f46}
-.badge-rojo{background:#fee2e2;color:#991b1b}
-.badge-amarillo{background:#fef3c7;color:#92400e}
-.badge-azul{background:#dbeafe;color:#1e40af}
-.badge-gris{background:#f3f4f6;color:#374151}
-.badge-naranja{background:#fff3ee;color:#E8450A}
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
-.btn-primary{background:var(--naranja);color:white}
-.btn-primary:hover{background:var(--naranja2)}
-.btn-danger{background:#fee2e2;color:var(--rojo)}
-.btn-danger:hover{background:#fecaca}
-.btn-warn{background:#fef3c7;color:var(--amarillo)}
-.btn-success{background:#d1fae5;color:var(--verde)}
-.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
-/* FORMS */
-.form-grid{display:grid;grid-template-columns:1fr;gap:10px}
-@media(min-width:500px){.form-grid{grid-template-columns:1fr 1fr}}
-.finput{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:.2s}
-.finput:focus{border-color:var(--naranja);box-shadow:0 0 0 3px rgba(232,69,10,.08)}
-.flabel{font-size:12px;font-weight:600;color:var(--gris);margin-bottom:4px;display:block}
-.fgroup{display:flex;flex-direction:column}
-/* PROMO */
-.promo-preview{background:linear-gradient(135deg,#E8450A,#ff6b35);color:white;border-radius:12px;padding:16px;margin-top:10px}
-.promo-tag{background:rgba(255,255,255,.2);display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:8px}
-.promo-title{font-size:18px;font-weight:800;margin-bottom:4px}
-.promo-desc{font-size:13px;opacity:.9}
-/* URL STATUS */
-.url-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:10px}
-.url-ok{background:#d1fae5;color:#065f46}
-.url-err{background:#fee2e2;color:#991b1b}
-.url-loading{background:#dbeafe;color:#1e40af}
-/* TUTORIAL */
-.tut-card{background:#f9fafb;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.15s}
-.tut-card:hover{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.tut-icon{width:42px;height:42px;border-radius:10px;background:var(--naranja);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.tut-title{font-size:14px;font-weight:700;color:var(--dark)}
-.tut-desc{font-size:12px;color:var(--gris);margin-top:2px}
-/* REDES */
-.red-card{background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
-.red-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.red-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.ig-icon{background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
-.fb-icon{background:#1877f2}
-.wa-icon{background:#25D366}
-.red-name{font-size:15px;font-weight:700}
-.red-status{font-size:12px;color:var(--gris)}
-/* TOAST */
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:99999;transition:.3s;opacity:0;pointer-events:none}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#toast.ok{background:#059669}
-#toast.err{background:#dc2626}
-#toast.warn{background:#d97706}
-/* ONLINE */
-.online-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6}
-.online-item:last-child{border-bottom:none}
-.online-avatar{width:38px;height:38px;border-radius:50%;background:var(--naranja);color:white;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.online-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:4px}
-/* MODAL COTIZACION */
-#cotizModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:16px}
-#cotizModal.open{display:flex}
-.modal-box{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:720px;max-height:90vh;overflow-y:auto;font-family:'Inter',sans-serif}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-/* BARRAS ESTADISTICAS */
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
-.bar-label{width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;font-weight:600;color:#374151}
-.bar-track{flex:1;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden}
-.bar-fill{height:100%;background:var(--naranja);border-radius:6px;transition:.4s}
-.bar-count{width:36px;text-align:right;font-weight:700;color:var(--naranja);flex-shrink:0}
-/* STATS COTIZ */
-.cotiz-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
-@media(min-width:500px){.cotiz-stats-grid{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:500px){.content{padding:12px}}
+.stats-bar{display:flex;gap:6px;padding:8px 14px;background:var(--gris-light);flex-wrap:wrap}
+.stat-chip{background:white;border-radius:8px;padding:5px 10px;font-size:11px;color:var(--gris);border:1px solid var(--gris-border)}
+.stat-chip span{font-weight:700;color:var(--naranja)}
+
+/* PRODUCTOS */
+.productos-list{padding:8px 14px;display:flex;flex-direction:column;gap:8px;max-width:700px;margin:0 auto;padding-bottom:90px}
+.prod-card{background:white;border-radius:var(--radius);box-shadow:0 1px 5px rgba(0,0,0,.05);overflow:hidden;transition:box-shadow .15s}
+.prod-card:hover{box-shadow:0 3px 14px rgba(0,0,0,.1)}
+.prod-header{padding:12px 14px 6px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.prod-nombre{font-size:13px;font-weight:600;color:var(--gris-dark);line-height:1.35;flex:1}
+.prod-codigo{font-size:10px;color:var(--gris-mid);background:var(--gris-light);padding:3px 7px;border-radius:6px;white-space:nowrap}
+.prod-marca{font-size:11px;color:var(--azul);font-weight:500;padding:0 14px 6px}
+.prod-bottom{padding:6px 14px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.precio-publico{background:var(--naranja-light);border-radius:8px;padding:8px 14px;display:flex;flex-direction:column;align-items:center}
+.precio-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--naranja);margin-bottom:1px}
+.precio-val{font-size:18px;font-weight:800;color:var(--naranja)}
+.prod-actions{display:flex;align-items:center;gap:6px}
+.qty-wrap{display:flex;align-items:center;gap:3px;background:var(--gris-light);border-radius:8px;padding:3px 6px}
+.qty-btn{width:26px;height:26px;border:none;background:var(--naranja);color:white;border-radius:5px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.qty-val{width:30px;text-align:center;font-size:15px;font-weight:700}
+.btn-add{padding:9px 16px;background:var(--naranja);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s;white-space:nowrap}
+.btn-add:hover{background:var(--naranja2)}
+
+/* CARRITO FAB */
+.cart-fab{position:fixed;bottom:20px;right:20px;width:58px;height:58px;background:var(--naranja);color:white;border-radius:50%;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 20px rgba(232,69,10,.5);display:flex;align-items:center;justify-content:center;z-index:200}
+.cart-badge{position:absolute;top:-3px;right:-3px;background:var(--rojo);color:white;border-radius:50%;width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+/* PANEL CARRITO */
+.cart-panel{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none}
+.cart-drawer{position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;max-height:92dvh;overflow-y:auto;padding:16px}
+.cart-handle{width:36px;height:4px;background:var(--gris-border);border-radius:2px;margin:0 auto 14px}
+.cart-title{font-size:19px;font-weight:800;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cart-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--gris-border)}
+.cart-item-info{flex:1}
+.cart-item-name{font-size:13px;font-weight:600;line-height:1.3}
+.cart-item-codigo{font-size:10px;color:var(--gris-mid);margin-top:1px}
+.cart-item-price{font-size:14px;font-weight:700;color:var(--naranja);white-space:nowrap}
+.cart-item-qty{font-size:11px;color:var(--gris-mid)}
+.btn-remove{color:var(--rojo);font-size:18px;cursor:pointer;padding:4px;background:none;border:none}
+.totales-box{margin:12px 0;border:1px solid var(--gris-border);border-radius:10px;overflow:hidden}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-size:14px}
+.total-row:not(:last-child){border-bottom:1px solid var(--gris-border)}
+.total-row.main{background:var(--naranja);color:white;font-size:17px;font-weight:800}
+.cliente-form{margin-bottom:12px}
+.form-tit{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--gris-dark)}
+.form-group{margin-bottom:8px}
+.form-label{font-size:11px;font-weight:600;color:var(--gris-mid);margin-bottom:3px;display:block}
+.form-input{width:100%;padding:9px 11px;border:1.5px solid var(--gris-border);border-radius:8px;font-size:14px;font-family:var(--font);outline:none;transition:border .2s}
+.form-input:focus{border-color:var(--naranja)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-pdf{width:100%;padding:14px;background:var(--naranja);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .2s}
+.btn-pdf:hover{background:var(--naranja2)}
+.btn-vaciar{width:100%;padding:10px;background:white;color:var(--rojo);border:1px solid var(--rojo);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:7px}
+.empty-state{text-align:center;padding:50px 20px;color:var(--gris-mid)}
+
+/* ADMIN OVERLAY */
+#cliAdminOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;padding:16px}
 </style>
 </head>
 <body>
@@ -144,978 +188,606 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
-    <div class="login-logo">A</div>
-    <div class="login-title">Panel Administrador</div>
-    <div class="login-sub">Ferretería Oviedo — El Manzano</div>
-    <input class="linput" id="lu" type="text" placeholder="Usuario" autocomplete="off">
-    <input class="linput" id="lp" type="password" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="lbtn" onclick="doLogin()">Ingresar</button>
-    <div class="lerr" id="lerr"></div>
+    <svg class="login-logo-img" width="60" height="60" viewBox="0 0 60 60" fill="none">
+      <rect width="60" height="60" rx="14" fill="#E8450A"/>
+      <path d="M12 42L22 17H27L20 33H36L29 17H34L44 42H38L34 32H22L18 42H12Z" fill="white"/>
+      <rect x="12" y="45" width="36" height="4" rx="2" fill="white"/>
+    </svg>
+    <div class="login-brand">FERRETERÍA OVIEDO</div>
+    <div class="login-sucursal">Sucursal El Manzano</div>
+    <div class="login-sub">Catálogo de productos y precios</div>
+    <input type="text" class="login-input" id="loginUser" placeholder="Usuario" autocomplete="off">
+    <input type="password" class="login-input" id="loginPass" placeholder="Contraseña" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Ver precios</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="license-info" id="licInfo">Acceso autorizado solo para clientes registrados</div>
   </div>
 </div>
 
-<!-- APP -->
-<div id="app">
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="top-logo">A</div>
-      <div>
-        <div class="top-title">Panel Admin</div>
-        <div class="top-sub">Ferretería Oviedo</div>
-      </div>
-    </div>
-    <div class="top-right">
-      <span class="badge-online" id="onlineBadge">● 0 en línea</span>
-      <button class="btn-logout" onclick="doLogout()">Salir</button>
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+
+<header>
+  <svg width="38" height="38" viewBox="0 0 60 60" fill="none" style="flex-shrink:0">
+    <rect width="60" height="60" rx="12" fill="#E8450A"/>
+    <path d="M12 42L22 17H27L20 33H36L29 17H34L44 42H38L34 32H22L18 42H12Z" fill="white"/>
+    <rect x="12" y="45" width="36" height="4" rx="2" fill="white"/>
+  </svg>
+  <div class="header-title">
+    <h1>FERRETERÍA OVIEDO</h1>
+    <p>Sucursal El Manzano</p>
+  </div>
+  <div class="header-spacer"></div>
+  <button id="adminBtn" class="btn-logout" onclick="openAdminCli()" style="display:none;background:#333;color:white;margin-right:6px">⚙ Usuarios</button>
+  <button class="btn-logout" onclick="doLogout()">Salir</button>
+</header>
+
+<div class="sync-bar loading" id="syncBar">
+  <div class="sync-dot"></div>
+  <span id="syncText">Actualizando precios...</span>
+</div>
+
+<!-- VENDEDORES -->
+<div class="vend-section">
+  <div class="vend-header">
+    <div class="vend-header-icon">📞</div>
+    <div>
+      <div class="vend-header-text">Ejecutivos de ventas</div>
+      <div class="vend-header-sub">Contáctanos directamente por WhatsApp</div>
     </div>
   </div>
-
-  <!-- NAV -->
-  <div class="nav" id="mainNav">
-    <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
-    <button class="nav-btn" onclick="showTab('usuarios',this)">👥 Usuarios</button>
-    <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
-    <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
-    <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
-    <button class="nav-btn" onclick="showTab('url',this)">🔗 URL / Conexión</button>
-    <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
-    <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
-    <button class="nav-btn" onclick="showTab('mejoras',this)">💡 Mejoras</button>
-  </div>
-
-  <div class="content">
-
-    <!-- ── DASHBOARD ── -->
-    <div class="tab-pane active" id="tab-dashboard">
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val" id="statTotalCli">—</div><div class="stat-lbl">Usuarios Clientes</div></div>
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="statTotalVend">—</div><div class="stat-lbl">Usuarios Vendedores</div></div>
-        <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-val" id="statOnline">0</div><div class="stat-lbl">Sesiones activas</div></div>
-        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-val" id="statProds">—</div><div class="stat-lbl">Productos catálogo</div></div>
+  <div class="vend-grid" id="vendGrid">
+    <!-- Ricardo -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">RV</div>
+        <div>
+          <div class="vend-name">Ricardo Vidal</div>
+          <div class="vend-email"><a href="mailto:ricardo.vidal@oviedo.cl">ricardo.vidal@oviedo.cl</a></div>
+        </div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-val" id="statTotalCotiz">0</div><div class="stat-lbl">Total cotizaciones</div></div>
-        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val" id="statMontoTotal">$0</div><div class="stat-lbl">Monto total cotizado</div></div>
-        <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-val" id="statCotizCli">0</div><div class="stat-lbl">Cotiz. App Clientes</div></div>
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="statCotizVend">0</div><div class="stat-lbl">Cotiz. App Vendedores</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🟢</span> Usuarios en línea ahora</div>
-        <div id="onlineList"><p style="color:#9ca3af;font-size:13px">Sin sesiones activas.</p></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>📄</span> Últimas cotizaciones generadas</div>
-        <div id="lastCotiz"><p style="color:#9ca3af;font-size:13px">Sin cotizaciones aún.</p></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🏆</span> Top 10 productos más cotizados</div>
-        <div id="topProductos"><p style="color:#9ca3af;font-size:13px">Sin datos aún.</p></div>
-      </div>
+      <a class="vend-wa" href="https://wa.me/56968410852" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 968410852
+      </a>
     </div>
-
-    <!-- ── USUARIOS ── -->
-    <div class="tab-pane" id="tab-usuarios">
-      <div class="card">
-        <div class="card-title"><span>📱</span> Usuarios App Clientes</div>
-        <div id="tablaCliUsuarios"></div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <div style="font-size:13px;font-weight:700;margin-bottom:10px">➕ Agregar usuario cliente</div>
-          <div class="form-grid">
-            <div class="fgroup"><label class="flabel">Usuario (login)</label><input class="finput" id="cnu" placeholder="ej: juan2025"></div>
-            <div class="fgroup"><label class="flabel">Nombre completo</label><input class="finput" id="cnn" placeholder="ej: Juan Pérez"></div>
-            <div class="fgroup"><label class="flabel">Contraseña</label><input class="finput" id="cnp" type="password" placeholder="mínimo 6 caracteres"></div>
-            <div class="fgroup"><label class="flabel">Licencia</label>
-              <select class="finput" id="cnl"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected>1 año</option></select>
-            </div>
-          </div>
-          <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="addCliUser()">+ Agregar usuario cliente</button>
+    <!-- Rafaela -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">RF</div>
+        <div>
+          <div class="vend-name">Rafaela Flores</div>
+          <div class="vend-email"><a href="mailto:rflores@oviedo.cl">rflores@oviedo.cl</a></div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title"><span>💼</span> Usuarios App Vendedores</div>
-        <div id="tablaVendUsuarios"></div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <div style="font-size:13px;font-weight:700;margin-bottom:10px">➕ Agregar usuario vendedor</div>
-          <div class="form-grid">
-            <div class="fgroup"><label class="flabel">Usuario (login)</label><input class="finput" id="vnu" placeholder="ej: vendedor5"></div>
-            <div class="fgroup"><label class="flabel">Nombre completo</label><input class="finput" id="vnn" placeholder="ej: María González"></div>
-            <div class="fgroup"><label class="flabel">Contraseña</label><input class="finput" id="vnp" type="password" placeholder="mínimo 6 caracteres"></div>
-            <div class="fgroup"><label class="flabel">Rol</label>
-              <select class="finput" id="vnr"><option value="vendedor">Vendedor</option><option value="admin">Admin</option></select>
-            </div>
-          </div>
-          <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="addVendUser()">+ Agregar usuario vendedor</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>📋</span> Log de cambios</div>
-        <div id="logUsuarios"><p style="color:#9ca3af;font-size:13px">Sin cambios registrados.</p></div>
-      </div>
+      <a class="vend-wa" href="https://wa.me/56974624064" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 974624064
+      </a>
     </div>
-
-    <!-- ── COTIZACIONES ── -->
-    <div class="tab-pane" id="tab-cotizaciones">
-      <div class="cotiz-stats-grid">
-        <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-val" id="cotizStatTotal">0</div><div class="stat-lbl">Total</div></div>
-        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val" id="cotizStatMonto">$0</div><div class="stat-lbl">Monto total</div></div>
-        <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-val" id="cotizStatCli">0</div><div class="stat-lbl">Desde Clientes</div></div>
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="cotizStatVend">0</div><div class="stat-lbl">Desde Vendedores</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🔍</span> Filtrar cotizaciones</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input class="finput" id="cotizSearch" placeholder="Buscar por usuario..." style="flex:1;min-width:160px" oninput="renderCotizaciones()">
-          <select class="finput" id="cotizFiltroApp" style="width:160px" onchange="renderCotizaciones()">
-            <option value="">Todas las apps</option>
-            <option value="Cliente">App Cliente</option>
-            <option value="Vendedor">App Vendedor</option>
-          </select>
-          <button class="btn btn-danger btn-sm" onclick="limpiarCotizaciones()">🗑 Limpiar todo</button>
+    <!-- Gregorio -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">GR</div>
+        <div>
+          <div class="vend-name">Gregorio Reyes</div>
+          <div class="vend-email"><a href="mailto:gregorio.reyes@oviedo.cl">gregorio.reyes@oviedo.cl</a></div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title"><span>📄</span> Cotizaciones registradas</div>
-        <div id="tablaCotiz"><p style="color:#9ca3af;font-size:13px">Sin cotizaciones aún.</p></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>🏆</span> Productos más cotizados</div>
-        <div id="topProductosCotiz"><p style="color:#9ca3af;font-size:13px">Sin datos aún.</p></div>
-      </div>
+      <a class="vend-wa" href="https://wa.me/56998693554" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 998693554
+      </a>
     </div>
-
-    <!-- ── PRECIOS ── -->
-    <div class="tab-pane" id="tab-precios">
-      <div class="card">
-        <div class="card-title"><span>🔗</span> Fuente de datos activa</div>
-        <div id="urlStatus" class="url-status url-loading">⏳ Verificando conexión...</div>
-        <div style="font-size:12px;color:var(--gris);margin-bottom:12px;word-break:break-all" id="urlActiva"></div>
-        <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>📊</span> Vista previa del catálogo</div>
-        <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input class="finput" id="precioSearch" placeholder="🔍 Buscar producto..." style="flex:1;min-width:180px" oninput="filtrarPrecios()">
-          <span id="precioCount" style="font-size:12px;color:var(--gris)"></span>
+    <!-- Jaime -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">JS</div>
+        <div>
+          <div class="vend-name">Jaime Subiabre</div>
+          <div class="vend-email"><a href="mailto:jaime.subiabre@oviedo.cl">jaime.subiabre@oviedo.cl</a></div>
         </div>
-        <div style="overflow-x:auto"><div id="tablaPrecios"><p style="color:#9ca3af;font-size:13px">Cargando...</p></div></div>
       </div>
-      <div class="card">
-        <div class="card-title"><span>📋</span> Instrucciones para actualizar precios</div>
-        <ol style="font-size:13px;line-height:2;padding-left:18px;color:#374151">
-          <li>Usa el archivo del catálogo en GitHub o un CSV público</li>
-          <li>Edita los valores en las columnas <strong>PrecioIVA</strong> o <strong>SocioIVA</strong></li>
-          <li>Ve a <strong>Archivo → Compartir → Publicar en la web</strong></li>
-          <li>Selecciona la hoja, formato <strong>CSV</strong> y copia el enlace</li>
-          <li>Pega el enlace en la sección <strong>🔗 URL / Conexión</strong></li>
-          <li>Las apps cliente y vendedor actualizarán precios automáticamente</li>
-        </ol>
-      </div>
+      <a class="vend-wa" href="https://wa.me/56998962590" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 998962590
+      </a>
     </div>
-
-    <!-- ── PROMOCIONES ── -->
-    <div class="tab-pane" id="tab-promociones">
-      <div class="card">
-        <div class="card-title"><span>🎯</span> Crear promoción / pack oferta</div>
-        <div class="form-grid">
-          <div class="fgroup"><label class="flabel">Título de la promoción</label><input class="finput" id="promoTitle" placeholder="ej: Pack Pintor Completo" oninput="updatePromoPreview()"></div>
-          <div class="fgroup"><label class="flabel">Etiqueta (badge)</label><input class="finput" id="promoTag" placeholder="ej: OFERTA SEMANA" oninput="updatePromoPreview()"></div>
-        </div>
-        <div class="fgroup" style="margin-top:10px"><label class="flabel">Descripción</label>
-          <textarea class="finput" id="promoDesc" rows="3" placeholder="ej: Brocha 4&quot;, rodillo, pintura 1 litro — Todo incluido" oninput="updatePromoPreview()" style="resize:vertical"></textarea>
-        </div>
-        <div class="fgroup" style="margin-top:10px"><label class="flabel">Precio promocional</label><input class="finput" id="promoPrice" placeholder="ej: $14.990" oninput="updatePromoPreview()"></div>
-        <div style="margin-top:14px;font-size:12px;font-weight:700;color:var(--gris);margin-bottom:8px">VISTA PREVIA:</div>
-        <div class="promo-preview" id="promoPreview">
-          <div class="promo-tag" id="pvTag">OFERTA</div>
-          <div class="promo-title" id="pvTitle">Título de la promoción</div>
-          <div class="promo-desc" id="pvDesc">Descripción del pack</div>
-          <div style="font-size:22px;font-weight:800;margin-top:10px" id="pvPrice"></div>
-        </div>
-        <button class="btn btn-primary" style="margin-top:14px;width:100%" onclick="guardarPromo()">✅ Guardar y publicar promoción</button>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>📋</span> Promociones activas</div>
-        <div id="listaPromos"><p style="color:#9ca3af;font-size:13px">Sin promociones activas.</p></div>
-      </div>
-    </div>
-
-    <!-- ── URL / CONEXIÓN ── -->
-    <div class="tab-pane" id="tab-url">
-      <div class="card">
-        <div class="card-title"><span>🔗</span> URL del catálogo (GitHub Raw / CSV)</div>
-        <div class="fgroup" style="margin-bottom:12px">
-          <label class="flabel">URL pública (recomendada) — GitHub raw</label>
-          <input class="finput" id="urlPub" placeholder="https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv">
-        </div>
-        <div class="fgroup" style="margin-bottom:12px">
-          <label class="flabel">URL proxy / respaldo</label>
-          <input class="finput" id="urlProxy" placeholder="https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv">
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
-          <button class="btn btn-success" onclick="guardarURLs()">💾 Guardar URLs</button>
-        </div>
-        <div id="urlTestResult" style="margin-top:12px"></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>📋</span> Instrucciones para obtener URL pública</div>
-        <ol style="font-size:13px;line-height:2.1;padding-left:18px;color:#374151">
-          <li>Abre tu catálogo en GitHub o en el archivo CSV público</li>
-          <li>Ve a <strong>Archivo → Compartir → Publicar en la web</strong></li>
-          <li>Selecciona la hoja con los precios</li>
-          <li>En Formato selecciona <strong>CSV</strong></li>
-          <li>Haz clic en <strong>Publicar</strong> y copia el enlace</li>
-          <li>Pégalo arriba en "URL pública" y haz clic en <strong>Guardar URLs</strong></li>
-          <li>Haz clic en <strong>Probar conexión</strong> para verificar</li>
-        </ol>
-      </div>
-    </div>
-
-    <!-- ── REDES SOCIALES ── -->
-    <div class="tab-pane" id="tab-redes">
-      <div class="red-card">
-        <div class="red-header">
-          <div class="red-icon ig-icon">📸</div>
-          <div><div class="red-name">Instagram</div><div class="red-status" id="igStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('ig')">Ver instrucciones</button>
-        </div>
-        <div class="fgroup"><label class="flabel">Nombre de usuario (@)</label>
-          <div style="display:flex;gap:8px">
-            <input class="finput" id="igUser" placeholder="@ferreteriaOviedo">
-            <button class="btn btn-sm btn-success" onclick="vincularRed('ig')">Vincular</button>
-          </div>
-        </div>
-        <div id="igInfo" style="display:none;margin-top:10px"></div>
-      </div>
-      <div class="red-card">
-        <div class="red-header">
-          <div class="red-icon fb-icon">📘</div>
-          <div><div class="red-name">Facebook</div><div class="red-status" id="fbStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('fb')">Ver instrucciones</button>
-        </div>
-        <div class="fgroup"><label class="flabel">URL de página Facebook</label>
-          <div style="display:flex;gap:8px">
-            <input class="finput" id="fbUrl" placeholder="https://facebook.com/tuPagina">
-            <button class="btn btn-sm btn-success" onclick="vincularRed('fb')">Vincular</button>
-          </div>
-        </div>
-        <div id="fbInfo" style="display:none;margin-top:10px"></div>
-      </div>
-      <div class="red-card">
-        <div class="red-header">
-          <div class="red-icon wa-icon">💬</div>
-          <div><div class="red-name">WhatsApp Business</div><div class="red-status" id="waStatus">Sin vincular</div></div>
-          <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showRedInstrucciones('wa')">Ver instrucciones</button>
-        </div>
-        <div class="fgroup"><label class="flabel">Número WhatsApp (+56...)</label>
-          <div style="display:flex;gap:8px">
-            <input class="finput" id="waNum" placeholder="+56912345678">
-            <button class="btn btn-sm btn-success" onclick="vincularRed('wa')">Vincular</button>
-          </div>
-        </div>
-        <div id="waInfo" style="display:none;margin-top:10px"></div>
-      </div>
-      <div id="redModal" style="display:none" class="card">
-        <div class="card-title"><span>📋</span> Instrucciones de vinculación</div>
-        <div id="redInstrContent"></div>
-      </div>
-    </div>
-
-    <!-- ── TUTORIALES ── -->
-    <div class="tab-pane" id="tab-tutoriales">
-      <div class="tut-card" onclick="descTutorial('cliente')">
-        <div class="tut-icon">📱</div>
-        <div><div class="tut-title">Manual App Clientes</div><div class="tut-desc">Cómo buscar productos, crear cotizaciones y descargar PDF</div></div>
-        <div style="margin-left:auto;font-size:20px">⬇️</div>
-      </div>
-      <div class="tut-card" onclick="descTutorial('vendedor')">
-        <div class="tut-icon">💼</div>
-        <div><div class="tut-title">Manual App Vendedores</div><div class="tut-desc">Acceso, consulta de precios con margen y sincronización</div></div>
-        <div style="margin-left:auto;font-size:20px">⬇️</div>
-      </div>
-      <div class="tut-card" onclick="descTutorial('admin')">
-        <div class="tut-icon">⚙️</div>
-        <div><div class="tut-title">Manual Panel Admin</div><div class="tut-desc">Gestión de usuarios, precios, URLs y configuración</div></div>
-        <div style="margin-left:auto;font-size:20px">⬇️</div>
-      </div>
-      <div class="tut-card" onclick="descTutorial('sheets')">
-        <div class="tut-icon">📊</div>
-        <div><div class="tut-title">Guía de catálogo</div><div class="tut-desc">Cómo actualizar precios, publicar y obtener URL</div></div>
-        <div style="margin-left:auto;font-size:20px">⬇️</div>
-      </div>
-    </div>
-
-    <!-- ── MEJORAS ── -->
-    <div class="tab-pane" id="tab-mejoras">
-      <div class="card">
-        <div class="card-title"><span>💡</span> Recomendaciones de mejora continua</div>
-        <div id="listaMejoras"></div>
-      </div>
-    </div>
-
-  </div><!-- /content -->
-</div><!-- /app -->
-
-<!-- MODAL DETALLE COTIZACIÓN -->
-<div id="cotizModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 style="font-size:16px;font-weight:800">📄 Detalle de Cotización</h2>
-      <button onclick="cerrarCotizModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#666">✕</button>
-    </div>
-    <div id="cotizModalContent"></div>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- BÚSQUEDA -->
+<div class="search-section">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Buscar producto, código o marca..." oninput="onSearch()">
+  </div>
+  <div class="filters" id="filtersBar"></div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+<div class="productos-list" id="productosList"></div>
+
+<button class="cart-fab" onclick="openCart()">
+  🛒<div class="cart-badge" id="cartBadge">0</div>
+</button>
+
+<!-- CARRITO -->
+<div class="cart-panel" id="cartPanel" onclick="if(event.target===this)closeCart()">
+  <div class="cart-drawer">
+    <div class="cart-handle"></div>
+    <div class="cart-title">
+      🛒 Mi Cotización
+      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gris-mid)" onclick="closeCart()">✕</button>
+    </div>
+    <div id="cartItems"></div>
+    <div id="cartTotals"></div>
+    <div class="cliente-form" style="margin-top:12px">
+      <div class="form-tit">📋 Tus datos</div>
+      <div class="form-group"><label class="form-label">Nombre completo / Empresa</label><input class="form-input" id="cliNombre" placeholder="Ej: Juan Pérez o Constructora SA"></div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">RUT</label><input class="form-input" id="cliRut" placeholder="12.345.678-9"></div>
+        <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="cliTel" placeholder="+56 9..."></div>
+      </div>
+      <div class="form-group"><label class="form-label">Dirección / Ciudad</label><input class="form-input" id="cliDir" placeholder="Calle, número, ciudad"></div>
+      <div class="form-group"><label class="form-label">Observaciones</label><input class="form-input" id="cliObs" placeholder="Forma de pago, plazo entrega..."></div>
+    </div>
+    <button class="btn-pdf" onclick="generarPDF()">📄 Descargar cotización PDF</button>
+    <button class="btn-vaciar" onclick="vaciarCarrito()">🗑 Vaciar carrito</button>
+  </div>
+</div>
+
+</div><!-- /mainApp -->
+
+<!-- ADMIN OVERLAY -->
+<div id="cliAdminOverlay">
+  <div style="background:white;border-radius:16px;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:800">⚙ Gestión de Usuarios</div>
+      <button onclick="closeAdminCli()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#888">✕</button>
+    </div>
+    <div id="cliAdminContent"></div>
+  </div>
+</div>
 
 <script>
-// ── DATOS BASE ──────────────────────────────────────
-var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
 
-var CLI_USERS = JSON.parse(localStorage.getItem('ov_cli_v2_users') || 'null') || [
-  {user:'admin',pass:'oviedo2025admin',nombre:'Administrador',role:'admin',licExpiry:new Date(Date.now()+365*864e5).toISOString(),estado:'activo'},
-  {user:'cliente1',pass:'cli2025',nombre:'Cliente 1',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'cliente2',pass:'cli2025',nombre:'Cliente 2',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'demo',pass:'demo123',nombre:'Demo',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'}
-];
+// ============================================================
+//  MÓDULO API CENTRAL — Ferretería Oviedo
+//  Sincronización multi-dispositivo via Firebase
+// ============================================================
+var API_URL = localStorage.getItem('ov_api_url') || 'https://script.google.com/macros/s/TU_ID_AQUI/exec';
 
-var VEND_USERS = JSON.parse(localStorage.getItem('ov_v2_users') || 'null') || [
-  {u:'vendedor1',p:'vend2025',nombre:'Ricardo Vidal',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'vendedor2',p:'vend2025',nombre:'Rafaela Flores',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'vendedor3',p:'vend2025',nombre:'Gregorio Reyes',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'vendedor4',p:'vend2025',nombre:'Jaime Subiabre',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
-  {u:'admin',p:'oviedo2025admin',nombre:'Administrador',role:'admin',exp:Date.now()+365*864e5,estado:'activo'}
-];
-
-var PROMOS = JSON.parse(localStorage.getItem('ov_promos') || '[]');
-var LOG = JSON.parse(localStorage.getItem('ov_log') || '[]');
-var PRODS_CACHE = [];
-var PRODS_FILT = [];
-
-var URL_PUB   = localStorage.getItem('ov_url_pub')   || 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
-var URL_PROXY = localStorage.getItem('ov_url_proxy') || 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
-
-function saveAll(){
-  localStorage.setItem('ov_cli_v2_users', JSON.stringify(CLI_USERS));
-  localStorage.setItem('ov_v2_users', JSON.stringify(VEND_USERS));
-  localStorage.setItem('ov_promos', JSON.stringify(PROMOS));
-  localStorage.setItem('ov_log', JSON.stringify(LOG));
+function apiGet(params, cb) {
+  if (window.db) {
+    // Usar Firebase
+    apiGetFirebase(params, cb);
+  } else {
+    // Fallback a Google Apps Script
+    var url = API_URL + '?' + Object.keys(params).map(function(k){
+      return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+    }).join('&');
+    fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(d){ cb(null, d); })
+      .catch(function(e){ cb(e, null); });
+  }
 }
 
-function saveRemoteUser(user){
-  if (!window.db) return;
-  var payload = {
-    u: user.u || user.user || '',
-    user: user.user || user.u || '',
-    p: user.p || user.pass || '',
-    pass: user.pass || user.p || '',
-    nombre: user.nombre || '',
-    role: user.role || '',
-    estado: user.estado || 'activo',
-    licExpiry: user.licExpiry || (user.exp?new Date(user.exp).toISOString():new Date(Date.now()+30*864e5).toISOString()),
-    exp: user.exp || (user.licExpiry?new Date(user.licExpiry).getTime():Date.now()+30*864e5)
-  };
-  apiPost({action:'saveUser', data:payload}, function(){});
+function apiPost(body, cb) {
+  if (window.db) {
+    // Usar Firebase
+    apiPostFirebase(body, cb);
+  } else {
+    // Fallback a Google Apps Script
+    fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ cb(null, d); })
+      .catch(function(e){ cb(e, null); });
+  }
 }
 
-function deleteRemoteUser(uid){
-  if (!window.db) return;
-  apiPost({action:'deleteUser', u:uid}, function(){});
-}
-
-function loadAdminUsers(cb){
-  if (!window.db) { if(cb) cb(); return; }
+function loadUsers(cb) {
   apiGet({action:'getUsers'}, function(err, data) {
-    if (!err && Array.isArray(data) && data.length) {
-      CLI_USERS = data.filter(function(u){ return u.role==='cliente'; }).map(function(u){
-        return {user:u.user||u.u||'', pass:u.pass||u.p||'', nombre:u.nombre||'', role:u.role||'cliente', licExpiry:u.licExpiry||new Date(u.exp||Date.now()+30*864e5).toISOString(), estado:u.estado||'activo'};
+    if(!err && Array.isArray(data) && data.length) {
+      USERS = data.map(function(u){
+        return {
+          user: u.user || u.u || '',
+          pass: u.pass || u.p || '',
+          nombre: u.nombre || '',
+          role: u.role || 'cliente',
+          licExpiry: u.licExpiry || (u.exp?new Date(u.exp).toISOString():new Date(Date.now()+30*864e5).toISOString()),
+          estado: u.estado || 'activo'
+        };
       });
-      VEND_USERS = data.filter(function(u){ return u.role==='vendedor' || u.role==='admin'; }).map(function(u){
-        return {u:u.u||u.user||'', p:u.p||u.pass||'', nombre:u.nombre||'', role:u.role||'vendedor', exp:u.exp||new Date(u.licExpiry||Date.now()+365*864e5).getTime(), estado:u.estado||'activo'};
-      });
-      saveAll();
+      try{ localStorage.setItem('ov_v2_users', JSON.stringify(USERS)); }catch(e){}
+    } else {
+      try{
+        var s = localStorage.getItem('ov_v2_users');
+        if(s){ var u=JSON.parse(s); if(u&&u.length) USERS=u; }
+      }catch(e){}
     }
     if(cb) cb();
   });
 }
 
-function fmtCLP(n){ return '$'+Math.round(n||0).toLocaleString('es-CL'); }
-
-var API_URL = localStorage.getItem('ov_api_url') || 'https://script.google.com/macros/s/TU_ID_AQUI/exec';
-
-function apiGet(params, cb) {
-  if (window.db) {
-    apiGetFirebase(params, cb);
-    return;
-  }
-  var url = API_URL + '?' + Object.keys(params).map(function(k){
-    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
-  }).join('&');
-  fetch(url)
-    .then(function(r){ return r.json(); })
-    .then(function(d){ cb(null, d); })
-    .catch(function(e){ cb(e, null); });
-}
-
-function apiPost(body, cb) {
-  if (window.db) {
-    apiPostFirebase(body, cb);
-    return;
-  }
-  fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(body)
-  })
-    .then(function(r){ return r.json(); })
-    .then(function(d){ cb(null, d); })
-    .catch(function(e){ cb(e, null); });
-}
-
-// ── LOGIN ────────────────────────────────────────────
-function doLogin(){
-  var u=document.getElementById('lu').value.trim();
-  var p=document.getElementById('lp').value.trim();
-  if(u===ADMIN_USER.u && p===ADMIN_USER.p){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    initApp();
-  } else {
-    document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
-  }
-}
-function doLogout(){
-  document.getElementById('app').style.display='none';
-  document.getElementById('loginScreen').style.display='flex';
-  document.getElementById('lu').value='';
-  document.getElementById('lp').value='';
-  document.getElementById('lerr').textContent='';
-}
-
-// ── TABS ─────────────────────────────────────────────
-function showTab(id, btn){
-  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
-  document.getElementById('tab-'+id).classList.add('active');
-  if(btn) btn.classList.add('active');
-  if(id==='usuarios')     renderUsuarios();
-  if(id==='precios')      loadPrecios();
-  if(id==='mejoras')      renderMejoras();
-  if(id==='cotizaciones') renderCotizaciones();
-  if(id==='url'){
-    document.getElementById('urlPub').value   = URL_PUB;
-    document.getElementById('urlProxy').value = URL_PROXY;
-  }
-  if(id==='promociones')  renderPromos();
-  if(id==='redes')        loadRedes();
-}
-
-// ── INIT ─────────────────────────────────────────────
-function initApp(){
-  loadAdminUsers(function(){
-    renderDashboard();
-    renderUsuarios();
-    renderPromos();
-    loadPrecios();
-    loadRedes();
-    document.getElementById('urlPub').value   = URL_PUB;
-    document.getElementById('urlProxy').value = URL_PROXY;
-    setInterval(renderDashboard, 30000);
-  });
-}
-
-// ── DASHBOARD ────────────────────────────────────────
-function renderDashboard(){
-  document.getElementById('statTotalCli').textContent  = CLI_USERS.filter(function(u){return u.role==='cliente';}).length;
-  document.getElementById('statTotalVend').textContent = VEND_USERS.filter(function(u){return u.role==='vendedor';}).length;
-
-  var localSessions = JSON.parse(localStorage.getItem('ov_sessions') || '[]');
-  var now = Date.now();
-
-  function renderSessions(sessions) {
-    var activas = sessions.filter(function(s){ return now - s.ts < 30*60*1000; });
-    document.getElementById('statOnline').textContent = activas.length;
-    document.getElementById('onlineBadge').textContent = '● '+activas.length+' en línea';
-
-    if(activas.length===0){
-      document.getElementById('onlineList').innerHTML =
-        '<div style="background:#f9fafb;border-radius:10px;padding:14px;font-size:13px;color:#6b7280">'+
-        '<div style="font-weight:700;margin-bottom:6px">Sin sesiones activas en este momento</div>'+
-        '<div style="font-size:12px">ℹ️ Las sesiones se registran cuando un usuario inicia sesión en la app cliente o vendedor.</div></div>';
-    } else {
-      document.getElementById('onlineList').innerHTML = activas.map(function(s){
-        var mins = Math.floor((now-s.ts)/60000);
-        return '<div class="online-item">'+
-          '<div class="online-avatar">'+s.user.charAt(0).toUpperCase()+'</div>'+
-          '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+s.user+'</div>'+
-          '<div style="font-size:12px;color:#6b7280">'+s.app+' · '+s.device+' · hace '+(mins<1?'<1':mins)+' min</div></div>'+
-          '<span class="badge badge-verde"><span class="online-dot"></span>Activo</span></div>';
-      }).join('');
+function saveUserRemote(userData, cb) {
+  var found = false;
+  for(var i=0;i<USERS.length;i++){
+    if(USERS[i].user===userData.user || USERS[i].user===userData.u){
+      for(var k in userData){ if(userData.hasOwnProperty(k)) USERS[i][k]=userData[k]; }
+      found=true; break;
     }
   }
+  if(!found) USERS.push(userData);
+  try{ localStorage.setItem('ov_v2_users', JSON.stringify(USERS)); }catch(e){}
+  userData.u = userData.u || userData.user || '';
+  userData.user = userData.user || userData.u || '';
+  userData.p = userData.p || userData.pass || '';
+  userData.pass = userData.pass || userData.p || '';
+  userData.licExpiry = userData.licExpiry || (userData.exp?new Date(userData.exp).toISOString():new Date(Date.now()+30*864e5).toISOString());
+  userData.exp = userData.exp || (userData.licExpiry?new Date(userData.licExpiry).getTime():Date.now()+30*864e5);
+  apiPost({action:'saveUser', data:userData}, function(err,res){ if(cb) cb(err,res); });
+}
 
-  if (window.db) {
-    apiGet({action:'getSessions'}, function(err, data) {
-      if (!err && Array.isArray(data) && data.length) {
-        renderSessions(data);
-      } else {
-        renderSessions(localSessions);
+function deleteUserRemote(uid, cb) {
+  USERS = USERS.filter(function(x){ return x.u!==uid; });
+  try{ localStorage.setItem('ov_v2_users', JSON.stringify(USERS)); }catch(e){}
+  apiGet({action:'deleteUser', u:uid}, function(err,res){ if(cb) cb(err,res); });
+}
+
+function registerSession(nombre, app) {
+  var device = navigator.userAgent.indexOf('Mobile')>=0 ? 'Móvil' : 'PC';
+  apiPost({action:'logSession', data:{user:nombre, app:app, ts:Date.now(), device:device}}, function(){});
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return Date.now()-x.ts < 30*60*1000; });
+    var ei=-1;
+    for(var i=0;i<s.length;i++){ if(s[i].user===nombre&&s[i].app===app){ei=i;break;} }
+    var en={user:nombre,app:app,ts:Date.now(),device:device};
+    if(ei>=0) s[ei]=en; else s.push(en);
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+  }catch(e){}
+}
+
+function clearSession(nombre, app) {
+  apiGet({action:'clearSession', user:nombre, app:app}, function(){});
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return !(x.user===nombre&&x.app===app); });
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+  }catch(e){}
+}
+
+function registrarCotizacion(total) {
+  try{
+    var detalle = (typeof CART !== 'undefined' ? CART : []).map(function(item){
+      return {Codigo:item.Codigo||'', Descripcion:item.Desc||'', qty:item.qty||0, precio:item.precio||0, margen:item.m||0};
+    });
+    var cot = {
+      ts:      Date.now(),
+      user:    (typeof me !== 'undefined' && me) ? me.nombre : 'Vendedor',
+      app:     'Vendedor',
+      items:   (typeof CART !== 'undefined' ? CART : []).reduce(function(a,c){ return a+(c.qty||0); },0),
+      total:   total,
+      detalle: detalle
+    };
+    var lista = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]');
+    lista.push(cot);
+    if(lista.length>200) lista=lista.slice(lista.length-200);
+    localStorage.setItem('ov_cotizaciones', JSON.stringify(lista));
+    apiPost({action:'saveCotizacion', data:cot}, function(){});
+  }catch(e){ console.error('Error guardando cotización',e); }
+}
+
+function loadAdminData(cb) {
+  var sesiones=[], cotizaciones=[];
+  apiGet({action:'getSessions'}, function(err, data) {
+    if(!err && Array.isArray(data)) sesiones=data;
+    apiGet({action:'getCotizaciones', limit:'50'}, function(err2, data2) {
+      if(!err2 && Array.isArray(data2)) cotizaciones=data2;
+      cb(sesiones, cotizaciones);
+    });
+  });
+}
+// ============================================================
+
+// ── URLs de catálogo: GitHub raw + fallback ─────────────────────────────────
+var SHEETS_CSV_DEFAULT  = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
+var JSON_URL_DEFAULT    = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.json';
+var SHEETS_PUB_DEFAULT  = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
+var JSON_URL_PUB_DEFAULT = 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.json';
+var SHEETS_CSV  = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
+var JSON_URL    = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
+var CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
+var JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
+
+var CACHE_KEY    = 'ov_cli_productos';
+var CACHE_TS_KEY = 'ov_cli_ts';
+
+// ── USUARIOS: siempre lee primero de ov_cli_v2_users (guardado por admin) ───
+var USUARIOS_DEFAULT = [
+  {user:'admin',   pass:'oviedo2025admin', nombre:'Administrador', role:'admin',   licExpiry:new Date(Date.now()+365*864e5).toISOString(), estado:'activo'},
+  {user:'cliente1',pass:'cli2025',         nombre:'Cliente 1',     role:'cliente', licExpiry:new Date(Date.now()+30*864e5).toISOString(),  estado:'activo'},
+  {user:'cliente2',pass:'cli2025',         nombre:'Cliente 2',     role:'cliente', licExpiry:new Date(Date.now()+30*864e5).toISOString(),  estado:'activo'},
+  {user:'demo',    pass:'demo123',         nombre:'Demo',          role:'cliente', licExpiry:new Date(Date.now()+30*864e5).toISOString(),  estado:'activo'}
+];
+
+var USUARIOS = USUARIOS_DEFAULT;
+
+function loadCliUsers(){
+  try{
+    var s = localStorage.getItem('ov_cli_v2_users');
+    if(s){ var u=JSON.parse(s); if(u&&u.length) USUARIOS=u; }
+  }catch(e){}
+}
+function saveCliUsers(){
+  try{ localStorage.setItem('ov_cli_v2_users', JSON.stringify(USUARIOS)); }catch(e){}
+}
+loadCliUsers();
+
+var currentUser = null;
+var PRODUCTOS   = [];
+var filtrados   = [];
+var carrito     = [];
+var marcaFiltro = 'TODOS';
+var _sessionInterval = null;
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function doLogin(){
+  loadCliUsers(); // Refresca siempre desde lo que admin guardó
+  // Refresca URLs por si admin las actualizó
+  SHEETS_CSV  = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
+  JSON_URL    = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
+  CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
+  JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
+
+  var u   = document.getElementById('loginUser').value.trim();
+  var p   = document.getElementById('loginPass').value.trim();
+  var err = document.getElementById('loginError');
+  err.textContent = '';
+
+  var found = null;
+  for(var i=0;i<USUARIOS.length;i++){
+    if(USUARIOS[i].user===u && USUARIOS[i].pass===p){ found=USUARIOS[i]; break; }
+  }
+  if(!found){ err.textContent='Usuario o contraseña incorrectos'; return; }
+  if(found.estado==='bloqueado'){ err.textContent='Usuario bloqueado. Contacta a Ferretería Oviedo.'; return; }
+  if(new Date(found.licExpiry) < new Date()){ err.textContent='Acceso vencido. Contacta a Ferretería Oviedo.'; return; }
+
+  currentUser = found;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display     = 'block';
+  document.getElementById('adminBtn').style.display    = found.role==='admin' ? 'inline-flex' : 'none';
+
+  registerSession(found.nombre, 'Cliente');
+  if(_sessionInterval) clearInterval(_sessionInterval);
+  _sessionInterval = setInterval(function(){ if(currentUser) registerSession(currentUser.nombre,'Cliente'); }, 60000);
+
+  iniciarApp();
+}
+
+function doLogout(){
+  if(currentUser) clearSession(currentUser.nombre,'Cliente');
+  if(_sessionInterval){ clearInterval(_sessionInterval); _sessionInterval=null; }
+  currentUser=null; PRODUCTOS=[]; filtrados=[]; carrito=[];
+  document.getElementById('mainApp').style.display    = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginError').textContent='';
+}
+
+// ── SESIONES PARA ADMIN ───────────────────────────────────────────────────────
+function registerSession(nombre, app){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return Date.now()-x.ts < 30*60*1000; });
+    var device = navigator.userAgent.indexOf('Mobile')>=0 ? '📱 Móvil' : '💻 PC';
+    var ei = -1;
+    for(var i=0;i<s.length;i++){ if(s[i].user===nombre&&s[i].app===app){ei=i;break;} }
+    var en = {user:nombre, app:app, ts:Date.now(), device:device};
+    if(ei>=0) s[ei]=en; else s.push(en);
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+  }catch(e){}
+}
+function clearSession(nombre, app){
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return !(x.user===nombre&&x.app===app); });
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+  }catch(e){}
+}
+
+// ── CARGA DE CATÁLOGO ───────────────────────────────────────────────────────
+function iniciarApp(){
+  setSyncState('loading','Actualizando catálogo desde GitHub...');
+  function normalizeJsonItems(items){
+    return items.map(function(it){
+      return {
+        Codigo: (it.Codigo||it.codigo||it.CODIGO||it.code||'').toString().trim(),
+        Descripcion: (it.Descripcion||it.descripcion||it.DESCRIPCION||it.Desc||it.desc||'').toString().trim(),
+        Marca: (it.Marca||it.marca||it.MARCA||'').toString().trim(),
+        SubFamilia: (it.SubFamilia||it.subfamilia||it.SUBFAMILIA||it.Sub||it.sub||'').toString().trim(),
+        PrecioIVA: num(it.PrecioIVA||it.precioiva||it.PRECIO_IVA||it.precioiva||it.precio_iva||it.precio||'0'),
+        SocioIVA: num(it.SocioIVA||it.socioiva||it.SOCIO_IVA||it.socioiva||it.socio_iva||'0')
+      };
+    }).filter(function(p){ return p.Codigo && (p.PrecioIVA||p.SocioIVA); });
+  }
+  function tryFetch(url){
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error('http');
+      return r.text();
+    }).then(function(txt){
+      var trimmed = txt.trim();
+      if(trimmed.charAt(0)==='['){
+        try{ var data = JSON.parse(trimmed); if(Array.isArray(data)) return normalizeJsonItems(data); }catch(e){}
       }
+      var parsed = parseCSV(txt);
+      if(parsed.length<1) throw new Error('empty');
+      return parsed;
     });
-  } else {
-    renderSessions(localSessions);
   }
-
-  document.getElementById('statProds').textContent = PRODS_CACHE.length || '—';
-
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var totalMonto = cotiz.reduce(function(a,c){return a+(c.total||0);},0);
-  var cotizCli  = cotiz.filter(function(c){return c.app==='Cliente';}).length;
-  var cotizVend = cotiz.filter(function(c){return c.app==='Vendedor';}).length;
-  document.getElementById('statTotalCotiz').textContent  = cotiz.length;
-  document.getElementById('statMontoTotal').textContent  = fmtCLP(totalMonto);
-  document.getElementById('statCotizCli').textContent    = cotizCli;
-  document.getElementById('statCotizVend').textContent   = cotizVend;
-
-  var lastDiv = document.getElementById('lastCotiz');
-  if(cotiz.length===0){ lastDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones.</p>'; }
-  else {
-    var recent = cotiz.slice(-5).reverse();
-    lastDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th></th></tr>'+
-      recent.map(function(c,i){
-        var idx = cotiz.length-1-i;
-        return '<tr>'+
-          '<td>'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-          '<td><b>'+c.user+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
-          '<td>'+c.items+'</td>'+
-          '<td>'+fmtCLP(c.total)+'</td>'+
-          '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+idx+')">Ver</button></td>'+
-        '</tr>';
-      }).join('')+
-    '</table></div>';
-  }
-
-  renderTopProductos('topProductos', cotiz);
-}
-
-// ── TOP PRODUCTOS ────────────────────────────────────
-function renderTopProductos(elId, cotiz){
-  var el = document.getElementById(elId);
-  if(!cotiz || cotiz.length===0){ el.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin datos aún.</p>'; return; }
-
-  var mapa = {};
-  cotiz.forEach(function(c){
-    if(!Array.isArray(c.detalle)) return;
-    c.detalle.forEach(function(it){
-      var key = it.Codigo||it.Descripcion||'?';
-      var desc = it.Descripcion || key;
-      if(!mapa[key]) mapa[key]={desc:desc,qty:0,total:0};
-      mapa[key].qty   += (it.qty||0);
-      mapa[key].total += (it.PrecioIVA||0)*(it.qty||0);
+  tryFetch(JSON_URL_PUB)
+    .catch(function(){ return tryFetch(CSV_URL_PUB); })
+    .catch(function(){ return tryFetch(JSON_URL); })
+    .catch(function(){ return tryFetch(SHEETS_CSV); })
+    .then(function(parsed){
+      PRODUCTOS = parsed;
+      try{ localStorage.setItem(CACHE_KEY,JSON.stringify(parsed)); localStorage.setItem(CACHE_TS_KEY,Date.now()); }catch(e){}
+      var ts = new Date().toLocaleTimeString('es-CL');
+      setSyncState('ok','✓ Precios vigentes · '+parsed.length+' productos · Actualizado: '+ts);
+      initUI();
+    })
+    .catch(function(){
+      try{
+        var c = localStorage.getItem(CACHE_KEY);
+        if(c){
+          PRODUCTOS = JSON.parse(c);
+          var tsRaw = localStorage.getItem(CACHE_TS_KEY);
+          var ts = tsRaw ? new Date(parseInt(tsRaw)).toLocaleString('es-CL') : '—';
+          setSyncState('warn','Sin conexión · Precios del '+ts+' · '+PRODUCTOS.length+' productos');
+          initUI(); return;
+        }
+      }catch(e){}
+      setSyncState('warn','Sin conexión. Verifica la URL del catálogo y recarga la página.');
     });
-  });
-
-  var arr = Object.values(mapa).sort(function(a,b){return b.qty-a.qty;});
-  if(arr.length===0){ el.innerHTML='<p style="color:#9ca3af;font-size:13px">Las cotizaciones aún no tienen detalle de productos.</p>'; return; }
-
-  var limit = 10;
-  var filtered = arr.slice(0, limit);
-  var max = filtered[0].qty || 1;
-  
-  var btnHTML = '<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">'+
-    '<button class="btn btn-sm btn-primary" onclick="setTopLimit(10)">Top 10</button>'+
-    '<button class="btn btn-sm btn-secondary" onclick="setTopLimit(20)">Top 20</button>'+
-    '<button class="btn btn-sm btn-secondary" onclick="setTopLimit(50)">Top 50</button>'+
-    '<button class="btn btn-sm btn-secondary" onclick="setTopLimit(100)">Top 100</button>'+
-  '</div>';
-  
-  var barsHTML = filtered.map(function(p){
-    var pct = Math.round((p.qty/max)*100);
-    return '<div class="bar-row">'+
-      '<div class="bar-label" title="'+p.desc+'">'+p.desc+'</div>'+
-      '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+
-      '<div class="bar-count">'+p.qty+'</div>'+
-    '</div>';
-  }).join('');
-  
-  el.innerHTML = btnHTML + barsHTML;
 }
 
-// ── CAMBIAR LÍMITE TOP PRODUCTOS ─────────────────────
-var topProductosLimit = 10;
-function setTopLimit(n){
-  topProductosLimit = n;
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]').slice().reverse();
-  var busq  = (document.getElementById('cotizSearch')     || {value:''}).value.toLowerCase().trim();
-  var appF  = (document.getElementById('cotizFiltroApp')  || {value:''}).value;
-  var filtradas = cotiz.filter(function(c){
-    var okUser = !busq || (c.user||'').toLowerCase().includes(busq);
-    var okApp  = !appF || c.app===appF;
-    return okUser && okApp;
-  });
-  renderTopProductos('topProductosCotiz', filtradas.slice().reverse());
+function setSyncState(type, text){
+  var bar = document.getElementById('syncBar');
+  bar.className = 'sync-bar '+type;
+  document.getElementById('syncText').textContent = text;
 }
 
-// ── COTIZACIONES ─────────────────────────────────────
-function renderCotizaciones(){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]').slice().reverse();
-  var busq  = (document.getElementById('cotizSearch')     || {value:''}).value.toLowerCase().trim();
-  var appF  = (document.getElementById('cotizFiltroApp')  || {value:''}).value;
+// ── FUNCIONES FIREBASE ───────────────────────────────────────────────────────
+function apiGetFirebase(params, cb) {
+  if (!window.db) return cb(new Error('Firebase no disponible'), null);
 
-  var filtradas = cotiz.filter(function(c){
-    var okUser = !busq || (c.user||'').toLowerCase().includes(busq);
-    var okApp  = !appF || c.app===appF;
-    return okUser && okApp;
-  });
-
-  // Stats
-  var totalMonto = filtradas.reduce(function(a,c){return a+(c.total||0);},0);
-  var cCli  = filtradas.filter(function(c){return c.app==='Cliente';}).length;
-  var cVend = filtradas.filter(function(c){return c.app==='Vendedor';}).length;
-  document.getElementById('cotizStatTotal').textContent = filtradas.length;
-  document.getElementById('cotizStatMonto').textContent = fmtCLP(totalMonto);
-  document.getElementById('cotizStatCli').textContent   = cCli;
-  document.getElementById('cotizStatVend').textContent  = cVend;
-
-  var div = document.getElementById('tablaCotiz');
-  if(filtradas.length===0){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cotizaciones para mostrar.</p>'; }
-  else {
-    // Necesitamos el índice original (en el array invertido) para verCotizacion
-    var totalLen = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]').length;
-    div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Fecha</th><th>Usuario</th><th>App</th><th>Items</th><th>Total</th><th>Acciones</th></tr>'+
-      filtradas.map(function(c, i){
-        var idxOrig = totalLen - 1 - i; // índice en array original sin invertir
-        return '<tr>'+
-          '<td style="white-space:nowrap">'+new Date(c.ts).toLocaleString('es-CL')+'</td>'+
-          '<td><b>'+c.user+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
-          '<td>'+c.items+'</td>'+
-          '<td>'+fmtCLP(c.total)+'</td>'+
-          '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+idxOrig+')">📋 Ver</button> <button class="btn btn-sm btn-success" onclick="descargarCotizacionPDF('+idxOrig+')">📥 PDF</button></td>'+
-        '</tr>';
-      }).join('')+
-    '</table></div>';
+  const { action } = params;
+  switch (action) {
+    case 'getUsers':
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(({ collection, getDocs }) => {
+          return getDocs(collection(window.db, 'users'));
+        })
+        .then(snapshot => {
+          const users = [];
+          snapshot.forEach(doc => users.push(doc.data()));
+          cb(null, users);
+        })
+        .catch(err => cb(err, null));
+      break;
+    case 'getSessions':
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(({ collection, query, where, getDocs }) => {
+          const q = query(collection(window.db, 'sessions'), where('ts', '>', Date.now() - 30*60*1000));
+          return getDocs(q);
+        })
+        .then(snapshot => {
+          const sessions = [];
+          snapshot.forEach(doc => sessions.push(doc.data()));
+          cb(null, sessions);
+        })
+        .catch(err => cb(err, null));
+      break;
+    case 'getCotizaciones':
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(({ collection, query, orderBy, limit, getDocs }) => {
+          const q = query(collection(window.db, 'cotizaciones'), orderBy('ts', 'desc'), limit(parseInt(params.limit) || 50));
+          return getDocs(q);
+        })
+        .then(snapshot => {
+          const cotizaciones = [];
+          snapshot.forEach(doc => cotizaciones.push(doc.data()));
+          cb(null, cotizaciones);
+        })
+        .catch(err => cb(err, null));
+      break;
+    default:
+      cb(new Error('Acción no soportada'), null);
   }
-
-  renderTopProductos('topProductosCotiz', filtradas.slice().reverse());
 }
 
-function limpiarCotizaciones(){
-  if(!confirm('¿Eliminar TODAS las cotizaciones guardadas? Esta acción no se puede deshacer.')) return;
-  localStorage.removeItem('ov_cotizaciones');
-  renderCotizaciones();
-  renderDashboard();
-  toast('Cotizaciones eliminadas','ok');
-}
+function apiPostFirebase(body, cb) {
+  if (!window.db) return cb(new Error('Firebase no disponible'), null);
 
-// ── VER COTIZACIÓN MODAL ─────────────────────────────
-function verCotizacion(idx){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var c = cotiz[idx];
-  if(!c){ toast('Cotización no encontrada','err'); return; }
-
-  var fecha   = new Date(c.ts).toLocaleString('es-CL');
-  var detalle = Array.isArray(c.detalle) ? c.detalle : [];
-
-  var rowsHTML = '';
-  if(detalle.length===0){
-    rowsHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:14px">Sin detalle de productos (cotización generada antes de la actualización)</td></tr>';
-  } else {
-    rowsHTML = detalle.map(function(it){
-      var sub = (it.PrecioIVA||0)*(it.qty||0);
-      return '<tr>'+
-        '<td>'+( it.Codigo||'—')+'</td>'+
-        '<td>'+( it.Descripcion||'—')+'</td>'+
-        '<td style="text-align:center">'+( it.qty||0)+'</td>'+
-        '<td style="text-align:right">'+fmtCLP(it.PrecioIVA||0)+'</td>'+
-        '<td style="text-align:right;font-weight:700;color:var(--naranja)">'+fmtCLP(sub)+'</td>'+
-      '</tr>';
-    }).join('');
+  const { action, data } = body;
+  switch (action) {
+    case 'saveUser':
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(({ doc, setDoc }) => {
+          return setDoc(doc(window.db, 'users', data.u), data);
+        })
+        .then(() => cb(null, { success: true }))
+        .catch(err => cb(err, null));
+      break;
+    case 'deleteUser':
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(({ doc, deleteDoc }) => {
+          return deleteDoc(doc(window.db, 'users', body.u));
+        })
+        .then(() => cb(null, { success: true }))
+        .catch(err => cb(err, null));
+      break;
+    case 'logSession':
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(({ collection, addDoc }) => {
+          return addDoc(collection(window.db, 'sessions'), data);
+        })
+        .then(() => cb(null, { success: true }))
+        .catch(err => cb(err, null));
+      break;
+    case 'clearSession':
+      // Para simplificar, no implementamos borrado de sesiones
+      cb(null, { success: true });
+      break;
+    case 'saveCotizacion':
+      import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js')
+        .then(({ collection, addDoc }) => {
+          return addDoc(collection(window.db, 'cotizaciones'), data);
+        })
+        .then(() => cb(null, { success: true }))
+        .catch(err => cb(err, null));
+      break;
+    default:
+      cb(new Error('Acción no soportada'), null);
   }
-
-  var neto = Math.round((c.total||0)/1.19);
-  var iva  = (c.total||0) - neto;
-
-  document.getElementById('cotizModalContent').innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Fecha</span><div style="font-weight:700">'+fecha+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Usuario</span><div style="font-weight:700">'+c.user+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">App origen</span><div><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">N° items</span><div style="font-weight:700">'+c.items+'</div></div>'+
-    '</div>'+
-    '<div style="overflow-x:auto;margin-bottom:14px">'+
-      '<table class="tbl">'+
-        '<tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio unit.</th><th style="text-align:right">Subtotal</th></tr>'+
-        rowsHTML+
-      '</table>'+
-    '</div>'+
-    '<div style="background:#f9fafb;border-radius:10px;padding:14px;text-align:right;font-size:13px">'+
-      '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">Neto:</span><span>'+fmtCLP(neto)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6b7280">IVA 19%:</span><span>'+fmtCLP(iva)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:16px;font-weight:800;color:var(--naranja);border-top:1px solid var(--border);margin-top:4px"><span>TOTAL:</span><span>'+fmtCLP(c.total)+'</span></div>'+
-    '</div>';
-
-  document.getElementById('cotizModal').classList.add('open');
 }
 
-function cerrarCotizModal(){
-  document.getElementById('cotizModal').classList.remove('open');
-}
-
-// Cerrar modal al hacer clic fuera
-document.getElementById('cotizModal').addEventListener('click', function(e){
-  if(e.target === this) cerrarCotizModal();
-});
-
-// ── DESCARGAR COTIZACIÓN PDF ─────────────────────────
-function descargarCotizacionPDF(idx){
-  var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]');
-  var c = cotiz[idx];
-  if(!c){ toast('Cotización no encontrada','err'); return; }
-  
-  var jsPDF = window.jspdf.jsPDF;
-  var doc = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
-  var og=[232,69,10], dk=[30,30,30], gr=[100,100,100], gl=[245,245,245];
-  var nro = Math.floor(Math.random()*90000)+10000;
-  var fecha = new Date(c.ts).toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  var detalle = Array.isArray(c.detalle) ? c.detalle : [];
-
-  // HEADER
-  doc.setFillColor(og[0],og[1],og[2]); doc.rect(0,0,216,28,'F');
-  doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
-  doc.text('FERRETERÍA OVIEDO',12,12);
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text('Sucursal El Manzano',12,20);
-  doc.text('Cotización Registrada',120,12);
-  doc.setFont('helvetica','bold'); doc.text('N° '+nro,120,18);
-  doc.setFont('helvetica','normal'); doc.text('App: '+c.app,120,24);
-
-  doc.setFillColor(gl[0],gl[1],gl[2]); doc.rect(0,28,216,10,'F');
-  doc.setFontSize(9); doc.setTextColor(gr[0],gr[1],gr[2]);
-  doc.text(fecha,12,35); doc.text('Usuario: '+c.user,130,35);
-
-  // INFO
-  var y=48;
-  doc.setTextColor(dk[0],dk[1],dk[2]); doc.setFontSize(9);
-  doc.setFont('helvetica','bold'); doc.text('Cliente/Usuario:',12,y);
-  doc.setFont('helvetica','normal'); doc.text(c.user,60,y); y+=8;
-  doc.setFont('helvetica','italic'); doc.setTextColor(gr[0],gr[1],gr[2]);
-  doc.text('Detalle de productos cotizados:',12,y); y+=8;
-
-  // TABLA
-  if(detalle.length===0){
-    doc.setTextColor(gr[0],gr[1],gr[2]);
-    doc.text('Sin detalle de productos',12,y);
-    y+=20;
-  } else {
-    var rows = detalle.map(function(it){
-      var desc = (it.Descripcion||it.Desc||'').substring(0,56);
-      return [it.Codigo||'—', desc, it.qty||0, '$'+Math.round(it.PrecioIVA||0).toLocaleString('es-CL'), '$'+Math.round((it.PrecioIVA||0)*(it.qty||0)).toLocaleString('es-CL')];
-    });
-    
-    doc.autoTable({
-      startY: y,
-      head: [['Código','Descripción','CANT','Precio Unit.','Subtotal']],
-      body: rows,
-      foot: [[{content:detalle.reduce(function(a,it){return a+(it.qty||0);},0)+' unid.',colSpan:3,styles:{halign:'right',fontStyle:'bold'}},{content:'Total',styles:{halign:'center',fontStyle:'bold'}},{content:'$'+Math.round(c.total||0).toLocaleString('es-CL'),styles:{halign:'right',fontStyle:'bold',textColor:og}}]],
-      headStyles:{fillColor:og,textColor:[255,255,255],fontSize:8,fontStyle:'bold',halign:'center'},
-      bodyStyles:{fontSize:8,textColor:dk},
-      footStyles:{fillColor:gl,fontSize:8,fontStyle:'bold'},
-      columnStyles:{0:{cellWidth:20},1:{cellWidth:70},2:{cellWidth:12,halign:'center'},3:{cellWidth:30,halign:'right'},4:{cellWidth:32,halign:'right'}},
-      alternateRowStyles:{fillColor:[250,250,250]},
-      margin:{left:12,right:12}
-    });
-    y = doc.lastAutoTable.finalY+8;
-  }
-
-  var neto = Math.round((c.total||0)/1.19);
-  var iva = (c.total||0) - neto;
-  
-  doc.setFillColor(gl[0],gl[1],gl[2]); doc.rect(120,y,84,22,'F');
-  doc.setFontSize(8); doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal');
-  doc.text('Neto:',126,y+6); doc.text('IVA 19%:',126,y+12);
-  doc.setFont('helvetica','bold'); doc.setTextColor(dk[0],dk[1],dk[2]);
-  doc.text('$'+Math.round(neto).toLocaleString('es-CL'),160,y+6);
-  doc.text('$'+Math.round(iva).toLocaleString('es-CL'),160,y+12);
-  
-  doc.setFontSize(10); doc.setTextColor(og[0],og[1],og[2]);
-  doc.text('TOTAL: $'+Math.round(c.total||0).toLocaleString('es-CL'),160,y+20);
-
-  doc.save('Cotizacion_'+c.user+'_'+Math.floor(Math.random()*9000+1000)+'.pdf');
-  toast('📥 PDF descargado','ok');
-}
-
-// ── USUARIOS ─────────────────────────────────────────
-function renderUsuarios(){
-  var div = document.getElementById('tablaCliUsuarios');
-  if(CLI_USERS.length===0){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin usuarios.</p>'; }
-  else {
-    div.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-      '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Licencia</th><th>Estado</th><th>Acciones</th></tr>'+
-      CLI_USERS.map(function(u,idx){
-        var dias=Math.ceil((new Date(u.licExpiry).getTime()-Date.now())/864e5);
-        var licBadge=dias>0?'<span class="badge badge-verde">'+dias+'d</span>':'<span class="badge badge-rojo">Vencido</span>';
-        var estBadge=u.estado==='activo'?'<span class="badge badge-verde">Activo</span>':u.estado==='bloqueado'?'<span class="badge badge-rojo">Bloqueado</span>':'<span class="badge badge-gris">—</span>';
-        var acc=u.role!=='admin'?
-          '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="cli" onclick="delUser(this)">🗑</button> '+
-          '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="cli" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>':'—';
-        return '<tr><td><b>'+u.user+'</b></td><td>'+u.nombre+'</td><td><span class="badge badge-azul">'+u.role+'</span></td><td>'+licBadge+'</td><td>'+estBadge+'</td><td>'+acc+'</td></tr>';
-      }).join('')+
-    '</table></div>';
-  }
-
-  var div2 = document.getElementById('tablaVendUsuarios');
-  div2.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-    '<tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>'+
-    VEND_USERS.map(function(u,idx){
-      var estBadge=u.estado==='bloqueado'?'<span class="badge badge-rojo">Bloqueado</span>':'<span class="badge badge-verde">Activo</span>';
-      var acc=u.role!=='admin'?
-        '<button class="btn btn-sm btn-danger" data-i="'+idx+'" data-t="vend" onclick="delUser(this)">🗑</button> '+
-        '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-i="'+idx+'" data-t="vend" onclick="toggleBlock(this)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>':'—';
-      return '<tr><td><b>'+u.u+'</b></td><td>'+u.nombre+'</td><td><span class="badge badge-azul">'+u.role+'</span></td><td>'+estBadge+'</td><td>'+acc+'</td></tr>';
-    }).join('')+
-  '</table></div>';
-
-  var logDiv = document.getElementById('logUsuarios');
-  if(LOG.length===0){ logDiv.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin cambios.</p>'; return; }
-  logDiv.innerHTML='<div style="overflow-x:auto"><table class="tbl">'+
-    '<tr><th>Fecha</th><th>Acción</th><th>Usuario</th><th>App</th></tr>'+
-    LOG.slice(-30).reverse().map(function(l){
-      return '<tr><td>'+new Date(l.ts).toLocaleString('es-CL')+'</td><td>'+l.accion+'</td><td>'+l.user+'</td><td>'+l.app+'</td></tr>';
-    }).join('')+
-  '</table></div>';
-}
-
-function addLog(accion,user,app){
-  LOG.push({ts:Date.now(),accion:accion,user:user,app:app});
-  if(LOG.length>100) LOG.shift();
-  saveAll();
-}
-
-function addCliUser(){
-  var u=document.getElementById('cnu').value.trim();
-  var n=document.getElementById('cnn').value.trim();
-  var p=document.getElementById('cnp').value.trim();
-  var l=parseInt(document.getElementById('cnl').value)||365;
-  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
-  if(CLI_USERS.find(function(x){return x.user===u;})){toast('Usuario ya existe','err');return;}
-  var newUser = {user:u,pass:p,nombre:n,role:'cliente',licExpiry:new Date(Date.now()+l*864e5).toISOString(),estado:'activo'};
-  CLI_USERS.push(newUser);
-  addLog('Crear',u,'Cliente');
-  saveAll(); saveRemoteUser(newUser); renderUsuarios();
-  document.getElementById('cnu').value=''; document.getElementById('cnn').value=''; document.getElementById('cnp').value='';
-  toast('Usuario '+u+' creado','ok');
-}
-
-function addVendUser(){
-  var u=document.getElementById('vnu').value.trim();
-  var n=document.getElementById('vnn').value.trim();
-  var p=document.getElementById('vnp').value.trim();
-  var r=document.getElementById('vnr').value;
-  if(!u||!n||!p){toast('Completa todos los campos','warn');return;}
-  if(VEND_USERS.find(function(x){return x.u===u;})){toast('Usuario ya existe','err');return;}
-  var newVend = {u:u,p:p,nombre:n,role:r,exp:Date.now()+365*864e5,estado:'activo'};
-  VEND_USERS.push(newVend);
-  addLog('Crear',u,'Vendedor');
-  saveAll(); saveRemoteUser(newVend); renderUsuarios();
-  document.getElementById('vnu').value=''; document.getElementById('vnn').value=''; document.getElementById('vnp').value='';
-  toast('Usuario '+u+' creado','ok');
-}
-
-function delUser(btn){
-  var idx=parseInt(btn.getAttribute('data-i'));
-  var tipo=btn.getAttribute('data-t');
-  var arr=tipo==='cli'?CLI_USERS:VEND_USERS;
-  var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
-  if(!confirm('¿Eliminar usuario "'+uname+'"?')) return;
-  addLog('Eliminar',uname,tipo==='cli'?'Cliente':'Vendedor');
-  var target = arr[idx];
-  arr.splice(idx,1);
-  saveAll(); if (tipo==='cli') deleteRemoteUser(target.user); else deleteRemoteUser(target.u);
-  renderUsuarios();
-  toast('Usuario eliminado','ok');
-}
-
-function toggleBlock(btn){
-  var idx=parseInt(btn.getAttribute('data-i'));
-  var tipo=btn.getAttribute('data-t');
-  var arr=tipo==='cli'?CLI_USERS:VEND_USERS;
-  var uname=tipo==='cli'?arr[idx].user:arr[idx].u;
-  var nuevoEstado=arr[idx].estado==='bloqueado'?'activo':'bloqueado';
-  arr[idx].estado=nuevoEstado;
-  addLog(nuevoEstado==='bloqueado'?'Bloquear':'Desbloquear',uname,tipo==='cli'?'Cliente':'Vendedor');
-  saveAll(); if (window.db) saveRemoteUser(arr[idx]); renderUsuarios();
-  toast('Usuario '+(nuevoEstado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
-}
-
-// ── PRECIOS ──────────────────────────────────────────
-var todosProds = [];
-function loadPrecios(){
-  document.getElementById('urlActiva').textContent = URL_PUB;
-  document.getElementById('urlPub').value   = URL_PUB;
-  document.getElementById('urlProxy').value = URL_PROXY;
-  document.getElementById('urlStatus').className='url-status url-loading';
-  document.getElementById('urlStatus').textContent='⏳ Verificando conexión...';
-  fetch(URL_PUB).then(function(r){
-    if(!r.ok) throw new Error('http');
-    return r.text();
-  }).then(function(txt){
-    var prods = parseCSVAdmin(txt);
-    PRODS_CACHE = prods;
-    todosProds  = prods;
-    PRODS_FILT  = prods;
-    document.getElementById('statProds').textContent = prods.length;
-    document.getElementById('urlStatus').className='url-status url-ok';
-    document.getElementById('urlStatus').textContent='✅ Conexión activa — '+prods.length+' productos';
-    renderTablaPrecios(prods.slice(0,100));
-  }).catch(function(){
-    document.getElementById('urlStatus').className='url-status url-err';
-    document.getElementById('urlStatus').textContent='❌ Sin conexión al catálogo — Verifica la URL';
-    fetch(URL_PROXY).then(function(r){ return r.text(); }).then(function(txt){
-      var prods = parseCSVAdmin(txt);
-      if(prods.length>0){
-        PRODS_CACHE = prods; todosProds = prods; PRODS_FILT = prods;
-        document.getElementById('urlStatus').className='url-status url-ok';
-        document.getElementById('urlStatus').textContent='✅ Conexión activa (proxy) — '+prods.length+' productos';
-        document.getElementById('statProds').textContent = prods.length;
-        renderTablaPrecios(prods.slice(0,100));
-      }
-    }).catch(function(){});
-  });
-}
-
-function parseCSVAdmin(text){
-  var lines=text.split('\n').filter(function(l){return l.trim();});
+function parseCSV(text){
+  var lines = text.split('\n').filter(function(l){return l.trim();});
   if(lines.length<2) return [];
-  var headers=lines[0].split(',').map(function(h){return h.replace(/"/g,'').trim();});
-  var idx={};
+  var headers = lines[0].split(',').map(function(h){return h.replace(/"/g,'').trim();});
+  var idx = {};
   headers.forEach(function(h,i){
-    var hl=h.toLowerCase().replace(/[^a-z]/g,'');
-    if(hl.includes('codigo')) idx.Codigo=i;
+    var hl = h.toLowerCase().replace(/[^a-z]/g,'');
+    if(hl.includes('codigo'))                                    idx.Codigo=i;
     else if(hl.includes('descripcion')||hl.includes('descripción')) idx.Descripcion=i;
-    else if(hl.includes('marca')) idx.Marca=i;
-    else if(hl.includes('precioiva')) idx.PrecioIVA=i;
-    else if(hl.includes('socioiva')) idx.SocioIVA=i;
+    else if(hl.includes('marca'))                                idx.Marca=i;
+    else if(hl.includes('subfamilia')||hl.includes('familia'))   idx.SubFamilia=i;
+    else if(hl.includes('precioiva'))                            idx.PrecioIVA=i;
   });
   var rows=[];
   for(var i=1;i<lines.length;i++){
-    var cols=parseLineAdmin(lines[i]);
-    var r={
-      Codigo:(cols[idx.Codigo]||'').trim(),
-      Descripcion:(cols[idx.Descripcion]||'').trim(),
-      Marca:(cols[idx.Marca]||'').trim(),
-      PrecioIVA:parseInt(((cols[idx.PrecioIVA]||'0')).replace(/[^0-9]/g,''))||0,
-      SocioIVA:parseInt(((cols[idx.SocioIVA]||'0')).replace(/[^0-9]/g,''))||0
+    var cols = parseLine(lines[i]);
+    var r = {
+      Codigo:      (cols[idx.Codigo]||'').trim(),
+      Descripcion: (cols[idx.Descripcion]||'').trim(),
+      Marca:       (cols[idx.Marca]||'').trim(),
+      SubFamilia:  (cols[idx.SubFamilia]||'').trim(),
+      PrecioIVA:   parseInt(((cols[idx.PrecioIVA]||'0')).replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'').replace(/[^0-9]/g,''))||0
     };
-    if(r.Codigo&&r.PrecioIVA) rows.push(r);
+    if(r.Codigo && r.PrecioIVA) rows.push(r);
   }
   return rows;
 }
-function parseLineAdmin(line){
+
+function parseLine(line){
   var result=[],cur='',inQ=false;
   for(var i=0;i<line.length;i++){
     var ch=line[i];
@@ -1126,184 +798,374 @@ function parseLineAdmin(line){
   result.push(cur); return result;
 }
 
-function renderTablaPrecios(prods){
-  var div=document.getElementById('tablaPrecios');
-  document.getElementById('precioCount').textContent=prods.length+' productos';
-  if(!prods.length){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin resultados.</p>'; return; }
-  div.innerHTML='<table class="tbl">'+
-    '<tr><th>Código</th><th>Descripción</th><th>Marca</th><th>PrecioIVA</th><th>SocioIVA</th></tr>'+
-    prods.slice(0,100).map(function(p){
-      return '<tr><td>'+p.Codigo+'</td><td>'+p.Descripcion+'</td><td>'+p.Marca+'</td><td>'+fmtCLP(p.PrecioIVA)+'</td><td>'+fmtCLP(p.SocioIVA)+'</td></tr>';
-    }).join('')+
-  '</table>';
+// ── UI ────────────────────────────────────────────────────────────────────────
+function initUI(){
+  filtrados = PRODUCTOS.slice();
+  buildFilters();
+  renderProductos();
 }
 
-function filtrarPrecios(){
-  var q=document.getElementById('precioSearch').value.toLowerCase().trim();
-  if(!q){ PRODS_FILT=todosProds; renderTablaPrecios(PRODS_FILT); return; }
-  PRODS_FILT=todosProds.filter(function(p){
-    return p.Descripcion.toLowerCase().includes(q)||p.Codigo.toLowerCase().includes(q)||(p.Marca||'').toLowerCase().includes(q);
+function buildFilters(){
+  var marcas = ['TODOS'];
+  var seen = {};
+  PRODUCTOS.forEach(function(p){ if(p.Marca && !seen[p.Marca]){seen[p.Marca]=1;marcas.push(p.Marca);} });
+  marcas.sort(function(a,b){ return a==='TODOS'?-1:b==='TODOS'?1:a.localeCompare(b); });
+  document.getElementById('filtersBar').innerHTML = marcas.slice(0,22).map(function(m){
+    return '<button class="filter-btn '+(m==='TODOS'?'active':'')+'" onclick="setMarca(\''+m.replace(/'/g,"\\'")+'\')">' + m + '</button>';
+  }).join('');
+}
+
+function setMarca(m){
+  marcaFiltro = m;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.toggle('active', b.textContent===m); });
+  onSearch();
+}
+
+function onSearch(){
+  var q = document.getElementById('searchInput').value.toLowerCase().trim();
+  filtrados = PRODUCTOS.filter(function(p){
+    var mm = marcaFiltro==='TODOS' || p.Marca===marcaFiltro;
+    var mq = !q || p.Descripcion.toLowerCase().includes(q) || p.Codigo.toLowerCase().includes(q) || (p.Marca||'').toLowerCase().includes(q);
+    return mm && mq;
   });
-  renderTablaPrecios(PRODS_FILT);
+  renderProductos();
 }
 
-// ── URL / CONEXIÓN ───────────────────────────────────
-function deriveJsonUrl(url){
-  if(!url) return url;
-  return url.replace(/Datos\.csv(\?.*)?$/i,'Datos.json$1');
-}
-function guardarURLs(){
-  URL_PUB   = document.getElementById('urlPub').value.trim();
-  URL_PROXY = document.getElementById('urlProxy').value.trim();
-  var jsonPub = deriveJsonUrl(URL_PUB) || URL_PUB;
-  var jsonProxy = deriveJsonUrl(URL_PROXY) || URL_PROXY;
-  localStorage.setItem('ov_url_pub',       URL_PUB);
-  localStorage.setItem('ov_url_proxy',     URL_PROXY);
-  localStorage.setItem('ov_url_json_pub',  jsonPub);
-  localStorage.setItem('ov_url_json',      jsonProxy);
-  toast('✅ URLs guardadas. Las apps cliente y vendedor usarán estas URLs automáticamente.','ok');
-  testConexion();
-}
+function renderProductos(){
+  var stats = document.getElementById('statsBar');
+  stats.innerHTML =
+    '<div class="stat-chip">Total: <span>'+PRODUCTOS.length+'</span></div>'+
+    '<div class="stat-chip">Filtrados: <span>'+filtrados.length+'</span></div>'+
+    '<div class="stat-chip">Carrito: <span>'+carrito.reduce(function(a,c){return a+c.qty;},0)+' items</span></div>';
 
-function testConexion(){
-  var res = document.getElementById('urlTestResult');
-  res.innerHTML='<div class="url-status url-loading">⏳ Probando...</div>';
-  fetch(URL_PUB).then(function(r){
-    if(!r.ok) throw new Error();
-    return r.text();
-  }).then(function(txt){
-    var prods=parseCSVAdmin(txt);
-    res.innerHTML='<div class="url-status url-ok">✅ Conexión exitosa — '+prods.length+' productos leídos</div>';
-    PRODS_CACHE=prods; todosProds=prods;
-    document.getElementById('statProds').textContent=prods.length;
-  }).catch(function(){
-    res.innerHTML='<div class="url-status url-err">❌ No se pudo conectar. Verifica la URL pública.</div>';
-  });
-}
-
-// ── PROMOCIONES ──────────────────────────────────────
-function updatePromoPreview(){
-  document.getElementById('pvTitle').textContent=document.getElementById('promoTitle').value||'Título';
-  document.getElementById('pvTag').textContent=document.getElementById('promoTag').value||'OFERTA';
-  document.getElementById('pvDesc').textContent=document.getElementById('promoDesc').value||'Descripción';
-  document.getElementById('pvPrice').textContent=document.getElementById('promoPrice').value||'';
-}
-
-function guardarPromo(){
-  var t=document.getElementById('promoTitle').value.trim();
-  if(!t){toast('Ingresa un título','warn');return;}
-  PROMOS.push({
-    ts:Date.now(),
-    titulo:t,
-    tag:document.getElementById('promoTag').value.trim()||'OFERTA',
-    desc:document.getElementById('promoDesc').value.trim(),
-    precio:document.getElementById('promoPrice').value.trim()
-  });
-  saveAll(); renderPromos();
-  document.getElementById('promoTitle').value='';
-  document.getElementById('promoDesc').value='';
-  document.getElementById('promoTag').value='';
-  document.getElementById('promoPrice').value='';
-  toast('Promoción guardada','ok');
-}
-
-function renderPromos(){
-  var div=document.getElementById('listaPromos');
-  if(!PROMOS.length){ div.innerHTML='<p style="color:#9ca3af;font-size:13px">Sin promociones activas.</p>'; return; }
-  div.innerHTML=PROMOS.slice().reverse().map(function(p,i){
-    return '<div style="background:linear-gradient(135deg,#E8450A,#ff6b35);color:white;border-radius:10px;padding:14px;margin-bottom:10px">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center">'+
-        '<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">'+p.tag+'</span>'+
-        '<button onclick="delPromo('+i+')" style="background:rgba(255,255,255,.15);border:none;color:white;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px">🗑 Eliminar</button>'+
+  var list = document.getElementById('productosList');
+  if(!filtrados.length){
+    list.innerHTML='<div class="empty-state"><div style="font-size:40px">🔍</div><p style="margin-top:8px;font-size:14px">Sin resultados</p></div>';
+    return;
+  }
+  list.innerHTML = filtrados.slice(0,80).map(function(p){
+    var safeCod = p.Codigo.replace(/'/g,"\\'");
+    return '<div class="prod-card">'+
+      '<div class="prod-header">'+
+        '<div class="prod-nombre">'+p.Descripcion+'</div>'+
+        '<div class="prod-codigo">'+p.Codigo+'</div>'+
       '</div>'+
-      '<div style="font-size:17px;font-weight:800;margin-top:6px">'+p.titulo+'</div>'+
-      '<div style="font-size:12px;opacity:.9;margin-top:4px">'+p.desc+'</div>'+
-      (p.precio?'<div style="font-size:20px;font-weight:800;margin-top:8px">'+p.precio+'</div>':'')+
+      '<div class="prod-marca">'+(p.Marca||'')+(p.SubFamilia?' · '+p.SubFamilia:'')+'</div>'+
+      '<div class="prod-bottom">'+
+        '<div class="precio-publico">'+
+          '<div class="precio-label">Precio IVA incl.</div>'+
+          '<div class="precio-val">'+fmt(p.PrecioIVA)+'</div>'+
+        '</div>'+
+        '<div class="prod-actions">'+
+          '<div class="qty-wrap">'+
+            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',-1)">−</button>'+
+            '<span class="qty-val" id="qty_'+safeCod+'">1</span>'+
+            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',1)">+</button>'+
+          '</div>'+
+          '<button class="btn-add" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
+        '</div>'+
+      '</div>'+
     '</div>';
   }).join('');
 }
 
-function delPromo(i){
-  var real=PROMOS.length-1-i;
-  if(!confirm('¿Eliminar esta promoción?')) return;
-  PROMOS.splice(real,1);
-  saveAll(); renderPromos();
-  toast('Promoción eliminada','ok');
+function fmt(n){ return '$'+Math.round(n).toLocaleString('es-CL'); }
+
+function chgQty(c,d){
+  var el = document.getElementById('qty_'+c);
+  if(!el) return;
+  var v = parseInt(el.textContent)+d;
+  if(v<1) v=1;
+  el.textContent = v;
 }
 
-// ── REDES SOCIALES ───────────────────────────────────
-function loadRedes(){
-  var ig=localStorage.getItem('ov_ig');
-  var fb=localStorage.getItem('ov_fb');
-  var wa=localStorage.getItem('ov_wa');
-  if(ig){ document.getElementById('igUser').value=ig; document.getElementById('igStatus').textContent='@'+ig; }
-  if(fb){ document.getElementById('fbUrl').value=fb; document.getElementById('fbStatus').textContent=fb; }
-  if(wa){ document.getElementById('waNum').value=wa; document.getElementById('waStatus').textContent=wa; }
+function addCart(codigo){
+  var p = null;
+  for(var i=0;i<PRODUCTOS.length;i++){ if(PRODUCTOS[i].Codigo===codigo){p=PRODUCTOS[i];break;} }
+  if(!p) return;
+  var qtyEl = document.getElementById('qty_'+codigo);
+  var qty = qtyEl ? parseInt(qtyEl.textContent)||1 : 1;
+  var idx = -1;
+  for(var j=0;j<carrito.length;j++){ if(carrito[j].Codigo===codigo){idx=j;break;} }
+  if(idx>=0) carrito[idx].qty += qty;
+  else carrito.push({Codigo:p.Codigo, Descripcion:p.Descripcion, Marca:p.Marca||'', SubFamilia:p.SubFamilia||'', PrecioIVA:p.PrecioIVA, qty:qty});
+  updateBadge();
+  toast('✅ Agregado al carrito','ok');
 }
 
-function vincularRed(tipo){
-  var val='';
-  if(tipo==='ig')      val=document.getElementById('igUser').value.trim().replace('@','');
-  else if(tipo==='fb') val=document.getElementById('fbUrl').value.trim();
-  else if(tipo==='wa') val=document.getElementById('waNum').value.trim();
-  if(!val){toast('Ingresa un valor válido','warn');return;}
-  localStorage.setItem('ov_'+tipo, val);
-  if(tipo==='ig') document.getElementById('igStatus').textContent='@'+val;
-  else if(tipo==='fb') document.getElementById('fbStatus').textContent=val;
-  else if(tipo==='wa') document.getElementById('waStatus').textContent=val;
-  toast('Red social vinculada','ok');
-}
+function updateBadge(){ document.getElementById('cartBadge').textContent = carrito.reduce(function(a,c){return a+c.qty;},0); }
+function openCart(){ renderCart(); document.getElementById('cartPanel').style.display='block'; }
+function closeCart(){ document.getElementById('cartPanel').style.display='none'; }
 
-function showRedInstrucciones(tipo){
-  var modal=document.getElementById('redModal');
-  modal.style.display='block';
-  var textos={
-    ig:'<ol style="font-size:13px;line-height:2;padding-left:18px"><li>Ve a Instagram y copia tu nombre de usuario</li><li>Pégalo en el campo "Nombre de usuario (@)"</li><li>Haz clic en "Vincular"</li><li>Aparecerá en el pie de página de las apps</li></ol>',
-    fb:'<ol style="font-size:13px;line-height:2;padding-left:18px"><li>Abre tu página en Facebook</li><li>Copia la URL completa desde el navegador</li><li>Pégala en "URL de página Facebook"</li><li>Haz clic en "Vincular"</li></ol>',
-    wa:'<ol style="font-size:13px;line-height:2;padding-left:18px"><li>Ingresa el número de WhatsApp Business con código de país</li><li>Ejemplo: +56912345678</li><li>Haz clic en "Vincular"</li><li>Se generará un botón directo en las apps</li></ol>'
-  };
-  document.getElementById('redInstrContent').innerHTML = textos[tipo]||'';
-}
-
-// ── TUTORIALES ───────────────────────────────────────
-function descTutorial(tipo){
-  var textos={
-    cliente:'📱 Manual App Clientes\n\n1. Entra a https://oviedoem.github.io/ferreteria-oviedo/panel-cliente.html\n2. Usa las credenciales que te entregó el administrador\n3. Busca productos por nombre, código o marca\n4. Usa el carrito para agregar los que necesitas\n5. Completa tus datos y descarga el PDF de cotización',
-    vendedor:'💼 Manual App Vendedores\n\n1. Entra a https://oviedoem.github.io/ferreteria-oviedo/panel-vendedor.html\n2. Usa tus credenciales de vendedor\n3. Visualiza precios con margen y precio socio\n4. Genera cotizaciones para tus clientes\n5. Las cotizaciones quedan registradas en el panel admin',
-    admin:'⚙️ Manual Admin\n\n1. Gestión de usuarios: agrega, bloquea o elimina usuarios cliente y vendedor\n2. Precios: verifica la conexión al catálogo en GitHub o CSV público\n3. URL: actualiza la URL de la planilla cuando cambie\n4. Cotizaciones: visualiza todas las cotizaciones con detalle\n5. Promociones: crea y publica ofertas',
-    sheets:'📊 Guía de catálogo\n\n1. Abre la planilla de precios en GitHub/CSV público\n2. Edita las columnas PrecioIVA y SocioIVA\n3. Ve a Archivo → Compartir → Publicar en la web\n4. Selecciona la hoja y formato CSV\n5. Copia el enlace y pégalo en el panel admin (🔗 URL / Conexión)\n6. Las apps se actualizan automáticamente'
-  };
-  alert(textos[tipo]||'Tutorial no disponible');
-}
-
-// ── MEJORAS ──────────────────────────────────────────
-function renderMejoras(){
-  var mejoras=[
-    {icono:'🔄',titulo:'Sincronización en tiempo real entre dispositivos',desc:'Actualmente localStorage solo funciona en el mismo navegador. Para sincronización entre dispositivos se requiere una base de datos externa como Firebase o Supabase (gratuito).'},
-    {icono:'📊',titulo:'Dashboard con más estadísticas históricas',desc:'Guardar datos históricos de ventas diarias/semanales para generar gráficos de tendencia por período.'},
-    {icono:'🔔',titulo:'Notificaciones automáticas por WhatsApp o Email',desc:'Cuando un cliente genera una cotización, enviar automáticamente resumen al vendedor asignado vía WhatsApp o email.'},
-    {icono:'📦',titulo:'Control de stock básico',desc:'Agregar columna de stock en el archivo CSV/JSON para mostrar disponibilidad en las apps cliente y vendedor.'},
-    {icono:'🔐',titulo:'Autenticación con contraseña segura (hash)',desc:'Actualmente las contraseñas se guardan en texto plano en localStorage. Se recomienda usar hash SHA-256 para mayor seguridad.'},
-    {icono:'📱',titulo:'PWA (Progressive Web App)',desc:'Convertir las apps en instalables en el celular como si fuera una app nativa, sin necesitar tienda de apps.'},
-    {icono:'🌐',titulo:'Dominio personalizado',desc:'Usar un subdominio de oviedo.cl (por ejemplo clientes.oviedo.cl) apuntando a GitHub Pages para URLs más profesionales.'}
-  ];
-  document.getElementById('listaMejoras').innerHTML=mejoras.map(function(m){
-    return '<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)">'+
-      '<div style="width:38px;height:38px;border-radius:10px;background:#fff3ee;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">'+m.icono+'</div>'+
-      '<div><div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px">'+m.titulo+'</div>'+
-      '<div style="font-size:12px;color:var(--gris);line-height:1.5">'+m.desc+'</div></div>'+
+function renderCart(){
+  var items  = document.getElementById('cartItems');
+  var totals = document.getElementById('cartTotals');
+  if(!carrito.length){
+    items.innerHTML='<div class="empty-state" style="padding:24px 0"><div style="font-size:32px">🛒</div><p style="margin-top:6px;font-size:13px">Carrito vacío</p></div>';
+    totals.innerHTML=''; return;
+  }
+  items.innerHTML = carrito.map(function(item,i){
+    return '<div class="cart-item">'+
+      '<div class="cart-item-info">'+
+        '<div class="cart-item-name">'+item.Descripcion+'</div>'+
+        '<div class="cart-item-codigo">'+item.Codigo+'</div>'+
+        '<div class="cart-item-qty">'+item.qty+' × '+fmt(item.PrecioIVA)+'</div>'+
+      '</div>'+
+      '<div class="cart-item-price">'+fmt(item.PrecioIVA*item.qty)+'</div>'+
+      '<button class="btn-remove" onclick="removeItem('+i+')">✕</button>'+
     '</div>';
   }).join('');
+  var subtotal = carrito.reduce(function(a,c){return a+c.PrecioIVA*c.qty;},0);
+  var neto = Math.round(subtotal/1.19);
+  var iva  = subtotal - neto;
+  totals.innerHTML =
+    '<div class="totales-box">'+
+      '<div class="total-row"><span>Neto</span><span>'+fmt(neto)+'</span></div>'+
+      '<div class="total-row"><span>IVA 19%</span><span>'+fmt(iva)+'</span></div>'+
+      '<div class="total-row main"><span>TOTAL</span><span>'+fmt(subtotal)+'</span></div>'+
+    '</div>';
 }
 
-// ── TOAST ────────────────────────────────────────────
-function toast(msg,type){
-  var t=document.getElementById('toast');
-  t.textContent=msg;
-  t.className='show '+(type||'ok');
-  clearTimeout(window._toastT);
-  window._toastT=setTimeout(function(){t.className='';},2800);
+function removeItem(i){ carrito.splice(i,1); updateBadge(); renderCart(); }
+function vaciarCarrito(){ if(!confirm('¿Vaciar el carrito?'))return; carrito=[]; updateBadge(); renderCart(); }
+
+// ── COTIZACIONES: guarda con detalle completo para el admin ───────────────────
+function registrarCotizacionResumen(total){
+  try{
+    var lista = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]');
+    var detalle = carrito.map(function(item){
+      return {
+        Codigo:      item.Codigo,
+        Descripcion: item.Descripcion,
+        Marca:       item.Marca||'',
+        qty:         item.qty||0,
+        PrecioIVA:   item.PrecioIVA||0
+      };
+    });
+    lista.push({
+      ts:      Date.now(),
+      user:    currentUser ? currentUser.nombre : 'Cliente',
+      app:     'Cliente',
+      items:   carrito.reduce(function(a,c){return a+(c.qty||0);},0),
+      total:   total,
+      detalle: detalle
+    });
+    if(lista.length>200) lista=lista.slice(lista.length-200);
+    localStorage.setItem('ov_cotizaciones', JSON.stringify(lista));
+  }catch(e){ console.error('Error guardando cotización',e); }
 }
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+function generarPDF(){
+  if(!carrito.length){ toast('Agrega productos primero','warn'); return; }
+  var jsPDF  = window.jspdf.jsPDF;
+  var doc    = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  var naranja=[232,69,10], negro=[30,30,30], gris=[100,100,100], grisClaro=[245,245,245];
+  var nro    = Math.floor(Math.random()*90000)+10000;
+  var fecha  = new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var nombre = document.getElementById('cliNombre').value||'Cliente';
+  var rut    = document.getElementById('cliRut').value||'';
+  var dir    = document.getElementById('cliDir').value||'';
+  var tel    = document.getElementById('cliTel').value||'';
+  var obs    = document.getElementById('cliObs').value||'';
+
+  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(0,0,216,28,'F');
+  doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('FERRETERÍA OVIEDO',12,12);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Sucursal El Manzano',12,20);
+  doc.text('Venta Cotización IVA Incluido',120,12);
+  doc.setFont('helvetica','bold'); doc.text('N° '+nro,120,18);
+  doc.setFont('helvetica','normal'); doc.text('Ferretería Oviedo El Manzano',120,24);
+
+  doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(0,28,216,10,'F');
+  doc.setFontSize(9); doc.setTextColor(gris[0],gris[1],gris[2]);
+  doc.text(fecha,12,35); doc.text('Sucursal: El Manzano',130,35);
+
+  var y=48;
+  doc.setTextColor(negro[0],negro[1],negro[2]); doc.setFontSize(9);
+  var campos=[['Señor(es):',nombre],['RUT:',rut],['Dirección:',dir],['Teléfono:',tel]];
+  campos.forEach(function(row){
+    if(!row[1]) return;
+    doc.setFont('helvetica','bold'); doc.text(row[0],12,y);
+    doc.setFont('helvetica','normal'); doc.text(row[1],45,y); y+=6;
+  });
+  y+=4;
+  doc.setFont('helvetica','italic'); doc.setTextColor(gris[0],gris[1],gris[2]);
+  doc.text('De acuerdo a lo solicitado, presentamos la siguiente cotización:',12,y); y+=8;
+
+  var subtotal = carrito.reduce(function(a,c){return a+c.PrecioIVA*c.qty;},0);
+  var rows = carrito.map(function(item){
+    var desc = item.Descripcion.length>58 ? item.Descripcion.substring(0,58)+'...' : item.Descripcion;
+    return [item.Codigo, desc, item.qty, fmt(item.PrecioIVA), '0,00', '0,00', fmt(item.PrecioIVA*item.qty)];
+  });
+
+  doc.autoTable({
+    startY: y,
+    head: [['Código','Descripción','CANT','Precio','Dcto','Dcto%','Valor Total']],
+    body: rows,
+    foot: [[
+      {content:carrito.reduce(function(a,c){return a+c.qty;},0)+' unid.',colSpan:3,styles:{halign:'right',fontStyle:'bold'}},
+      {content:'Total',colSpan:3,styles:{halign:'center',fontStyle:'bold'}},
+      {content:fmt(subtotal),styles:{halign:'right',fontStyle:'bold',textColor:naranja}}
+    ]],
+    headStyles:{fillColor:naranja,textColor:[255,255,255],fontSize:8,fontStyle:'bold',halign:'center'},
+    bodyStyles:{fontSize:8,textColor:negro},
+    footStyles:{fillColor:grisClaro,fontSize:8,fontStyle:'bold'},
+    columnStyles:{0:{cellWidth:22},1:{cellWidth:76},2:{cellWidth:12,halign:'center'},3:{cellWidth:24,halign:'right'},4:{cellWidth:15,halign:'right'},5:{cellWidth:15,halign:'right'},6:{cellWidth:28,halign:'right'}},
+    alternateRowStyles:{fillColor:[250,250,250]},
+    margin:{left:12,right:12}
+  });
+
+  var yT   = doc.lastAutoTable.finalY+6;
+  var neto = Math.round(subtotal/1.19);
+  var iva  = subtotal-neto;
+
+  doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(120,yT,84,28,'F');
+  doc.setFontSize(8); doc.setTextColor(gris[0],gris[1],gris[2]); doc.setFont('helvetica','normal');
+  doc.text('Neto:',126,yT+8); doc.text('IVA 19%:',126,yT+15);
+  doc.setTextColor(negro[0],negro[1],negro[2]); doc.setFont('helvetica','bold');
+  doc.text(fmt(neto),198,yT+8,{align:'right'}); doc.text(fmt(iva),198,yT+15,{align:'right'});
+  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(120,yT+20,84,10,'F');
+  doc.setFontSize(11); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('TOTAL:',126,yT+27); doc.text(fmt(subtotal),198,yT+27,{align:'right'});
+
+  var yF=yT+34;
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(negro[0],negro[1],negro[2]);
+  doc.text('Condiciones de Venta',12,yF);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gris[0],gris[1],gris[2]);
+  if(obs) doc.text(obs,12,yF+6);
+  doc.text('Forma de Pago: TDébito + Efectivo / Transferencia',12,yF+12);
+  doc.text('Esta cotización tiene validez de 7 días hábiles.',12,yF+18);
+  doc.setFont('helvetica','bold'); doc.setTextColor(negro[0],negro[1],negro[2]);
+  doc.text('Ferretería Oviedo — Sucursal El Manzano',12,yF+28);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gris[0],gris[1],gris[2]);
+  doc.text('Página 1 de 1',198,272,{align:'right'});
+
+  var pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(0,pageH-12,216,12,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont('helvetica','normal');
+  doc.text('Ferretería Oviedo — Sucursal El Manzano',12,pageH-4);
+  doc.text('Cotización N° '+nro,198,pageH-4,{align:'right'});
+
+  doc.save('Cotizacion_Oviedo_'+nro+'.pdf');
+  toast('📄 PDF generado correctamente','ok');
+  registrarCotizacionResumen(subtotal);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type){
+  type = type||'ok';
+  var t = document.createElement('div');
+  var bg = type==='ok' ? '#2e7d32' : type==='warn' ? '#e65100' : '#c62828';
+  t.style.cssText = 'position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:'+bg+';color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;font-family:var(--font);max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2800);
+}
+
+// ── GESTIÓN DE USUARIOS EN APP (solo admin) ───────────────────────────────────
+function openAdminCli(){
+  if(!currentUser || currentUser.role!=='admin') return;
+  renderAdminCli();
+  document.getElementById('cliAdminOverlay').style.display = 'flex';
+}
+function closeAdminCli(){ document.getElementById('cliAdminOverlay').style.display = 'none'; }
+
+function renderAdminCli(){
+  var now = Date.now();
+  var rows = '';
+  for(var i=0;i<USUARIOS.length;i++){
+    var u = USUARIOS[i];
+    var exp   = new Date(u.licExpiry).getTime();
+    var dias  = Math.ceil((exp-now)/864e5);
+    var licTxt = dias>0 ? dias+' días' : 'VENCIDO';
+    var licCol = dias>0 ? '#2e7d32' : '#c62828';
+    var estTxt = u.estado==='bloqueado' ? '🚫 Bloqueado' : '✅ Activo';
+    var btns = u.role!=='admin' ?
+      '<button onclick="cliDelUser('+i+')" style="background:#fee2e2;color:#c62828;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">🗑</button> '+
+      '<button onclick="cliToggleBlock('+i+')" style="background:#fef3c7;color:#d97706;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>' : '—';
+    rows += '<tr style="border-bottom:1px solid #f3f4f6">'+
+      '<td style="padding:8px 6px;font-size:12px;font-weight:600">'+u.user+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px">'+u.nombre+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px;color:'+licCol+'">'+licTxt+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px">'+estTxt+'</td>'+
+      '<td style="padding:8px 6px">'+btns+'</td>'+
+    '</tr>';
+  }
+  var html =
+    '<div style="overflow-x:auto;margin-bottom:14px">'+
+      '<table style="width:100%;border-collapse:collapse">'+
+        '<thead><tr style="background:#f9fafb;font-size:11px;color:#6b7280">'+
+          '<th style="padding:8px 6px;text-align:left">Usuario</th>'+
+          '<th style="padding:8px 6px;text-align:left">Nombre</th>'+
+          '<th style="padding:8px 6px;text-align:left">Licencia</th>'+
+          '<th style="padding:8px 6px;text-align:left">Estado</th>'+
+          '<th style="padding:8px 6px;text-align:left">Acc.</th>'+
+        '</tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table>'+
+    '</div>'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:8px">➕ Agregar usuario</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
+      '<input id="nuU" class="form-input" placeholder="Usuario">'+
+      '<input id="nuN" class="form-input" placeholder="Nombre completo">'+
+      '<input id="nuP" class="form-input" type="password" placeholder="Contraseña">'+
+      '<select id="nuL" class="form-input"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected>1 año</option></select>'+
+    '</div>'+
+    '<button onclick="cliAddUser()" style="width:100%;padding:10px;background:#E8450A;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">+ Agregar usuario</button>';
+  document.getElementById('cliAdminContent').innerHTML = html;
+}
+
+function cliDelUser(i){
+  if(!confirm('¿Eliminar usuario "'+USUARIOS[i].user+'"?')) return;
+  USUARIOS.splice(i,1);
+  saveCliUsers(); renderAdminCli();
+  toast('Usuario eliminado','ok');
+}
+
+function cliToggleBlock(i){
+  USUARIOS[i].estado = USUARIOS[i].estado==='bloqueado' ? 'activo' : 'bloqueado';
+  saveCliUsers(); renderAdminCli();
+  toast('Usuario '+(USUARIOS[i].estado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
+}
+
+function cliAddUser(){
+  var u = document.getElementById('nuU').value.trim();
+  var n = document.getElementById('nuN').value.trim();
+  var p = document.getElementById('nuP').value.trim();
+  var l = parseInt(document.getElementById('nuL').value)||365;
+  if(!u||!n||!p){ toast('Completa todos los campos','warn'); return; }
+  var existe = false;
+  for(var i=0;i<USUARIOS.length;i++){ if(USUARIOS[i].user===u){existe=true;break;} }
+  if(existe){ toast('Usuario ya existe','warn'); return; }
+  USUARIOS.push({user:u, pass:p, nombre:n, role:'cliente', licExpiry:new Date(Date.now()+l*864e5).toISOString(), estado:'activo'});
+  saveCliUsers(); renderAdminCli();
+  toast('Usuario '+u+' creado','ok');
+}
+
+function startAppV16(){
+  if (typeof escucharConfigUrls === 'function') {
+    escucharConfigUrls(function(cfg){
+      if (cfg) {
+        localStorage.setItem('ov_api_url_pub', cfg.pub || '');
+        localStorage.setItem('ov_api_url_proxy', cfg.proxy || '');
+      }
+    });
+  }
+  if (typeof escucharBroadcast === 'function') {
+    escucharBroadcast(function(data){
+      if (data && data.msg) console.log('[OV] ' + data.msg);
+    });
+  }
+  if (typeof registrarSesionActiva === 'function') {
+    try {
+      var u = firebase.auth().currentUser;
+      if (u) registrarSesionActiva(u.uid, u.displayName || u.email || 'user', 'app', navigator.userAgent, function(){});
+    } catch(e) {}
+  }
+}
+
 </script>
 </body>
 </html>
