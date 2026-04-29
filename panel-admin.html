@@ -491,16 +491,33 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 <div id="toast"></div>
 
 <script>
-// ── DATOS BASE ──────────────────────────────────────
-var ADMIN_USER = {u:'admin', p:'oviedo2025admin'};
+// ── DATOS BASE DE USUARIOS ──────────────────────────────────────
 
-var CLI_USERS = JSON.parse(localStorage.getItem('ov_cli_v2_users') || 'null') || [
-  {user:'admin',pass:'oviedo2025admin',nombre:'Administrador',role:'admin',licExpiry:new Date(Date.now()+365*864e5).toISOString(),estado:'activo'},
-  {user:'cliente1',pass:'cli2025',nombre:'Cliente 1',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'cliente2',pass:'cli2025',nombre:'Cliente 2',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'},
-  {user:'demo',pass:'demo123',nombre:'Demo',role:'cliente',licExpiry:new Date(Date.now()+30*864e5).toISOString(),estado:'activo'}
+// Usuario principal del administrador (recomendado usar este)
+const ADMIN_CREDENTIALS = {
+  u: 'admin',
+  p: 'oviedo2025admin',     // ← Cambia esta contraseña cuando termines de configurar
+  nombre: 'Administrador',
+  role: 'admin',
+  estado: 'activo'
+};
+
+// Lista de usuarios para el Panel Admin (Vendedores + Admin)
+let VEND_USERS = [
+  ADMIN_CREDENTIALS,
+  {u:'vendedor1', p:'vend2025', nombre:'Ricardo Vidal',     role:'vendedor', estado:'activo'},
+  {u:'vendedor2', p:'vend2025', nombre:'Rafaela Flores',    role:'vendedor', estado:'activo'},
+  {u:'vendedor3', p:'vend2025', nombre:'Gregorio Reyes',    role:'vendedor', estado:'activo'},
+  {u:'vendedor4', p:'vend2025', nombre:'Jaime Subiabre',    role:'vendedor', estado:'activo'}
 ];
 
+// Lista de usuarios para el Panel Cliente
+let CLI_USERS = [
+  {user:'admin',     pass:'oviedo2025admin', nombre:'Administrador', role:'admin',     estado:'activo'},
+  {user:'cliente1',  pass:'cli2025',         nombre:'Cliente 1',     role:'cliente',   estado:'activo'},
+  {user:'cliente2',  pass:'cli2025',         nombre:'Cliente 2',     role:'cliente',   estado:'activo'},
+  {user:'demo',      pass:'demo123',         nombre:'Demo',          role:'cliente',   estado:'activo'}
+];
 var VEND_USERS = JSON.parse(localStorage.getItem('ov_v2_users') || 'null') || [
   {u:'vendedor1',p:'vend2025',nombre:'Ricardo Vidal',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
   {u:'vendedor2',p:'vend2025',nombre:'Rafaela Flores',role:'vendedor',exp:Date.now()+365*864e5,estado:'activo'},
