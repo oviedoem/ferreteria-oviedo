@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── USUARIOS ─────────────────────────────────────────────
+    // Lectura pública para sincronizar credenciales entre apps
+    // Escritura desde cualquier app autenticada (admin controla por lógica)
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // ── COTIZACIONES ─────────────────────────────────────────
+    // Cualquier usuario puede crear y leer cotizaciones
+    match /cotizaciones/{cotizId} {
+      allow read, write: if true;
+    }
+
+    // ── SESIONES ACTIVAS (presencia online) ──────────────────
+    // Las apps escriben al iniciar/cerrar sesión
+    // El admin lee en tiempo real via onSnapshot
+    match /sesiones_activas/{uid} {
+      allow read, write: if true;
+    }
+
+    // ── PROMOCIONES ───────────────────────────────────────────
+    // Lectura pública (se muestran en apps)
+    // Escritura solo desde admin
+    match /promos/{promoId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── CONFIG (URLs, ping) ───────────────────────────────────
+    // Lectura pública para que apps lean URLs del catálogo
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── PRODUCTOS (catálogo en Firestore, fallback) ───────────
+    // Solo lectura pública — fuente primaria es GitHub raw
+    match /productos/{prodId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── BLOQUEO DE COLECCIONES OBSOLETAS ─────────────────────
+    // sessions — reemplazada por sesiones_activas
+    match /sessions/{docId} {
+      allow read: if false;
+      allow write: if false;
+    }
+    // notificaciones — no usada en ninguna app
+    match /notificaciones/{docId} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

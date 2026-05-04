@@ -1,0 +1,43 @@
+name: Catálogo CSV → JSON
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "CATALOGO PRODUCTOS/Datos.csv"
+      - ".github/workflows/generate-datos-json.yml"
+  workflow_dispatch:
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Convertir CSV a JSON
+        run: |
+          python3 - <<'EOF'
+          import csv, json, os
+
+          csv_path = "CATALOGO PRODUCTOS/Datos.csv"
+          json_path = "CATALOGO PRODUCTOS/Datos.json"
+
+          productos = []
+          with open(csv_path, newline='', encoding='utf-8-sig') as f:
+              reader = csv.DictReader(f)
+              for row in reader:
+                  productos.append({k.strip(): v.strip() for k, v in row.items()})
+
+          with open(json_path, 'w', encoding='utf-8') as f:
+              json.dump({"productos": productos, "total": len(productos)}, f, ensure_ascii=False, indent=2)
+
+          print(f"Generados {len(productos)} productos en {json_path}")
+          EOF
+
+      - name: Commit Datos.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "CATALOGO PRODUCTOS/Datos.json"
+          git commit -m "chore: regenerar Datos.json desde CSV" || echo "Sin cambios"
+          git push

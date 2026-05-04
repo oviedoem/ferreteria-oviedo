@@ -1,0 +1,56 @@
+# ============================================================
+# .gitignore — Ferretería Oviedo
+# ============================================================
+
+# Firebase CLI cache (NO debe estar en el repo)
+.firebase/
+.firebaserc.local
+
+# Scripts de auditoría y mantenimiento (solo locales)
+scripts/
+*.bat
+*.py
+*.ps1
+*.sql
+
+# Reportes generados
+AUDITORIA_*.md
+REVISION_*.bat
+REPORTE_*.md
+
+# Archivos de versiones anteriores eliminados
+firebase-config-V16.js
+firebase-config-V16__1_.js
+visual_engine_v18.py
+OMNI_PASO_A_PASO_V18.bat
+validar_sistema.bat
+ruta_configuracion.ps1
+INSERTAR_SQL_AQUI.sql
+README_V18.md
+manual_v17.md
+Manual_Supremo_V17_0.pdf
+MAPA_FLUJOS_ARQUITECTURA_V18.md
+REPORTE_CAMBIOS_V18.md
+
+# Node / npm (si se instala Firebase CLI localmente)
+node_modules/
+package-lock.json
+package.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Mantener en repo (necesarios para actualizar catálogo)
+!CATALOGO PRODUCTOS/scripts/
+!CATALOGO PRODUCTOS/scripts/sql_a_csv.py
+!CATALOGO PRODUCTOS/scripts/productos.sql
+!CATALOGO PRODUCTOS/scripts/ACTUALIZAR_CATALOGO.bat
+!MANUAL_SISTEMA.md

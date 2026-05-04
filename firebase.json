@@ -1,0 +1,24 @@
+{
+  "hosting": {
+    "site": "ferreteria-oviedo",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "**/*.bat",
+      "**/*.py",
+      "**/*.sh",
+      "**/*.exe",
+      "**/*.sql",
+      "**/scripts/**",
+      "**/*.pdf",
+      "**/*.xlsx"
+    ],
+    "rewrites": [
+      { "source": "/panel-admin",   "destination": "/panel-admin.html"   },
+      { "source": "/panel-cliente", "destination": "/panel-cliente.html" },
+      { "source": "/vendedor",      "destination": "/index.html"         }
+    ]
+  }
+}
