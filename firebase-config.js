@@ -102,20 +102,6 @@ function eliminarPromoFirestore(id, cb) {
     .then(function(){ if(cb) cb(null); }).catch(function(e){ if(cb) cb(e); });
 }
 
-// ── CONFIG URLs ───────────────────────────────────────────────
-function guardarConfigURLs(pub, proxy, cb) {
-  if (!db) { if(cb) cb(new Error('Firebase no disponible')); return; }
-  db.collection('config').doc('urls').set({pub:pub,proxy:proxy,ts:nowTs()})
-    .then(function(){ if(cb) cb(null); }).catch(function(e){ if(cb) cb(e); });
-}
-
-function cargarConfigURLs(cb) {
-  if (!db) { cb(null,null); return; }
-  db.collection('config').doc('urls').get()
-    .then(function(d){ cb(null,d.exists?d.data():null); })
-    .catch(function(){ cb(null,null); });
-}
-
 // ── TEST ──────────────────────────────────────────────────────
 function probarConexion(cb) {
   if (!db) { cb(new Error('Firebase no inicializado')); return; }

@@ -4,7 +4,7 @@ color 0A & cls
 
 echo ============================================================
 echo  FERRETERIA OVIEDO - Actualizador de Catalogo
-echo  Convierte productos.sql → Datos.csv → GitHub
+echo  Convierte productos.sql → Datos.csv → Firestore
 echo ============================================================
 echo.
 
@@ -17,21 +17,19 @@ if %errorlevel% neq 0 (
 )
 
 echo  [1] Solo ver cambios (sin modificar archivos)
-echo  [2] Actualizar CSV (sin subir a GitHub)
-echo  [3] Actualizar CSV Y subir a GitHub Pages
-echo  [4] Salir
+echo  [2] Actualizar CSV
+echo  [3] Salir
 echo.
-set /p OPC="Opcion (1-4): "
+set /p OPC="Opcion (1-3): "
 
 if "%OPC%"=="1" python sql_a_csv.py productos.sql --preview
 if "%OPC%"=="2" python sql_a_csv.py productos.sql
-if "%OPC%"=="3" python sql_a_csv.py productos.sql --subir
-if "%OPC%"=="4" exit /b 0
+if "%OPC%"=="3" exit /b 0
 
 echo.
 if "%OPC%"=="2" (
     echo [OK] CSV actualizado en CATALOGO PRODUCTOS/Datos.csv
-    echo      Para publicar: ejecutar opcion 3 o usar git push manualmente.
+    echo      Importa a Firestore y recarga el catalogo desde el panel admin.
 )
 echo.
 pause

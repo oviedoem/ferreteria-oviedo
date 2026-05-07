@@ -247,7 +247,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
     <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
     <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
     <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
-    <button class="nav-btn" onclick="showTab('url',this)">🔗 URL / Conexión</button>
+    <button class="nav-btn" onclick="recargaCatalogo()">🔄 Recargar catálogo</button>
     <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
     <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
     <button class="nav-btn" onclick="showTab('mejoras',this)">💡 Mejoras</button>
@@ -359,9 +359,9 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
     <div class="tab-pane" id="tab-precios">
       <div class="card">
         <div class="card-title"><span>🔗</span> Fuente de datos activa</div>
-        <div id="urlStatus" class="url-status url-loading">⏳ Verificando conexión...</div>
-        <div style="font-size:12px;color:var(--gris);margin-bottom:12px;word-break:break-all" id="urlActiva"></div>
-        <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
+        <div id="urlStatus" class="url-status url-loading">⏳ Cargando catálogo...</div>
+        <div style="font-size:12px;color:var(--gris);margin-bottom:12px" id="urlActiva">Firestore — colección «productos»</div>
+        <button class="btn btn-primary" onclick="recargaCatalogo()">🔄 Recargar catálogo</button>
       </div>
       <div class="card">
         <div class="card-title"><span>📊</span> Vista previa del catálogo</div>
@@ -374,12 +374,10 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
       <div class="card">
         <div class="card-title"><span>📋</span> Instrucciones para actualizar precios</div>
         <ol style="font-size:13px;line-height:2;padding-left:18px;color:#374151">
-          <li>Usa el archivo del catálogo en GitHub o un CSV público</li>
-          <li>Edita los valores en las columnas <strong>PrecioIVA</strong> o <strong>SocioIVA</strong></li>
-          <li>Ve a <strong>Archivo → Compartir → Publicar en la web</strong></li>
-          <li>Selecciona la hoja, formato <strong>CSV</strong> y copia el enlace</li>
-          <li>Pega el enlace en la sección <strong>🔗 URL / Conexión</strong></li>
-          <li>Las apps cliente y vendedor actualizarán precios automáticamente</li>
+          <li>Edita el archivo <strong>productos.sql</strong> con los nuevos precios</li>
+          <li>Ejecuta <strong>ACTUALIZAR_CATALOGO.bat</strong> para generar el CSV</li>
+          <li>Importa los productos a Firestore colección <strong>productos</strong></li>
+          <li>Haz clic en <strong>🔄 Recargar catálogo</strong> para ver los cambios</li>
         </ol>
       </div>
     </div>
@@ -411,35 +409,12 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
       </div>
     </div>
 
-    <!-- ── URL / CONEXIÓN ── -->
+    <!-- ── CATÁLOGO FIRESTORE ── -->
     <div class="tab-pane" id="tab-url">
       <div class="card">
-        <div class="card-title"><span>🔗</span> URL del catálogo (GitHub Raw / CSV)</div>
-        <div class="fgroup" style="margin-bottom:12px">
-          <label class="flabel">URL pública (recomendada) — GitHub raw</label>
-          <input class="finput" id="urlPub" placeholder="https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv">
-        </div>
-        <div class="fgroup" style="margin-bottom:12px">
-          <label class="flabel">URL proxy / respaldo</label>
-          <input class="finput" id="urlProxy" placeholder="https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv">
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="testConexion()">🔄 Probar conexión</button>
-          <button class="btn btn-success" onclick="guardarURLs()">💾 Guardar URLs</button>
-        </div>
-        <div id="urlTestResult" style="margin-top:12px"></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span>📋</span> Instrucciones para obtener URL pública</div>
-        <ol style="font-size:13px;line-height:2.1;padding-left:18px;color:#374151">
-          <li>Abre tu catálogo en GitHub o en el archivo CSV público</li>
-          <li>Ve a <strong>Archivo → Compartir → Publicar en la web</strong></li>
-          <li>Selecciona la hoja con los precios</li>
-          <li>En Formato selecciona <strong>CSV</strong></li>
-          <li>Haz clic en <strong>Publicar</strong> y copia el enlace</li>
-          <li>Pégalo arriba en "URL pública" y haz clic en <strong>Guardar URLs</strong></li>
-          <li>Haz clic en <strong>Probar conexión</strong> para verificar</li>
-        </ol>
+        <div class="card-title"><span>📦</span> Catálogo Firestore</div>
+        <p style="font-size:13px;color:var(--gris);margin-bottom:16px">El catálogo se lee directamente desde Firestore, colección <strong>productos</strong>.</p>
+        <button class="btn btn-primary" onclick="recargaCatalogo()">🔄 Recargar catálogo</button>
       </div>
     </div>
 
@@ -523,8 +498,8 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
           <b>URL:</b> <a href="https://ferreteria-oviedo.web.app/panel-admin" target="_blank" style="color:var(--naranja)">ferreteria-oviedo.web.app/panel-admin</a><br>
           <b>Usuarios:</b> Agregar, bloquear, eliminar clientes y vendedores<br>
           <b>Cotizaciones:</b> Ver historial completo, descargar PDF y Excel por cotización<br>
-          <b>Precios:</b> Verificar catálogo cargado desde GitHub<br>
-          <b>URL/Conexión:</b> Actualizar la URL del catálogo CSV si cambia<br>
+          <b>Precios:</b> Verificar catálogo cargado desde Firestore<br>
+          <b>Recargar catálogo:</b> Actualizar datos desde Firestore colección productos<br>
           <b>Promociones:</b> Crear y publicar ofertas visibles en la app cliente<br>
           <b>Notificaciones:</b> Avisos con sonido cuando alguien inicia sesión
         </div>
@@ -534,9 +509,9 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
         <div style="font-size:13px;color:#374151;line-height:1.8;padding:4px 0">
           <b>Archivo a editar:</b> <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">CATALOGO PRODUCTOS/scripts/productos.sql</code><br>
           <b>1.</b> Editar los precios en <code>productos.sql</code> (formato INSERT INTO)<br>
-          <b>2.</b> Ejecutar <code>ACTUALIZAR_CATALOGO.bat</code> → opción 3 (actualiza y publica)<br>
-          <b>3.</b> Las apps toman los nuevos precios automáticamente en ~1 minuto<br>
-          <b>Alternativa rápida:</b> Editar <code>CATALOGO PRODUCTOS/Datos.csv</code> directamente en GitHub y hacer commit
+          <b>2.</b> Ejecutar <code>ACTUALIZAR_CATALOGO.bat</code> → opción 2 (genera CSV)<br>
+          <b>3.</b> Importar a Firestore y hacer clic en <strong>🔄 Recargar catálogo</strong><br>
+          <b>Fuente:</b> Firestore colección <code>productos</code>
         </div>
       </div>
     </div>
@@ -686,8 +661,6 @@ var LOG = JSON.parse(localStorage.getItem('ov_log') || '[]');
 var PRODS_CACHE = [];
 var PRODS_FILT = [];
 
-var URL_PUB   = localStorage.getItem('ov_url_pub')   || 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
-var URL_PROXY = localStorage.getItem('ov_url_proxy') || 'https://raw.githubusercontent.com/oviedoem/ferreteria-oviedo/main/CATALOGO%20PRODUCTOS/Datos.csv';
 
 function saveAll(){
   localStorage.setItem('ov_cli_v2_users', JSON.stringify(CLI_USERS));
@@ -804,10 +777,6 @@ function showTab(id, btn){
   if(id==='mejoras')      renderMejoras();
   if(id==='notificaciones'){ renderNotifTab(); marcarNotifLeidas(); }
   if(id==='cotizaciones') renderCotizaciones();
-  if(id==='url'){
-    document.getElementById('urlPub').value   = URL_PUB;
-    document.getElementById('urlProxy').value = URL_PROXY;
-  }
   if(id==='promociones')  renderPromos();
   if(id==='redes')        loadRedes();
 }
@@ -820,9 +789,6 @@ function initApp(){
     renderPromos();
     loadPrecios();
     loadRedes();
-    document.getElementById('urlPub').value   = URL_PUB;
-    document.getElementById('urlProxy').value = URL_PROXY;
-
     // ── REALTIME: sesiones activas via Firestore ─────
     if(window.db){
       // Escuchar sesiones en tiempo real
@@ -1510,37 +1476,33 @@ function toggleBlock(btn){
 // ── PRECIOS ──────────────────────────────────────────
 var todosProds = [];
 function loadPrecios(){
-  document.getElementById('urlActiva').textContent = URL_PUB;
-  document.getElementById('urlPub').value   = URL_PUB;
-  document.getElementById('urlProxy').value = URL_PROXY;
+  document.getElementById('urlActiva').textContent = "Firestore — colección «productos»";
   document.getElementById('urlStatus').className='url-status url-loading';
-  document.getElementById('urlStatus').textContent='⏳ Verificando conexión...';
-  fetch(URL_PUB).then(function(r){
-    if(!r.ok) throw new Error('http');
-    return r.text();
-  }).then(function(txt){
-    var prods = parseCSVAdmin(txt);
-    PRODS_CACHE = prods;
-    todosProds  = prods;
-    PRODS_FILT  = prods;
-    document.getElementById('statProds').textContent = prods.length;
-    document.getElementById('urlStatus').className='url-status url-ok';
-    document.getElementById('urlStatus').textContent='✅ Conexión activa — '+prods.length+' productos';
-    renderTablaPrecios(prods.slice(0,100));
-  }).catch(function(){
+  document.getElementById('urlStatus').textContent='⏳ Cargando catálogo desde Firestore...';
+  if(!window.db){
     document.getElementById('urlStatus').className='url-status url-err';
-    document.getElementById('urlStatus').textContent='❌ Sin conexión al catálogo — Verifica la URL';
-    fetch(URL_PROXY).then(function(r){ return r.text(); }).then(function(txt){
-      var prods = parseCSVAdmin(txt);
-      if(prods.length>0){
-        PRODS_CACHE = prods; todosProds = prods; PRODS_FILT = prods;
-        document.getElementById('urlStatus').className='url-status url-ok';
-        document.getElementById('urlStatus').textContent='✅ Conexión activa (proxy) — '+prods.length+' productos';
-        document.getElementById('statProds').textContent = prods.length;
-        renderTablaPrecios(prods.slice(0,100));
-      }
-    }).catch(function(){});
-  });
+    document.getElementById('urlStatus').textContent='❌ Firebase no disponible';
+    return;
+  }
+  window.db.collection('productos').get()
+    .then(function(snap){
+      var prods=[];
+      snap.forEach(function(d){ prods.push(d.data()); });
+      PRODS_CACHE=prods; todosProds=prods; PRODS_FILT=prods;
+      document.getElementById('statProds').textContent=prods.length;
+      document.getElementById('urlStatus').className='url-status url-ok';
+      document.getElementById('urlStatus').textContent='✅ Catálogo Firestore — '+prods.length+' productos';
+      renderTablaPrecios(prods.slice(0,100));
+    })
+    .catch(function(){
+      document.getElementById('urlStatus').className='url-status url-err';
+      document.getElementById('urlStatus').textContent='❌ Error al leer Firestore';
+    });
+}
+
+function recargaCatalogo(){
+  loadPrecios();
+  toast('🔄 Recargando catálogo desde Firestore...','ok');
 }
 
 function parseCSVAdmin(text){
@@ -1600,40 +1562,6 @@ function filtrarPrecios(){
     return p.Descripcion.toLowerCase().includes(q)||p.Codigo.toLowerCase().includes(q)||(p.Marca||'').toLowerCase().includes(q);
   });
   renderTablaPrecios(PRODS_FILT);
-}
-
-// ── URL / CONEXIÓN ───────────────────────────────────
-function deriveJsonUrl(url){
-  if(!url) return url;
-  return url.replace(/Datos\.csv(\?.*)?$/i,'Datos.json$1');
-}
-function guardarURLs(){
-  URL_PUB   = document.getElementById('urlPub').value.trim();
-  URL_PROXY = document.getElementById('urlProxy').value.trim();
-  var jsonPub = deriveJsonUrl(URL_PUB) || URL_PUB;
-  var jsonProxy = deriveJsonUrl(URL_PROXY) || URL_PROXY;
-  localStorage.setItem('ov_url_pub',       URL_PUB);
-  localStorage.setItem('ov_url_proxy',     URL_PROXY);
-  localStorage.setItem('ov_url_json_pub',  jsonPub);
-  localStorage.setItem('ov_url_json',      jsonProxy);
-  toast('✅ URLs guardadas. Las apps cliente y vendedor usarán estas URLs automáticamente.','ok');
-  testConexion();
-}
-
-function testConexion(){
-  var res = document.getElementById('urlTestResult');
-  res.innerHTML='<div class="url-status url-loading">⏳ Probando...</div>';
-  fetch(URL_PUB).then(function(r){
-    if(!r.ok) throw new Error();
-    return r.text();
-  }).then(function(txt){
-    var prods=parseCSVAdmin(txt);
-    res.innerHTML='<div class="url-status url-ok">✅ Conexión exitosa — '+prods.length+' productos leídos</div>';
-    PRODS_CACHE=prods; todosProds=prods;
-    document.getElementById('statProds').textContent=prods.length;
-  }).catch(function(){
-    res.innerHTML='<div class="url-status url-err">❌ No se pudo conectar. Verifica la URL pública.</div>';
-  });
 }
 
 // ── PROMOCIONES ──────────────────────────────────────
