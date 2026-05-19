@@ -10780,6 +10780,10 @@ function vadmReRenderTabActivo(){
   else if(id==='arbolheat')    vadmRenderArbolHeat();
   else if(id==='rankingmarca') setTimeout(vadmRenderRankingMarca, 0);
   else if(id==='estaciones')   vadmRenderEstaciones();
+  else if(id==='sobrestock')   vadmRenderSobreStock();
+  else if(id==='transito')     vadmRenderTransito();
+  else if(id==='merma')        vadmRenderMerma();
+  else if(id==='entrefechas')  { var _d=document.getElementById('vadmEFdesde'),_h=document.getElementById('vadmEFhasta'); if(_d&&_h&&_d.value&&_h.value) vadmRenderEntrefechas(); }
   else if(id==='sector')       vadmRenderSector();
   else if(id==='impacto')      vadmRenderImpacto();
   else if(id==='nc')           vadmRenderNC();
