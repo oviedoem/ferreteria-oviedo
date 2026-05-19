@@ -1,0 +1,32 @@
+{
+  "name": "Oviedo Admin",
+  "short_name": "Oviedo Admin",
+  "description": "Panel Administrador — Ferretería Oviedo",
+  "start_url": "/panel-admin",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#DA0000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo_oviedo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "logo_oviedo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/panel-admin",
+      "description": "Panel Administrador"
+    }
+  ]
+}

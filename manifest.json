@@ -1,0 +1,32 @@
+﻿{
+  "name": "Oviedo Vendedor",
+  "short_name": "Oviedo",
+  "description": "Panel Vendedor — Ferretería Oviedo",
+  "start_url": "/vendedor",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#DA0000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo_oviedo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "logo_oviedo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Vendedor",
+      "url": "/vendedor",
+      "description": "Panel Vendedor"
+    }
+  ]
+}

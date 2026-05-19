@@ -1,0 +1,32 @@
+{
+  "name": "Oviedo Catálogo",
+  "short_name": "Oviedo",
+  "description": "Catálogo de productos Ferretería Oviedo",
+  "start_url": "/panel-cliente",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#DA0000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo_oviedo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "logo_oviedo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catálogo",
+      "url": "/panel-cliente",
+      "description": "Ver catálogo de productos"
+    }
+  ]
+}

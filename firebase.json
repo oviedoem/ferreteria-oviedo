@@ -1,0 +1,43 @@
+{
+  "hosting": {
+    "site": "ferreteria-oviedo",
+    "public": ".",
+    "predeploy": ["node update-sw-version.js"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "**/*.bat",
+      "**/*.py",
+      "**/*.sh",
+      "**/*.exe",
+      "**/*.sql",
+      "**/scripts/**",
+      "**/*.pdf",
+      "**/*.xlsx",
+      "**/*.xlsm",
+      "**/*.xlsb",
+      "**/*.xltm",
+      "**/*.pptx",
+      "**/*.pptm",
+      "**/*.mp4",
+      "**/*.ini",
+      "update-sw-version.js",
+      "VENTAS EL MANZANO/**",
+      "VENTAS EL MANZANO LOCAL/**",
+      "SERVIDOR2_DATOS_AYER/**",
+      "SOLO EJEMPLO/**",
+      "FLUJOS .MD/**",
+      "backups/**",
+      "users_export.json"
+    ],
+    "rewrites": [
+      { "source": "/panel-admin",   "destination": "/panel-admin.html"   },
+      { "source": "/panel-cliente", "destination": "/panel-cliente.html" },
+      { "source": "/vendedor",      "destination": "/index.html"         }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

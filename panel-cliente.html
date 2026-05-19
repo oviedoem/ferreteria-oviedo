@@ -1,0 +1,3238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#DA0000">
+<meta name="description" content="Catálogo de productos Ferretería Oviedo — consulta precios y genera cotizaciones.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Oviedo Catálogo">
+<link rel="manifest" href="manifest-cliente.json">
+<link rel="apple-touch-icon" href="logo_oviedo.jpg">
+<title>Ferretería Oviedo — Catálogo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+:root{
+  --naranja:#DA0000;--naranja2:#b50000;--naranja-light:#fff0f0;--negro:#202020;--rojo-marca:#DA0000;
+  --gris-dark:#1a1a1a;--gris:#4a4a4a;--gris-mid:#888;--gris-light:#f5f5f5;--gris-border:#e0e0e0;
+  --blanco:#fff;--verde:#2e7d32;--rojo:#c62828;--azul:#1565c0;
+  --radius:14px;--radius-sm:8px;--shadow:0 2px 12px rgba(0,0,0,.1);
+  --font:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--gris-light);color:var(--gris-dark);min-height:100dvh}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#202020 0%,#DA0000 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:white;border-radius:20px;padding:40px;width:360px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-logo-img{display:block;margin:0 auto 14px;width:180px;height:auto;max-width:80%}
+.login-brand{font-size:22px;font-weight:800;color:var(--naranja);margin-bottom:2px;letter-spacing:-0.5px}
+.login-sucursal{font-size:13px;font-weight:600;color:var(--gris-dark);margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--gris-mid);margin-bottom:28px}
+.login-input{width:100%;padding:14px 16px;border:2px solid var(--gris-border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;transition:border .2s;margin-bottom:12px}
+.login-input:focus{border-color:var(--naranja)}
+.login-btn{width:100%;padding:14px;background:var(--naranja);color:white;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;cursor:pointer;transition:background .2s;font-family:var(--font)}
+.login-btn:hover{background:var(--naranja2)}
+.login-error{color:var(--rojo);font-size:13px;margin-top:8px;min-height:18px}
+.license-info{font-size:11px;color:var(--gris-mid);margin-top:14px;padding-top:14px;border-top:1px solid var(--gris-border)}
+.login-link{font-size:12px;color:var(--naranja);cursor:pointer;margin-top:10px;text-decoration:underline;display:inline-block}
+.login-toggle-legacy{font-size:11px;color:var(--gris-mid);cursor:pointer;margin-top:8px;text-decoration:underline;display:inline-block}
+.login-divider{border:none;border-top:1px solid var(--gris-border);margin:12px 0}
+.login-section-label{font-size:11px;font-weight:700;color:var(--gris-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;text-align:left}
+#loginRegisterForm{display:none;text-align:left}
+#loginRegisterForm .login-input{margin-bottom:10px}
+.rut-hint{font-size:11px;color:var(--gris-mid);margin-top:-6px;margin-bottom:10px}
+.login-spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HEADER */
+header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.header-title h1{font-size:15px;font-weight:800;color:white;line-height:1.1}
+.header-title p{font-size:10px;color:rgba(255,255,255,.55)}
+.header-spacer{flex:1}
+.btn-logout{font-size:11px;color:rgba(255,255,255,.8);cursor:pointer;padding:6px 10px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);font-family:var(--font)}
+.btn-logout:hover{background:rgba(255,255,255,.15)}
+
+/* SYNC BAR */
+.sync-bar{padding:3px 14px;font-size:10px;display:flex;align-items:center;gap:5px;min-height:22px}
+.sync-bar.ok{background:#e8f5e9;color:#2e7d32}
+.sync-bar.warn{background:#fff3e0;color:#e65100}
+.sync-bar.loading{background:#e3f2fd;color:#1565c0}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* VENDEDORES */
+.vend-section{background:#202020;border-bottom:3px solid #DA0000;padding:10px 14px 8px}
+.vend-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.vend-header-left{display:flex;align-items:center;gap:8px}
+.vend-header-icon{width:28px;height:28px;background:#DA0000;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.vend-header-text{font-size:12px;font-weight:800;color:#fff;letter-spacing:-.2px}
+.vend-header-sub{font-size:10px;color:rgba(255,255,255,.55);margin-top:1px}
+.vend-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+@media(max-width:500px){.vend-grid{grid-template-columns:1fr 1fr}}
+.vend-card{background:rgba(255,255,255,.06);border-radius:10px;padding:8px 10px;border:1px solid rgba(218,0,0,.3);display:flex;flex-direction:column;gap:5px}
+.vend-card-top{display:flex;align-items:center;gap:7px}
+.vend-avatar{width:30px;height:30px;border-radius:50%;background:#DA0000;color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:-.5px;border:1.5px solid rgba(255,255,255,.2)}
+.vend-name{font-size:11px;font-weight:700;color:#fff;line-height:1.2}
+.vend-email{font-size:9px;color:rgba(255,255,255,.45);margin-top:1px}
+.vend-email a{color:rgba(255,255,255,.45);text-decoration:none}
+.vend-wa{display:flex;align-items:center;justify-content:center;gap:4px;background:#25D366;color:white;border:none;border-radius:6px;padding:5px 0;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none;font-family:var(--font);width:100%;transition:background .15s}
+.vend-wa:hover{background:#1da851}
+.vend-wa svg{width:12px;height:12px;fill:white;flex-shrink:0}
+/* Redes inline con vendedores */
+.redes-inline{display:flex;gap:6px;align-items:center}
+.red-btn-inline{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;text-decoration:none;color:white;white-space:nowrap}
+
+/* SEARCH */
+.search-section{padding:10px 14px;background:white;border-bottom:1px solid var(--gris-border)}
+.search-wrap{position:relative;margin-bottom:8px}
+.search-wrap input{width:100%;padding:11px 16px 11px 40px;border:2px solid var(--gris-border);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);outline:none;transition:border .2s}
+.search-wrap input:focus{border-color:var(--naranja)}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:17px}
+.filters{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+.filters::-webkit-scrollbar{height:0}
+.filter-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--gris-border);font-size:11px;background:white;cursor:pointer;color:var(--gris);font-family:var(--font);white-space:nowrap;flex-shrink:0;transition:all .15s}
+.filter-btn.active{background:var(--naranja);border-color:var(--naranja);color:white;font-weight:600}
+
+/* STATS */
+.stats-bar{display:flex;gap:6px;padding:8px 14px;background:var(--gris-light);flex-wrap:wrap}
+.stat-chip{background:white;border-radius:8px;padding:5px 10px;font-size:11px;color:var(--gris);border:1px solid var(--gris-border)}
+.stat-chip span{font-weight:700;color:var(--naranja)}
+
+/* PRODUCTOS */
+.productos-list{padding:8px 14px;display:flex;flex-direction:column;gap:8px;max-width:700px;margin:0 auto;padding-bottom:90px}
+.prod-card{background:white;border-radius:var(--radius);box-shadow:0 1px 5px rgba(0,0,0,.05);overflow:hidden;transition:box-shadow .15s}
+.prod-card:hover{box-shadow:0 3px 14px rgba(0,0,0,.1)}
+.prod-header{padding:12px 14px 6px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.prod-nombre{font-size:13px;font-weight:600;color:var(--gris-dark);line-height:1.35;flex:1}
+.prod-codigo{font-size:10px;color:var(--gris-mid);background:var(--gris-light);padding:3px 7px;border-radius:6px;white-space:nowrap}
+.prod-marca{font-size:11px;color:var(--azul);font-weight:500;padding:0 14px 6px}
+.prod-bottom{padding:6px 14px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.precio-publico{background:var(--naranja-light);border-radius:8px;padding:8px 14px;display:flex;flex-direction:column;align-items:center}
+.precio-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--naranja);margin-bottom:1px}
+.precio-val{font-size:18px;font-weight:800;color:var(--naranja)}
+.prod-actions{display:flex;align-items:center;gap:6px}
+.qty-wrap{display:flex;align-items:center;gap:3px;background:var(--gris-light);border-radius:8px;padding:3px 6px}
+.qty-btn{width:26px;height:26px;border:none;background:var(--naranja);color:white;border-radius:5px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.qty-val{width:30px;text-align:center;font-size:15px;font-weight:700}
+.btn-add{padding:9px 16px;background:var(--naranja);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s;white-space:nowrap}
+.btn-add:hover{background:var(--naranja2)}
+
+/* CARRITO FAB */
+.cart-fab{position:fixed;bottom:20px;right:16px;background:#202020;border:2.5px solid #DA0000;border-radius:16px;padding:10px 14px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;z-index:200;transition:transform .15s,box-shadow .15s;min-width:64px}
+.btn-wa-prod{background:#25D366;color:white;border:none;border-radius:6px;padding:7px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s;white-space:nowrap;flex-shrink:0}
+.btn-wa-prod:hover{background:#1da851}
+.stock-badge{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:800;padding:4px 10px;border-radius:12px;margin-top:4px;letter-spacing:.2px}
+.stock-ok{background:#dcfce7;color:#166534}.stock-low{background:#fef9c3;color:#854d0e}.stock-out{background:#fee2e2;color:#991b1b}
+.precio-consultar-wa{background:none;border:1.5px solid #25D366;color:#166534;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap}
+.wa-cat-chip{background:none;border:1.5px solid #25D366;color:#166534;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0}
+.btn-wa-cot{width:100%;padding:12px;background:#25D366;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .2s;margin-top:8px;display:none}
+.btn-wa-cot:hover{background:#1da851}
+/* ── BANNER SUCURSAL ─────────────────────────────────────── */
+.sucursal-banner{
+  position:relative;overflow:hidden;height:160px;
+  border-bottom:2px solid #DA0000;background:#1a1a1a;
+  flex-shrink:0;
+}
+.sucursal-bg{
+  position:absolute;inset:0;
+  background:url('FONDO3.jpg') center 40%/cover no-repeat;
+  opacity:.82;
+}
+.sucursal-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to right,
+    rgba(0,0,0,.72) 0%,
+    rgba(0,0,0,.42) 36%,
+    rgba(0,0,0,.08) 64%,
+    transparent 100%
+  );
+}
+.sucursal-info{
+  position:absolute;top:0;left:0;bottom:0;
+  z-index:2;display:flex;flex-direction:column;
+  justify-content:center;gap:7px;
+  padding:0 20px;max-width:290px;
+}
+.sucursal-loc{display:flex;align-items:center;gap:5px}
+.sucursal-loc-icon{display:flex;align-items:center;opacity:.95}
+.sucursal-loc-icon svg{animation:iconBounce 3s ease-in-out infinite;display:block}
+@keyframes iconBounce{
+  0%,60%,100%{transform:translateY(0)}
+  30%{transform:translateY(-7px)}
+  45%{transform:translateY(-3px)}
+  52%{transform:translateY(-5px)}
+}
+.sucursal-loc-name{
+  font-size:10px;font-weight:800;color:#DA0000;
+  text-transform:uppercase;letter-spacing:.8px;
+}
+.sucursal-horario{display:flex;flex-direction:column;gap:3px}
+.sched-row{display:flex;align-items:baseline;gap:8px}
+.sched-day{font-size:10px;font-weight:600;color:rgba(255,255,255,.75);min-width:52px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.sched-time{font-size:13px;font-weight:800;color:#fff;letter-spacing:-.2px;text-shadow:0 1px 5px rgba(0,0,0,.65)}
+.sucursal-loc-name{font-size:10px;font-weight:800;color:#ff3a3a;text-transform:uppercase;letter-spacing:.8px;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+@media(max-width:380px){.sched-time{font-size:12px}}
+/* ── ASISTENTE FLOTANTE WA (OVI.EM) ─────────────────────── */
+#waFloatContainer{
+  position:fixed;bottom:78px;left:14px;z-index:400;
+  display:none;flex-direction:column;align-items:flex-start;gap:10px;
+}
+/* burbuja saludo */
+.wa-bubble{
+  background:white;border-radius:16px 16px 16px 4px;
+  padding:12px 34px 12px 14px;
+  box-shadow:0 4px 24px rgba(0,0,0,.14);
+  max-width:228px;position:relative;
+  border:1px solid rgba(37,211,102,.28);
+  animation:waBubbleIn .38s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes waBubbleIn{from{transform:scale(.7) translateY(8px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.wa-bubble-brand{font-size:11px;font-weight:800;color:#DA0000;letter-spacing:.3px;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.wa-bubble-txt{font-size:13px;color:#202020;line-height:1.45}
+.wa-bubble-close{position:absolute;top:6px;right:7px;background:none;border:none;font-size:15px;cursor:pointer;color:#ccc;padding:2px;line-height:1;font-family:inherit}
+.wa-bubble-close:hover{color:#888}
+/* panel de contactos */
+.wa-menu-panel{
+  background:white;border-radius:18px;
+  box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden;width:268px;
+  animation:waMenuIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes waMenuIn{from{transform:scale(.85) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.wa-menu-header{
+  background:linear-gradient(135deg,#1a1a1a 0%,#DA0000 100%);
+  padding:15px 14px 13px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.wa-menu-hicon{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;overflow:hidden;
+  background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;
+}
+.wa-menu-hicon img{width:100%;height:100%;object-fit:cover;filter:brightness(2)}
+.wa-menu-htxt{flex:1}
+.wa-menu-title{font-size:13px;font-weight:800;color:white;line-height:1.2}
+.wa-menu-sub{font-size:10px;color:rgba(255,255,255,.7);margin-top:2px}
+.wa-menu-close-btn{
+  background:rgba(255,255,255,.15);border:none;color:white;
+  width:24px;height:24px;border-radius:50%;font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:inherit;transition:background .15s;
+}
+.wa-menu-close-btn:hover{background:rgba(255,255,255,.3)}
+.wa-contact-item{
+  display:flex;align-items:center;gap:10px;padding:11px 14px;
+  border-bottom:1px solid #f3f4f6;text-decoration:none;
+  transition:background .12s;cursor:pointer;
+}
+.wa-contact-item:hover{background:#f9fafb}
+.wa-contact-item:last-child{border-bottom:none}
+.wa-contact-avatar{
+  width:40px;height:40px;border-radius:50%;background:#DA0000;color:white;
+  font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;border:2px solid rgba(218,0,0,.12);letter-spacing:-.5px;
+}
+.wa-contact-avatar.store-av{background:linear-gradient(135deg,#202020,#DA0000)}
+.wa-contact-info{flex:1;min-width:0}
+.wa-contact-name{font-size:13px;font-weight:700;color:#202020;line-height:1.2}
+.wa-contact-role{font-size:10px;color:#888;margin-top:1px}
+.wa-contact-go{
+  width:28px;height:28px;border-radius:50%;background:#25D366;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.wa-contact-go svg{width:14px;height:14px;fill:white}
+/* ── ASESOR IA — cápsula vertical flotante ─────────────── */
+#waFab{
+  width:96px;height:144px;
+  border-radius:22px;
+  overflow:hidden;
+  position:relative;
+  flex-shrink:0;
+  border:2.5px solid rgba(218,0,0,.8);
+  box-shadow:0 6px 28px rgba(218,0,0,.42),0 2px 10px rgba(0,0,0,.28);
+  cursor:pointer;
+  touch-action:none;
+  user-select:none;-webkit-user-select:none;
+  background:url('PERSONA.jpg') 50% 12% / cover no-repeat #1a1a1a;
+  transition:border-color .2s,box-shadow .2s;
+}
+#waFab:hover{ box-shadow:0 8px 32px rgba(218,0,0,.6) }
+#waFab.wa-fab-open{ border-color:#25D366;box-shadow:0 6px 28px rgba(37,211,102,.42) }
+/* vignette izquierda suave */
+#waFab::before{
+  content:'';position:absolute;inset:0;z-index:1;
+  background:linear-gradient(to right, rgba(20,20,20,.5) 0%, rgba(20,20,20,.08) 32%, transparent 56%);
+  pointer-events:none;
+}
+/* gradiente inferior + label */
+#waFab::after{
+  content:'';position:absolute;
+  bottom:0;left:0;right:0;height:48px;z-index:2;
+  background:linear-gradient(to bottom, transparent 0%, rgba(16,16,16,.96) 100%);
+  pointer-events:none;
+}
+.asesor-fab-label{
+  position:absolute;bottom:8px;left:0;right:0;z-index:3;
+  font-size:9px;font-weight:800;color:rgba(255,255,255,.95);
+  text-align:center;letter-spacing:.8px;text-transform:uppercase;
+  pointer-events:none;
+}
+.asesor-active-dot{
+  position:absolute;top:8px;right:8px;z-index:3;
+  width:12px;height:12px;border-radius:50%;
+  background:#25D366;border:2px solid white;
+  animation:waPulse 2.2s infinite;
+  pointer-events:none;
+}
+@keyframes waPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+/* ── PANEL CONTACTO COMERCIAL ("Consultar precio") ─────── */
+.cpc-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:450;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.cpc-sheet{
+  width:100%;max-width:520px;background:white;
+  border-radius:20px 20px 0 0;
+  max-height:82dvh;overflow-y:auto;
+  padding-bottom:28px;
+  animation:cpcIn .26s cubic-bezier(.25,.8,.25,1);
+}
+@keyframes cpcIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.cpc-handle{width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:12px auto}
+.cpc-header{
+  background:linear-gradient(135deg,#1a1a1a 0%,#DA0000 100%);
+  padding:15px 16px 13px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.cpc-header-title{font-size:14px;font-weight:800;color:white;line-height:1.2}
+.cpc-header-sub{font-size:10px;color:rgba(255,255,255,.7);margin-top:2px}
+.cpc-close{
+  background:rgba(255,255,255,.15);border:none;color:white;
+  width:28px;height:28px;border-radius:50%;font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-family:inherit;transition:background .15s;
+}
+.cpc-close:hover{background:rgba(255,255,255,.3)}
+.cpc-prod-info{
+  margin:14px 16px 0;
+  background:#f9fafb;border-radius:10px;
+  padding:10px 12px;border-left:3px solid #DA0000;
+}
+.cpc-prod-name{font-size:12px;font-weight:700;color:#202020;line-height:1.35}
+.cpc-prod-code{font-size:10px;color:#888;margin-top:2px}
+.cpc-contacts-title{
+  font-size:10px;font-weight:700;color:#888;
+  text-transform:uppercase;letter-spacing:.8px;
+  padding:14px 16px 8px;
+}
+.cpc-contact-item{
+  display:flex;align-items:center;gap:10px;padding:11px 16px;
+  border-bottom:1px solid #f3f4f6;cursor:pointer;
+  transition:background .12s;
+}
+.cpc-contact-item:hover{background:#f9fafb}
+.cpc-contact-item:last-child{border-bottom:none}
+.cpc-avatar{
+  width:42px;height:42px;border-radius:50%;background:#DA0000;
+  color:white;font-size:13px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;letter-spacing:-.5px;
+}
+.cpc-avatar.store{background:linear-gradient(135deg,#202020,#DA0000)}
+.cpc-contact-info{flex:1}
+.cpc-contact-name{font-size:13px;font-weight:700;color:#202020}
+.cpc-contact-role{font-size:10px;color:#888;margin-top:1px}
+.cpc-contact-go{
+  width:32px;height:32px;border-radius:50%;background:#25D366;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.cpc-contact-go svg{width:16px;height:16px;fill:white}
+.cart-fab:active{transform:scale(.94)}.cart-fab:hover{box-shadow:0 6px 24px rgba(218,0,0,.4);transform:translateY(-2px)}
+.cart-fab-icon{width:26px;height:26px;flex-shrink:0}
+.cart-fab-label{font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px;line-height:1.2;text-align:left}
+.cart-fab-label span{display:block;font-size:13px;font-weight:800;color:#DA0000}
+.cart-badge{position:absolute;top:-6px;right:-6px;background:#fff;color:#DA0000;border:2.5px solid #DA0000;border-radius:50%;width:24px;height:24px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(218,0,0,.35);transition:transform .2s}
+.cart-badge.pulse{animation:badgePulse .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes badgePulse{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1)}}
+
+/* PANEL CARRITO */
+.cart-panel{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none}
+.cart-drawer{position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;max-height:92dvh;overflow-y:auto;padding:16px}
+.cart-handle{width:36px;height:4px;background:var(--gris-border);border-radius:2px;margin:0 auto 14px}
+.cart-title{font-size:19px;font-weight:800;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cart-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--gris-border)}
+.cart-item-info{flex:1}
+.cart-item-name{font-size:13px;font-weight:600;line-height:1.3}
+.cart-item-codigo{font-size:10px;color:var(--gris-mid);margin-top:1px}
+.cart-item-price{font-size:14px;font-weight:700;color:var(--naranja);white-space:nowrap}
+.cart-item-qty{font-size:11px;color:var(--gris-mid)}
+.btn-remove{color:var(--rojo);font-size:18px;cursor:pointer;padding:4px;background:none;border:none}
+.totales-box{margin:12px 0;border:1px solid var(--gris-border);border-radius:10px;overflow:hidden}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-size:14px}
+.total-row:not(:last-child){border-bottom:1px solid var(--gris-border)}
+.total-row.main{background:var(--naranja);color:white;font-size:17px;font-weight:800}
+.cliente-form{margin-bottom:12px}
+.form-tit{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--gris-dark)}
+.form-group{margin-bottom:8px}
+.form-label{font-size:11px;font-weight:600;color:var(--gris-mid);margin-bottom:3px;display:block}
+.form-input{width:100%;padding:9px 11px;border:1.5px solid var(--gris-border);border-radius:8px;font-size:14px;font-family:var(--font);outline:none;transition:border .2s}
+.form-input:focus{border-color:var(--naranja)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-pdf{width:100%;padding:14px;background:var(--naranja);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .2s}
+.btn-pdf:hover{background:var(--naranja2)}
+.btn-vaciar{width:100%;padding:10px;background:white;color:var(--rojo);border:1px solid var(--rojo);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:7px}
+.empty-state{text-align:center;padding:50px 20px;color:var(--gris-mid)}
+
+/* ADMIN OVERLAY */
+#cliAdminOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;padding:16px}
+
+/* ── CUPÓN FLOTANTE (notificación push del admin) ──────────────── */
+@keyframes cuponDestacado{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.02)}}
+@keyframes cuponGlow{0%,100%{box-shadow:0 4px 20px rgba(218,0,0,.4)}50%{box-shadow:0 8px 32px rgba(218,0,0,.75)}}
+@keyframes cuponPulseRing{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.2);opacity:0}}
+.cupon-flotante{
+  position:fixed;bottom:90px;right:14px;
+  background:#DA0000;color:white;
+  border-radius:16px;padding:12px 15px 12px 13px;
+  z-index:500;max-width:240px;
+  animation:cuponDestacado 2s infinite ease-in-out, cuponGlow 2s infinite ease-in-out;
+  cursor:pointer;border:2px solid rgba(255,255,255,.25);
+  font-family:var(--font);
+}
+.cupon-flotante .cf-ring{
+  position:absolute;top:-4px;right:-4px;
+  width:18px;height:18px;border-radius:50%;
+  background:#FF4444;
+  animation:cuponPulseRing 1.4s infinite;
+}
+.cupon-flotante .cf-dot{
+  position:absolute;top:-4px;right:-4px;
+  width:18px;height:18px;border-radius:50%;
+  background:#FF4444;border:2px solid white;
+  font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:800;
+}
+.cupon-flotante .cf-title{font-size:12px;font-weight:800;margin-bottom:3px;letter-spacing:.3px}
+.cupon-flotante .cf-codigo{font-size:16px;font-weight:900;letter-spacing:2px;margin-bottom:3px}
+.cupon-flotante .cf-pct{font-size:11px;opacity:.9;margin-bottom:4px}
+.cupon-flotante .cf-hint{font-size:10px;opacity:.75;line-height:1.3}
+.cupon-flotante .cf-cerrar{position:absolute;top:6px;right:8px;font-size:14px;cursor:pointer;opacity:.7;background:none;border:none;color:white;padding:0;font-family:inherit}
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <img src="logo_oviedo.jpg" class="login-logo-img" alt="Ferreterías Oviedo" style="width:190px;height:auto;max-width:85%;display:block;margin:0 auto 18px">
+    <div class="login-sub" style="margin-bottom:20px">Catálogo de productos y precios</div>
+
+    <!-- ── MODO EMAIL (principal) ── -->
+    <div id="loginEmailMode">
+      <input type="email" class="login-input" id="loginEmail" placeholder="Correo electrónico" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+      <input type="password" class="login-input" id="loginPass" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLoginAuth()">
+      <button class="login-btn" id="loginAuthBtn" onclick="doLoginAuth()">Ver precios</button>
+      <span class="login-toggle-legacy" onclick="doForgotPassCli()" style="cursor:pointer">¿Olvidaste tu contraseña?</span>
+      <div id="loginRegistroLink" style="display:none">
+        <span class="login-link" onclick="toggleRegistroForm(true)">¿No tienes cuenta? Regístrate aquí</span>
+      </div>
+      <hr class="login-divider" style="margin:14px 0">
+      <button onclick="doLoginGoogleCli()" id="btnGoogleCli"
+        style="width:100%;padding:11px;border:1.5px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s"
+        onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;height:18px" alt="">
+        Continuar con Google
+      </button>
+    </div>
+
+    <!-- ── FORMULARIO DE REGISTRO ── -->
+    <div id="loginRegisterForm">
+      <hr class="login-divider">
+      <div class="login-section-label">Crear cuenta nueva</div>
+      <input type="text" class="login-input" id="regNombre" placeholder="Nombre completo" autocomplete="name">
+      <input type="text" class="login-input" id="regRut" placeholder="RUT (ej: 12.345.678-9)" autocomplete="off" oninput="autoFormatRut(this)">
+      <div class="rut-hint" id="rutHint"></div>
+      <input type="email" class="login-input" id="regEmail" placeholder="Correo electrónico" autocomplete="email">
+      <input type="password" class="login-input" id="regPass" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="new-password">
+      <button class="login-btn" id="regBtn" onclick="doRegistroCli()" style="background:#1565c0">Crear cuenta</button>
+      <span class="login-link" onclick="toggleRegistroForm(false)" style="color:var(--gris)">Cancelar</span>
+    </div>
+
+    <div class="login-error" id="loginError"></div>
+    <div class="license-info" id="licInfo">Acceso autorizado solo para clientes registrados</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+
+<header>
+  <img src="logo_oviedo.jpg" alt="Ferreterías Oviedo" style="height:40px;width:auto;flex-shrink:0;display:block">
+  <div class="header-spacer"></div>
+  <button id="adminBtn" class="btn-logout" onclick="openAdminCli()" style="display:none;background:#333;color:white;margin-right:6px">⚙ Usuarios</button>
+  <button id="pwaInstall" onclick="instalarPWA()" style="display:none;background:rgba(255,255,255,.1);color:white;border:none;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-right:4px" title="Instalar app">📲</button>
+  <button class="btn-logout" onclick="doLogout()">Salir</button>
+</header>
+
+
+<div class="sync-bar loading" id="syncBar">
+  <div class="sync-dot"></div>
+  <span id="syncText">Actualizando precios...</span>
+</div>
+
+<!-- BANNER SUCURSAL -->
+<div class="sucursal-banner">
+  <div class="sucursal-bg"></div>
+  <div class="sucursal-overlay"></div>
+  <div class="sucursal-info">
+    <div class="sucursal-loc">
+      <a href="https://maps.app.goo.gl/umCSP9Mz2JZ9xv1b6" target="_blank" rel="noopener" title="Ver en Google Maps" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:5px">
+        <span class="sucursal-loc-icon">
+          <svg width="14" height="18" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 0C3.686 0 1 2.686 1 6c0 4.2 6 12 6 12s6-7.8 6-12c0-3.314-2.686-6-6-6z" fill="#DA0000"/>
+            <circle cx="7" cy="6" r="2.2" fill="white"/>
+          </svg>
+        </span>
+        <span class="sucursal-loc-name">Sucursal El Manzano</span>
+      </a>
+    </div>
+    <div class="sucursal-horario">
+      <div class="sched-row">
+        <span class="sched-day">Lun – Vie</span>
+        <span class="sched-time" id="bnrSched1">08:30–13:30 · 14:30–18:00</span>
+      </div>
+      <div class="sched-row">
+        <span class="sched-day">Sábado</span>
+        <span class="sched-time" id="bnrSched2">09:00–13:30</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VENDEDORES — movidos al asistente flotante y panel contacto comercial -->
+<div class="vend-section" style="display:none">
+  <div class="vend-header">
+    <div class="vend-header-left">
+      <div class="vend-header-icon">📞</div>
+      <div>
+        <div class="vend-header-text">EJECUTIVOS DE VENTAS</div>
+        <div class="vend-header-sub">Contacto directo vía WhatsApp</div>
+      </div>
+    </div>
+    <div class="redes-inline" id="redesInline"></div>
+  </div>
+  <div class="vend-grid" id="vendGrid">
+    <!-- Ricardo -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">RV</div>
+        <div>
+          <div class="vend-name">Ricardo Vidal</div>
+          <div class="vend-email"><a href="mailto:ricardo.vidal@oviedo.cl">ricardo.vidal@oviedo.cl</a></div>
+        </div>
+      </div>
+      <a class="vend-wa" href="https://wa.me/56968410852" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 968410852
+      </a>
+    </div>
+    <!-- Rafaela -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">RF</div>
+        <div>
+          <div class="vend-name">Rafaela Flores</div>
+          <div class="vend-email"><a href="mailto:rflores@oviedo.cl">rflores@oviedo.cl</a></div>
+        </div>
+      </div>
+      <a class="vend-wa" href="https://wa.me/56974624064" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 974624064
+      </a>
+    </div>
+    <!-- Gregorio -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">GR</div>
+        <div>
+          <div class="vend-name">Gregorio Reyes</div>
+          <div class="vend-email"><a href="mailto:gregorio.reyes@oviedo.cl">gregorio.reyes@oviedo.cl</a></div>
+        </div>
+      </div>
+      <a class="vend-wa" href="https://wa.me/56998693554" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 998693554
+      </a>
+    </div>
+    <!-- Jaime -->
+    <div class="vend-card">
+      <div class="vend-card-top">
+        <div class="vend-avatar">JS</div>
+        <div>
+          <div class="vend-name">Jaime Subiabre</div>
+          <div class="vend-email"><a href="mailto:jaime.subiabre@oviedo.cl">jaime.subiabre@oviedo.cl</a></div>
+        </div>
+      </div>
+      <a class="vend-wa" href="https://wa.me/56998962590" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg>
+        WhatsApp +56 998962590
+      </a>
+    </div>
+  </div>
+</div>
+
+
+<!-- PROMOCIONES (desde Firestore) -->
+<div id="promoSection" style="display:none;background:#202020;padding:12px 14px 10px;border-bottom:2px solid #DA0000">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+    <div style="width:4px;height:18px;background:#DA0000;border-radius:2px"></div>
+    <span style="font-size:11px;font-weight:800;color:white;text-transform:uppercase;letter-spacing:1px">Promociones</span>
+  </div>
+  <div id="promoList" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch"></div>
+</div>
+
+<!-- BÚSQUEDA -->
+<div class="search-section">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Buscar producto, código o marca..." oninput="onSearch()">
+  </div>
+  <div class="filters" id="filtersBar"></div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+<div class="productos-list" id="productosList"></div>
+
+<button class="cart-fab" onclick="openCart()">
+  <svg class="cart-fab-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#DA0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="3" y1="6" x2="21" y2="6" stroke="#DA0000" stroke-width="2" stroke-linecap="round"/>
+    <path d="M16 10a4 4 0 01-8 0" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="cart-fab-label">Cotización<span id="cartBadge" style="display:none">0</span></div>
+</button>
+
+<!-- CARRITO -->
+<div class="cart-panel" id="cartPanel" onclick="if(event.target===this)closeCart()">
+  <div class="cart-drawer">
+    <div class="cart-handle"></div>
+    <div class="cart-title">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span>🛒</span>
+        <span>Mi Cotización</span>
+        <span id="cartCount" style="background:#DA0000;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:800;min-width:28px;text-align:center"></span>
+      </div>
+      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gris-mid)" onclick="closeCart()">✕</button>
+    </div>
+    <div id="cartItems"></div>
+    <div id="cartTotals"></div>
+    <div class="cliente-form" style="margin-top:12px">
+      <div class="form-tit">📋 Tus datos</div>
+      <div class="form-group"><label class="form-label" for="cliNombre">Nombre completo / Empresa</label><input class="form-input" id="cliNombre" placeholder="Ej: Juan Pérez o Constructora SA"></div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label" for="cliRut">RUT</label><input class="form-input" id="cliRut" placeholder="12.345.678-9"></div>
+        <div class="form-group"><label class="form-label" for="cliTel">Teléfono</label><input class="form-input" id="cliTel" placeholder="+56 9..."></div>
+      </div>
+      <div class="form-group"><label class="form-label" for="cliDir">Dirección / Ciudad</label><input class="form-input" id="cliDir" placeholder="Calle, número, ciudad"></div>
+      <div class="form-group"><label class="form-label" for="cliObs">Observaciones</label><input class="form-input" id="cliObs" placeholder="Forma de pago, plazo entrega..."></div>
+    </div>
+    <button class="btn-pdf" onclick="generarPDF()">📄 Descargar cotización PDF</button>
+    <button class="btn-wa-cot" id="btnWaCot" onclick="waCotizacionCliente()">💬 Continuar por WhatsApp</button>
+
+    <!-- ── CUPÓN DE DESCUENTO ───────────────────────────────────────── -->
+    <div id="cuponBox" style="display:none;margin-top:14px;border:2.5px solid #DA0000;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(218,0,0,.15)">
+      <div style="background:#DA0000;padding:11px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">🏷️</span>
+        <span style="font-size:14px;font-weight:800;color:white;letter-spacing:.3px">Cupón de Descuento</span>
+        <span id="cuponNroBadge" style="margin-left:auto;background:rgba(0,0,0,.25);padding:2px 8px;border-radius:20px;font-size:11px;color:white;font-weight:700"></span>
+      </div>
+      <div style="padding:14px;background:white">
+        <div id="cuponEstado"></div>
+        <div id="cuponSolicitar">
+          <div style="margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:8px">
+              Selecciona el % de descuento:
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center">
+              <button onclick="cuponSelPct(1,this)" id="cuponBtn1"
+                style="flex:1;padding:10px 0;border:2px solid #e5e7eb;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;background:white;color:#374151;font-family:inherit;transition:all .15s">
+                1%
+              </button>
+              <button onclick="cuponSelPct(2,this)" id="cuponBtn2"
+                style="flex:1;padding:10px 0;border:2px solid #e5e7eb;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;background:white;color:#374151;font-family:inherit;transition:all .15s">
+                2%
+              </button>
+              <button onclick="cuponSelPct(3,this)" id="cuponBtn3"
+                style="flex:1;padding:10px 0;border:2px solid #e5e7eb;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;background:white;color:#374151;font-family:inherit;transition:all .15s">
+                3%
+              </button>
+            </div>
+          </div>
+          <div class="cupon-bots-solicitar" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button id="btnSolVend" onclick="solicitarCupon('vendedor')"
+              style="padding:10px;background:#202020;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+              👤 Pedir a Vendedor
+            </button>
+            <button id="btnSolAdmin" onclick="solicitarCupon('admin')"
+              style="padding:10px;background:#DA0000;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+              🔑 Pedir a Admin
+            </button>
+          </div>
+          <div id="cuponSolicDeshabilitado" style="display:none;background:#f3f4f6;border-radius:8px;padding:10px;font-size:12px;color:#6b7280;text-align:center;margin-top:4px">
+            Las solicitudes de descuento están temporalmente deshabilitadas.
+          </div>
+        </div>
+        <div id="cuponAprobado" style="display:none"></div>
+      </div>
+    </div>
+    <!-- ── FIN CUPÓN ─────────────────────────────────────────────────── -->
+
+    <button class="btn-vaciar" onclick="vaciarCarrito()">🗑 Vaciar carrito</button>
+
+    <!-- ── BUSCAR CUPÓN POR CORRELATIVO ──────────────────────────────── -->
+    <div style="margin-top:10px;border:1.5px solid #e5e7eb;border-radius:10px;overflow:hidden">
+      <div style="background:#f9fafb;padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e5e7eb">
+        <span style="font-size:14px">🔎</span>
+        <span style="font-size:12px;font-weight:700;color:#374151">¿Ya tienes un cupón aprobado? Búscalo por N° de cotización</span>
+      </div>
+      <div style="padding:12px;background:white;display:flex;gap:8px">
+        <input id="correlatBusqueda" type="text" placeholder="N° cotización (ej: 45231)"
+          style="flex:1;padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none"
+          onfocus="this.style.borderColor='#DA0000'" onblur="this.style.borderColor='#e5e7eb'">
+        <button onclick="cuponBuscarPorCorrelativo()"
+          style="padding:9px 14px;background:#DA0000;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
+          Buscar
+        </button>
+      </div>
+      <div id="correlatResultado" style="display:none;padding:0 12px 12px"></div>
+    </div>
+    <!-- ── FIN BUSCAR CUPÓN ───────────────────────────────────────────── -->
+  </div>
+</div>
+
+
+</div><!-- /mainApp -->
+
+<!-- ── CUPÓN FLOTANTE PUSH (Admin/Vendedor → Cliente) ────────────────────── -->
+<!-- ── ASISTENTE FLOTANTE WA — OVI.EM ───────────────────── -->
+<div id="waFloatContainer" style="display:none">
+
+  <!-- Burbuja de bienvenida / mensajes rotativos -->
+  <div class="wa-bubble" id="waBubble">
+    <div class="wa-bubble-brand">
+      <svg width="14" height="14" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0" aria-hidden="true">
+        <circle cx="20" cy="20" r="13.5" stroke="#DA0000" stroke-width="3.8" fill="white"/>
+        <rect x="17.8" y="6.5" width="4.4" height="27" rx="2.2" fill="#1a1a1a"/>
+        <rect x="6.5" y="17.8" width="27" height="4.4" rx="2.2" fill="#1a1a1a"/>
+        <circle cx="20" cy="20" r="3.6" fill="#DA0000"/>
+      </svg>
+      <span>OVI.EM · Asistente Oviedo</span>
+    </div>
+    <div class="wa-bubble-txt" id="waBubbleTxt">¡Hola! ¿Te puedo ayudar con tu proyecto hoy?</div>
+    <button class="wa-bubble-close" onclick="waBubbleCerrar()" title="Cerrar">✕</button>
+  </div>
+
+  <!-- Panel de 5 contactos -->
+  <div class="wa-menu-panel" id="waMenuPanel" style="display:none">
+    <div class="wa-menu-header">
+      <div class="wa-menu-hicon">🔧</div>
+      <div class="wa-menu-htxt">
+        <div class="wa-menu-title">💬 Contactar por WhatsApp</div>
+        <div class="wa-menu-sub">Elige con quién hablar</div>
+      </div>
+      <button class="wa-menu-close-btn" onclick="waMenuCerrar()" title="Cerrar">✕</button>
+    </div>
+
+    <a class="wa-contact-item" onclick="waContacto('56968410852','Ricardo Vidal')" href="javascript:void(0)">
+      <div class="wa-contact-avatar">RV</div>
+      <div class="wa-contact-info">
+        <div class="wa-contact-name">Ricardo Vidal</div>
+        <div class="wa-contact-role">Ejecutivo de Ventas</div>
+      </div>
+      <div class="wa-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </a>
+
+    <a class="wa-contact-item" onclick="waContacto('56974624064','Rafaela Flores')" href="javascript:void(0)">
+      <div class="wa-contact-avatar">RF</div>
+      <div class="wa-contact-info">
+        <div class="wa-contact-name">Rafaela Flores</div>
+        <div class="wa-contact-role">Ejecutiva de Ventas</div>
+      </div>
+      <div class="wa-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </a>
+
+    <a class="wa-contact-item" onclick="waContacto('56998693554','Gregorio Reyes')" href="javascript:void(0)">
+      <div class="wa-contact-avatar">GR</div>
+      <div class="wa-contact-info">
+        <div class="wa-contact-name">Gregorio Reyes</div>
+        <div class="wa-contact-role">Ejecutivo de Ventas</div>
+      </div>
+      <div class="wa-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </a>
+
+    <a class="wa-contact-item" onclick="waContacto('56998962590','Jaime Subiabre')" href="javascript:void(0)">
+      <div class="wa-contact-avatar">JS</div>
+      <div class="wa-contact-info">
+        <div class="wa-contact-name">Jaime Subiabre</div>
+        <div class="wa-contact-role">Ejecutivo de Ventas</div>
+      </div>
+      <div class="wa-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </a>
+
+    <a class="wa-contact-item" onclick="waContactoSucursal()" href="javascript:void(0)">
+      <div class="wa-contact-avatar store-av">OM</div>
+      <div class="wa-contact-info">
+        <div class="wa-contact-name">Oviedo El Manzano</div>
+        <div class="wa-contact-role">Sucursal · Línea directa</div>
+      </div>
+      <div class="wa-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </a>
+  </div>
+
+  <!-- Asesor IA — cápsula vertical con imagen del trabajador -->
+  <div id="waFab" role="button" tabindex="0" title="Hablar con un asesor" aria-label="Abrir asistente WhatsApp" onclick="waFabTap()">
+    <span class="asesor-active-dot"></span>
+    <span class="asesor-fab-label">ASESOR</span>
+  </div>
+
+</div>
+<!-- ── FIN ASISTENTE WA ───────────────────────────────────── -->
+
+<!-- ── PANEL CONTACTO COMERCIAL ("Consultar precio") ────── -->
+<div id="cpcPanel" class="cpc-overlay" onclick="if(event.target===this)cpcCerrar()" style="display:none">
+  <div class="cpc-sheet">
+    <div class="cpc-handle"></div>
+    <div class="cpc-header">
+      <div>
+        <div class="cpc-header-title">💬 Contactar por WhatsApp</div>
+        <div class="cpc-header-sub">Elige con quién hablar</div>
+      </div>
+      <button class="cpc-close" onclick="cpcCerrar()">✕</button>
+    </div>
+    <div id="cpcProdRow" class="cpc-prod-info" style="display:none">
+      <div class="cpc-prod-name" id="cpcProdNombre"></div>
+      <div class="cpc-prod-code" id="cpcProdCodigo"></div>
+    </div>
+    <div class="cpc-contacts-title">Selecciona un asesor</div>
+    <div class="cpc-contact-item" onclick="cpcContactar('56968410852','Ricardo Vidal')">
+      <div class="cpc-avatar">RV</div>
+      <div class="cpc-contact-info">
+        <div class="cpc-contact-name">Ricardo Vidal</div>
+        <div class="cpc-contact-role">Ejecutivo de Ventas</div>
+      </div>
+      <div class="cpc-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </div>
+    <div class="cpc-contact-item" onclick="cpcContactar('56974624064','Rafaela Flores')">
+      <div class="cpc-avatar">RF</div>
+      <div class="cpc-contact-info">
+        <div class="cpc-contact-name">Rafaela Flores</div>
+        <div class="cpc-contact-role">Ejecutiva de Ventas</div>
+      </div>
+      <div class="cpc-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </div>
+    <div class="cpc-contact-item" onclick="cpcContactar('56998693554','Gregorio Reyes')">
+      <div class="cpc-avatar">GR</div>
+      <div class="cpc-contact-info">
+        <div class="cpc-contact-name">Gregorio Reyes</div>
+        <div class="cpc-contact-role">Ejecutivo de Ventas</div>
+      </div>
+      <div class="cpc-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </div>
+    <div class="cpc-contact-item" onclick="cpcContactar('56998962590','Jaime Subiabre')">
+      <div class="cpc-avatar">JS</div>
+      <div class="cpc-contact-info">
+        <div class="cpc-contact-name">Jaime Subiabre</div>
+        <div class="cpc-contact-role">Ejecutivo de Ventas</div>
+      </div>
+      <div class="cpc-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </div>
+    <div class="cpc-contact-item" onclick="cpcContactarSucursal()">
+      <div class="cpc-avatar store">OM</div>
+      <div class="cpc-contact-info">
+        <div class="cpc-contact-name">Oviedo El Manzano</div>
+        <div class="cpc-contact-role">Sucursal · Línea directa</div>
+      </div>
+      <div class="cpc-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
+    </div>
+  </div>
+</div>
+<!-- ── FIN PANEL CONTACTO COMERCIAL ──────────────────────── -->
+
+<div id="cuponFlotante" style="display:none" class="cupon-flotante" onclick="cuponFlotanteAbrir()">
+  <div class="cf-ring"></div>
+  <div class="cf-dot">🏷</div>
+  <button class="cf-cerrar" onclick="event.stopPropagation();cuponFlotanteCerrar()">✕</button>
+  <div class="cf-title">🎉 ¡Tienes un cupón!</div>
+  <div class="cf-codigo" id="cfCodigo">—</div>
+  <div class="cf-pct" id="cfPct">% de descuento</div>
+  <div class="cf-hint">🔍 Busca tu cotización por el número y aplica este descuento: <span id="cfNroCotiz" style="font-weight:800"></span></div>
+</div>
+<!-- ── FIN CUPÓN FLOTANTE ────────────────────────────────────────────────── -->
+
+<script>
+
+// ============================================================
+// Panel Cliente — Ferretería Oviedo V33+
+// URL: https://ferreteria-oviedo.web.app/panel-cliente
+// ============================================================
+
+// Firebase ya inicializado por firebase-config.js (compat SDK)
+// window.db se establece automáticamente desde firebase-config.js
+// Este bloque solo verifica que la conexión esté lista
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+    window.db = firebase.firestore();
+  }
+});
+</script>
+
+<!-- ADMIN OVERLAY -->
+<div id="cliAdminOverlay">
+  <div style="background:white;border-radius:16px;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:800">⚙ Gestión de Usuarios</div>
+      <button onclick="closeAdminCli()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#888">✕</button>
+    </div>
+    <div id="cliAdminContent"></div>
+  </div>
+</div>
+
+<script>
+
+// ============================================================
+//  MÓDULO API CENTRAL — Ferretería Oviedo
+//  Sincronización multi-dispositivo via Firebase
+// ============================================================
+
+function apiGet(params, cb) {
+  if (window.db) {
+    // Usar Firebase
+    apiGetFirebase(params, cb);
+  } else {
+    // Fallback a Google Apps Script
+    var url = API_URL + '?' + Object.keys(params).map(function(k){
+      return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+    }).join('&');
+    fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(d){ cb(null, d); })
+      .catch(function(e){ cb(e, null); });
+  }
+}
+
+function apiPost(body, cb) {
+  if (window.db) {
+    // Usar Firebase
+    apiPostFirebase(body, cb);
+  } else {
+    // Fallback a Google Apps Script
+    fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ cb(null, d); })
+      .catch(function(e){ cb(e, null); });
+  }
+}
+
+
+
+// ── BLOQUE 5: Generar deviceId único por navegador/dispositivo ───────────────
+function getDeviceId() {
+  var key = 'ov_device_id';
+  var id  = localStorage.getItem(key);
+  if (!id) {
+    // Hash simple de user-agent + pantalla + idioma para identificar el dispositivo
+    var raw = (navigator.userAgent||'') + '|' + screen.width + 'x' + screen.height + '|' + (navigator.language||'');
+    var hash = 0;
+    for (var i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash |= 0; }
+    id = 'dv_' + Math.abs(hash).toString(36) + '_' + Date.now().toString(36);
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function registerSession(nombre, app) {
+  var device = (typeof detectarDispositivo === 'function') ? detectarDispositivo()
+               : (navigator.userAgent.indexOf('Mobile')>=0 ? '📱 Móvil' : '💻 PC');
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return Date.now()-x.ts < 30*60*1000; });
+    var ei=-1;
+    for(var i=0;i<s.length;i++){ if(s[i].user===nombre&&s[i].app===app){ei=i;break;} }
+    var en={user:nombre,app:app,ts:Date.now(),device:device};
+    if(ei>=0) s[ei]=en; else s.push(en);
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+
+    if(window.db){
+      var sesUid   = nombre.replace(/\s+/g,'_')+'_'+app;
+      var deviceId = (typeof getDeviceId === 'function') ? getDeviceId() : sesUid;
+
+      // Datos enriquecidos si el usuario entró con Firebase Auth
+      var u = currentUser || {};
+      var sesData = {
+        uid:       sesUid,
+        nombre:    nombre,
+        app:       app,
+        ts:        firebase.firestore.FieldValue.serverTimestamp(),
+        dispositivo: device, device: device,
+        loginTs:   Date.now(),
+        activo:    true
+      };
+      if(u.email)         sesData.email         = u.email;
+      if(u.rut)           sesData.rut           = u.rut;
+      if(u.uid)           sesData.authUid       = u.uid;
+      if(u.nombre)        sesData.nombreCompleto = u.nombre;
+
+      // Firestore sesiones_activas (Bloque 3)
+      window.db.collection('sesiones_activas').doc(sesUid).set(sesData).catch(function(){});
+
+      // Bloque G — sesionesLog con datos enriquecidos
+      if(typeof registrarSesionLogCompleto === 'function' && u.email) {
+        // Usuario con Firebase Auth: versión completa
+        registrarSesionLogCompleto({
+          uid:            u.uid || sesUid,
+          deviceId:       deviceId,
+          email:          u.email         || '',
+          nombreCompleto: u.nombre        || nombre,
+          rut:            u.rut           || '',
+          role:           u.role          || 'cliente',
+          panelTipo:      app
+        }, null);
+      } else if(typeof registrarSesionLog === 'function') {
+        // Usuario legacy: versión básica
+        registrarSesionLog(sesUid, nombre, app, deviceId, null);
+      }
+    }
+  }catch(e){}
+}
+
+function clearSession(nombre, app) {
+  try{
+    var s = JSON.parse(localStorage.getItem('ov_sessions')||'[]');
+    s = s.filter(function(x){ return !(x.user===nombre&&x.app===app); });
+    localStorage.setItem('ov_sessions', JSON.stringify(s));
+    if(window.db){
+      var uid = nombre.replace(/\s+/g,'_')+'_'+app;
+      window.db.collection('sesiones_activas').doc(uid).delete().catch(function(){});
+    }
+  }catch(e){}
+}
+
+// ── URLs de catálogo: GitHub raw + fallback ─────────────────────────────────
+var SHEETS_CSV_DEFAULT  = 'https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/Datos.csv';
+var JSON_URL_DEFAULT    = 'https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/Datos.json';
+var SHEETS_PUB_DEFAULT  = 'https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/Datos.csv';
+var JSON_URL_PUB_DEFAULT = 'https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/Datos.json';
+var SHEETS_CSV  = localStorage.getItem('ov_url_proxy') || SHEETS_CSV_DEFAULT;
+var JSON_URL    = localStorage.getItem('ov_url_json')  || JSON_URL_DEFAULT;
+var CSV_URL_PUB = localStorage.getItem('ov_url_pub')   || SHEETS_PUB_DEFAULT;
+var JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
+
+var CACHE_KEY    = 'ov_cli_productos';
+var CACHE_TS_KEY = 'ov_cli_ts';
+
+// ── USUARIOS: siempre lee primero de ov_cli_v2_users (guardado por admin) ───
+var USUARIOS_DEFAULT = []; /* sin credenciales por defecto — carga desde Firestore */
+
+var USUARIOS = USUARIOS_DEFAULT;
+
+function loadCliUsers(){
+  try{
+    var s = localStorage.getItem('ov_cli_v2_users');
+    if(s){ var u=JSON.parse(s); if(u&&u.length) USUARIOS=u; }
+  }catch(e){}
+}
+function saveCliUsers(){
+  try{ localStorage.setItem('ov_cli_v2_users', JSON.stringify(USUARIOS)); }catch(e){}
+}
+loadCliUsers();
+
+var currentUser = null;
+var PRODUCTOS   = [];
+var filtrados   = [];
+var carrito     = [];
+window._waNumEmpresa  = '56938623488'; // número empresa — se actualiza desde Firestore
+window._mostrarPrecio = false;         // precios ocultos por defecto — admin activa manualmente
+
+// ── Rate limiting login cliente ───────────────────────────────────────────────
+var _CLI_MAX_INTENTOS = 5;
+var _CLI_BLOQUEO_MS   = 10 * 60 * 1000; // 10 minutos
+function _cliCheckBloqueo(){
+  var hasta = parseInt(localStorage.getItem('_cli_bl')||'0');
+  if(Date.now() < hasta){
+    var mins = Math.ceil((hasta - Date.now()) / 60000);
+    return 'Demasiados intentos fallidos. Espera ' + mins + ' min.';
+  }
+  return null;
+}
+function _cliRegistrarIntentoFallido(){
+  var data = JSON.parse(localStorage.getItem('_cli_int')||'{"n":0,"t":0}');
+  if(Date.now() - data.t > _CLI_BLOQUEO_MS){ data.n = 0; }
+  data.n++; data.t = Date.now();
+  localStorage.setItem('_cli_int', JSON.stringify(data));
+  if(data.n >= _CLI_MAX_INTENTOS){
+    localStorage.setItem('_cli_bl', String(Date.now() + _CLI_BLOQUEO_MS));
+    localStorage.removeItem('_cli_int');
+  }
+}
+function _cliResetarIntentos(){
+  localStorage.removeItem('_cli_int');
+  localStorage.removeItem('_cli_bl');
+}
+var marcaFiltro = 'TODOS';
+var _sessionInterval = null;
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+var OV_CLI_SESSION_KEY = 'ov_cli_me';
+var _configRegistroCache = null;
+
+// Cargar config de registro al inicio y reaccionar a cambios
+(function initConfigRegistro(){
+  if(typeof escucharConfigRegistro === 'function'){
+    escucharConfigRegistro(function(cfg){
+      _configRegistroCache = cfg;
+      var linkReg = document.getElementById('loginRegistroLink');
+      if(linkReg){
+        linkReg.style.display = cfg.registroClienteHabilitado ? 'block' : 'none';
+      }
+      // Si registro está deshabilitado y el form está abierto, cerrarlo
+      if(!cfg.registroClienteHabilitado) toggleRegistroForm(false);
+    });
+  }
+})();
+
+
+function toggleRegistroForm(show){
+  document.getElementById('loginRegisterForm').style.display = show ? 'block' : 'none';
+  document.getElementById('loginEmailMode').style.display    = show ? 'none'  : 'block';
+  document.getElementById('loginError').textContent = '';
+  if(show){
+    // Pre-rellenar email si ya lo escribió
+    var emailVal = document.getElementById('loginEmail').value.trim();
+    if(emailVal) document.getElementById('regEmail').value = emailVal;
+    setTimeout(function(){ document.getElementById('regNombre').focus(); }, 100);
+  }
+}
+
+function autoFormatRut(inp){
+  if(typeof formatearRUT === 'function'){
+    var raw = inp.value.replace(/[^0-9kK\-\.]/g,'');
+    inp.value = raw;
+    var hint = document.getElementById('rutHint');
+    if(hint && raw.length > 3 && typeof validarRUT === 'function'){
+      hint.textContent = validarRUT(raw) ? '✓ RUT válido' : '✗ RUT inválido';
+      hint.style.color = validarRUT(raw) ? 'var(--verde)' : 'var(--rojo)';
+    }
+  }
+}
+
+// ── RECUPERAR CONTRASEÑA ──────────────────────────────────────────────────────
+function doForgotPassCli(){
+  var email = (document.getElementById('loginEmail')||{}).value||'';
+  if(!email){ email = prompt('Ingresa tu correo electrónico para recuperar la contraseña:'); }
+  if(!email) return;
+  if(!window.auth){ alert('Sin conexión a Firebase'); return; }
+  window.auth.sendPasswordResetEmail(email.trim())
+    .then(function(){
+      var err = document.getElementById('loginError');
+      if(err){ err.style.color='#2e7d32'; err.textContent='✓ Te enviamos un correo para restablecer tu clave. Revisa tu bandeja.'; }
+      else alert('✓ Correo de recuperación enviado a ' + email);
+    })
+    .catch(function(e){
+      var err = document.getElementById('loginError');
+      var msg = e.code === 'auth/user-not-found' ? 'No encontramos una cuenta con ese correo.'
+              : e.code === 'auth/invalid-email'  ? 'El correo ingresado no es válido.'
+              : 'Error: ' + e.message;
+      if(err){ err.style.color='#c62828'; err.textContent = msg; }
+      else alert(msg);
+    });
+}
+
+// ── LOGIN CON GOOGLE ──────────────────────────────────────────────────────────
+function doLoginGoogleCli(){
+  if(!window.auth){ var err=document.getElementById('loginError'); if(err) err.textContent='Sin conexión a Firebase'; return; }
+  var provider = new firebase.auth.GoogleAuthProvider();
+  var btn = document.getElementById('btnGoogleCli');
+  if(btn){ btn.disabled=true; btn.textContent='Conectando...'; }
+  aplicarPersistenciaCli(function(){
+    window.auth.signInWithPopup(provider)
+      .then(function(result){
+        var uid   = result.user.uid;
+        var email = result.user.email;
+        return window.db.collection('users').doc(uid).get()
+          .then(function(snap){
+            var dat = snap.exists ? snap.data() : {};
+            // Admin siempre puede acceder; registroAprobado solo aplica a clientes/vendedores
+            if(!snap.exists || (dat.registroAprobado === false && dat.role !== 'admin')){
+              window.auth.signOut();
+              throw { code: 'noregistrado' };
+            }
+            if(dat.estado === 'bloqueado'){ window.auth.signOut(); throw { code: 'bloqueado' }; }
+            var found = {
+              uid: uid, u: dat.user || email.split('@')[0],
+              nombre: dat.nombreCompleto || dat.nombre || result.user.displayName || email,
+              email: email, role: dat.role || 'cliente',
+              exp: new Date(dat.licExpiry || Date.now()+365*864e5).getTime(),
+              estado: dat.estado || 'activo', rut: dat.rut || ''
+            };
+            localStorage.setItem(OV_CLI_SESSION_KEY, JSON.stringify({ uid: uid, email: email }));
+            if(btn){ btn.disabled=false; btn.innerHTML='<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;height:18px" alt=""> Continuar con Google'; }
+            registrarAccesoCli(uid, found.nombre, found.role);
+            _cargarUrls(); mostrarAppCli(found);
+          });
+      })
+    .catch(function(e){
+      if(btn){ btn.disabled=false; btn.innerHTML='<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;height:18px" alt=""> Continuar con Google'; }
+      var err = document.getElementById('loginError');
+      var msg = e.code === 'noregistrado' ? 'Esta cuenta de Google no está registrada en el sistema.'
+              : e.code === 'bloqueado'    ? 'Usuario bloqueado. Contacta a Ferretería Oviedo.'
+              : e.code === 'auth/popup-closed-by-user' ? '' : 'Error al iniciar sesión con Google.';
+      if(err && msg){ err.style.color='#c62828'; err.textContent = msg; }
+    });
+  }); // aplicarPersistenciaCli
+}
+
+// ── LOGIN CON FIREBASE AUTH (Bloque C) ───────────────────────────────────────
+function doLoginAuth(){
+  _cargarUrls();
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass  = document.getElementById('loginPass').value.trim();
+  var err   = document.getElementById('loginError');
+  err.textContent = '';
+
+  if(!email || !pass){ err.textContent = 'Ingresa correo y contraseña'; return; }
+
+  var btn = document.getElementById('loginAuthBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="login-spinner"></span>Ingresando...';
+
+  var bloqueo = _cliCheckBloqueo();
+  if(bloqueo){ err.textContent = bloqueo; btn.disabled = false; btn.innerHTML = 'Ver precios'; return; }
+
+  if(window.auth){
+    aplicarPersistenciaCli(function(){
+      window.auth.signInWithEmailAndPassword(email, pass)
+        .then(function(cred){
+          var uid = cred.user.uid;
+          return window.db.collection('users').doc(uid).get()
+            .then(function(snap){
+              var dat = snap.exists ? snap.data() : {};
+              if(dat.estado === 'bloqueado'){
+                window.auth.signOut();
+                throw { code: 'bloqueado' };
+              }
+              if(dat.registroAprobado === false && dat.role !== 'admin'){
+                window.auth.signOut();
+                throw { code: 'pendiente' };
+              }
+              var found = {
+                uid: uid,
+                user: dat.user || email.split('@')[0],
+                nombre: dat.nombreCompleto || dat.nombre || cred.user.displayName || email,
+                email: email,
+                role: dat.role || 'cliente',
+                licExpiry: dat.licExpiry || new Date(Date.now() + 365*864e5).toISOString(),
+                estado: dat.estado || 'activo',
+                rut: dat.rut || ''
+              };
+              localStorage.setItem(OV_CLI_SESSION_KEY, JSON.stringify({ uid: uid, email: email }));
+              btn.disabled = false; btn.innerHTML = 'Ver precios';
+              _cliResetarIntentos();
+              registrarAccesoCli(uid, found.nombre||'', found.role||'cliente');
+              mostrarAppCli(found);
+            });
+        })
+      .catch(function(e){
+        btn.disabled = false; btn.innerHTML = 'Ver precios';
+        if(e.code === 'bloqueado'){ err.textContent = 'Usuario bloqueado. Contacta a Ferretería Oviedo.'; return; }
+        if(e.code === 'pendiente'){ err.textContent = 'Cuenta pendiente de aprobación por el administrador.'; return; }
+        _cliRegistrarIntentoFallido();
+        if(e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'){
+          err.textContent = 'Correo o contraseña incorrectos';
+        } else if(e.code === 'auth/invalid-email'){
+          err.textContent = 'Correo inválido';
+        } else if(e.code === 'auth/too-many-requests'){
+          err.textContent = 'Demasiados intentos. Intenta más tarde.';
+        } else {
+          err.textContent = 'Error al iniciar sesión. Intenta con usuario (abajo).';
+        }
+      });
+    }); // aplicarPersistenciaCli
+  } else {
+    btn.disabled = false; btn.innerHTML = 'Ver precios';
+    err.textContent = 'Error de conexión. Usa el acceso con usuario.';
+  }
+}
+
+// ── REGISTRO NUEVO USUARIO (Bloque C) ────────────────────────────────────────
+function doRegistroCli(){
+  var nombre = document.getElementById('regNombre').value.trim();
+  var rut    = document.getElementById('regRut').value.trim();
+  var email  = document.getElementById('regEmail').value.trim();
+  var pass   = document.getElementById('regPass').value.trim();
+  var err    = document.getElementById('loginError');
+  err.textContent = '';
+
+  if(!nombre){ err.textContent='Ingresa tu nombre completo'; return; }
+  if(!rut){ err.textContent='Ingresa tu RUT'; return; }
+  if(typeof validarRUT === 'function' && !validarRUT(rut)){ err.textContent='RUT inválido'; return; }
+  if(!email){ err.textContent='Ingresa tu correo'; return; }
+  if(pass.length < 6){ err.textContent='La contraseña debe tener al menos 6 caracteres'; return; }
+
+  if(!_configRegistroCache || !_configRegistroCache.registroClienteHabilitado){
+    err.textContent = 'El registro no está habilitado actualmente.'; return;
+  }
+
+  var btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = 'Creando cuenta...';
+
+  // Verificar email y RUT no usados
+  function procederRegistro(){
+    if(!window.auth){ err.textContent='Error de conexión'; btn.disabled=false; btn.textContent='Crear cuenta'; return; }
+    window.auth.createUserWithEmailAndPassword(email, pass)
+      .then(function(cred){
+        var uid = cred.user.uid;
+        return cred.user.updateProfile({ displayName: nombre })
+          .then(function(){
+            var aprobAuto = !(_configRegistroCache && _configRegistroCache.requiereAprobacionAdmin);
+            var userData = {
+              uid: uid,
+              email: email,
+              nombreCompleto: nombre,
+              rut: typeof formatearRUT === 'function' ? formatearRUT(rut) : rut,
+              role: 'cliente',
+              estado: aprobAuto ? 'activo' : 'pendiente',
+              registroAprobado: aprobAuto,
+              creadoPor: 'self',
+              fechaRegistro: new Date().toISOString(),
+              licExpiry: new Date(Date.now() + 365*864e5).toISOString()
+            };
+            return window.db.collection('users').doc(uid).set(userData, { merge: true })
+              .then(function(){
+                btn.disabled = false; btn.textContent = 'Crear cuenta';
+                if(aprobAuto){
+                  // Login automático
+                  err.style.color = 'var(--verde)';
+                  err.textContent = '¡Cuenta creada! Ingresando...';
+                  localStorage.setItem(OV_CLI_SESSION_KEY, JSON.stringify({ uid: uid, email: email }));
+                  var found = { uid:uid, user:email.split('@')[0], nombre:nombre, email:email, role:'cliente',
+                    licExpiry:userData.licExpiry, estado:'activo', rut:userData.rut };
+                  setTimeout(function(){ err.style.color=''; mostrarAppCli(found); }, 1200);
+                } else {
+                  toggleRegistroForm(false);
+                  err.style.color = 'var(--azul)';
+                  err.textContent = 'Cuenta creada. Espera la aprobación del administrador.';
+                  // Cerrar sesión Auth hasta que se apruebe
+                  window.auth.signOut();
+                }
+              });
+          });
+      })
+      .catch(function(e){
+        btn.disabled = false; btn.textContent = 'Crear cuenta';
+        if(e.code === 'auth/email-already-in-use'){ err.textContent = 'Este correo ya está registrado. Inicia sesión.'; }
+        else if(e.code === 'auth/invalid-email'){ err.textContent = 'Correo inválido'; }
+        else if(e.code === 'auth/weak-password'){ err.textContent = 'Contraseña muy débil'; }
+        else { err.textContent = 'Error al crear cuenta: ' + (e.message || e.code); }
+      });
+  }
+
+  // Verificar RUT libre antes de crear
+  if(typeof verificarRUTLibre === 'function'){
+    verificarRUTLibre(rut, function(libre){
+      if(!libre){ err.textContent='Este RUT ya está registrado.'; btn.disabled=false; btn.textContent='Crear cuenta'; return; }
+      procederRegistro();
+    });
+  } else {
+    procederRegistro();
+  }
+}
+
+// ── CONFIGURACIÓN DE URLs ─────────────────────────────────────────────────────
+function _cargarUrls(){
+  SHEETS_CSV   = localStorage.getItem('ov_url_proxy')    || SHEETS_CSV_DEFAULT;
+  JSON_URL     = localStorage.getItem('ov_url_json')     || JSON_URL_DEFAULT;
+  CSV_URL_PUB  = localStorage.getItem('ov_url_pub')      || SHEETS_PUB_DEFAULT;
+  JSON_URL_PUB = localStorage.getItem('ov_url_json_pub') || JSON_URL_PUB_DEFAULT;
+}
+
+function doLogin(){
+  _cargarUrls();
+  var u   = document.getElementById('loginUser').value.trim();
+  var p   = document.getElementById('loginPassLeg').value.trim();
+  var err = document.getElementById('loginError');
+  err.textContent = '';
+
+  if(!u || !p){ err.textContent='Ingresa usuario y contraseña'; return; }
+
+  function tryLogin(lista){
+    var found = null;
+    for(var i=0;i<lista.length;i++){
+      if(lista[i].user===u && lista[i].pass===p){ found=lista[i]; break; }
+    }
+    if(!found){ err.textContent='Usuario o contraseña incorrectos'; return; }
+    if(found.estado==='bloqueado'){ err.textContent='Usuario bloqueado. Contacta a Ferretería Oviedo.'; return; }
+    if(new Date(found.licExpiry) < new Date()){ err.textContent='Acceso vencido. Contacta a Ferretería Oviedo.'; return; }
+    localStorage.setItem(OV_CLI_SESSION_KEY, JSON.stringify({user:found.user, pass:found.pass}));
+    mostrarAppCli(found);
+  }
+
+  // Intentar primero desde Firestore (usuarios creados por admin)
+  if(window.db){
+    window.db.collection('users').get()
+      .then(function(snap){
+        var fsUsers = [];
+        snap.forEach(function(d){
+          var dat = d.data();
+          if((dat.role==='cliente'||dat.role==='admin') && dat.user){
+            fsUsers.push({
+              user: dat.user || dat.u || '',
+              pass: dat.pass || dat.p || '',
+              nombre: dat.nombre || '',
+              role: dat.role || 'cliente',
+              licExpiry: dat.licExpiry || new Date(dat.exp||Date.now()+30*864e5).toISOString(),
+              estado: dat.estado || 'activo'
+            });
+          }
+        });
+        var merged = USUARIOS_DEFAULT.slice();
+        fsUsers.forEach(function(fu){
+          if(!merged.find(function(m){ return m.user===fu.user; })) merged.push(fu);
+        });
+        try{ localStorage.setItem('ov_cli_v2_users', JSON.stringify(merged)); }catch(e){}
+        USUARIOS = merged;
+        tryLogin(merged);
+      })
+      .catch(function(){
+        loadCliUsers();
+        tryLogin(USUARIOS);
+      });
+  } else {
+    loadCliUsers();
+    tryLogin(USUARIOS);
+  }
+}
+
+function mostrarAppCli(found){
+  currentUser = found;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display     = 'block';
+  document.getElementById('adminBtn').style.display    = found.role==='admin' ? 'inline-flex' : 'none';
+
+  registerSession(found.nombre, 'Cliente');
+  // Cargar promos y redes desde Firestore
+  cargarPromosFirestore();
+  cargarRedesFirestore();
+  // Iniciar listener global de cupones push y configuración
+  cuponGlobalIniciarListener();
+  cuponCargarConfigSolicitudes();
+  // Bloque 3: iniciar listener de cierre remoto de sesión
+  iniciarListenerSesionRemota(found.nombre, 'Cliente');
+  if(_sessionInterval) clearInterval(_sessionInterval);
+  _sessionInterval = setInterval(function(){ if(currentUser) registerSession(currentUser.nombre,'Cliente'); }, 60000);
+
+  _cargarConfigPrecios();
+  cargarBannerDinamico();
+  _cliIniciarWatchdog();
+  iniciarApp();
+  var wfc = document.getElementById('waFloatContainer');
+  if(wfc){
+    wfc.style.display = 'flex';
+    initDragAsesor();
+    // Mostrar burbuja inicial tras 2 s y ocultarla a los 9 s
+    setTimeout(function(){
+      _waShowBubble(_waMsgs[0]);
+      setTimeout(function(){
+        var b = document.getElementById('waBubble');
+        if(b && !_waBubbleDismissed) b.style.display = 'none';
+      }, 9000);
+    }, 2000);
+    // Arrancar rotación de mensajes (cada 60 s)
+    _waStartRotation();
+  }
+}
+
+// ── TIMEOUT DE SESIÓN (8 horas de inactividad) ───────────────────────────────
+var _cliSessionTimeout = null;
+var _CLI_MAX_INACTIVITY = 8 * 60 * 60 * 1000; // 8 horas en ms
+
+function _cliResetTimeout(){
+  if(_cliSessionTimeout) clearTimeout(_cliSessionTimeout);
+  _cliSessionTimeout = setTimeout(function(){
+    if(currentUser){
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e3a8a;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+      toast.textContent = '⏱️ Sesión cerrada por inactividad (8 h)';
+      document.body.appendChild(toast);
+      setTimeout(function(){ doLogout(); toast.remove(); }, 2000);
+    }
+  }, _CLI_MAX_INACTIVITY);
+}
+
+function _cliIniciarWatchdog(){
+  _cliResetTimeout();
+  ['click','keydown','touchstart','scroll'].forEach(function(ev){
+    document.addEventListener(ev, _cliResetTimeout, { passive: true });
+  });
+}
+
+function _cliDetenerWatchdog(){
+  if(_cliSessionTimeout){ clearTimeout(_cliSessionTimeout); _cliSessionTimeout=null; }
+  ['click','keydown','touchstart','scroll'].forEach(function(ev){
+    document.removeEventListener(ev, _cliResetTimeout);
+  });
+}
+
+function doLogout(){
+  _cliDetenerWatchdog();
+  localStorage.removeItem(OV_CLI_SESSION_KEY);
+  if(currentUser) clearSession(currentUser.nombre,'Cliente');
+  if(_sessionInterval){ clearInterval(_sessionInterval); _sessionInterval=null; }
+  // Bloque 3: desuscribir listener sesión remota
+  if(_sesionRemolaUnsubscribe){ try{ _sesionRemolaUnsubscribe(); }catch(e){} _sesionRemolaUnsubscribe=null; }
+  // Bloque 1: cerrar listener de cupones
+  if(_cuponGlobalListener){ try{ _cuponGlobalListener(); }catch(e){} _cuponGlobalListener=null; }
+  if(_cuponListener){ try{ _cuponListener(); }catch(e){} _cuponListener=null; }
+  // Firebase Auth sign out
+  if(window.auth){ try{ window.auth.signOut(); }catch(e){} }
+  currentUser=null; PRODUCTOS=[]; filtrados=[]; carrito=[];
+  document.getElementById('mainApp').style.display    = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  // Limpiar campos
+  var em=document.getElementById('loginEmail'); if(em) em.value='';
+  var ps=document.getElementById('loginPass');  if(ps) ps.value='';
+  document.getElementById('loginError').textContent='';
+  // Volver siempre al modo email
+  toggleLegacyMode(false);
+  toggleRegistroForm(false);
+}
+
+// Auto-login al recargar — verifica en Firestore para obtener usuarios actualizados
+(function autoLoginCli(){
+  var saved = localStorage.getItem(OV_CLI_SESSION_KEY);
+  if(!saved) return;
+  var creds;
+  try{ creds = JSON.parse(saved); }catch(e){ localStorage.removeItem(OV_CLI_SESSION_KEY); return; }
+  if(!creds) return;
+
+  // ── Ruta Auth: creds tiene uid ──────────────────────────────────────────────
+  if(creds.uid && window.auth){
+    window.auth.onAuthStateChanged(function(user){
+      if(!user || user.uid !== creds.uid){ localStorage.removeItem(OV_CLI_SESSION_KEY); return; }
+      window.db.collection('users').doc(creds.uid).get()
+        .then(function(snap){
+          var dat = snap.exists ? snap.data() : {};
+          if(dat.estado === 'bloqueado' || (dat.registroAprobado === false && dat.role !== 'admin')){
+            window.auth.signOut(); localStorage.removeItem(OV_CLI_SESSION_KEY); return;
+          }
+          var found = {
+            uid: creds.uid,
+            user: dat.user || (creds.email||'').split('@')[0],
+            nombre: dat.nombreCompleto || dat.nombre || user.displayName || creds.email,
+            email: creds.email || user.email,
+            role: dat.role || 'cliente',
+            licExpiry: dat.licExpiry || new Date(Date.now()+365*864e5).toISOString(),
+            estado: dat.estado || 'activo',
+            rut: dat.rut || ''
+          };
+          mostrarAppCli(found);
+        }).catch(function(){ localStorage.removeItem(OV_CLI_SESSION_KEY); });
+    });
+    return; // onAuthStateChanged se encargará
+  }
+
+  // ── Ruta Legacy: creds tiene user+pass ─────────────────────────────────────
+  if(!creds.user) return;
+
+  function tryRestoreWith(lista){
+    var found = null;
+    for(var i=0;i<lista.length;i++){
+      if(lista[i].user===creds.user && lista[i].pass===creds.pass){ found=lista[i]; break; }
+    }
+    if(found && found.estado!=='bloqueado' && new Date(found.licExpiry)>=new Date()){
+      mostrarAppCli(found); return true;
+    }
+    localStorage.removeItem(OV_CLI_SESSION_KEY);
+    return false;
+  }
+
+  function doRestore(){
+    if(window.db){
+      window.db.collection('users').get()
+        .then(function(snap){
+          var merged = USUARIOS_DEFAULT.slice();
+          snap.forEach(function(d){
+            var dat=d.data();
+            if(dat.user && !merged.find(function(m){return m.user===dat.user;})){
+              merged.push({user:dat.user||dat.u||'',pass:dat.pass||dat.p||'',nombre:dat.nombre||'',role:dat.role||'cliente',licExpiry:dat.licExpiry||new Date(dat.exp||Date.now()+30*864e5).toISOString(),estado:dat.estado||'activo'});
+            }
+          });
+          USUARIOS = merged;
+          tryRestoreWith(merged);
+        }).catch(function(){ loadCliUsers(); tryRestoreWith(USUARIOS); });
+    } else {
+      loadCliUsers(); tryRestoreWith(USUARIOS);
+    }
+  }
+
+  if(window.db){ doRestore(); }
+  else{ setTimeout(doRestore, 800); }
+})();
+
+// ── CARGA DE CATÁLOGO ───────────────────────────────────────────────────────
+function iniciarApp(){
+  setSyncState('loading','Actualizando catálogo desde GitHub...');
+
+  // Parsea precios chilenos/argentinos: "1.500,00" "1500,00" "1500" "1.500"
+  function num(s){
+    s = (s||'0').toString().trim().replace(/\$/g,'').trim();
+    s = s.replace(/,\d{1,2}$/, '');           // quita centavos ,XX
+    s = s.replace(/[.,]/g,'').replace(/[^0-9]/g,''); // quita separadores
+    return parseInt(s)||0;
+  }
+
+  function normalizeJsonItems(items){
+    return items.map(function(it){
+      return {
+        Codigo: (it.Codigo||it.codigo||it.CODIGO||it.code||'').toString().trim(),
+        Descripcion: (it.Descripcion||it.descripcion||it.DESCRIPCION||it.Desc||it.desc||'').toString().trim(),
+        Marca: (it.Marca||it.marca||it.MARCA||'').toString().trim(),
+        SubFamilia: (it.SubFamilia||it.subfamilia||it.SUBFAMILIA||it.Sub||it.sub||'').toString().trim(),
+        PrecioIVA: num(it.PrecioIVA||it.precioiva||it.PRECIO_IVA||it.precioiva||it.precio_iva||it.precio||'0'),
+        SocioIVA: num(it.SocioIVA||it.socioiva||it.SOCIO_IVA||it.socioiva||it.socio_iva||'0'),
+        Stock: parseInt(it.Stock||it.stock||it.STOCK||0)||(parseInt(it.pem||0)+parseInt(it.sem||0)+parseInt(it.iem||0)+parseInt(it.tem||0)+parseInt(it.rce||0)+parseInt(it.cd||0))
+      };
+    }).filter(function(p){ return p.Codigo && (p.PrecioIVA||p.SocioIVA); });
+  }
+  function tryFetch(url){
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error('http');
+      return r.text();
+    }).then(function(txt){
+      var trimmed = txt.trim();
+      if(trimmed.charAt(0)==='['){
+        try{ var data = JSON.parse(trimmed); if(Array.isArray(data)) return normalizeJsonItems(data); }catch(e){}
+      }
+      var parsed = parseCSV(txt);
+      if(parsed.length<1) throw new Error('empty');
+      return parsed;
+    });
+  }
+  tryFetch(JSON_URL_PUB)
+    .catch(function(){ return tryFetch(CSV_URL_PUB); })
+    .catch(function(){ return tryFetch(JSON_URL); })
+    .catch(function(){ return tryFetch(SHEETS_CSV); })
+    .then(function(parsed){
+      PRODUCTOS = parsed;
+      // sessionStorage: sin limite, disponible toda la sesion
+      try{ sessionStorage.setItem(CACHE_KEY, JSON.stringify(parsed)); }catch(e){}
+      // localStorage: comprimido para offline (soporta 9000+ productos)
+      try{
+        var compact = parsed.map(function(p){ return {C:p.Codigo,D:p.Descripcion,M:p.Marca,S:p.SubFamilia,P:p.PrecioIVA}; });
+        localStorage.setItem(CACHE_KEY, JSON.stringify(compact));
+        localStorage.setItem(CACHE_TS_KEY, Date.now());
+      }catch(e){
+        try{
+          var mini = parsed.map(function(p){ return [p.Codigo,p.Descripcion||p.Codigo,p.PrecioIVA||0]; });
+          localStorage.setItem(CACHE_KEY, JSON.stringify(mini));
+          localStorage.setItem(CACHE_TS_KEY, Date.now());
+        }catch(e2){}
+      }
+      var ts = new Date().toLocaleTimeString('es-CL');
+      setSyncState('ok','✓ '+parsed.length+' productos · '+ts);
+      initUI();
+    })
+    .catch(function(){
+      try{
+        var c = sessionStorage.getItem(CACHE_KEY) || localStorage.getItem(CACHE_KEY);
+        if(c){
+          var raw = JSON.parse(c);
+          if(Array.isArray(raw) && raw.length && Array.isArray(raw[0])){
+            PRODUCTOS = raw.map(function(r){ return {Codigo:r[0],Descripcion:r[1]||r[0],Marca:'',SubFamilia:'',PrecioIVA:r[2]||0}; });
+          } else if(Array.isArray(raw) && raw.length && raw[0] && raw[0].C !== undefined){
+            PRODUCTOS = raw.map(function(r){ return {Codigo:r.C,Descripcion:r.D||r.C,Marca:r.M||'',SubFamilia:r.S||'',PrecioIVA:r.P||0}; });
+          } else {
+            PRODUCTOS = raw;
+          }
+          var tsRaw = localStorage.getItem(CACHE_TS_KEY);
+          var ts = tsRaw ? new Date(parseInt(tsRaw)).toLocaleString('es-CL') : '—';
+          setSyncState('warn','Sin conexión · Precios del '+ts+' · '+PRODUCTOS.length+' productos');
+          initUI(); return;
+        }
+      }catch(e){}
+      setSyncState('warn','Sin conexión. Verifica la URL del catálogo y recarga la página.');
+    });
+}
+
+function setSyncState(type, text){
+  var bar = document.getElementById('syncBar');
+  bar.className = 'sync-bar '+type;
+  document.getElementById('syncText').textContent = text;
+}
+
+// ── FUNCIONES FIREBASE ───────────────────────────────────────────────────────
+// ── FIREBASE COMPAT — usa window.db (SDK compat ya cargado por firebase-config.js)
+function apiGetFirebase(params, cb) {
+  if (!window.db) return cb(new Error('Firebase no disponible'), null);
+  var action = params.action;
+  if (action === 'getUsers') {
+    window.db.collection('users').get()
+      .then(function(snap){ var r=[]; snap.forEach(function(d){ r.push(d.data()); }); cb(null,r); })
+      .catch(function(e){ cb(e,null); });
+  } else if (action === 'getSessions') {
+    var cutoff = new Date(Date.now() - 30*60*1000);
+    window.db.collection('sesiones_activas').get()
+      .then(function(snap){ var r=[]; snap.forEach(function(d){ r.push(d.data()); }); cb(null,r); })
+      .catch(function(e){ cb(e,null); });
+  } else if (action === 'getCotizaciones') {
+    window.db.collection('cotizaciones').orderBy('ts','desc').limit(parseInt(params.limit)||50).get()
+      .then(function(snap){ var r=[]; snap.forEach(function(d){ r.push(d.data()); }); cb(null,r); })
+      .catch(function(e){ cb(e,null); });
+  } else {
+    cb(null, []);
+  }
+}
+
+function apiPostFirebase(body, cb) {
+  if (!window.db) return cb(new Error('Firebase no disponible'), null);
+  var action = body.action;
+  var data   = body.data;
+  if (action === 'saveUser') {
+    window.db.collection('users').doc(data.u||data.user||'unknown').set(data)
+      .then(function(){ cb(null,{success:true}); }).catch(function(e){ cb(e,null); });
+  } else if (action === 'deleteUser') {
+    window.db.collection('users').doc(body.u).delete()
+      .then(function(){ cb(null,{success:true}); }).catch(function(e){ cb(e,null); });
+  } else if (action === 'saveCotizacion') {
+    window.db.collection('cotizaciones').add(data)
+      .then(function(){ cb(null,{success:true}); }).catch(function(e){ cb(e,null); });
+  } else {
+    cb(null, {success:true});
+  }
+}
+
+function parseCSV(text){
+  var lines = text.split('\n').filter(function(l){return l.trim();});
+  if(lines.length<2) return [];
+  var headers = lines[0].split(',').map(function(h){return h.replace(/"/g,'').trim();});
+  var idx = {};
+  headers.forEach(function(h,i){
+    var hl = h.toLowerCase().replace(/[^a-z]/g,'');
+    if(hl.includes('codigo'))                                    idx.Codigo=i;
+    else if(hl.includes('descripcion')||hl.includes('descripción')) idx.Descripcion=i;
+    else if(hl.includes('marca'))                                idx.Marca=i;
+    else if(hl.includes('subfamilia')||hl.includes('familia'))   idx.SubFamilia=i;
+    else if(hl.includes('precioiva'))                            idx.PrecioIVA=i;
+  });
+  var rows=[];
+  for(var i=1;i<lines.length;i++){
+    var cols = parseLine(lines[i]);
+    var r = {
+      Codigo:      (cols[idx.Codigo]||'').trim(),
+      Descripcion: (cols[idx.Descripcion]||'').trim(),
+      Marca:       (cols[idx.Marca]||'').trim(),
+      SubFamilia:  (cols[idx.SubFamilia]||'').trim(),
+      PrecioIVA:   (function(s){ s=(s||'0').replace(/\$/g,'').trim(); s=s.replace(/,\d{1,2}$/,''); s=s.replace(/[.,]/g,'').replace(/[^0-9]/g,''); return parseInt(s)||0; })(cols[idx.PrecioIVA]||'0')
+    };
+    if(r.Codigo && r.PrecioIVA) rows.push(r);
+  }
+  return rows;
+}
+
+function parseLine(line){
+  var result=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(ch==='"'){inQ=!inQ;continue;}
+    if(ch===','&&!inQ){result.push(cur);cur='';continue;}
+    cur+=ch;
+  }
+  result.push(cur); return result;
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+function initUI(){
+  filtrados = PRODUCTOS.slice();
+  buildFilters();
+  renderProductos();
+}
+
+function buildFilters(){
+  var marcas = ['TODOS'];
+  var seen = {};
+  PRODUCTOS.forEach(function(p){ if(p.Marca && !seen[p.Marca]){seen[p.Marca]=1;marcas.push(p.Marca);} });
+  marcas.sort(function(a,b){ return a==='TODOS'?-1:b==='TODOS'?1:a.localeCompare(b); });
+  document.getElementById('filtersBar').innerHTML = marcas.slice(0,22).map(function(m){
+    return '<button class="filter-btn '+(m==='TODOS'?'active':'')+'" onclick="setMarca(\''+m.replace(/'/g,"\\'")+'\')">' + m + '</button>';
+  }).join('');
+}
+
+function setMarca(m){
+  marcaFiltro = m;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.toggle('active', b.textContent===m); });
+  onSearch();
+}
+
+function scoreprod(p,q){
+  var cod  = (p.Codigo||'').toLowerCase();
+  var desc = (p.Descripcion||'').toLowerCase();
+  var marc = (p.Marca||'').toLowerCase();
+  var sub  = (p.SubFamilia||'').toLowerCase();
+  if(cod===q)             return 100;
+  if(cod.indexOf(q)===0)  return 80;
+  if(desc.indexOf(q)===0) return 60;
+  if(desc.indexOf(q)>0)   return 40;
+  if(marc.indexOf(q)>=0 || sub.indexOf(q)>=0) return 20;
+  return 0;
+}
+function onSearch(){
+  var q = document.getElementById('searchInput').value.toLowerCase().trim();
+  var raw = PRODUCTOS.filter(function(p){
+    var mm = marcaFiltro==='TODOS' || p.Marca===marcaFiltro;
+    if(!mm) return false;
+    if(!q)  return true;
+    var cod  = (p.Codigo||'').toLowerCase();
+    var desc = (p.Descripcion||'').toLowerCase();
+    var marc = (p.Marca||'').toLowerCase();
+    var sub  = (p.SubFamilia||'').toLowerCase();
+    return cod.indexOf(q)>=0 || desc.indexOf(q)>=0 || marc.indexOf(q)>=0 || sub.indexOf(q)>=0;
+  });
+  if(q){ raw.sort(function(a,b){ return scoreprod(b,q)-scoreprod(a,q); }); }
+  filtrados = raw;
+  renderProductos();
+}
+
+function renderProductos(){
+  var stats = document.getElementById('statsBar');
+  var shown40 = Math.min(filtrados.length, 40);
+  var waCatBtn = '';
+  if(marcaFiltro !== 'TODOS'){
+    var _safecat = marcaFiltro.replace(/'/g,"\\'");
+    waCatBtn = '<button class="wa-cat-chip" onclick="waConsultarCategoria(\''+_safecat+'\')">💬 Consultar '+marcaFiltro+'</button>';
+  }
+  stats.innerHTML =
+    '<div class="stat-chip">Total: <span>'+PRODUCTOS.length+'</span></div>'+
+    '<div class="stat-chip">Mostrando: <span>'+shown40+' de '+filtrados.length+'</span></div>'+
+    '<div class="stat-chip">Carrito: <span>'+carrito.reduce(function(a,c){return a+c.qty;},0)+' items</span></div>'+
+    waCatBtn;
+
+  var list = document.getElementById('productosList');
+  if(!filtrados.length){
+    list.innerHTML='<div class="empty-state"><div style="font-size:40px">🔍</div><p style="margin-top:8px;font-size:14px">Sin resultados</p></div>';
+    return;
+  }
+  list.innerHTML = filtrados.slice(0,40).map(function(p){
+    var safeCod = p.Codigo.replace(/'/g,"\\'");
+    var sk = p.Stock||0;
+    var stockHtml = sk>10
+      ? '<span class="stock-badge stock-ok">🟢 STOCK: '+sk+'</span>'
+      : sk>0
+        ? '<span class="stock-badge stock-low">⚠️ Últimas '+sk+'</span>'
+        : '<span class="stock-badge stock-out">🔴 SIN STOCK</span>';
+    var precioHtml = window._mostrarPrecio
+      ? '<div class="precio-publico">'+
+          '<div class="precio-label">Precio IVA incl.</div>'+
+          '<div class="precio-val">'+fmt(p.PrecioIVA)+'</div>'+
+        '</div>'
+      : '<button class="precio-consultar-wa" onclick="waConsultarProducto(\''+safeCod+'\')">💬 Consultar precio</button>';
+    return '<div class="prod-card">'+
+      '<div class="prod-header">'+
+        '<div class="prod-nombre">'+p.Descripcion+'</div>'+
+        '<div class="prod-codigo">'+p.Codigo+'</div>'+
+      '</div>'+
+      '<div class="prod-marca">'+(p.Marca||'')+(p.SubFamilia?' · '+p.SubFamilia:'')+' '+stockHtml+'</div>'+
+      '<div class="prod-bottom">'+
+        precioHtml+
+        '<div class="prod-actions">'+
+          '<div class="qty-wrap">'+
+            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',-1)">−</button>'+
+            '<span class="qty-val" id="qty_'+safeCod+'">1</span>'+
+            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',1)">+</button>'+
+          '</div>'+
+          '<button class="btn-add" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString('es-CL'); }
+
+function waConsultarProducto(cod){
+  // Abre el panel de contacto comercial con el contexto del producto
+  cpcAbrir(cod);
+}
+
+function waCotizacionCliente(){
+  var num = window._waNumEmpresa || '56938623488';
+  var nro  = window._ultimaNroCotiz || '–';
+  var sub  = window._ultimaSubtotal ? '$'+Math.round(window._ultimaSubtotal).toLocaleString('es-CL') : '–';
+  var nombre = (window._ultimaDatosCliente && window._ultimaDatosCliente.nombre) || 'Cliente';
+  var items  = carrito.reduce(function(a,c){return a+c.qty;},0);
+  var msg = '🔧 Hola, Ferreterías Oviedo!\n\n'
+    +'Acabo de generar la cotización N° *'+nro+'*.\n\n'
+    +'👤 '+nombre+'\n'
+    +'🛒 '+items+' producto(s)\n'
+    +'💰 Total: *'+sub+'* (IVA incl.)\n\n'
+    +'Quedo atento a la confirmación.';
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+function waAbrirContacto(){ waMenuToggle(); }
+
+var _waFabLastDrag = 0;
+function waFabTap(){
+  if(Date.now() - _waFabLastDrag < 350) return;
+  waMenuToggle();
+}
+
+/* ── PANEL CONTACTO COMERCIAL ───────────────────────────── */
+var _cpcCod = null;
+
+function cpcAbrir(cod){
+  _cpcCod = cod || null;
+  var panel = document.getElementById('cpcPanel');
+  if(!panel) return;
+  var prodRow = document.getElementById('cpcProdRow');
+  if(prodRow){
+    if(cod){
+      var p = null;
+      for(var i=0;i<PRODUCTOS.length;i++) if(PRODUCTOS[i].Codigo===cod){p=PRODUCTOS[i];break;}
+      if(p){
+        document.getElementById('cpcProdNombre').textContent = p.Descripcion;
+        document.getElementById('cpcProdCodigo').textContent = 'Cód. '+p.Codigo+(p.Marca?' · '+p.Marca:'');
+        prodRow.style.display = 'block';
+      } else { prodRow.style.display='none'; }
+    } else { prodRow.style.display='none'; }
+  }
+  panel.style.display = 'flex';
+}
+
+function cpcCerrar(){
+  var panel = document.getElementById('cpcPanel');
+  if(panel) panel.style.display = 'none';
+  _cpcCod = null;
+}
+
+function cpcContactar(num, nombre){
+  var msg;
+  if(_cpcCod){
+    var p = null;
+    for(var i=0;i<PRODUCTOS.length;i++) if(PRODUCTOS[i].Codigo===_cpcCod){p=PRODUCTOS[i];break;}
+    if(p){
+      msg = '🔧 Hola '+nombre+', te contacto desde el catálogo de Ferreterías Oviedo.\n\n'
+        +'Consulto por:\n📦 *'+p.Descripcion+'*\n'
+        +'🔖 Cód: '+p.Codigo+'\n'
+        +(p.Marca?'🏷️ Marca: '+p.Marca+'\n':'')
+        +'¿Tienen disponibilidad y cuál es el precio?';
+    }
+  }
+  if(!msg) msg = '🔩 Hola '+nombre+', te contacto desde el catálogo online de Ferreterías Oviedo.\n\n¿Me puedes ayudar con una consulta?';
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
+  cpcCerrar();
+}
+
+function cpcContactarSucursal(){
+  var num = window._waNumEmpresa || '56938623488';
+  var msg;
+  if(_cpcCod){
+    var p = null;
+    for(var i=0;i<PRODUCTOS.length;i++) if(PRODUCTOS[i].Codigo===_cpcCod){p=PRODUCTOS[i];break;}
+    if(p){
+      msg = '🔧 Hola, Ferreterías Oviedo — Sucursal El Manzano.\n\n'
+        +'Consulto desde el catálogo online por:\n📦 *'+p.Descripcion+'*\n'
+        +'🔖 Cód: '+p.Codigo+'\n'
+        +(p.Marca?'🏷️ '+p.Marca+'\n':'')
+        +'¿Tienen disponibilidad y cuál es el precio?';
+    }
+  }
+  if(!msg) msg = '🔩 Hola, Ferreterías Oviedo — Sucursal El Manzano.\n\nTe contacto desde el catálogo online. ¿Me pueden ayudar?';
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
+  cpcCerrar();
+}
+
+/* ── DRAG — ASISTENTE IA ────────────────────────────────── */
+function initDragAsesor(){
+  var c = document.getElementById('waFloatContainer');
+  var f = document.getElementById('waFab');
+  if(!c || !f || c._di) return;
+  c._di = true;
+  var drag=false, moved=false, sx, sy, ix, iy;
+  var THR = 8;
+
+  function getXY(e){
+    var t = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+    return [t.clientX, t.clientY];
+  }
+
+  function toTopMode(){
+    if(c._topMode) return;
+    c._topMode = true;
+    var r = c.getBoundingClientRect();
+    c.style.bottom = '';
+    c.style.top  = r.top  + 'px';
+    c.style.left = r.left + 'px';
+  }
+
+  function onStart(e){
+    toTopMode();
+    var p = getXY(e);
+    sx = p[0]; sy = p[1];
+    var r = c.getBoundingClientRect();
+    ix = r.left; iy = r.top;
+    drag = true; moved = false;
+    c.style.transition = 'none';
+    f.style.cursor = 'grabbing';
+  }
+
+  function onMove(e){
+    if(!drag) return;
+    var p = getXY(e);
+    var dx = p[0]-sx, dy = p[1]-sy;
+    if(!moved && Math.abs(dx)<THR && Math.abs(dy)<THR) return;
+    moved = true;
+    e.preventDefault();
+    var r = c.getBoundingClientRect();
+    var nL = Math.max(8, Math.min(window.innerWidth  - r.width  - 8, ix+dx));
+    var nT = Math.max(60, Math.min(window.innerHeight - r.height - 8, iy+dy));
+    c.style.left = nL+'px';
+    c.style.top  = nT+'px';
+  }
+
+  function onEnd(){
+    if(!drag) return;
+    drag = false;
+    f.style.cursor = 'pointer';
+    if(!moved) return;
+    _waFabLastDrag = Date.now(); // bloquea onclick 350ms tras drag
+    doSnap();
+  }
+
+  function doSnap(){
+    var r = c.getBoundingClientRect();
+    var toRight = (r.left + r.width/2) > window.innerWidth/2;
+    c.style.transition = 'left .28s cubic-bezier(.25,.8,.25,1)';
+    c.style.left = (toRight ? window.innerWidth - r.width - 14 : 14)+'px';
+    c.style.alignItems = toRight ? 'flex-end' : 'flex-start';
+    setTimeout(function(){ c.style.transition=''; }, 300);
+  }
+
+  f.addEventListener('mousedown',  onStart);
+  f.addEventListener('touchstart', onStart, {passive:true});
+  document.addEventListener('mousemove',  onMove);
+  document.addEventListener('touchmove',  onMove, {passive:false});
+  document.addEventListener('mouseup',   onEnd);
+  document.addEventListener('touchend',  onEnd, {passive:true});
+  f.addEventListener('keydown', function(e){
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); waMenuToggle(); }
+  });
+}
+
+function waMenuToggle(){
+  var panel  = document.getElementById('waMenuPanel');
+  var bubble = document.getElementById('waBubble');
+  var fab    = document.getElementById('waFab');
+  var isOpen = panel && panel.style.display === 'block';
+  if(panel)  panel.style.display  = isOpen ? 'none' : 'block';
+  if(bubble) bubble.style.display = 'none';
+  if(fab)    fab.classList.toggle('wa-fab-open', !isOpen);
+}
+
+function waMenuCerrar(){
+  var panel = document.getElementById('waMenuPanel');
+  var fab   = document.getElementById('waFab');
+  if(panel) panel.style.display = 'none';
+  if(fab)   fab.classList.remove('wa-fab-open');
+}
+
+// ── MENSAJES ROTATIVOS OVI.EM ──────────────────────────────
+var _waMsgs = [
+  '¡Hola! ¿Te puedo ayudar con tu proyecto hoy?',
+  'Consulta stock, obtén precios y cotiza al instante por WhatsApp.',
+  'Horario: Lun–Vie 08:30–13:30 · 14:30–18:00 · Sáb 09:00–13:30',
+  '¿Necesitas materiales de construcción? Tenemos todo en stock.',
+  '🔩 Pide tu cotización y te la enviamos al instante.',
+  '📍 Visítanos en El Manzano — toca aquí para ver cómo llegar.'
+];
+var _waMsgIdx  = 0;
+var _waMsgTimer = null;
+var _waBubbleDismissed = false;
+
+function _waShowBubble(txt){
+  var b = document.getElementById('waBubble');
+  if(!b) return;
+  var el = document.getElementById('waBubbleTxt');
+  if(el) el.textContent = txt;
+  b.style.display = 'block';
+  b.style.animation = 'none';
+  void b.offsetWidth;
+  b.style.animation = 'waBubbleIn .38s cubic-bezier(.34,1.56,.64,1)';
+}
+
+function _waStartRotation(){
+  if(_waMsgTimer) return;
+  _waMsgTimer = setInterval(function(){
+    var panel = document.getElementById('waMenuPanel');
+    if(panel && panel.style.display === 'block') return; // menú abierto: no interrumpir
+    if(_waBubbleDismissed) return;
+    _waMsgIdx = (_waMsgIdx + 1) % _waMsgs.length;
+    _waShowBubble(_waMsgs[_waMsgIdx]);
+    // auto-ocultar después de 9 s
+    setTimeout(function(){
+      var b = document.getElementById('waBubble');
+      if(b && !_waBubbleDismissed) b.style.display = 'none';
+    }, 9000);
+  }, 10000);
+}
+
+function waBubbleCerrar(){
+  var b = document.getElementById('waBubble');
+  if(b) b.style.display = 'none';
+  _waBubbleDismissed = true;
+  // Reactivar la rotación después de 3 minutos de silencio
+  setTimeout(function(){ _waBubbleDismissed = false; }, 180000);
+}
+
+function waContacto(num, nombre){
+  var msg = '🔩 Hola '+nombre+', te contacto desde el catálogo online de Ferreterías Oviedo.\n\n¿Me puedes ayudar con una consulta?';
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
+  waMenuCerrar();
+}
+
+function waContactoSucursal(){
+  var num = window._waNumEmpresa || '56938623488';
+  var msg = '🔩 Hola, Ferreterías Oviedo — Sucursal El Manzano.\n\nTe contacto desde el catálogo online. ¿Me pueden ayudar?';
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
+  waMenuCerrar();
+}
+
+function waConsultarCategoria(cat){
+  var num = window._waNumEmpresa || '56938623488';
+  var total = filtrados.length;
+  var msg = '🔧 Hola, Ferreterías Oviedo!\n\n'
+    +'Consulto por productos de la categoría *'+cat+'*.\n'
+    +'('+total+' producto'+(total!==1?'s':'')+' encontrado'+(total!==1?'s':'')+' en el catálogo)\n\n'
+    +'¿Pueden ayudarme con disponibilidad y precios?';
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+function cargarBannerDinamico(){
+  if(!window.db) return;
+  window.db.collection('config').doc('banner').get().then(function(doc){
+    if(!doc.exists) return;
+    var d = doc.data();
+    var imgSrc = d.imageData || d.url || null;
+    if(!d.activo || !imgSrc) return;
+    var bg     = document.querySelector('.sucursal-bg');
+    var banner = document.querySelector('.sucursal-banner');
+    if(bg){
+      bg.style.backgroundImage    = "url('" + imgSrc + "')";
+      bg.style.backgroundPosition = (d.posX||50) + '% ' + (d.posY||40) + '%';
+      bg.style.backgroundSize     = 'cover';
+      bg.style.opacity            = (d.opacity||82) / 100;
+      var f = 'brightness('+(d.brightness||100)+'%) contrast('+(d.contrast||100)+'%) saturate('+(d.saturacion||100)+'%)';
+      bg.style.filter = f;
+    }
+    if(banner && d.height) banner.style.height = d.height + 'px';
+    // Texto del banner
+    var s1 = document.getElementById('bnrSched1');
+    var s2 = document.getElementById('bnrSched2');
+    if(s1 && d.horario1) s1.textContent = d.horario1;
+    if(s2 && d.horario2) s2.textContent = d.horario2;
+    // Posición del bloque de texto
+    var info = document.querySelector('.sucursal-info');
+    var ovrl = document.querySelector('.sucursal-overlay');
+    if(info && d.textoPos === 'right'){
+      info.style.left='auto'; info.style.right='0';
+      if(ovrl) ovrl.style.background='linear-gradient(to left,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)';
+    } else if(info){
+      info.style.left='0'; info.style.right='auto';
+      if(ovrl) ovrl.style.background='linear-gradient(to right,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)';
+    }
+  }).catch(function(){});
+}
+
+// ── Sanitizar inputs de cotización ───────────────────────────────────────────
+function _sanitizarCotizInput(s){
+  return String(s||'').replace(/[<>"'`\\]/g,'').trim().substring(0,200);
+}
+function cliEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function _cargarConfigPrecios(){
+  // Garantizar default seguro ANTES de cualquier llamada asíncrona
+  window._mostrarPrecio = false;
+  if(!window.db){ renderProductos(); return; }
+  window.db.collection('config').doc('precios').get()
+    .then(function(doc){
+      var d = doc.exists ? doc.data() : {};
+      // Solo true si el campo existe Y es explícitamente true
+      window._mostrarPrecio = (d.mostrarPrecioCliente === true);
+      renderProductos();
+    })
+    .catch(function(){
+      // Error Firestore: mantener false, renderizar de todas formas
+      window._mostrarPrecio = false;
+      renderProductos();
+    });
+}
+
+function chgQty(c,d){
+  var el = document.getElementById('qty_'+c);
+  if(!el) return;
+  var v = parseInt(el.textContent)+d;
+  if(v<1) v=1;
+  el.textContent = v;
+}
+
+function addCart(codigo){
+  var p = null;
+  for(var i=0;i<PRODUCTOS.length;i++){ if(PRODUCTOS[i].Codigo===codigo){p=PRODUCTOS[i];break;} }
+  if(!p) return;
+  var qtyEl = document.getElementById('qty_'+codigo);
+  var qty = qtyEl ? parseInt(qtyEl.textContent)||1 : 1;
+  var idx = -1;
+  for(var j=0;j<carrito.length;j++){ if(carrito[j].Codigo===codigo){idx=j;break;} }
+  if(idx>=0) carrito[idx].qty += qty;
+  else carrito.push({Codigo:p.Codigo, Descripcion:p.Descripcion, Marca:p.Marca||'', SubFamilia:p.SubFamilia||'', PrecioIVA:p.PrecioIVA, qty:qty});
+  updateBadge();
+  toast('✅ Agregado al carrito','ok');
+}
+
+function updateBadge(){
+  var badge = document.getElementById('cartBadge');
+  var n = carrito.reduce(function(a,c){return a+c.qty;},0);
+  badge.textContent = n;
+  badge.style.display = n > 0 ? 'flex' : 'none';
+  // Animación de pulso al actualizar
+  badge.classList.remove('pulse');
+  void badge.offsetWidth; // reflow para reiniciar animación
+  badge.classList.add('pulse');
+}
+function openCart(){
+  renderCart();
+  var n = carrito.reduce(function(a,c){return a+c.qty;},0);
+  var cc = document.getElementById('cartCount');
+  if(cc) cc.textContent = n > 0 ? n+' items' : 'Vacío';
+  document.getElementById('cartPanel').style.display='block';
+}
+function closeCart(){ document.getElementById('cartPanel').style.display='none'; }
+
+function renderCart(){
+  var items   = document.getElementById('cartItems');
+  var totals  = document.getElementById('cartTotals');
+  var mostrar = window._mostrarPrecio !== false;
+  if(!carrito.length){
+    items.innerHTML='<div class="empty-state" style="padding:24px 0"><div style="font-size:32px">🛒</div><p style="margin-top:6px;font-size:13px">Carrito vacío</p></div>';
+    totals.innerHTML=''; return;
+  }
+  items.innerHTML = carrito.map(function(item,i){
+    // Stock del producto para cuando precios están ocultos
+    var prod = (typeof PRODUCTOS!=='undefined') ? PRODUCTOS.filter(function(p){return p.Codigo===item.Codigo;})[0] : null;
+    var sk   = prod ? (prod.Stock||0) : -1;
+    var skBadge = sk < 0 ? '' :
+                  sk > 10 ? '<span style="font-size:11px;font-weight:800;color:#16a34a">🟢 STOCK: '+sk+'</span>' :
+                  sk > 0  ? '<span style="font-size:11px;font-weight:800;color:#d97706">⚠️ Últimas '+sk+'</span>' :
+                             '<span style="font-size:11px;font-weight:800;color:#dc2626">🔴 SIN STOCK</span>';
+    return '<div class="cart-item">'+
+      '<div class="cart-item-info">'+
+        '<div class="cart-item-name">'+item.Descripcion+'</div>'+
+        '<div class="cart-item-codigo">'+item.Codigo+'</div>'+
+        (mostrar
+          ? '<div class="cart-item-qty">'+item.qty+' × '+fmt(item.PrecioIVA)+'</div>'
+          : '<div class="cart-item-qty" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+              '<span>Cant: <b>'+item.qty+'</b></span>'+skBadge+
+            '</div>')+
+      '</div>'+
+      (mostrar ? '<div class="cart-item-price">'+fmt(item.PrecioIVA*item.qty)+'</div>' : '')+
+      '<button class="btn-remove" onclick="removeItem('+i+')">✕</button>'+
+    '</div>';
+  }).join('');
+  var totalUnid = carrito.reduce(function(a,c){return a+c.qty;},0);
+  if(mostrar){
+    var subtotal = carrito.reduce(function(a,c){return a+c.PrecioIVA*c.qty;},0);
+    var neto = Math.round(subtotal/1.19);
+    var iva  = subtotal - neto;
+    totals.innerHTML =
+      '<div class="totales-box">'+
+        '<div class="total-row"><span>Neto</span><span>'+fmt(neto)+'</span></div>'+
+        '<div class="total-row"><span>IVA 19%</span><span>'+fmt(iva)+'</span></div>'+
+        '<div class="total-row main"><span>TOTAL</span><span>'+fmt(subtotal)+'</span></div>'+
+      '</div>';
+  } else {
+    totals.innerHTML =
+      '<div class="totales-box" style="text-align:center;padding:14px 10px">'+
+        '<div style="font-size:14px;font-weight:700">'+totalUnid+' unidad'+(totalUnid!==1?'es':'')+' seleccionada'+(totalUnid!==1?'s':'')+'</div>'+
+        '<div style="font-size:11px;color:var(--gris);margin-top:5px">Los precios serán informados por nuestro equipo de ventas</div>'+
+      '</div>';
+  }
+}
+
+function removeItem(i){ carrito.splice(i,1); updateBadge(); renderCart(); }
+function vaciarCarrito(){ if(!confirm('¿Vaciar el carrito?'))return; carrito=[]; updateBadge(); renderCart(); }
+
+// ── COTIZACIONES: guarda con detalle completo para el admin ───────────────────
+function registrarCotizacionResumen(total, nroCotiz){
+  try{
+    var detalle = carrito.slice(0,100).map(function(item){
+      return {
+        Codigo:      item.Codigo,
+        Descripcion: item.Descripcion,
+        Marca:       item.Marca||'',
+        qty:         item.qty||0,
+        PrecioIVA:   item.PrecioIVA||0
+      };
+    });
+    var cot = {
+      ts:        Date.now(),
+      user:      currentUser ? currentUser.nombre : 'Cliente',
+      app:       'Cliente',
+      items:     carrito.reduce(function(a,c){return a+(c.qty||0);},0),
+      total:     total,
+      detalle:   detalle,
+      nroCotiz:  nroCotiz || ''  // correlativo visible del PDF
+    };
+    // Guardar en localStorage
+    var lista = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]');
+    lista.push(cot);
+    if(lista.length>200) lista=lista.slice(lista.length-200);
+    localStorage.setItem('ov_cotizaciones', JSON.stringify(lista));
+    // Guardar en Firestore para que llegue al Panel Admin en tiempo real
+    if(window.db){
+      window.db.collection('cotizaciones').add(
+        Object.assign({}, cot, {ts: firebase.firestore.FieldValue.serverTimestamp(), tsNum: Date.now()})
+      ).catch(function(){});
+    }
+  }catch(e){}
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+function generarPDF(){
+  if(!carrito.length){ toast('Agrega productos primero','warn'); return; }
+  // Obtener correlativo atómico desde Firestore (o fallback local)
+  var _genPDF = typeof obtenerSiguienteCorrelativo === 'function'
+    ? obtenerSiguienteCorrelativo
+    : function(cb){ cb(null, Math.floor(Math.random()*90000)+10000); };
+  _genPDF(function(err, nroRaw){
+  // Formatear: 1→"01", 12→"12", 100→"100"
+  var nro = typeof fmtNroCotiz === 'function' ? fmtNroCotiz(nroRaw) : String(nroRaw);
+  var jsPDF  = window.jspdf.jsPDF;
+  var doc    = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  var naranja=[218,0,0], negro=[32,32,32], gris=[100,100,100], grisClaro=[245,245,245];
+  var fecha  = new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var nombre = document.getElementById('cliNombre').value||'Cliente';
+  var rut    = document.getElementById('cliRut').value||'';
+  var dir    = document.getElementById('cliDir').value||'';
+  var tel    = document.getElementById('cliTel').value||'';
+  var obs    = document.getElementById('cliObs').value||'';
+
+  doc.setFillColor(negro[0],negro[1],negro[2]); doc.rect(0,0,216,32,'F');
+  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(0,0,4,32,'F');
+  doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('FERRETERÍAS OVIEDO',10,13);
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(160,160,160);
+  doc.text('Sucursal El Manzano  |  Red MTS',10,21);
+  doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text(window._mostrarPrecio!==false ? 'Venta Cotización  IVA Incluido' : 'Solicitud de Productos',110,10);
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(naranja[0],naranja[1],naranja[2]);
+  doc.text('N° '+nro,110,17);
+  doc.setTextColor(160,160,160);
+  doc.text('Ferretería Oviedo El Manzano',110,24);
+  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(0,32,216,1.5,'F');
+  doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(0,33.5,216,9,'F');
+  doc.setFontSize(8); doc.setTextColor(gris[0],gris[1],gris[2]); doc.setFont('helvetica','normal');
+  doc.text(fecha,12,39.5); doc.text('Sucursal: El Manzano',150,39.5);
+
+  var y=52;
+  doc.setTextColor(negro[0],negro[1],negro[2]); doc.setFontSize(9);
+  var campos=[['Señor(es):',nombre],['RUT:',rut],['Dirección:',dir],['Teléfono:',tel]];
+  campos.forEach(function(row){
+    if(!row[1]) return;
+    doc.setFont('helvetica','bold'); doc.text(row[0],12,y);
+    doc.setFont('helvetica','normal'); doc.text(row[1],45,y); y+=6;
+  });
+  y+=4;
+  doc.setFont('helvetica','italic'); doc.setTextColor(gris[0],gris[1],gris[2]);
+  doc.text('De acuerdo a lo solicitado, presentamos la siguiente cotización:',12,y); y+=8;
+
+  var mostrar  = window._mostrarPrecio !== false;
+  var subtotal = carrito.reduce(function(a,c){return a+c.PrecioIVA*c.qty;},0);
+  var totalUnid= carrito.reduce(function(a,c){return a+c.qty;},0);
+
+  if(mostrar){
+    var rows = carrito.map(function(item){
+      var desc = item.Descripcion.length>72 ? item.Descripcion.substring(0,72)+'...' : item.Descripcion;
+      return [item.Codigo, desc, item.qty, fmt(item.PrecioIVA), fmt(item.PrecioIVA*item.qty)];
+    });
+    doc.autoTable({
+      startY: y,
+      head: [['Código','Descripción','CANT','Precio Unit.','Valor Total']],
+      body: rows,
+      foot: [[
+        {content:totalUnid+' unid.',colSpan:3,styles:{halign:'right',fontStyle:'bold'}},
+        {content:'Total',styles:{halign:'center',fontStyle:'bold'}},
+        {content:fmt(subtotal),styles:{halign:'right',fontStyle:'bold',textColor:naranja}}
+      ]],
+      headStyles:{fillColor:naranja,textColor:[255,255,255],fontSize:8,fontStyle:'bold',halign:'center'},
+      bodyStyles:{fontSize:8,textColor:negro},
+      footStyles:{fillColor:grisClaro,fontSize:8,fontStyle:'bold'},
+      columnStyles:{0:{cellWidth:24},1:{cellWidth:'auto'},2:{cellWidth:14,halign:'center'},3:{cellWidth:30,halign:'right'},4:{cellWidth:32,halign:'right'}},
+      tableWidth:'wrap',
+      alternateRowStyles:{fillColor:[250,250,250]},
+      margin:{left:12,right:12}
+    });
+    var yT   = doc.lastAutoTable.finalY+6;
+    var neto = Math.round(subtotal/1.19);
+    var iva  = subtotal-neto;
+    doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(120,yT,84,28,'F');
+    doc.setFontSize(8); doc.setTextColor(gris[0],gris[1],gris[2]); doc.setFont('helvetica','normal');
+    doc.text('Neto:',126,yT+8); doc.text('IVA 19%:',126,yT+15);
+    doc.setTextColor(negro[0],negro[1],negro[2]); doc.setFont('helvetica','bold');
+    doc.text(fmt(neto),198,yT+8,{align:'right'}); doc.text(fmt(iva),198,yT+15,{align:'right'});
+    doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(120,yT+20,84,10,'F');
+    doc.setFontSize(11); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+    doc.text('TOTAL:',126,yT+27); doc.text(fmt(subtotal),198,yT+27,{align:'right'});
+  } else {
+    // SIN PRECIOS — lista de productos con stock
+    var rowsS = carrito.map(function(item){
+      var prod = (typeof PRODUCTOS!=='undefined') ? PRODUCTOS.filter(function(p){return p.Codigo===item.Codigo;})[0] : null;
+      var sk   = prod ? (prod.Stock||0) : 0;
+      var skTxt = sk>10 ? 'Disponible ('+sk+')' : sk>0 ? 'Últimas '+sk : 'Sin stock';
+      var desc  = item.Descripcion.length>80 ? item.Descripcion.substring(0,80)+'...' : item.Descripcion;
+      return [item.Codigo, desc, item.qty, skTxt];
+    });
+    doc.autoTable({
+      startY: y,
+      head: [['Código','Descripción','CANT','Stock']],
+      body: rowsS,
+      foot: [[
+        {content:totalUnid+' unidad'+(totalUnid!==1?'es':'')+' solicitada'+(totalUnid!==1?'s':''),colSpan:4,styles:{halign:'right',fontStyle:'bold'}}
+      ]],
+      headStyles:{fillColor:naranja,textColor:[255,255,255],fontSize:8,fontStyle:'bold',halign:'center'},
+      bodyStyles:{fontSize:8,textColor:negro},
+      footStyles:{fillColor:grisClaro,fontSize:8,fontStyle:'bold'},
+      columnStyles:{0:{cellWidth:24},1:{cellWidth:'auto'},2:{cellWidth:16,halign:'center'},3:{cellWidth:36,halign:'center'}},
+      tableWidth:'wrap',
+      alternateRowStyles:{fillColor:[250,250,250]},
+      margin:{left:12,right:12}
+    });
+    var yT = doc.lastAutoTable.finalY+6;
+    // Nota informativa — sin totales
+    doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(120,yT,84,14,'F');
+    doc.setFontSize(8); doc.setTextColor(gris[0],gris[1],gris[2]); doc.setFont('helvetica','italic');
+    doc.text('Precios sujetos a consulta con el equipo de ventas.',125,yT+5.5);
+    doc.text('Esta lista no incluye valorización.',125,yT+11);
+  }
+
+  var yF=yT+( mostrar ? 34 : 20 );
+  doc.setFillColor(grisClaro[0],grisClaro[1],grisClaro[2]); doc.rect(0,yF-4,216,42,'F');
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(negro[0],negro[1],negro[2]);
+  doc.text('Condiciones de Venta',12,yF+2);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gris[0],gris[1],gris[2]);
+  doc.text('Forma de Pago: Efectivo / TDébito / Transferencia',12,yF+8);
+  if(obs){ doc.text(obs.substring(0,100),12,yF+14); }
+  doc.text('Esta cotización tiene validez de 7 días hábiles.',12,yF+20);
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(negro[0],negro[1],negro[2]);
+  doc.text('Ferreterías Oviedo — Sucursal El Manzano',12,yF+32);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gris[0],gris[1],gris[2]);
+  doc.text('Página 1 de 1',198,yF+32,{align:'right'});
+  var pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(negro[0],negro[1],negro[2]); doc.rect(0,pageH-14,216,14,'F');
+  doc.setFillColor(naranja[0],naranja[1],naranja[2]); doc.rect(0,pageH-14,4,14,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont('helvetica','normal');
+  doc.text('Ferreterías Oviedo — Sucursal El Manzano  |  Red MTS',10,pageH-5);
+  doc.text('Cotización N° '+nro+'  |  Página 1 de 1',198,pageH-5,{align:'right'});
+
+  doc.save('Cotizacion_Oviedo_'+nro+'.pdf');
+  toast('📄 PDF generado correctamente','ok');
+  // Guardar nro globalmente para el sistema de cupones
+  window._ultimaNroCotiz    = nro;
+  window._ultimaSubtotal    = subtotal;
+  window._ultimaCarrito     = carrito.slice();
+  window._ultimaDatosCliente = {
+    nombre: _sanitizarCotizInput(document.getElementById('cliNombre').value)||'Cliente',
+    rut:    _sanitizarCotizInput(document.getElementById('cliRut').value),
+    dir:    _sanitizarCotizInput(document.getElementById('cliDir').value),
+    tel:    _sanitizarCotizInput(document.getElementById('cliTel').value),
+    obs:    _sanitizarCotizInput(document.getElementById('cliObs').value)
+  };
+  registrarCotizacionResumen(subtotal, nro);
+  // Botón WA: aparece SIEMPRE después de generar PDF
+  var _btnWa = document.getElementById('btnWaCot');
+  if(_btnWa){ _btnWa.style.display='block'; }
+  // Cupón solo cuando los precios son visibles
+  if(window._mostrarPrecio === true){
+    _cuponPctSeleccionado = 1;
+    var btn1 = document.getElementById('cuponBtn1');
+    if(btn1) cuponSelPct(1, btn1);
+    cuponMostrarBloque();
+  }
+  }); // fin obtenerSiguienteCorrelativo
+}
+
+// ── PROMOCIONES DESDE FIRESTORE ────────────────────────────────────────────────
+function cargarPromosFirestore(){
+  if(!window.db){ return; }
+  window.db.collection('promos').orderBy('ts','desc').get()
+    .then(function(snap){
+      var promos = [];
+      snap.forEach(function(d){ promos.push(Object.assign({_id:d.id}, d.data())); });
+      renderPromosCliente(promos);
+    })
+    .catch(function(){ });
+}
+
+function renderPromosCliente(promos){
+  var section = document.getElementById('promoSection');
+  var list    = document.getElementById('promoList');
+  if(!section || !list) return;
+  if(!promos || !promos.length){ section.style.display='none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = promos.map(function(p){
+    return '<div style="flex-shrink:0;width:190px;background:white;border-radius:12px;overflow:hidden;'+
+      'box-shadow:0 4px 16px rgba(0,0,0,.3);border:2px solid #DA0000">'+
+      '<div style="background:white;padding:6px 10px;border-bottom:2px solid #DA0000;display:flex;align-items:center;justify-content:space-between">'+
+        '<img src="logo_oviedo_white.jpg" style="height:22px;width:auto" alt="Oviedo" onerror="this.style.display=\'none\'">'+
+        '<span style="background:#DA0000;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:800;color:white;text-transform:uppercase;letter-spacing:.5px">'+cliEsc(p.tag||'OFERTA')+'</span>'+
+      '</div>'+
+      '<div style="padding:10px 12px 12px">'+
+        '<div style="font-size:14px;font-weight:800;color:#1a1a1a;line-height:1.25;margin-bottom:4px">'+cliEsc(p.titulo)+'</div>'+
+        (p.desc?'<div style="font-size:11px;color:#666;line-height:1.4;margin-bottom:6px">'+cliEsc(p.desc)+'</div>':'')+
+        (p.precio?'<div style="font-size:22px;font-weight:800;color:#DA0000;line-height:1">'+cliEsc(p.precio)+'</div>':'')+
+      '</div>'+
+      '<div style="background:#1a1a1a;padding:4px 10px;text-align:center">'+
+        '<span style="font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.4px">FERRETERÍAS OVIEDO</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+// ── REDES SOCIALES DESDE FIRESTORE ─────────────────────────────────────────────
+function cargarRedesFirestore(){
+  if(!window.db){ return; }
+  window.db.collection('config').doc('redes').get()
+    .then(function(doc){
+      if(!doc.exists) return;
+      var data = doc.data();
+      renderRedesCliente(data);
+    })
+    .catch(function(){ });
+}
+
+function renderRedesCliente(data){
+  // Mostrar redes inline junto a vendedores
+  var inline = document.getElementById('redesInline');
+  if(!inline) return;
+  var h = '';
+  if(data.ig){
+    h += '<a href="https://instagram.com/'+data.ig+'" target="_blank" class="red-btn-inline" '+
+      'style="background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)">'+
+      '📸 @'+data.ig+'</a>';
+  }
+  if(data.fb){
+    h += '<a href="'+data.fb+'" target="_blank" class="red-btn-inline" style="background:#1877F2">'+
+      '📘 Facebook</a>';
+  }
+  if(data.wa){
+    var num = data.wa.replace(/[^0-9+]/g,'');
+    window._waNumEmpresa = num.replace('+','');
+    h += '<a href="https://wa.me/'+num+'" target="_blank" class="red-btn-inline" style="background:#25D366">'+
+      '💬 WA</a>';
+  }
+  if(h) inline.innerHTML = h;
+}
+
+// ── BLOQUE 3: LISTENER CIERRE REMOTO DE SESIÓN ───────────────────────────────
+var _sesionRemolaUnsubscribe = null;
+
+function iniciarListenerSesionRemota(nombre, app) {
+  if (!window.db) return;
+  var uid = nombre.replace(/\s+/g,'_') + '_' + app;
+  if (_sesionRemolaUnsubscribe) { try{ _sesionRemolaUnsubscribe(); }catch(e){} }
+  _sesionRemolaUnsubscribe = window.db.collection('sesiones_activas').doc(uid)
+    .onSnapshot(function(snap) {
+      if (!snap.exists) return;
+      var data = snap.data();
+      // Si el admin puso activo:false, forzar logout
+      if (data.activo === false) {
+        toast('🔒 Tu sesión fue cerrada por el administrador', 'warn');
+        setTimeout(function() { doLogout(); }, 2000);
+      }
+    }, function(){});
+}
+
+// ── BLOQUE 4: SERVICE WORKER + BANNER DE ACTUALIZACIÓN ───────────────────────
+(function() {
+  if (!('serviceWorker' in navigator)) return;
+
+  function attachUpdateHandler(reg) {
+    // Revisar si ya hay un worker esperando (ej: tab recargada)
+    if (reg.waiting) { mostrarBannerActualizacion(reg.waiting); return; }
+
+    reg.onupdatefound = function() {
+      var newWorker = reg.installing;
+      if (!newWorker) return;
+      newWorker.onstatechange = function() {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          mostrarBannerActualizacion(newWorker);
+        }
+      };
+    };
+  }
+
+  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    attachUpdateHandler(reg);
+
+    // Forzar revisión de actualización al cargar la página
+    reg.update().catch(function(){});
+
+    // Re-revisar cada vez que la pestaña vuelve a ser visible
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') reg.update().catch(function(){});
+    });
+
+    // Re-revisar cada 30 min (por si el usuario deja la tab abierta mucho tiempo)
+    setInterval(function() { reg.update().catch(function(){}); }, 30 * 60 * 1000);
+
+    // Cuando el controller cambia (nuevo SW activado), recargar la página
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      window.location.reload();
+    });
+
+  }).catch(function(){});
+})();
+
+function mostrarBannerActualizacion(pendingWorker) {
+  if (document.getElementById('swUpdateBanner')) return; // ya mostrado
+  var banner = document.createElement('div');
+  banner.id = 'swUpdateBanner';
+  banner.style.cssText = [
+    'position:fixed','bottom:0','left:0','right:0','z-index:9999',
+    'background:#202020','color:#fff','padding:12px 16px',
+    'display:flex','align-items:center','gap:10px',
+    'font-family:Inter,sans-serif','font-size:13px',
+    'box-shadow:0 -2px 12px rgba(0,0,0,.35)',
+    'border-top:2px solid #DA0000'
+  ].join(';');
+  banner.innerHTML =
+    '<span style="flex:1">🔄 <strong>Nueva versión disponible.</strong> Actualiza para ver los últimos cambios.</span>'+
+    '<button onclick="aplicarActualizacionSW()" style="padding:8px 16px;background:#DA0000;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Actualizar ahora</button>'+
+    '<button onclick="this.parentNode.remove()" style="padding:6px 10px;background:rgba(255,255,255,.1);color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer">✕</button>';
+  document.body.appendChild(banner);
+  window._swPendingWorker = pendingWorker;
+}
+
+function aplicarActualizacionSW() {
+  if (window._swPendingWorker) {
+    window._swPendingWorker.postMessage({ type: 'SKIP_WAITING' });
+  }
+  // Limpiar caches y recargar
+  if ('caches' in window) {
+    caches.keys().then(function(keys) {
+      keys.forEach(function(k) { caches.delete(k); });
+    });
+  }
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    window.location.reload(true);
+  });
+}
+
+// ── SISTEMA DE CUPONES ────────────────────────────────────────────────────────
+var _cuponListener          = null;  // onSnapshot activo (carrito)
+var _cuponGlobalListener    = null;  // onSnapshot global (notificación flotante)
+var _solicitudesHabilitadas = true;  // leído de config/cupones
+var _cuponSolicitudId       = null;  // ID del doc en solicitudes_cupon
+var _cuponBloqueado         = false; // Ya aplicado
+var _cuponPctSeleccionado   = 1;     // Porcentaje seleccionado: 1, 2 o 3
+// ── BLOQUE 1: IDs de cupones push descartados por el usuario ─────────────────
+var _cuponDescartados = (function() {
+  try { return new Set(JSON.parse(localStorage.getItem('ov_cupon_descartados')||'[]')); }
+  catch(e) { return new Set(); }
+})();
+var _cuponPushActual = null; // Datos del cupón push actualmente visible
+
+// ── LISTENER GLOBAL DE CUPONES PUSH (activo siempre que el usuario esté logueado) ──
+// Detecta cupones aprobados emitidos por Admin/Vendedor para cualquier cotización del usuario.
+// BLOQUE 1: filtra los cupones descartados por el usuario (_cuponDescartados)
+function cuponGlobalIniciarListener() {
+  if (!window.db || !currentUser) return;
+  if (_cuponGlobalListener) { _cuponGlobalListener(); _cuponGlobalListener = null; }
+  _cuponGlobalListener = window.db.collection('solicitudes_cupon')
+    .where('estado', '==', 'aprobado')
+    .where('cuponAplicado', '==', false)
+    .onSnapshot(function(snap) {
+      var pendiente = null;
+      snap.docs.forEach(function(d) {
+        var dat = d.data();
+        var esMio = dat.clienteUID === (currentUser.user || currentUser.nombre || '')
+          || dat.clienteUID === 'admin_emision'
+          || dat.origenAdmin === true;
+        // BLOQUE 1: ignorar cupones descartados por el usuario en esta sesión
+        var clavDesc = d.id + '_' + (dat.cuponCodigo || '');
+        if (esMio && !dat.cuponAplicado && !_cuponDescartados.has(clavDesc)) {
+          if (!pendiente) pendiente = { id: d.id, data: dat, clav: clavDesc };
+        }
+      });
+      if (pendiente) {
+        _cuponPushActual = pendiente;
+        cuponFlotanteMostrar(pendiente.data);
+      } else {
+        cuponFlotanteCerrar();
+      }
+    }, function() {});
+}
+
+function cuponFlotanteMostrar(data) {
+  var f = document.getElementById('cuponFlotante');
+  if (!f) return;
+  var cod = document.getElementById('cfCodigo');
+  var pct = document.getElementById('cfPct');
+  var nro = document.getElementById('cfNroCotiz');
+  if (cod) cod.textContent = data.cuponCodigo || '—';
+  if (pct) pct.textContent = (data.porcentajeSolicitado || '?') + '% de descuento';
+  if (nro) nro.textContent = data.cotizacionID || '—';
+  f.style.display = 'block';
+}
+
+// BLOQUE 1: cerrar cupón flotante Y guardarlo como descartado en localStorage
+// → el listener no lo vuelve a mostrar aunque Firestore siga con cuponAplicado:false
+function cuponFlotanteCerrar() {
+  var f = document.getElementById('cuponFlotante');
+  if (f) f.style.display = 'none';
+  // Si hay un cupón actual, registrarlo como descartado para esta combinación uid+cupón
+  if (_cuponPushActual && _cuponPushActual.clav) {
+    _cuponDescartados.add(_cuponPushActual.clav);
+    try {
+      localStorage.setItem('ov_cupon_descartados', JSON.stringify([..._cuponDescartados]));
+    } catch(e) {}
+  }
+  _cuponPushActual = null;
+}
+
+function cuponFlotanteAbrir() {
+  // Al hacer clic en el flotante, abre el carrito y activa búsqueda por correlativo
+  var f = document.getElementById('cuponFlotante');
+  if (!f) return;
+  var nro = document.getElementById('cfNroCotiz');
+  openCart();
+  if (nro && nro.textContent) {
+    var inp = document.getElementById('correlatBusqueda');
+    if (inp) { inp.value = nro.textContent; }
+    setTimeout(function() { cuponBuscarPorCorrelativo(); }, 300);
+  }
+}
+
+// ── LEER CONFIGURACIÓN SOLICITUDES HABILITADAS ────────────────────────────────
+function cuponCargarConfigSolicitudes() {
+  if (!window.db) return;
+  // Escuchar cambios en tiempo real
+  window.db.collection('config').doc('cupones')
+    .onSnapshot(function(doc) {
+      var val = doc.exists ? doc.data().solicitudesHabilitadas : true;
+      _solicitudesHabilitadas = val !== false;
+      cuponActualizarVisibilidadSolicitar();
+    }, function() {});
+}
+
+function cuponActualizarVisibilidadSolicitar() {
+  var sol = document.getElementById('cuponSolicitar');
+  if (!sol) return;
+  // Mostrar/ocultar solo los botones de solicitar, no el bloque completo
+  var bV = document.getElementById('btnSolVend');
+  var bA = document.getElementById('btnSolAdmin');
+  var bots = sol.querySelector('.cupon-bots-solicitar');
+  if (bots) bots.style.display = _solicitudesHabilitadas ? 'grid' : 'none';
+  // Mensaje cuando está deshabilitado
+  var msgDis = document.getElementById('cuponSolicDeshabilitado');
+  if (msgDis) msgDis.style.display = _solicitudesHabilitadas ? 'none' : 'block';
+}
+
+// ── SELECCIÓN DE PORCENTAJE ───────────────────────────────────────────────────
+function cuponSelPct(pct, btn){
+  _cuponPctSeleccionado = pct;
+  ['cuponBtn1','cuponBtn2','cuponBtn3'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.style.background   = 'white';
+    el.style.color        = '#374151';
+    el.style.borderColor  = '#e5e7eb';
+  });
+  if(btn){
+    btn.style.background  = '#DA0000';
+    btn.style.color       = 'white';
+    btn.style.borderColor = '#DA0000';
+  }
+}
+
+// Búsqueda de cupón por número de cotización (para cotizaciones ya cerradas)
+function cuponBuscarPorCorrelativo(){
+  var nro = (document.getElementById('correlatBusqueda').value||'').trim();
+  var res = document.getElementById('correlatResultado');
+  if(!nro){ toast('Ingresa el N° de cotización','warn'); return; }
+  if(!window.db){ toast('Firebase no disponible','err'); return; }
+  res.style.display = 'block';
+  res.innerHTML = '<div style="font-size:12px;color:#6b7280;padding:6px 0">Buscando...</div>';
+  window.db.collection('solicitudes_cupon')
+    .where('cotizacionID','==', String(nro))
+    .get()
+    .then(function(snap){
+      if(snap.empty){
+        res.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:12px;color:#991b1b">No se encontró ningún cupón para la cotización N° '+nro+'.</div>';
+        return;
+      }
+      var docSnap = snap.docs[0];
+      var data    = docSnap.data();
+      if(data.estado === 'aprobado' && !data.cuponAplicado){
+        res.innerHTML =
+          '<div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px;margin-bottom:8px">'+
+            '<div style="font-size:11px;color:#166534;font-weight:700;margin-bottom:4px">🎉 Cupón aprobado para cot. N° '+nro+'</div>'+
+            '<div style="font-size:14px;font-weight:800;color:#DA0000;letter-spacing:1px">'+data.cuponCodigo+'</div>'+
+            '<div style="font-size:12px;color:#374151;margin-top:4px">'+data.porcentajeSolicitado+'% de descuento</div>'+
+          '</div>'+
+          '<button onclick="cuponAplicarDesdeCorrelativo(\''+docSnap.id+'\',\''+data.cuponCodigo+'\','+data.porcentajeSolicitado+')"'+
+          ' style="width:100%;padding:10px;background:#DA0000;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+
+          '🏷️ Aplicar Cupón y Generar PDF</button>';
+      } else if(data.estado === 'aprobado' && data.cuponAplicado){
+        res.innerHTML = '<div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px;font-size:12px;color:#166534">✅ El cupón <b>'+data.cuponCodigo+'</b> ya fue aplicado para esta cotización.</div>';
+      } else if(data.estado === 'pendiente'){
+        res.innerHTML = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px;font-size:12px;color:#92400e">⏳ La solicitud de cupón para cot. N° '+nro+' está pendiente de aprobación.</div>';
+      } else {
+        res.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:12px;color:#991b1b">❌ El cupón para cot. N° '+nro+' fue rechazado.</div>';
+      }
+    })
+    .catch(function(){
+      res.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:12px;color:#991b1b">Error al buscar. Intenta nuevamente.</div>';
+    });
+}
+
+function cuponAplicarDesdeCorrelativo(solId, codigo, porcentaje){
+  if(!window._ultimaCarrito || !window._ultimaCarrito.length){
+    toast('No hay cotización activa en esta sesión. Busca los productos y genera el PDF primero.','warn');
+    return;
+  }
+  cuponAplicar(solId, codigo, porcentaje);
+}
+
+function cuponMostrarBloque(){
+  var box = document.getElementById('cuponBox');
+  if(!box) return;
+  // Actualizar badge con N° cotización
+  var badge = document.getElementById('cuponNroBadge');
+  if(badge) badge.textContent = window._ultimaNroCotiz ? 'Cot. N° '+window._ultimaNroCotiz : '';
+  // Resetear estado visual
+  document.getElementById('cuponSolicitar').style.display = 'block';
+  document.getElementById('cuponAprobado').style.display  = 'none';
+  document.getElementById('cuponEstado').innerHTML = '';
+  _cuponBloqueado   = false;
+  _cuponSolicitudId = null;
+  // Mostrar siempre (aunque no haya cotización activa, para la búsqueda)
+  box.style.display = 'block';
+  // Si no hay cotización activa, mostrar solo estado vacío
+  if(!window.db || !currentUser || !window._ultimaNroCotiz){ cuponEstadoDefault(); return; }
+  // Escuchar cambios en tiempo real para esta cotización (solicitudes del cliente Y push del admin)
+  if(_cuponListener){ _cuponListener(); _cuponListener=null; }
+  _cuponListener = window.db.collection('solicitudes_cupon')
+    .where('cotizacionID', '==', String(window._ultimaNroCotiz))
+    .onSnapshot(function(snap){
+      if(snap.empty){ cuponEstadoDefault(); return; }
+      // Buscar el doc más relevante: preferir aprobado > pendiente > rechazado
+      var mejor = null;
+      snap.docs.forEach(function(d){
+        var dat = d.data();
+        if(!mejor) { mejor = d; return; }
+        var ord = {aprobado:0, pendiente:1, rechazado:2};
+        if((ord[dat.estado]||9) < (ord[mejor.data().estado]||9)) mejor = d;
+      });
+      var data = mejor.data();
+      _cuponSolicitudId = mejor.id;
+      if(data.estado === 'pendiente'){
+        cuponEstadoPendiente(data.porcentajeSolicitado, data.destinatario);
+      } else if(data.estado === 'aprobado'){
+        cuponEstadoAprobado(data, mejor.id);
+      } else if(data.estado === 'rechazado'){
+        cuponEstadoRechazado();
+      }
+    }, function(){ cuponEstadoDefault(); });
+}
+
+function cuponEstadoDefault(){
+  var sol = document.getElementById('cuponSolicitar');
+  var apr = document.getElementById('cuponAprobado');
+  var est = document.getElementById('cuponEstado');
+  var bV  = document.getElementById('btnSolVend');
+  var bA  = document.getElementById('btnSolAdmin');
+  if(sol) sol.style.display = 'block';
+  if(apr) apr.style.display = 'none';
+  if(est) est.innerHTML     = '';
+  if(bV)  bV.disabled       = false;
+  if(bA)  bA.disabled       = false;
+}
+
+function cuponEstadoPendiente(pct, dest){
+  document.getElementById('cuponSolicitar').style.display = 'block';
+  document.getElementById('cuponAprobado').style.display  = 'none';
+  document.getElementById('btnSolVend').disabled  = true;
+  document.getElementById('btnSolAdmin').disabled = true;
+  document.getElementById('cuponEstado').innerHTML =
+    '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#92400e">'+
+    '⏳ Solicitud enviada ('+pct+'% a '+(dest==='admin'?'Admin':'Vendedor')+').<br>Espera la aprobación...</div>';
+}
+
+function cuponEstadoAprobado(data, solId){
+  document.getElementById('cuponSolicitar').style.display = 'none';
+  var aprobadoDiv = document.getElementById('cuponAprobado');
+  aprobadoDiv.style.display = 'block';
+  if(data.cuponAplicado){
+    aprobadoDiv.innerHTML =
+      '<div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px 12px;font-size:12px;color:#166534">'+
+      '✅ Cupón <b>'+data.cuponCodigo+'</b> ya fue aplicado.<br>Revisa tu PDF con descuento.</div>';
+    return;
+  }
+  aprobadoDiv.innerHTML =
+    '<div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px 12px;margin-bottom:10px">'+
+      '<div style="font-size:11px;color:#166534;font-weight:700;margin-bottom:4px">🎉 ¡Cupón aprobado!</div>'+
+      '<div style="font-size:14px;font-weight:800;color:#DA0000;letter-spacing:1px">'+data.cuponCodigo+'</div>'+
+      '<div style="font-size:12px;color:#374151;margin-top:4px">'+data.porcentajeSolicitado+'% de descuento</div>'+
+    '</div>'+
+    '<button id="btnAplicarCupon" '+
+    'data-sol="'+solId+'" data-cod="'+data.cuponCodigo+'" data-pct="'+data.porcentajeSolicitado+'"'+
+    ' onclick="var b=this;cuponAplicar(b.dataset.sol,b.dataset.cod,parseInt(b.dataset.pct))"'+
+    ' style="width:100%;padding:12px;background:#DA0000;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+
+    '🏷️ Aplicar Cupón y Generar PDF con Descuento</button>';
+}
+
+function cuponEstadoRechazado(){
+  document.getElementById('cuponSolicitar').style.display = 'block';
+  document.getElementById('cuponAprobado').style.display  = 'none';
+  document.getElementById('btnSolVend').disabled  = false;
+  document.getElementById('btnSolAdmin').disabled = false;
+  document.getElementById('cuponEstado').innerHTML =
+    '<div style="background:#fef2f2;border:1px solid #ef4444;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#991b1b">'+
+    '❌ Tu solicitud fue rechazada. Puedes enviar una nueva.</div>';
+}
+
+function solicitarCupon(destinatario){
+  if(!window.db){ toast('Firebase no disponible','err'); return; }
+  if(!currentUser){ toast('Inicia sesión primero','err'); return; }
+  if(!window._ultimaNroCotiz){ toast('Genera una cotización PDF primero','warn'); return; }
+  // Usar porcentaje seleccionado desde los botones (1, 2 o 3)
+  var pct = _cuponPctSeleccionado || 1;
+  if(pct < 1 || pct > 3){ toast('Selecciona 1%, 2% o 3%','warn'); return; }
+  var payload = {
+    clienteUID:          currentUser.user || currentUser.nombre || '',
+    clienteNombre:       currentUser.nombre || '',
+    cotizacionID:        String(window._ultimaNroCotiz),
+    porcentajeSolicitado:pct,
+    destinatario:        destinatario,
+    estado:              'pendiente',
+    cuponCodigo:         null,
+    cuponAplicado:       false,
+    aprobadoPor:         null,
+    timestamp:           Date.now(),
+    timestampAprobacion: null
+  };
+  var btnVend  = document.getElementById('btnSolVend');
+  var btnAdmin = document.getElementById('btnSolAdmin');
+  if(btnVend)  btnVend.disabled  = true;
+  if(btnAdmin) btnAdmin.disabled = true;
+  window.db.collection('solicitudes_cupon').add(payload)
+    .then(function(ref){
+      _cuponSolicitudId = ref.id;
+      cuponEstadoPendiente(pct, destinatario);
+      toast('Solicitud enviada. Espera la aprobación','ok');
+    })
+    .catch(function(e){
+      if(btnVend)  btnVend.disabled  = false;
+      if(btnAdmin) btnAdmin.disabled = false;
+      toast('Error al enviar solicitud: ' + (e.message||'sin conexión'), 'err');
+    });
+}
+
+function cuponAplicar(solId, codigo, porcentaje){
+  if(!window.db){ toast('Firebase no disponible','err'); return; }
+  var btn = document.getElementById('btnAplicarCupon');
+  if(btn) btn.disabled = true;
+  // Leer doc actualizado para verificar que no fue aplicado ya
+  window.db.collection('solicitudes_cupon').doc(solId).get()
+    .then(function(snap){
+      if(!snap.exists){ toast('Solicitud no encontrada','err'); return; }
+      var data = snap.data();
+      if(data.cuponAplicado){
+        toast('Cupón ya fue utilizado','warn');
+        cuponEstadoAprobado(data, solId);
+        return;
+      }
+      // Marcar como aplicado en Firestore
+      return snap.ref.update({ cuponAplicado: true })
+        .then(function(){
+          // BLOQUE 1: limpiar lista de descartados al aplicar el cupón
+          _cuponDescartados.clear();
+          try { localStorage.removeItem('ov_cupon_descartados'); } catch(e) {}
+          // Generar PDF con descuento
+          cuponGenerarPDFDescuento(codigo, porcentaje);
+          if(btn){ btn.disabled=true; btn.textContent='✅ Cupón ya aplicado'; btn.style.background='#6b7280'; }
+          toast('Cupón aplicado — PDF generado','ok');
+        });
+    })
+    .catch(function(){ toast('Error al aplicar cupón','err'); if(btn) btn.disabled=false; });
+}
+
+function cuponGenerarPDFDescuento(codigo, porcentaje){
+  if(!window._ultimaCarrito || !window._ultimaCarrito.length){ toast('No hay cotización activa','warn'); return; }
+  if(window._mostrarPrecio === false){ toast('No disponible en modo sin precios','warn'); return; }
+  var jsPDF   = window.jspdf.jsPDF;
+  var doc     = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  var og=[218,0,0], dk=[32,32,32], gr=[100,100,100], gl=[245,245,245];
+  var nro     = window._ultimaNroCotiz;
+  var nroDesc = nro + '-DCT';
+  var fecha   = new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var d       = window._ultimaDatosCliente || {};
+  var nombre  = d.nombre||'Cliente';
+  var rut     = d.rut||'';
+  var dir     = d.dir||'';
+  var tel     = d.tel||'';
+  var obs     = d.obs||'';
+  var carritoSnap = window._ultimaCarrito;
+  var subtotalOrig = window._ultimaSubtotal || carritoSnap.reduce(function(a,c){return a+c.PrecioIVA*c.qty;},0);
+  var montoDesc    = Math.round(subtotalOrig * porcentaje / 100);
+  var totalFinal   = subtotalOrig - montoDesc;
+
+  // Header — igual al PDF original
+  doc.setFillColor(dk[0],dk[1],dk[2]); doc.rect(0,0,216,32,'F');
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(0,0,4,32,'F');
+  doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('FERRETERÍAS OVIEDO',10,13);
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(160,160,160);
+  doc.text('Sucursal El Manzano  |  Red MTS',10,21);
+  doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('Cotización con Descuento  IVA Incluido',110,10);
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(og[0],og[1],og[2]);
+  doc.text('N° '+nroDesc,110,17);
+  doc.setTextColor(160,160,160); doc.text('Cupón: '+codigo,110,24);
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(0,32,216,1.5,'F');
+  doc.setFillColor(gl[0],gl[1],gl[2]); doc.rect(0,33.5,216,9,'F');
+  doc.setFontSize(8); doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal');
+  doc.text(fecha,12,39.5); doc.text('Cupón ref. cotización '+nro,130,39.5);
+
+  var y=52;
+  doc.setTextColor(dk[0],dk[1],dk[2]); doc.setFontSize(9);
+  var campos=[['Señor(es):',nombre],['RUT:',rut],['Dirección:',dir],['Teléfono:',tel]];
+  campos.forEach(function(row){ if(!row[1]) return; doc.setFont('helvetica','bold'); doc.text(row[0],12,y); doc.setFont('helvetica','normal'); doc.text(row[1],45,y); y+=6; });
+  y+=4;
+  doc.setFont('helvetica','italic'); doc.setTextColor(gr[0],gr[1],gr[2]);
+  doc.text('Cotización con cupón de descuento del '+porcentaje+'% aplicado:',12,y); y+=8;
+
+  var rows = carritoSnap.map(function(item){
+    var desc = item.Descripcion.length>72 ? item.Descripcion.substring(0,72)+'...' : item.Descripcion;
+    return [item.Codigo, desc, item.qty, fmt(item.PrecioIVA), fmt(item.PrecioIVA*item.qty)];
+  });
+
+  doc.autoTable({
+    startY: y,
+    head: [['Código','Descripción','CANT','Precio Unit.','Valor Total']],
+    body: rows,
+    headStyles:{fillColor:og,textColor:[255,255,255],fontSize:8,fontStyle:'bold',halign:'center'},
+    bodyStyles:{fontSize:8,textColor:dk},
+    columnStyles:{0:{cellWidth:24},1:{cellWidth:'auto'},2:{cellWidth:14,halign:'center'},3:{cellWidth:30,halign:'right'},4:{cellWidth:32,halign:'right'}},
+    tableWidth:'wrap',
+    alternateRowStyles:{fillColor:[250,250,250]},
+    margin:{left:12,right:12}
+  });
+
+  var yT  = doc.lastAutoTable.finalY+6;
+  var neto = Math.round(totalFinal/1.19);
+  var iva  = totalFinal - neto;
+
+  // Totales con descuento
+  doc.setFillColor(gl[0],gl[1],gl[2]); doc.rect(120,yT,84,40,'F');
+  doc.setFontSize(8); doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal');
+  doc.text('Subtotal original:',126,yT+8);
+  doc.setTextColor(dk[0],dk[1],dk[2]); doc.setFont('helvetica','bold');
+  doc.text(fmt(subtotalOrig),198,yT+8,{align:'right'});
+  doc.setFont('helvetica','normal'); doc.setTextColor(og[0],og[1],og[2]);
+  doc.text('Descuento '+porcentaje+'% (cupón):',126,yT+15);
+  doc.setFont('helvetica','bold');
+  doc.text('-'+fmt(montoDesc),198,yT+15,{align:'right'});
+  doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal');
+  doc.text('Neto:',126,yT+22); doc.text('IVA 19%:',126,yT+29);
+  doc.setTextColor(dk[0],dk[1],dk[2]); doc.setFont('helvetica','bold');
+  doc.text(fmt(neto),198,yT+22,{align:'right'}); doc.text(fmt(iva),198,yT+29,{align:'right'});
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(120,yT+32,84,10,'F');
+  doc.setFontSize(11); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('TOTAL:',126,yT+39); doc.text(fmt(totalFinal),198,yT+39,{align:'right'});
+
+  var yF = yT+46;
+  doc.setFillColor(gl[0],gl[1],gl[2]); doc.rect(0,yF-4,216,46,'F');
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(dk[0],dk[1],dk[2]);
+  doc.text('Condiciones de Venta',12,yF+2);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gr[0],gr[1],gr[2]);
+  doc.text('Forma de Pago: Efectivo / TDébito / Transferencia',12,yF+8);
+  if(obs){ doc.text(obs.substring(0,100),12,yF+14); }
+  doc.text('Esta cotización tiene validez de 7 días hábiles.',12,yF+20);
+  // Línea de cupón destacada
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(12,yF+24,192,8,'F');
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('Cupón: '+codigo+' — Válido SOLO para cotización N° '+nro+' — Uso único',110,yF+29,{align:'center'});
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(dk[0],dk[1],dk[2]);
+  doc.text('Ferreterías Oviedo — Sucursal El Manzano',12,yF+38);
+  doc.setFont('helvetica','normal'); doc.setTextColor(gr[0],gr[1],gr[2]);
+  doc.text('Página 1 de 1',198,yF+38,{align:'right'});
+
+  var pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(dk[0],dk[1],dk[2]); doc.rect(0,pageH-14,216,14,'F');
+  doc.setFillColor(og[0],og[1],og[2]); doc.rect(0,pageH-14,4,14,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont('helvetica','normal');
+  doc.text('Ferreterías Oviedo — Sucursal El Manzano  |  Red MTS',10,pageH-5);
+  doc.text('Cotización N° '+nroDesc+'  |  Página 1 de 1',198,pageH-5,{align:'right'});
+
+  doc.save('Cotizacion_Oviedo_'+nroDesc+'.pdf');
+}
+
+// ── FIN SISTEMA DE CUPONES ─────────────────────────────────────────────────────
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type){
+  type = type||'ok';
+  var t = document.createElement('div');
+  var bg = type==='ok' ? '#2e7d32' : type==='warn' ? '#e65100' : '#c62828';
+  t.style.cssText = 'position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:'+bg+';color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;font-family:var(--font);max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2800);
+}
+
+// ── GESTIÓN DE USUARIOS EN APP (solo admin) ───────────────────────────────────
+function openAdminCli(){
+  if(!currentUser || currentUser.role!=='admin') return;
+  renderAdminCli();
+  document.getElementById('cliAdminOverlay').style.display = 'flex';
+}
+function closeAdminCli(){ document.getElementById('cliAdminOverlay').style.display = 'none'; }
+
+function renderAdminCli(){
+  var now = Date.now();
+  var rows = '';
+  for(var i=0;i<USUARIOS.length;i++){
+    var u = USUARIOS[i];
+    var exp   = new Date(u.licExpiry).getTime();
+    var dias  = Math.ceil((exp-now)/864e5);
+    var licTxt = dias>0 ? dias+' días' : 'VENCIDO';
+    var licCol = dias>0 ? '#2e7d32' : '#c62828';
+    var estTxt = u.estado==='bloqueado' ? '🚫 Bloqueado' : '✅ Activo';
+    var btns = u.role!=='admin' ?
+      '<button onclick="cliDelUser('+i+')" style="background:#fee2e2;color:#c62828;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">🗑</button> '+
+      '<button onclick="cliToggleBlock('+i+')" style="background:#fef3c7;color:#d97706;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>' : '—';
+    rows += '<tr style="border-bottom:1px solid #f3f4f6">'+
+      '<td style="padding:8px 6px;font-size:12px;font-weight:600">'+u.user+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px">'+u.nombre+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px;color:'+licCol+'">'+licTxt+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px">'+estTxt+'</td>'+
+      '<td style="padding:8px 6px">'+btns+'</td>'+
+    '</tr>';
+  }
+  var html =
+    '<div style="overflow-x:auto;margin-bottom:14px">'+
+      '<table style="width:100%;border-collapse:collapse">'+
+        '<thead><tr style="background:#f9fafb;font-size:11px;color:#6b7280">'+
+          '<th style="padding:8px 6px;text-align:left">Usuario</th>'+
+          '<th style="padding:8px 6px;text-align:left">Nombre</th>'+
+          '<th style="padding:8px 6px;text-align:left">Licencia</th>'+
+          '<th style="padding:8px 6px;text-align:left">Estado</th>'+
+          '<th style="padding:8px 6px;text-align:left">Acc.</th>'+
+        '</tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table>'+
+    '</div>'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:8px">➕ Agregar usuario</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
+      '<input id="nuU" class="form-input" placeholder="Usuario">'+
+      '<input id="nuN" class="form-input" placeholder="Nombre completo">'+
+      '<input id="nuP" class="form-input" type="password" placeholder="Contraseña">'+
+      '<select id="nuL" class="form-input"><option value="30">30 días</option><option value="90">90 días</option><option value="180">180 días</option><option value="365" selected>1 año</option></select>'+
+    '</div>'+
+    '<button onclick="cliAddUser()" style="width:100%;padding:10px;background:#E8450A;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">+ Agregar usuario</button>';
+  document.getElementById('cliAdminContent').innerHTML = html;
+}
+
+function cliDelUser(i){
+  if(!confirm('¿Eliminar usuario "'+USUARIOS[i].user+'"?')) return;
+  USUARIOS.splice(i,1);
+  saveCliUsers(); renderAdminCli();
+  toast('Usuario eliminado','ok');
+}
+
+function cliToggleBlock(i){
+  USUARIOS[i].estado = USUARIOS[i].estado==='bloqueado' ? 'activo' : 'bloqueado';
+  saveCliUsers(); renderAdminCli();
+  toast('Usuario '+(USUARIOS[i].estado==='bloqueado'?'bloqueado':'desbloqueado'),'ok');
+}
+
+function cliAddUser(){
+  var u = document.getElementById('nuU').value.trim();
+  var n = document.getElementById('nuN').value.trim();
+  var p = document.getElementById('nuP').value.trim();
+  var l = parseInt(document.getElementById('nuL').value)||365;
+  if(!u||!n||!p){ toast('Completa todos los campos','warn'); return; }
+  var existe = false;
+  for(var i=0;i<USUARIOS.length;i++){ if(USUARIOS[i].user===u){existe=true;break;} }
+  if(existe){ toast('Usuario ya existe','warn'); return; }
+  USUARIOS.push({user:u, pass:p, nombre:n, role:'cliente', licExpiry:new Date(Date.now()+l*864e5).toISOString(), estado:'activo'});
+  saveCliUsers(); renderAdminCli();
+  toast('Usuario '+u+' creado','ok');
+}
+
+var _pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault(); _pwaPrompt=e;
+  var b=document.getElementById('pwaInstall'); if(b) b.style.display='inline-block';
+});
+window.addEventListener('appinstalled',function(){
+  _pwaPrompt=null;
+  var b=document.getElementById('pwaInstall'); if(b) b.style.display='none';
+});
+function instalarPWA(){
+  if(!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(function(r){
+    if(r.outcome==='accepted'){ var b=document.getElementById('pwaInstall'); if(b) b.style.display='none'; }
+    _pwaPrompt=null;
+  });
+}
+
+// ── PERSISTENCIA DE SESIÓN — V31 ─────────────────────────────────────────────
+function aplicarPersistenciaCli(fn){
+  if(!window.db||!window.auth){ fn(); return; }
+  window.db.collection('config').doc('sessionConfig').get()
+    .then(function(snap){
+      var tipo = snap.exists ? (snap.data().tipo||'LOCAL') : 'LOCAL';
+      var p = tipo==='SESSION'
+        ? firebase.auth.Auth.Persistence.SESSION
+        : firebase.auth.Auth.Persistence.LOCAL;
+      return window.auth.setPersistence(p);
+    })
+    .then(fn)
+    .catch(function(){ fn(); });
+}
+
+// ── AUDITORÍA DE ACCESOS — V31 ────────────────────────────────────────────────
+function registrarAccesoCli(uid, nombre, role){
+  if(!window.db) return;
+  window.db.collection('auditLog').add({
+    uid:uid, nombre:nombre||'', role:role||'cliente', panel:'cliente',
+    ts:Date.now(), fecha:new Date().toLocaleString('es-CL')
+  }).catch(function(){});
+}
+
+
+</script>
+<div style="position:fixed;bottom:8px;right:10px;z-index:1000;background:rgba(0,0,0,.4);color:rgba(255,255,255,.45);font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;pointer-events:none;letter-spacing:.3px">V32 · A.G. · 2026-05-11</div>
+</body>
+</html>

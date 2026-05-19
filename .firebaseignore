@@ -1,0 +1,30 @@
+# Directorios internos — no publicar en Hosting
+VENTAS EL MANZANO/
+VENTAS EL MANZANO LOCAL/
+SERVIDOR2_DATOS_AYER/
+SOLO EJEMPLO/
+FLUJOS .MD/
+backups/
+.claude/
+
+# Archivos sensibles
+users_export.json
+**/*.ini
+**/*.env
+**/credenciales*
+**/SEGURIDAD_CREDENCIALES*
+
+# Binarios y archivos de trabajo
+**/*.xlsm
+**/*.xlsb
+**/*.xltm
+**/*.pptx
+**/*.pptm
+**/*.mp4
+**/*.exe
+**/*.bat
+**/*.py
+**/*.sh
+**/*.sql
+**/*.pdf
+**/*.xlsx

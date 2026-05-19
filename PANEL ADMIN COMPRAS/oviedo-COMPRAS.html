@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>Ferretería Oviedo — Panel Compras</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+:root{--R:#DA0000;--R2:#b50000;--dark:#111827;--card:#fff;--border:#e5e7eb;--g:#6b7280;
+  --verde:#059669;--rojo:#dc2626;--azul:#2563eb;--amarillo:#d97706;--naranja:#f97316}
+/* EXCLUSION PANEL */
+.excl-panel{padding:10px 14px;background:#fef2f2;border-bottom:1px solid #fecaca}
+.excl-title{font-size:10px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.excl-chk{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#374151;cursor:pointer;padding:2px 0}
+.excl-chk input{accent-color:var(--R)}
+/* SIN VENTA */
+.sv-12{background:#fee2e2!important}.sv-6{background:#fff7ed!important}.sv-cob{background:#fefce8!important}
+/* SUGERIDO */
+.sug-alta{color:var(--rojo);font-weight:700}
+.tab-seg{display:flex;gap:4px;flex-wrap:wrap}
+.tsb{background:#f3f4f6;color:#374151;border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+.tsb.active{background:var(--R);color:#fff;border-color:var(--R)}
+.tsb:hover:not(.active){background:#e5e7eb}
+/* TEMPORADA */
+.temp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.temp-card{background:#fff;border-radius:12px;padding:14px 16px;border:2px solid var(--border);transition:.2s;cursor:default}
+.temp-card.actual{border-color:var(--R);background:#fff5f5}
+.temp-card.proxima{border-color:#f97316;background:#fff7ed}
+.temp-icon{font-size:28px;margin-bottom:4px}
+.temp-name{font-size:13px;font-weight:700;color:var(--dark)}
+.temp-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;margin-left:6px}
+.temp-badge.actual{background:#fee2e2;color:#991b1b}
+.temp-badge.proxima{background:#ffedd5;color:#c2410c}
+.temp-stat{font-size:11px;color:var(--g);margin-top:2px}
+/* ABC80 badge */
+.abc80{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700}
+.abc80-A{background:#fee2e2;color:#991b1b}
+.abc80-B{background:#fff7ed;color:#c2410c}
+.abc80-C{background:#fefce8;color:#854d0e}
+.abc80-D{background:#f3f4f6;color:#6b7280}
+/* COB badge */
+.cob-ok{color:var(--verde);font-weight:700}
+.cob-low{color:var(--rojo);font-weight:700}
+.cob-high{color:var(--amarillo);font-weight:600}
+/* UPDATE BANNER */
+#updateBanner{display:none;position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;color:#fff;padding:12px 20px;align-items:center;justify-content:space-between;gap:12px;z-index:9998;border-top:3px solid var(--R);box-shadow:0 -4px 20px rgba(0,0,0,.35);animation:slideUp .3s ease}
+#updateBanner.show{display:flex}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.ub-text{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ub-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.ub-btn{background:var(--R);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.ub-btn:hover{background:var(--R2)}
+.ub-close{background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;font-family:inherit;line-height:1}
+.ub-close:hover{background:rgba(255,255,255,.2)}
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#111827,#DA0000);display:flex;align-items:center;justify-content:center;z-index:9999}
+.lbox{background:#fff;border-radius:20px;padding:36px 32px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
+.llogo{display:block;margin:0 auto 16px;width:190px;max-width:85%}
+.ltitle{font-size:20px;font-weight:800;color:var(--dark);margin-bottom:2px}
+.lsub{font-size:12px;color:var(--g);margin-bottom:24px}
+.linput{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:10px;outline:none;transition:.2s}
+.linput:focus{border-color:var(--R);box-shadow:0 0 0 3px rgba(218,0,0,.1)}
+.lbtn{width:100%;padding:13px;background:var(--R);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.lbtn:hover{background:var(--R2)}
+.lerr{color:var(--rojo);font-size:12px;margin-top:6px;min-height:18px}
+/* LAYOUT */
+#app{display:none;min-height:100vh}
+.topbar{background:#1a1a1a;color:#fff;padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.tbl-left{display:flex;align-items:center;gap:12px}
+.top-logo{height:44px;width:auto;flex-shrink:0}
+.top-title{font-size:15px;font-weight:700}
+.top-sub{font-size:11px;color:#9ca3af}
+.tbl-right{display:flex;align-items:center;gap:10px}
+.btn-logout{background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-logout:hover{background:rgba(255,255,255,.18)}
+.hamburger{display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:7px 10px;font-size:18px;cursor:pointer;line-height:1}
+/* SIDEBAR */
+.app-body{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:236px;background:var(--card);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;transition:transform .25s}
+.sbrand{padding:14px;display:flex;flex-direction:column;align-items:center;text-align:center;border-bottom:2px solid var(--R);background:#1a1a1a}
+.sbrand-logo{height:46px;width:auto;margin-bottom:5px}
+.sbrand-name{color:#fff;font-size:12px;font-weight:700}
+.sbrand-sub{color:#9ca3af;font-size:10px;margin-top:1px}
+.sg{padding:5px 0;border-bottom:1px solid var(--border)}
+.sg:last-child{border-bottom:none}
+.sg-lbl{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.8px;padding:7px 16px 2px;display:block}
+.nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 16px;font-size:13px;font-weight:600;color:var(--g);cursor:pointer;font-family:inherit;background:none;border:none;border-left:3px solid transparent;white-space:nowrap;transition:.15s;text-align:left}
+.nb.active{color:var(--R);background:#fff6f5;border-left-color:var(--R)}
+.nb:hover:not(.active){background:#f9fafb;color:var(--dark)}
+.sov{display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,.4);z-index:190}
+@media(max-width:768px){.hamburger{display:flex}.sidebar{position:fixed;top:60px;left:0;bottom:0;z-index:200;transform:translateX(-236px)}.sidebar.open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.15)}.sov.open{display:block}.top-sub{display:none}}
+/* MAIN */
+.main-content{flex:1;min-width:0;overflow-x:hidden}
+.content{padding:18px;max-width:1140px;margin:0 auto}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.ph{margin-bottom:18px}
+.ph-title{font-size:21px;font-weight:800;color:var(--dark)}
+.ph-sub{font-size:13px;color:var(--g);margin-top:3px}
+/* CARDS */
+.card{background:var(--card);border-radius:14px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:1px solid var(--border);margin-bottom:14px}
+.ct{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+/* STATS */
+.sg2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:560px){.sg2{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:860px){.sg2{grid-template-columns:repeat(6,1fr)}}
+.sc{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.sv{font-size:24px;font-weight:800;color:var(--dark)}
+.sl{font-size:11px;color:var(--g);margin-top:2px}
+.si{font-size:18px;margin-bottom:5px}
+.sc.danger .sv{color:var(--rojo)}.sc.warn .sv{color:var(--amarillo)}.sc.success .sv{color:var(--verde)}.sc.primary .sv{color:var(--R)}
+/* TABLES */
+.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#f9fafb;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:8px 11px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fafafa}
+.tbl tr.row-A td{background:#fff5f5}
+.tbl tr.row-A:hover td{background:#fee2e2}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.b-A{background:#fee2e2;color:#991b1b}.b-B{background:#dbeafe;color:#1e40af}
+.b-C{background:#fef3c7;color:#92400e}.b-D{background:#f3f4f6;color:#374151}
+.b-sin{background:#fce7f3;color:#9d174d}
+.b-ok{background:#d1fae5;color:#065f46}.b-err{background:#fee2e2;color:#991b1b}
+.b-warn{background:#fef3c7;color:#92400e}.b-info{background:#dbeafe;color:#1e40af}
+.b-gray{background:#f3f4f6;color:#374151}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.btn-primary{background:var(--R);color:#fff}.btn-primary:hover{background:var(--R2)}
+.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb}.btn-secondary:hover{background:#e5e7eb}
+.btn-email{background:#0f172a;color:#fff}.btn-email:hover{background:#1e293b}
+.btn-success{background:#d1fae5;color:var(--verde)}
+/* FILTERS */
+.fr{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.fi{padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:.2s;background:#fff}
+.fi:focus{border-color:var(--R);box-shadow:0 0 0 3px rgba(218,0,0,.08)}
+.fi-long{min-width:220px;flex:1}
+.fi-sel{cursor:pointer}
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:4px 10px;font-size:11px;font-weight:600;border-radius:20px;border:1.5px solid #d1d5db;background:#fff;color:var(--g);cursor:pointer;transition:.15s;font-family:inherit}
+.chip.on{background:var(--R);border-color:var(--R);color:#fff}
+.chip:hover:not(.on){border-color:var(--R);color:var(--R)}
+/* PAGINACIÓN */
+.pr{display:flex;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap}
+.pb{padding:4px 11px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:#fff;color:var(--dark);transition:.15s}
+.pb.on{background:var(--R);color:#fff;border-color:var(--R)}
+.pb:hover:not(.on){background:#f3f4f6}
+.pi{font-size:12px;color:var(--g);margin-left:auto}
+/* CHARTS */
+.cw{position:relative;height:260px}
+.c2col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.c2col{grid-template-columns:1fr}}
+/* DROP ZONE */
+.dz{border:2px dashed #d1d5db;border-radius:12px;padding:28px;text-align:center;color:var(--g);transition:.2s;cursor:pointer;margin-bottom:14px}
+.dz:hover,.dz.over{border-color:var(--R);color:var(--R);background:#fff6f5}
+/* STATUS */
+.ds{display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:14px}
+.ds.ok{background:#d1fae5;color:#065f46}.ds.warn{background:#fef3c7;color:#92400e}.ds.err{background:#fee2e2;color:#991b1b}
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.mo.open{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:680px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.mh{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.mt{font-size:16px;font-weight:800;color:var(--dark)}
+.mc{background:none;border:none;font-size:22px;cursor:pointer;color:var(--g);padding:2px 6px;border-radius:6px;line-height:1}
+.mc:hover{background:#f3f4f6}
+.mb{padding:18px 22px}
+/* ALERTS */
+#alertBox{position:fixed;top:68px;right:14px;z-index:9000;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.ai{background:#fff;border-radius:10px;padding:11px 15px;box-shadow:0 4px 16px rgba(0,0,0,.15);font-size:13px;font-weight:600;border-left:4px solid;pointer-events:all;min-width:220px;max-width:320px;animation:sIn .22s ease}
+@keyframes sIn{from{transform:translateX(36px);opacity:0}to{transform:translateX(0);opacity:1}}
+.ai.ok{border-color:var(--verde);color:#065f46}.ai.err{border-color:var(--rojo);color:#991b1b}.ai.info{border-color:var(--azul);color:#1e40af}
+/* MARCA BARS */
+.mbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.mbar-lbl{font-size:12px;font-weight:600;color:var(--dark);width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbar-track{flex:1;height:14px;background:#f3f4f6;border-radius:7px;overflow:hidden}
+.mbar-fill{height:100%;background:var(--R);border-radius:7px;transition:.4s}
+.mbar-val{font-size:12px;font-weight:700;color:var(--R);min-width:28px;text-align:right}
+/* MARCA DETAIL PANEL */
+.marca-det{background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px;display:none}
+.marca-det.open{display:block}
+.mdet-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mdet-title{font-size:15px;font-weight:800;color:var(--dark)}
+.mdet-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--g);padding:2px 8px;border-radius:6px;font-family:inherit;line-height:1}
+.mdet-close:hover{background:#e5e7eb}
+.mdet-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:640px){.mdet-kpi{grid-template-columns:repeat(2,1fr)}}
+.mdk{background:#fff;border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center}
+.mdk-v{font-size:17px;font-weight:800}
+.mdk-l{font-size:10px;color:var(--g);margin-top:1px}
+/* SEGMENTACIÓN */
+.seg-wrap{overflow-x:auto;margin-top:8px}
+.seg-tbl{border-collapse:collapse;width:100%;font-size:12px}
+.seg-tbl th{background:#f9fafb;padding:7px 10px;font-size:10px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.4px;border:1px solid var(--border);white-space:nowrap}
+.seg-tbl td{padding:8px 10px;border:1px solid var(--border);text-align:center;transition:.12s}
+.seg-tbl td:first-child{font-weight:700;text-align:left;background:#f9fafb}
+/* TOAST exclusión */
+#exclToast{display:none;position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:8000;box-shadow:0 4px 20px rgba(0,0,0,.25);pointer-events:none;animation:fadeToast .3s ease}
+@keyframes fadeToast{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+/* EMAIL FORM */
+.ef-row{margin-bottom:14px}
+.ef-lbl{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:4px;display:block}
+.ef-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:.2s}
+.ef-input:focus{border-color:var(--R);box-shadow:0 0 0 3px rgba(218,0,0,.08)}
+.ef-radios{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.ef-radio{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s}
+.ef-radio input{accent-color:var(--R)}
+.ef-radio:has(input:checked){border-color:var(--R);background:#fff6f5;color:var(--R)}
+.ef-nota{font-size:11px;color:var(--g);margin-top:6px;background:#f9fafb;border-radius:6px;padding:8px 10px}
+</style>
+</head>
+<body>
+<div id="exclToast"></div>
+<div id="alertBox"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="lbox">
+    <img src="logo_oviedo.jpg" class="llogo" alt="Ferretería Oviedo" onerror="this.style.display='none'">
+    <div class="ltitle">Panel Compras</div>
+    <div class="lsub">Ferretería Oviedo — Área de Compras</div>
+    <input type="password" id="lpass" class="linput" placeholder="Contraseña" autocomplete="current-password">
+    <button class="lbtn" onclick="doLogin()">Ingresar</button>
+    <div class="lerr" id="lerr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tbl-left">
+      <button class="hamburger" onclick="toggleSB()">☰</button>
+      <img src="logo_oviedo.jpg" class="top-logo" alt="Oviedo" onerror="this.style.display='none'">
+      <div><div class="top-title">Panel Compras</div><div class="top-sub">Ferretería Oviedo S.A.</div></div>
+    </div>
+    <div class="tbl-right">
+      <span id="topDate" style="font-size:11px;color:#9ca3af"></span>
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div class="sov" id="sov" onclick="closeSB()"></div>
+  <div class="app-body">
+    <div class="sidebar" id="sidebar">
+      <div class="sbrand">
+        <img src="logo_oviedo.jpg" class="sbrand-logo" alt="Oviedo" onerror="this.style.display='none'">
+        <div class="sbrand-name">Ferretería Oviedo S.A.</div>
+        <div class="sbrand-sub">Panel de Compras</div>
+      </div>
+      <!-- Filtros de exclusión global -->
+      <div class="excl-panel">
+        <div class="excl-title">🚫 Excluir del panel</div>
+        <label class="excl-chk"><input type="checkbox" id="exclDD" onchange="applyExcl()"> Productos (DD)</label>
+        <label class="excl-chk"><input type="checkbox" id="exclDesc" onchange="applyExcl()"> Descontinuados</label>
+        <label class="excl-chk"><input type="checkbox" id="exclOutlet" onchange="applyExcl()"> Outlet</label>
+      </div>
+      <div class="sg">
+        <span class="sg-lbl">Resumen</span>
+        <button class="nb active" id="nav-dash" onclick="showTab('dash')">📊 Dashboard</button>
+      </div>
+      <div class="sg">
+        <span class="sg-lbl">Quiebres y Stock</span>
+        <button class="nb" id="nav-quiebres" onclick="showTab('quiebres')">🔴 Quiebres</button>
+        <button class="nb" id="nav-marcas" onclick="showTab('marcas')">🏷 Por Marca</button>
+        <button class="nb" id="nav-bodegas" onclick="showTab('bodegas')">🏭 Stock Bodegas</button>
+      </div>
+      <div class="sg">
+        <span class="sg-lbl">Gestión de Compra</span>
+        <button class="nb" id="nav-sinventa" onclick="showTab('sinventa')">🔻 Sin Movimiento</button>
+        <button class="nb" id="nav-sugerido" onclick="showTab('sugerido')">💡 Sugerido Compra</button>
+        <button class="nb" id="nav-temporada" onclick="showTab('temporada')">🌿 Por Temporada</button>
+      </div>
+      <div class="sg">
+        <span class="sg-lbl">Análisis</span>
+        <button class="nb" id="nav-abc" onclick="showTab('abc')">🔤 Clasificación ABC 80/15/5</button>
+        <button class="nb" id="nav-ranking" onclick="showTab('ranking')">🏆 Ranking Ventas</button>
+      </div>
+      <div class="sg">
+        <span class="sg-lbl">Reportes</span>
+        <button class="nb" id="nav-email" onclick="openEmail()">📧 Enviar Informe</button>
+        <button class="nb" id="nav-datos" onclick="showTab('datos')">🔄 Datos</button>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="content">
+
+        <!-- ══ DASHBOARD ══════════════════════════════════ -->
+        <div class="tab-pane active" id="tab-dash">
+          <div class="ph">
+            <div class="ph-title">📊 Dashboard Ejecutivo</div>
+            <div class="ph-sub" id="dashSub">Cargando datos...</div>
+          </div>
+          <div class="sg2" id="dashKPI">
+            <div class="sc"><div class="si">📦</div><div class="sv" id="k-total">—</div><div class="sl">Total SKUs</div></div>
+            <div class="sc danger"><div class="si">🔴</div><div class="sv" id="k-q">—</div><div class="sl">Quiebres totales</div></div>
+            <div class="sc danger"><div class="si">🚨</div><div class="sv" id="k-qA">—</div><div class="sl">Quiebres Tipo A</div></div>
+            <div class="sc warn"><div class="si">⚠️</div><div class="sv" id="k-qB">—</div><div class="sl">Quiebres Tipo B</div></div>
+            <div class="sc success"><div class="si">🅰️</div><div class="sv" id="k-A">—</div><div class="sl">SKUs Tipo A</div></div>
+            <div class="sc"><div class="si">🏷</div><div class="sv" id="k-marcas">—</div><div class="sl">Marcas con quiebre A</div></div>
+          </div>
+          <div class="c2col">
+            <div class="card"><div class="ct">📊 Distribución ABC</div><div class="cw"><canvas id="cTipo"></canvas></div></div>
+            <div class="card"><div class="ct">🏭 Stock total por bodega</div><div class="cw"><canvas id="cBodega"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="ct">🚨 Top marcas con quiebres Tipo A</div>
+            <div id="dashMarcaBars"></div>
+          </div>
+          <div class="card">
+            <div class="ct">🔴 Quiebres críticos — Tipo A sin stock</div>
+            <div class="tw" id="dashTopA"></div>
+          </div>
+        </div>
+
+        <!-- ══ QUIEBRES ════════════════════════════════════ -->
+        <div class="tab-pane" id="tab-quiebres">
+          <div class="ph"><div class="ph-title">🔴 Quiebres de Stock</div><div class="ph-sub">Productos con stock cero. Filas rojas = Tipo A (alta rotación)</div></div>
+          <div class="fr">
+            <input type="text" id="fqBuscar" class="fi fi-long" placeholder="🔍 Código, descripción o marca..." oninput="_p.q=1;renderQ()">
+            <select id="fqTipo" class="fi fi-sel" onchange="_p.q=1;renderQ()">
+              <option value="">Todos los tipos</option>
+              <option value="A">🔴 Tipo A — Crítico</option>
+              <option value="B">Tipo B</option>
+              <option value="C">Tipo C</option>
+              <option value="D">Tipo D</option>
+              <option value="SIN STOCK">Sin clasificar</option>
+            </select>
+            <select id="fqAbc80" class="fi fi-sel" onchange="_p.q=1;renderQ()">
+              <option value="">Todo ABC80</option>
+              <option value="A">ABC80 A</option>
+              <option value="B">ABC80 B</option>
+              <option value="C">ABC80 C</option>
+              <option value="D">ABC80 D</option>
+            </select>
+            <select id="fqMarca" class="fi fi-sel" onchange="_p.q=1;renderQ()">
+              <option value="">Todas las marcas</option>
+            </select>
+            <select id="fqBodega" class="fi fi-sel" onchange="_p.q=1;renderQ()">
+              <option value="">Todas las bodegas</option>
+            </select>
+            <label class="fi" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 11px">
+              <input type="checkbox" id="fqSoloA" onchange="_p.q=1;renderQ()"> Solo Tipo A
+            </label>
+          </div>
+          <div class="fr" style="gap:6px">
+            <button class="btn btn-primary" onclick="exportQPDF()">📄 PDF</button>
+            <button class="btn btn-secondary" onclick="exportQXLSX()">📊 Excel</button>
+            <button class="btn btn-email" onclick="openEmail('quiebres_A')">📧 Enviar por correo</button>
+            <span id="qCount" style="font-size:12px;color:var(--g);margin-left:auto"></span>
+          </div>
+          <div class="card" style="padding:14px;margin-bottom:14px">
+            <div class="ct">📊 Segmentación ABC80 — resumen interactivo</div>
+            <div class="seg-wrap" id="segTable"></div>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblQ"></div></div>
+          <div class="pr" id="pagQ"></div>
+        </div>
+
+        <!-- ══ POR MARCA ══════════════════════════════════ -->
+        <div class="tab-pane" id="tab-marcas">
+          <div class="ph"><div class="ph-title">🏷 Quiebres por Marca</div><div class="ph-sub">Marcas ordenadas por quiebres en productos Tipo A. Rojo = impacto crítico.</div></div>
+          <div class="fr">
+            <input type="text" id="fmBuscar" class="fi fi-long" placeholder="🔍 Buscar marca..." oninput="_p.m=1;renderM()">
+            <select id="fmFiltro" class="fi fi-sel" onchange="_p.m=1;renderM()">
+              <option value="">Todas las marcas</option>
+              <option value="conA">Con quiebres Tipo A</option>
+              <option value="conB">Con quiebres Tipo B</option>
+              <option value="criticas">Críticas (≥5 quiebres A)</option>
+            </select>
+            <button class="btn btn-primary" onclick="exportMarcasPDF()">📄 PDF</button>
+            <button class="btn btn-secondary" onclick="exportMarcasXLSX()">📊 Excel</button>
+            <button class="btn btn-email" onclick="openEmail('marcas')">📧 Enviar</button>
+          </div>
+          <div class="c2col" style="margin-bottom:14px">
+            <div class="card"><div class="ct">🔴 Quiebres A por marca (top 15)</div><div class="cw"><canvas id="cMarcas"></canvas></div></div>
+            <div class="card"><div class="ct">📊 SKUs por tipo en marcas con quiebre A</div><div class="cw"><canvas id="cMarcasTipo"></canvas></div></div>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblM"></div></div>
+          <div class="pr" id="pagM"></div>
+          <!-- PANEL DETALLE MARCA -->
+          <div class="marca-det" id="marcaDetalle">
+            <div class="mdet-hdr">
+              <div class="mdet-title" id="mdetTitle">Marca</div>
+              <button class="mdet-close" onclick="closeMarcaDet()">✕</button>
+            </div>
+            <div class="mdet-kpi" id="mdetKPI"></div>
+            <div class="c2col" style="margin-bottom:12px">
+              <div class="card" style="padding:14px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Distribución ABC80</div><div style="height:180px"><canvas id="cMarcaDet"></canvas></div></div>
+              <div class="card" style="padding:14px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Quiebres vs Stock</div><div style="height:180px"><canvas id="cMarcaDetStock"></canvas></div></div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--dark);margin-bottom:8px">Productos — <span id="mdetProdCount" style="color:var(--g);font-weight:400"></span></div>
+            <div id="mdetProds"></div>
+          </div>
+        </div>
+
+        <!-- ══ STOCK BODEGAS ══════════════════════════════ -->
+        <div class="tab-pane" id="tab-bodegas">
+          <div class="ph"><div class="ph-title">🏭 Stock por Bodegas</div><div class="ph-sub">Vista de disponibilidad por bodega. Verde = tiene stock, rojo = sin stock.</div></div>
+          <div class="fr">
+            <input type="text" id="fbBuscar" class="fi fi-long" placeholder="🔍 Buscar..." oninput="_p.b=1;renderB()">
+            <select id="fbBodega" class="fi fi-sel" onchange="_p.b=1;renderB()">
+              <option value="">Todas las bodegas</option>
+            </select>
+            <select id="fbTipo" class="fi fi-sel" onchange="_p.b=1;renderB()">
+              <option value="">Todos los tipos</option>
+              <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+            </select>
+            <select id="fbMarca" class="fi fi-sel" onchange="_p.b=1;renderB()">
+              <option value="">Todas las marcas</option>
+            </select>
+            <label class="fi" style="display:flex;align-items:center;gap:5px;cursor:pointer">
+              <input type="checkbox" id="fbSoloStock" onchange="_p.b=1;renderB()"> Solo con stock
+            </label>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblB"></div></div>
+          <div class="pr" id="pagB"></div>
+        </div>
+
+        <!-- ══ ABC ════════════════════════════════════════ -->
+        <div class="tab-pane" id="tab-abc">
+          <div class="ph"><div class="ph-title">🔤 Clasificación ABC</div><div class="ph-sub">Análisis de rotación. Ventas año móvil desde hoja TIPO del XLSM.</div></div>
+          <div class="sg2" id="abcKPI"></div>
+          <div class="card"><div class="ct">📊 Distribución ABC</div><div class="cw" style="height:220px"><canvas id="cABC"></canvas></div></div>
+          <div class="fr">
+            <select id="faFiltro" class="fi fi-sel" onchange="_p.a=1;renderA()">
+              <option value="">Todos los tipos</option>
+              <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="SIN STOCK">Sin Stock</option>
+            </select>
+            <select id="faMarca" class="fi fi-sel" onchange="_p.a=1;renderA()">
+              <option value="">Todas las marcas</option>
+            </select>
+            <input type="text" id="faBuscar" class="fi fi-long" placeholder="🔍 Buscar..." oninput="_p.a=1;renderA()">
+            <button class="btn btn-secondary" onclick="exportABCXLSX()">📊 Excel</button>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblA"></div></div>
+          <div class="pr" id="pagA"></div>
+        </div>
+
+        <!-- ══ RANKING ════════════════════════════════════ -->
+        <div class="tab-pane" id="tab-ranking">
+          <div class="ph"><div class="ph-title">🏆 Ranking de Ventas</div><div class="ph-sub">Productos con mayor movimiento — período ene 2025 a may 2025.</div></div>
+          <div class="fr">
+            <input type="text" id="frBuscar" class="fi fi-long" placeholder="🔍 Buscar..." oninput="_p.r=1;renderR()">
+            <select id="frFamilia" class="fi fi-sel" onchange="_p.r=1;renderR()"><option value="">Todas las familias</option></select>
+            <button class="btn btn-primary" onclick="exportRPDF()">📄 PDF</button>
+            <button class="btn btn-secondary" onclick="exportRXLSX()">📊 Excel</button>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblR"></div></div>
+          <div class="pr" id="pagR"></div>
+        </div>
+
+        <!-- ══ SIN MOVIMIENTO ════════════════════════════ -->
+        <div class="tab-pane" id="tab-sinventa">
+          <div class="ph"><div class="ph-title">🔻 Stock Sin Movimiento</div><div class="ph-sub">Capital inmovilizado: productos con stock pero sin ventas recientes. Basado en venta año móvil (TIPO) y venta acumulada 2026 (RESUMEN).</div></div>
+          <div class="sg2" id="svKPI"></div>
+          <div class="fr">
+            <select id="fsvPeriodo" class="fi fi-sel" onchange="_p.sv=1;renderSV()">
+              <option value="">Todos con stock</option>
+              <option value="12m">Sin venta 12+ meses (ventaAño=0)</option>
+              <option value="6m">Sin venta reciente (~4-6m) (sin venta 2026)</option>
+              <option value="cob12p">Cobertura &gt;12 meses</option>
+              <option value="cob6">Cobertura 6-12 meses</option>
+            </select>
+            <select id="fsvAbc" class="fi fi-sel" onchange="_p.sv=1;renderSV()">
+              <option value="">Todo ABC80</option>
+              <option value="A">ABC80 = A</option>
+              <option value="B">ABC80 = B</option>
+              <option value="C">ABC80 = C</option>
+              <option value="D">ABC80 = D (sin venta)</option>
+            </select>
+            <select id="fsvMarca" class="fi fi-sel" onchange="_p.sv=1;renderSV()">
+              <option value="">Todas las marcas</option>
+            </select>
+            <input type="text" id="fsvBuscar" class="fi fi-long" placeholder="🔍 Código, descripción..." oninput="_p.sv=1;renderSV()">
+            <button class="btn btn-secondary" onclick="exportSVXLSX()">📊 Excel</button>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblSV"></div></div>
+          <div class="pr" id="pagSV"></div>
+        </div>
+
+        <!-- ══ SUGERIDO COMPRA ════════════════════════════ -->
+        <div class="tab-pane" id="tab-sugerido">
+          <div class="ph"><div class="ph-title">💡 Sugerido de Compra</div><div class="ph-sub">Grupos con cobertura baja (&lt;1 mes) o en quiebre. Meta: 3 meses de cobertura. Sugerido = (ventaAño÷12×3) − stock disponible − tránsito.</div></div>
+          <div class="sg2" id="sugKPI"></div>
+          <div class="fr">
+            <div class="tab-seg">
+              <button class="tsb active" id="sugBtnMarca" onclick="setSugVista('marca',this)">Por Marca</button>
+              <button class="tsb" id="sugBtnFamilia" onclick="setSugVista('familia',this)">Por Familia</button>
+              <button class="tsb" id="sugBtnSubfamilia" onclick="setSugVista('subfamilia',this)">Por Subfamilia</button>
+              <button class="tsb" id="sugBtnHiperfamilia" onclick="setSugVista('hiperfamilia',this)">Por Hiperfamilia</button>
+            </div>
+            <input type="text" id="fSugBuscar" class="fi fi-long" placeholder="🔍 Buscar grupo..." oninput="renderSugerido()">
+            <button class="btn btn-secondary" onclick="exportSugXLSX()">📊 Excel</button>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblSug"></div></div>
+        </div>
+
+        <!-- ══ TEMPORADA ══════════════════════════════════ -->
+        <div class="tab-pane" id="tab-temporada">
+          <div class="ph"><div class="ph-title">🌿 Análisis por Temporada</div><div class="ph-sub">Productos clasificados por temporada chilena según familia/hiperfamilia. Planifica compras por estación.</div></div>
+          <div id="tempCards" class="temp-grid"></div>
+          <div class="fr">
+            <select id="ftTemp" class="fi fi-sel" onchange="_p.t=1;renderTemp()">
+              <option value="">Todas las temporadas</option>
+              <option value="VERANO">🌞 Verano (Dic-Feb)</option>
+              <option value="OTOÑO">🍂 Otoño (Mar-May)</option>
+              <option value="INVIERNO">❄️ Invierno (Jun-Ago)</option>
+              <option value="PRIMAVERA">🌸 Primavera (Sep-Nov)</option>
+              <option value="GENERAL">⚙️ General (todo el año)</option>
+            </select>
+            <select id="ftAbc" class="fi fi-sel" onchange="_p.t=1;renderTemp()">
+              <option value="">Todo ABC80</option>
+              <option value="A">ABC80 = A</option>
+              <option value="B">ABC80 = B</option>
+            </select>
+            <label class="fi" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 11px">
+              <input type="checkbox" id="ftSoloQ" onchange="_p.t=1;renderTemp()"> Solo quiebres
+            </label>
+            <input type="text" id="ftBuscar" class="fi fi-long" placeholder="🔍 Buscar..." oninput="_p.t=1;renderTemp()">
+            <button class="btn btn-secondary" onclick="exportTempXLSX()">📊 Excel</button>
+            <button class="btn btn-primary" onclick="exportTempPDF()">📄 PDF</button>
+            <button class="btn btn-email" onclick="openEmail('temporada')">📧 Enviar</button>
+          </div>
+          <div class="card" style="padding:0"><div class="tw" id="tblTemp"></div></div>
+          <div class="pr" id="pagTemp"></div>
+        </div>
+
+        <!-- ══ DATOS ══════════════════════════════════════ -->
+        <div class="tab-pane" id="tab-datos">
+          <div class="ph"><div class="ph-title">🔄 Datos</div><div class="ph-sub">Fuente activa y carga manual del XLSM</div></div>
+          <div id="datosStatus"></div>
+          <div class="card">
+            <div class="ct">☁️ Datos desde Hosting</div>
+            <p style="font-size:13px;color:var(--g);margin-bottom:12px">Los datos se cargan automáticamente al abrir. Para actualizarlos ejecuta <strong>PUBLICAR_COMPRAS.bat</strong>.</p>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 13px;font-size:12px;font-family:monospace;color:#374151;margin-bottom:12px">D:\ferreteria-oviedo\PANEL ADMIN COMPRAS\PUBLICAR_COMPRAS.bat</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="btn btn-primary" onclick="recargar()">🔄 Recargar</button>
+              <span id="recargarSt" style="font-size:12px;color:var(--g)"></span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct">📂 Cargar XLSM manualmente</div>
+            <p style="font-size:13px;color:var(--g);margin-bottom:12px">Arrastra el archivo XLSM aquí para procesarlo localmente (no sube nada).</p>
+            <div class="dz" id="dropZone" onclick="document.getElementById('xlsmFile').click()">
+              <div style="font-size:32px;margin-bottom:8px">📁</div>
+              <div style="font-size:14px;font-weight:700;margin-bottom:3px">Arrastra SOLICITUDES SANTIAGO_TLC2.XLSM aquí</div>
+              <div style="font-size:12px">o haz clic para seleccionar</div>
+            </div>
+            <input type="file" id="xlsmFile" accept=".xlsm,.xlsx" style="display:none" onchange="loadXLSM(this.files[0])">
+            <div id="xlsmSt"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMAIL -->
+<div class="mo" id="moEmail" onclick="if(event.target===this)closeEmail()">
+  <div class="modal">
+    <div class="mh">
+      <div class="mt">📧 Enviar Informe por Correo</div>
+      <button class="mc" onclick="closeEmail()">✕</button>
+    </div>
+    <div class="mb">
+      <div style="background:#fff6f5;border-radius:8px;padding:10px 13px;font-size:12px;color:#374151;margin-bottom:16px;border-left:3px solid var(--R)">
+        <strong>Remitente:</strong> agonzalez@oviedo.cl — Alejandro González, Jefe Sucursal El Manzano
+      </div>
+      <div class="ef-row">
+        <label class="ef-lbl">Destinatario *</label>
+        <input type="email" id="emailTo" class="ef-input" placeholder="correo@empresa.cl" value="">
+      </div>
+      <div class="ef-row">
+        <label class="ef-lbl">Tipo de informe</label>
+        <div class="ef-radios" id="emailRadios">
+          <label class="ef-radio"><input type="radio" name="erpt" value="quiebres_A" checked> 🚨 Quiebres Tipo A</label>
+          <label class="ef-radio"><input type="radio" name="erpt" value="quiebres_AB"> ⚠️ Quiebres A + B</label>
+          <label class="ef-radio"><input type="radio" name="erpt" value="todos_quiebres"> 🔴 Todos los quiebres</label>
+          <label class="ef-radio"><input type="radio" name="erpt" value="marcas"> 🏷 Quiebres por marca</label>
+          <label class="ef-radio"><input type="radio" name="erpt" value="resumen"> 📊 Resumen ejecutivo</label>
+          <label class="ef-radio"><input type="radio" name="erpt" value="temporada"> 🌿 Por Temporada</label>
+        </div>
+      </div>
+      <div class="ef-row">
+        <label class="ef-lbl">Mensaje adicional (opcional)</label>
+        <textarea id="emailMsg" class="ef-input" rows="3" placeholder="Estimado/a,..."></textarea>
+      </div>
+      <div class="ef-nota">
+        ℹ️ El Excel se descargará automáticamente. Luego se abrirá tu cliente de correo con asunto y cuerpo prellenados. Adjunta el archivo descargado antes de enviar.
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="enviarInforme()" style="flex:1">📊 Descargar Excel</button>
+        <button class="btn btn-email" onclick="abrirCorreo()" style="flex:1">📧 Abrir correo</button>
+        <button class="btn btn-secondary" onclick="closeEmail()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="mo" id="moDet" onclick="if(event.target===this)closeDet()">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="detTitle">Detalle</div><button class="mc" onclick="closeDet()">✕</button></div>
+    <div class="mb" id="detBody"></div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+var DATA_URL  = 'data/compras.json';
+var LOGIN_KEY = 'cp_v2';
+var ACCESS_PASS = 'compras2026';
+var BODEGAS = ["PEM","SEM","IEM","TEM","RCE","CD","ICD","RCD","PCS","SIR"];
+
+// ── ESTADO ──────────────────────────────────────────────
+var _data=null, _prods=[], _ranking=[], _stats={}, _sugerido={}, _ventaHist={};
+var _p={q:1,m:1,b:1,a:1,r:1,sv:1,sug:1,t:1};
+var PAGE=50;
+var _charts={};
+var _sugVista='marca';
+
+// ── EXCLUSIÓN GLOBAL ────────────────────────────────────
+var _excl={dd:false,desc:false,outlet:false};
+function applyExcl(){
+  _excl.dd    =document.getElementById('exclDD').checked;
+  _excl.desc  =document.getElementById('exclDesc').checked;
+  _excl.outlet=document.getElementById('exclOutlet').checked;
+  _p={q:1,m:1,b:1,a:1,r:1,sv:1,sug:1,t:1};
+  var ac=document.querySelector('.tab-pane.active');
+  if(ac&&_data) showTab(ac.id.replace('tab-',''));
+  // Toast con conteo de excluidos
+  var exclCount=_prods.filter(function(p){return isExcluded(p);}).length;
+  var labels=[_excl.dd?'(DD)':'',_excl.desc?'Descontinuados':'',_excl.outlet?'Outlet':''].filter(Boolean);
+  var msg=exclCount>0?'Excluyendo '+exclCount+' productos: '+labels.join(', '):'Filtros de exclusión desactivados';
+  var t=document.getElementById('exclToast');
+  t.textContent=msg;t.style.display='block';
+  clearTimeout(t._tid);t._tid=setTimeout(function(){t.style.display='none';},2800);
+}
+function isExcluded(p){
+  if(_excl.dd&&p.isDD)return true;
+  if(_excl.desc&&p.isDescontinuado)return true;
+  if(_excl.outlet&&p.isOutlet)return true;
+  return false;
+}
+function getProds(){return _prods.filter(function(p){return !isExcluded(p);});}
+
+// ── LOGIN ────────────────────────────────────────────────
+function doLogin(){
+  if(document.getElementById('lpass').value===ACCESS_PASS){
+    localStorage.setItem(LOGIN_KEY,'1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  } else {
+    document.getElementById('lerr').textContent='Contraseña incorrecta';
+    document.getElementById('lpass').value='';
+  }
+}
+document.getElementById('lpass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+function doLogout(){localStorage.removeItem(LOGIN_KEY);location.reload();}
+if(localStorage.getItem(LOGIN_KEY)==='1'){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.addEventListener('DOMContentLoaded',initApp);
+}
+
+// ── INIT ────────────────────────────────────────────────
+function initApp(){fetchData();}
+function fetchData(){
+  fetch(DATA_URL+'?t='+Date.now())
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(j){applyData(j,'hosting');})
+    .catch(function(e){showAlert('Sin datos del hosting. Usa pestaña Datos.','err');setDS('err','Sin datos — '+e.message);});
+}
+function applyData(json,fuente){
+  _data=json;_prods=json.productos||[];_ranking=json.ranking||[];_stats=json.stats||{};
+  _sugerido=json.sugeridoCompra||{};_ventaHist=json.ventaHistorica||{};
+  var gen=json.generado?json.generado.slice(0,10):'—';
+  document.getElementById('topDate').textContent='Datos: '+gen;
+  setDS('ok',_prods.length+' productos · '+(fuente==='local'?'archivo local':'hosting')+' · '+gen);
+  var marcasSet=Array.from(new Set(_prods.map(function(p){return(p.marca||'').trim();}).filter(Boolean))).sort();
+  ['fqMarca','fbMarca','faMarca','fsvMarca'].forEach(function(id){
+    var el=document.getElementById(id); if(!el)return;
+    el.innerHTML='<option value="">Todas las marcas</option>';
+    marcasSet.forEach(function(m){el.innerHTML+='<option value="'+esc(m)+'">'+esc(m)+'</option>';});
+  });
+  var bods=_stats.bodegas||BODEGAS;
+  ['fqBodega','fbBodega'].forEach(function(id){
+    var el=document.getElementById(id); if(!el)return;
+    el.innerHTML='<option value="">Todas las bodegas</option>';
+    bods.forEach(function(b){el.innerHTML+='<option value="'+b+'">'+b+'</option>';});
+  });
+  var fams=Array.from(new Set(_ranking.map(function(r){return r.familia||'';}).filter(Boolean))).sort();
+  var fe=document.getElementById('frFamilia');
+  if(fe){fe.innerHTML='<option value="">Todas las familias</option>';fams.forEach(function(f){fe.innerHTML+='<option value="'+esc(f)+'">'+esc(f)+'</option>';});}
+  renderDash();
+  showAlert('Datos cargados: '+_prods.length+' productos','ok');
+}
+function setDS(type,msg){
+  var b=document.getElementById('datosStatus');if(!b)return;
+  var icon=type==='ok'?'✅':type==='warn'?'⚠️':'❌';
+  b.innerHTML='<div class="ds '+type+'">'+icon+' '+msg+'</div>';
+}
+
+// ── TABS ─────────────────────────────────────────────────
+function showTab(id){
+  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  var nb=document.getElementById('nav-'+id); if(nb) nb.classList.add('active');
+  closeSB();
+  if(!_data) return;
+  if(id==='dash') renderDash();
+  else if(id==='quiebres'){renderQ();renderSegmentacion();}
+  else if(id==='marcas') renderMarcas();
+  else if(id==='bodegas') renderB();
+  else if(id==='abc'){renderABCKPI();renderABCChart();renderA();}
+  else if(id==='ranking') renderR();
+  else if(id==='sinventa'){renderSVKPI();renderSV();}
+  else if(id==='sugerido'){renderSugKPI();renderSugerido();}
+  else if(id==='temporada'){renderTempCards();renderTemp();}
+}
+function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sov').classList.toggle('open');}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sov').classList.remove('open');}
+
+// ── ALERTS ───────────────────────────────────────────────
+function showAlert(msg,type){
+  var b=document.getElementById('alertBox'),d=document.createElement('div');
+  d.className='ai '+(type||'info');d.textContent=msg;b.appendChild(d);
+  setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},3600);
+}
+
+// ── UTILS ────────────────────────────────────────────────
+function fn(n){return n==null?'—':Number(n).toLocaleString('es-CL');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function bTipo(t){
+  var u=(t||'').toUpperCase().trim();
+  var map={A:'b-A',B:'b-B',C:'b-C',D:'b-D'};
+  return '<span class="badge '+(map[u]||'b-sin')+'">'+(u||'S/E')+'</span>';
+}
+function buildPag(cid,total,key,fn2){
+  var pages=Math.ceil(total/PAGE)||1,cur=_p[key]||1,row=document.getElementById(cid);
+  if(!row)return;
+  if(pages<=1){row.innerHTML='';return;}
+  var h='',s=Math.max(1,cur-2),e=Math.min(pages,s+4);
+  if(cur>1)h+='<button class="pb" onclick="_p.'+key+'='+(cur-1)+';'+fn2+'">‹</button>';
+  for(var p=s;p<=e;p++)h+='<button class="pb'+(p===cur?' on':'')+'" onclick="_p.'+key+'='+p+';'+fn2+'">'+p+'</button>';
+  if(cur<pages)h+='<button class="pb" onclick="_p.'+key+'='+(cur+1)+';'+fn2+'">›</button>';
+  h+='<span class="pi">'+cur+'/'+pages+' ('+total+' registros)</span>';
+  row.innerHTML=h;
+}
+function filtQ(){
+  var q=(document.getElementById('fqBuscar').value||'').toLowerCase();
+  var tipo=(document.getElementById('fqTipo').value||'').toUpperCase();
+  var abc80v=(document.getElementById('fqAbc80').value||'');
+  var marc=(document.getElementById('fqMarca').value||'');
+  var bod=(document.getElementById('fqBodega').value||'');
+  var soloA=document.getElementById('fqSoloA').checked;
+  return getProds().filter(function(p){
+    if(!p.quiebre) return false;
+    if(soloA&&(p.tipo||'').toUpperCase().trim()!=='A') return false;
+    if(tipo&&(p.tipo||'').toUpperCase().trim()!==tipo) return false;
+    if(abc80v&&(p.abc80||'D')!==abc80v) return false;
+    if(marc&&(p.marca||'').trim()!==marc) return false;
+    if(bod&&((p.stocks&&p.stocks[bod])||0)>0) return false;
+    if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q)&&!(p.marca||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+// ── DASHBOARD ────────────────────────────────────────────
+function renderDash(){
+  var prods=getProds();
+  var tc=_stats.tiposCount||{};
+  var abc80c=_stats.abc80Count||{};
+  var qA=prods.filter(function(p){return p.quiebre&&(p.tipo||'').toUpperCase().trim()==='A';}).length;
+  var qB=prods.filter(function(p){return p.quiebre&&(p.tipo||'').toUpperCase().trim()==='B';}).length;
+  var mQ=((_stats.topQuiebresA)||[]).length;
+  // % venta en riesgo por quiebres A (ABC80)
+  var totalVA=_stats.totalVentaAnio||0;
+  var riesgoA=_stats.riesgoVentaA||0;
+  var pctRiesgo=_stats.pctRiesgoA||0;
+  document.getElementById('k-total').textContent=fn(prods.length);
+  document.getElementById('k-q').textContent=fn(_stats.quiebres);
+  document.getElementById('k-qA').textContent=fn(qA);
+  document.getElementById('k-qB').textContent=fn(qB);
+  document.getElementById('k-A').textContent=fn(tc['A']||0);
+  document.getElementById('k-marcas').textContent=fn(mQ);
+  var gen=(_data&&_data.generado)?_data.generado.slice(0,10):'—';
+  document.getElementById('dashSub').textContent='Fuente: '+((_data&&_data.fuente)||'—')+' · '+gen+' · Quiebres A: '+qA+' SKUs · Riesgo venta: '+pctRiesgo+'%';
+
+  // Chart ABC80 doughnut (80/15/5 recalculado)
+  var abc80labels=['A (80%)','B (15%)','C (5%)','D (sin venta)'];
+  var abc80vals=[abc80c['A']||0,abc80c['B']||0,abc80c['C']||0,abc80c['D']||0];
+  mkChart('cTipo','doughnut',abc80labels,abc80vals,
+    ['#dc2626','#f97316','#d97706','#9ca3af'],
+    {legend:{position:'right',labels:{font:{family:'Inter',size:11}}},
+     plugins:{tooltip:{callbacks:{label:function(ctx){return ctx.label+': '+ctx.parsed+' SKUs';}}}}});
+
+  // Chart bodegas bar
+  var bods=(_stats.bodegas||BODEGAS).slice(0,8);
+  var bvals=bods.map(function(b){return prods.reduce(function(a,p){return a+((p.stocks&&p.stocks[b])||0);},0);});
+  mkChart('cBodega','bar',bods,bvals,['rgba(218,0,0,.7)'],{legend:{display:false},scales:{y:{ticks:{callback:function(v){return v>=1000?Math.round(v/1000)+'K':v;}}}}});
+
+  // Barras marcas con más quiebres A — con % de venta en riesgo
+  var top=(_stats.topQuiebresA||[]).slice(0,12);
+  var maxQ=top.length?top[0].quiebresA:1;
+  var html='';
+  if(!top.length){html='<p style="color:var(--g);font-size:13px">Sin datos de marcas.</p>';}
+  top.forEach(function(m){
+    var pct=Math.round(m.quiebresA/maxQ*100);
+    var color=m.quiebresA>=5?'var(--R)':m.quiebresA>=2?'var(--amarillo)':'var(--verde)';
+    var pctVA=totalVA>0?Math.round(m.ventaAnioA/totalVA*100):0;
+    html+='<div class="mbar-row"><div class="mbar-lbl">'+esc(m.marca)+'</div>';
+    html+='<div class="mbar-track"><div class="mbar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
+    html+='<div class="mbar-val" style="color:'+color+'">'+m.quiebresA+' <span style="font-size:10px;color:var(--g)">('+pctVA+'% venta)</span></div></div>';
+  });
+  // Indicador riesgo total
+  if(pctRiesgo>0){
+    html='<div style="background:#fff5f5;border-left:3px solid var(--R);padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px">'
+      +'<strong style="color:var(--rojo)">⚠️ Riesgo: '+pctRiesgo+'% de la venta anual</strong> está en productos ABC80-A con quiebre'
+      +'</div>'+html;
+  }
+  document.getElementById('dashMarcaBars').innerHTML=html||'<p style="color:var(--g);font-size:13px">Sin datos.</p>';
+
+  // Top quiebres A con ABC80 y cobertura
+  var topA=prods.filter(function(p){return p.quiebre&&(p.tipo||'').toUpperCase().trim()==='A';})
+    .sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);}).slice(0,20);
+  var th='<table class="tbl"><thead><tr><th>Código</th><th>Marca</th><th>Descripción</th><th>Tipo</th><th>ABC80</th><th>Venta 2026</th><th>Venta Año</th><th>Sugerido</th></tr></thead><tbody>';
+  if(!topA.length) th+='<tr><td colspan="8" style="text-align:center;color:var(--g);padding:20px">Sin quiebres tipo A</td></tr>';
+  topA.forEach(function(p){
+    th+='<tr class="row-A"><td><code style="font-size:11px">'+esc(p.codigo)+'</code></td>';
+    th+='<td style="font-size:11px;color:var(--g)">'+esc(p.marca||'—')+'</td>';
+    th+='<td style="max-width:200px;font-size:12px">'+esc(p.descripcion)+'</td>';
+    th+='<td>'+bTipo(p.tipo)+'</td>';
+    th+='<td>'+abc80Badge(p.abc80)+'</td>';
+    th+='<td style="font-weight:600">'+fn(p.venta)+'</td>';
+    th+='<td style="font-weight:700;color:var(--R)">'+fn(p.ventaAnioMovil||0)+'</td>';
+    th+='<td>'+(p.sugerido>0?'<strong class="sug-alta">'+fn(p.sugerido)+'</strong>':'—')+'</td></tr>';
+  });
+  th+='</tbody></table>';
+  document.getElementById('dashTopA').innerHTML=th;
+}
+
+// ── QUIEBRES ─────────────────────────────────────────────
+function renderQ(){
+  var fl=filtQ();
+  document.getElementById('qCount').textContent=fl.length+' registros';
+  var s=(_p.q-1)*PAGE,page=fl.slice(s,s+PAGE);
+  var h='<table class="tbl"><thead><tr><th>Código</th><th>Marca</th><th>Descripción</th><th>Tipo</th><th>ABC80</th><th>Venta E-A</th><th>Venta Año</th><th>PEM</th><th>CD</th><th>Tr.CD</th><th>Tr.PEM</th><th>Tot.Disp</th><th></th></tr></thead><tbody>';
+  if(!page.length) h+='<tr><td colspan="13" style="text-align:center;color:var(--g);padding:22px">Sin resultados</td></tr>';
+  page.forEach(function(p,i){
+    var isA=(p.tipo||'').toUpperCase().trim()==='A';
+    var totDisp=(p.stockTotal||0)+(p.transitoCD||0)+(p.transitoPEM||0);
+    h+='<tr'+(isA?' class="row-A"':'')+'>';
+    h+='<td><code style="font-size:11px">'+esc(p.codigo)+'</code></td>';
+    h+='<td style="font-size:11px;color:var(--g)">'+esc(p.marca||'—')+'</td>';
+    h+='<td style="max-width:200px;font-size:12px">'+esc(p.descripcion)+'</td>';
+    h+='<td>'+bTipo(p.tipo)+'</td>';
+    h+='<td>'+abc80Badge(p.abc80)+'</td>';
+    h+='<td style="font-size:12px">'+fn(p.venta)+'</td>';
+    h+='<td style="font-size:12px;color:var(--R);font-weight:600">'+fn(p.ventaAnioMovil||0)+'</td>';
+    h+='<td>'+fn((p.stocks&&p.stocks.PEM)||0)+'</td>';
+    h+='<td>'+fn((p.stocks&&p.stocks.CD)||0)+'</td>';
+    h+='<td style="font-size:11px;color:var(--azul);font-weight:600">'+fn(p.transitoCD||0)+'</td>';
+    h+='<td style="font-size:11px;color:#7c3aed;font-weight:600">'+fn(p.transitoPEM||0)+'</td>';
+    h+='<td style="font-weight:700;color:'+(totDisp>0?'var(--verde)':'var(--rojo)')+'">'+fn(totDisp)+'</td>';
+    h+='<td><button class="btn btn-secondary" style="padding:3px 7px;font-size:11px" onclick="showDet(\'q\','+(s+i)+')">Ver</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('tblQ').innerHTML=h;
+  buildPag('pagQ',fl.length,'q','renderQ()');
+}
+
+// ── POR MARCA ─────────────────────────────────────────────
+var _cMarcas=null,_cMarcasTipo=null;
+function renderMarcas(){
+  var q=(document.getElementById('fmBuscar').value||'').toLowerCase();
+  var filtro=document.getElementById('fmFiltro').value;
+  var ms=(_stats.marcaStats||[]).filter(function(m){
+    if(!m.marca||m.marca==='Sin marca') return false;
+    if(q&&!m.marca.toLowerCase().includes(q)) return false;
+    if(filtro==='conA'&&m.quiebresA<=0) return false;
+    if(filtro==='conB'&&m.quiebresB<=0) return false;
+    if(filtro==='criticas'&&m.quiebresA<5) return false;
+    return true;
+  });
+  var s=(_p.m-1)*PAGE,page=ms.slice(s,s+PAGE);
+  var h='<table class="tbl"><thead><tr><th>Marca</th><th>SKUs A</th><th>Quiebres A</th><th>% Quiebre A</th><th>SKUs B</th><th>Quiebres B</th><th>Venta E-A</th><th>Venta Año Móvil</th><th>Total SKUs</th></tr></thead><tbody>';
+  if(!page.length) h+='<tr><td colspan="9" style="text-align:center;color:var(--g);padding:22px">Sin resultados</td></tr>';
+  page.forEach(function(m){
+    var critica=m.quiebresA>=5;
+    var warn=m.quiebresA>=2&&m.quiebresA<5;
+    var rowCls=critica?' class="row-A"':'';
+    var pctCls=critica?'style="color:var(--rojo);font-weight:800"':warn?'style="color:var(--amarillo);font-weight:700"':'';
+    var mJson=JSON.stringify(m.marca).replace(/"/g,'&quot;');
+    h+='<tr'+rowCls+' style="cursor:pointer" onclick="selectMarca('+mJson+')" title="Clic para ver productos">';
+    h+='<td style="font-weight:700">'+esc(m.marca)+(critica?' <span class="badge b-A">Crítico</span>':'')+'</td>';
+    h+='<td style="font-weight:700">'+fn(m.skuA)+'</td>';
+    h+='<td><strong style="color:var(--rojo)">'+fn(m.quiebresA)+'</strong></td>';
+    h+='<td '+pctCls+'>'+m.pctQuiebreA+'%</td>';
+    h+='<td>'+fn(m.skuB)+'</td>';
+    h+='<td style="color:var(--amarillo);font-weight:600">'+fn(m.quiebresB)+'</td>';
+    h+='<td>'+fn(m.totalVenta)+'</td>';
+    h+='<td style="font-weight:600">'+fn(m.totalVentaAnio||0)+'</td>';
+    h+='<td style="color:var(--g)">'+fn(m.totalSKU)+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('tblM').innerHTML=h;
+  buildPag('pagM',ms.length,'m','renderM()');
+  renderMarcasCharts(ms);
+}
+function renderM(){_p.m=_p.m||1;renderMarcas();}
+function renderMarcasCharts(ms){
+  var top=ms.filter(function(m){return m.quiebresA>0;}).slice(0,15);
+  if(_cMarcas) _cMarcas.destroy();
+  var topRef=top;
+  _cMarcas=new Chart(document.getElementById('cMarcas'),{
+    type:'bar',
+    data:{labels:top.map(function(m){return m.marca.length>18?m.marca.slice(0,18)+'…':m.marca;}),
+      datasets:[
+        {label:'Quiebres A',data:top.map(function(m){return m.quiebresA;}),backgroundColor:'rgba(220,38,38,.8)',borderRadius:5,borderSkipped:false},
+        {label:'Quiebres B',data:top.map(function(m){return m.quiebresB;}),backgroundColor:'rgba(37,99,235,.6)',borderRadius:5,borderSkipped:false}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{position:'top',labels:{font:{family:'Inter',size:11}}},
+        tooltip:{callbacks:{title:function(items){return topRef[items[0].dataIndex]?topRef[items[0].dataIndex].marca:'';}}}},
+      scales:{x:{stacked:false}},
+      onClick:function(evt,elements){
+        if(elements.length>0){var m=topRef[elements[0].index];if(m)selectMarca(m.marca);}
+      },
+      onHover:function(evt){evt.native.target.style.cursor='pointer';}
+    }
+  });
+  // Tipo breakdown for those with quiebre A
+  var tot={A:0,B:0,C:0,D:0};
+  top.forEach(function(m){tot.A+=m.skuA;tot.B+=m.skuB;tot.C+=m.skuC;tot.D+=m.skuD;});
+  if(_cMarcasTipo) _cMarcasTipo.destroy();
+  _cMarcasTipo=new Chart(document.getElementById('cMarcasTipo'),{
+    type:'doughnut',
+    data:{labels:['A','B','C','D'],datasets:[{data:[tot.A,tot.B,tot.C,tot.D],backgroundColor:['#dc2626','#2563eb','#d97706','#6b7280'],borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:'Inter',size:12}}}}}
+  });
+}
+
+// ── SELECCIÓN MARCA ──────────────────────────────────────
+var _marcaSeleccionada=null,_cMarcaDet=null,_cMarcaDetStock=null;
+function selectMarca(marca){
+  if(_marcaSeleccionada===marca){closeMarcaDet();return;}
+  _marcaSeleccionada=marca;
+  var panel=document.getElementById('marcaDetalle');
+  panel.classList.add('open');
+  setTimeout(function(){panel.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
+
+  var prods=getProds().filter(function(p){return (p.marca||'').trim()===marca;});
+  var quiebres=prods.filter(function(p){return p.quiebre;});
+  var tipA=prods.filter(function(p){return (p.abc80||'D')==='A';});
+  var totalVA=prods.reduce(function(s,p){return s+(p.ventaAnioMovil||0);},0);
+  var totalSug=prods.reduce(function(s,p){return s+(p.sugerido||0);},0);
+
+  document.getElementById('mdetTitle').textContent=marca;
+  document.getElementById('mdetProdCount').textContent=prods.length+' SKUs';
+  document.getElementById('mdetKPI').innerHTML=[
+    {v:prods.length,  l:'Total SKUs',    c:''},
+    {v:quiebres.length,l:'En quiebre',  c:quiebres.length>0?'var(--rojo)':'var(--verde)'},
+    {v:tipA.length,   l:'ABC80 A',       c:'var(--R)'},
+    {v:fmtN(totalVA), l:'Venta año',     c:'var(--azul)'},
+    {v:fmtN(totalSug),l:'Sugerido uds',  c:totalSug>0?'var(--rojo)':''},
+    {v:prods.filter(function(p){return (p.mesesCobertura||0)<1&&(p.ventaAnioMovil||0)>0;}).length,l:'Cob.<1 mes',c:'var(--amarillo)'},
+  ].map(function(k){return '<div class="mdk"><div class="mdk-v" style="color:'+k.c+'">'+k.v+'</div><div class="mdk-l">'+k.l+'</div></div>';}).join('');
+
+  // Chart 1: ABC80 distribución
+  var abc={A:0,B:0,C:0,D:0};
+  var abcQ={A:0,B:0,C:0,D:0};
+  prods.forEach(function(p){var k=p.abc80||'D';abc[k]++;if(p.quiebre)abcQ[k]++;});
+  if(_cMarcaDet) _cMarcaDet.destroy();
+  _cMarcaDet=new Chart(document.getElementById('cMarcaDet'),{type:'bar',
+    data:{labels:['A','B','C','D'],datasets:[
+      {label:'Total',data:[abc.A,abc.B,abc.C,abc.D],backgroundColor:['rgba(220,38,38,.45)','rgba(249,115,22,.45)','rgba(217,119,6,.45)','rgba(156,163,175,.45)'],borderRadius:4},
+      {label:'Quiebre',data:[abcQ.A,abcQ.B,abcQ.C,abcQ.D],backgroundColor:['rgba(220,38,38,.9)','rgba(249,115,22,.9)','rgba(217,119,6,.9)','rgba(156,163,175,.9)'],borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{family:'Inter',size:10}}}},scales:{y:{ticks:{callback:function(v){return v>=1000?Math.round(v/1000)+'K':v;}}}}}
+  });
+
+  // Chart 2: Stock vs Quiebre doughnut
+  var conStock=prods.filter(function(p){return !p.quiebre;}).length;
+  if(_cMarcaDetStock) _cMarcaDetStock.destroy();
+  _cMarcaDetStock=new Chart(document.getElementById('cMarcaDetStock'),{type:'doughnut',
+    data:{labels:['Con stock','En quiebre'],datasets:[{data:[conStock,quiebres.length],backgroundColor:['#059669','#dc2626'],borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:'Inter',size:11}}},tooltip:{callbacks:{label:function(ctx){var tot=conStock+quiebres.length;return ctx.label+': '+ctx.parsed+' ('+((ctx.parsed/tot)*100).toFixed(1)+'%)';}}}}
+  }});
+
+  // Tabla productos
+  var sorted=prods.slice().sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);});
+  var h='<div class="tw"><table class="tbl"><thead><tr><th>Código</th><th>Descripción</th><th>ABC80</th><th>Stock</th><th>Tr.CD</th><th>Tr.PEM</th><th>Cob.</th><th>Venta Año</th><th>Sugerido</th><th>Estado</th></tr></thead><tbody>';
+  sorted.slice(0,40).forEach(function(p){
+    h+='<tr class="'+(p.quiebre&&(p.abc80==='A'||p.abc80==='B')?'row-A':'')+'"><td><code style="font-size:11px">'+esc(p.codigo)+'</code></td>';
+    h+='<td style="font-size:12px;max-width:200px">'+esc(p.descripcion)+'</td>';
+    h+='<td>'+abc80Badge(p.abc80)+'</td>';
+    h+='<td>'+fn(p.stockTotal)+'</td>';
+    h+='<td style="color:var(--azul);font-weight:600">'+fn(p.transitoCD||0)+'</td>';
+    h+='<td style="color:#7c3aed;font-weight:600">'+fn(p.transitoPEM||0)+'</td>';
+    h+='<td>'+cobBadge(p.mesesCobertura||0)+'</td>';
+    h+='<td style="font-weight:600">'+fn(p.ventaAnioMovil||0)+'</td>';
+    h+='<td>'+(p.sugerido>0?'<strong class="sug-alta">'+fn(p.sugerido)+'</strong>':'—')+'</td>';
+    h+='<td>'+(p.quiebre?'<span class="badge b-err">Quiebre</span>':'<span class="badge b-ok">OK</span>')+'</td></tr>';
+  });
+  if(sorted.length>40) h+='<tr><td colspan="10" style="text-align:center;color:var(--g);font-size:11px;padding:8px">+ '+(sorted.length-40)+' productos más</td></tr>';
+  h+='</tbody></table></div>';
+  document.getElementById('mdetProds').innerHTML=h;
+}
+function closeMarcaDet(){
+  _marcaSeleccionada=null;
+  document.getElementById('marcaDetalle').classList.remove('open');
+}
+
+// ── SEGMENTACIÓN ──────────────────────────────────────────
+function renderSegmentacion(){
+  var el=document.getElementById('segTable'); if(!el)return;
+  var prods=getProds();
+  var data={A:{t:0,q:0,va:0},B:{t:0,q:0,va:0},C:{t:0,q:0,va:0},D:{t:0,q:0,va:0}};
+  prods.forEach(function(p){
+    var k=p.abc80||'D'; if(!data[k])return;
+    data[k].t++; data[k].va+=p.ventaAnioMovil||0;
+    if(p.quiebre) data[k].q++;
+  });
+  var totalT=prods.length,totalQ=prods.filter(function(p){return p.quiebre;}).length;
+  var totalVA=prods.reduce(function(s,p){return s+(p.ventaAnioMovil||0);},0);
+  var colors={A:'#fff0f0',B:'#fff7ed',C:'#fefce8',D:'#f9fafb'};
+  var html='<table class="seg-tbl"><thead><tr><th>ABC80</th><th>Total SKUs</th><th>En Quiebre</th><th>Con Stock</th><th>% Quiebre</th><th>Venta Año</th><th>Filtrar</th></tr></thead><tbody>';
+  ['A','B','C','D'].forEach(function(k){
+    var d=data[k],pct=d.t>0?+(d.q/d.t*100).toFixed(1):0;
+    html+='<tr style="background:'+colors[k]+'"><td>'+abc80Badge(k)+'</td>';
+    html+='<td><strong>'+fn(d.t)+'</strong></td>';
+    html+='<td style="color:var(--rojo);font-weight:700">'+fn(d.q)+'</td>';
+    html+='<td style="color:var(--verde);font-weight:700">'+fn(d.t-d.q)+'</td>';
+    html+='<td><strong>'+pct+'%</strong></td>';
+    html+='<td>'+fmtN(d.va)+'</td>';
+    html+='<td><button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="filtrarPorAbc80(\''+k+'\')">Ver quiebres</button></td></tr>';
+  });
+  var totPct=totalT>0?+(totalQ/totalT*100).toFixed(1):0;
+  html+='<tr style="background:#e5e7eb;font-weight:700"><td>Total</td><td>'+fn(totalT)+'</td><td style="color:var(--rojo)">'+fn(totalQ)+'</td><td style="color:var(--verde)">'+fn(totalT-totalQ)+'</td><td>'+totPct+'%</td><td>'+fmtN(totalVA)+'</td><td></td></tr>';
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+function filtrarPorAbc80(k){
+  document.getElementById('fqAbc80').value=k;
+  _p.q=1; renderQ();
+  document.getElementById('tblQ').scrollIntoView({behavior:'smooth',block:'nearest'});
+  showAlert('Filtrando quiebres ABC80 = '+k,'info');
+}
+
+// ── STOCK BODEGAS ─────────────────────────────────────────
+function renderB(){
+  var q=(document.getElementById('fbBuscar').value||'').toLowerCase();
+  var bodSel=document.getElementById('fbBodega').value;
+  var tipo=(document.getElementById('fbTipo').value||'').toUpperCase();
+  var marc=document.getElementById('fbMarca').value||'';
+  var soloSt=document.getElementById('fbSoloStock').checked;
+  var bods=_stats.bodegas||BODEGAS;
+  var cols=bodSel?[bodSel]:bods;
+  var fl=getProds().filter(function(p){
+    if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q)) return false;
+    if(tipo&&(p.tipo||'').toUpperCase().trim()!==tipo) return false;
+    if(marc&&(p.marca||'').trim()!==marc) return false;
+    if(soloSt&&!cols.some(function(b){return(p.stocks&&p.stocks[b]||0)>0;})) return false;
+    return true;
+  });
+  var s=(_p.b-1)*PAGE,page=fl.slice(s,s+PAGE);
+  var h='<table class="tbl"><thead><tr><th>Código</th><th>Marca</th><th>Descripción</th><th>Tipo</th>';
+  cols.forEach(function(b){h+='<th>'+b+'</th>';});
+  h+='<th>Total</th></tr></thead><tbody>';
+  if(!page.length) h+='<tr><td colspan="'+(5+cols.length)+'" style="text-align:center;color:var(--g);padding:22px">Sin resultados</td></tr>';
+  page.forEach(function(p){
+    var isA=(p.tipo||'').toUpperCase().trim()==='A';
+    h+='<tr'+(isA&&p.quiebre?' class="row-A"':'')+'>';
+    h+='<td><code style="font-size:11px">'+esc(p.codigo)+'</code></td>';
+    h+='<td style="font-size:11px;color:var(--g)">'+esc(p.marca||'—')+'</td>';
+    h+='<td style="max-width:220px;font-size:12px">'+esc(p.descripcion)+'</td>';
+    h+='<td>'+bTipo(p.tipo)+'</td>';
+    cols.forEach(function(b){var v=(p.stocks&&p.stocks[b])||0;h+='<td style="font-weight:600;color:'+(v>0?'var(--verde)':'#d1d5db')+'">'+fn(v)+'</td>';});
+    h+='<td style="font-weight:700;color:'+(p.stockTotal>0?'var(--dark)':'var(--rojo)')+'">'+fn(p.stockTotal)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('tblB').innerHTML=h;
+  buildPag('pagB',fl.length,'b','renderB()');
+}
+
+// ── ABC ──────────────────────────────────────────────────
+var _cABC=null;
+function renderABCKPI(){
+  var prods=getProds();
+  var tc=_stats.tiposCount||{},tot=prods.length||1;
+  var abc80c=_stats.abc80Count||{};
+  // Mostrar también ABC80
+  var svKpi=document.getElementById('abcKPI');
+  if(svKpi){
+    svKpi.innerHTML=[
+      {k:'A',l:'ABC80 A — Top 80% venta',v:abc80c['A']||0,c:'#dc2626'},
+      {k:'B',l:'ABC80 B — 80-95% venta', v:abc80c['B']||0,c:'#f97316'},
+      {k:'C',l:'ABC80 C — 95-100% venta',v:abc80c['C']||0,c:'#d97706'},
+      {k:'D',l:'ABC80 D — Sin venta',    v:abc80c['D']||0,c:'#6b7280'},
+    ].map(function(t){
+      return '<div class="sc"><div class="si">'+abc80Badge(t.k)+'</div><div class="sv" style="color:'+t.c+'">'+fn(t.v)+'</div><div class="sl">'+t.l+' ('+((t.v/tot)*100).toFixed(1)+'%)</div></div>';
+    }).join('');
+    return;
+  }
+  var tipos=[{k:'A',l:'Tipo A — Alta rotación',c:'#dc2626'},{k:'B',l:'Tipo B',c:'#2563eb'},{k:'C',l:'Tipo C',c:'#d97706'},{k:'D',l:'Tipo D',c:'#6b7280'},{k:'SIN STOCK',l:'Sin stock',c:'#9d174d'}];
+  document.getElementById('abcKPI').innerHTML=tipos.map(function(t){
+    var v=tc[t.k]||0;
+    return '<div class="sc"><div class="si">📦</div><div class="sv" style="color:'+t.c+'">'+fn(v)+'</div><div class="sl">'+t.l+' ('+((v/tot)*100).toFixed(1)+'%)</div></div>';
+  }).join('');
+}
+function renderABCChart(){
+  var abc80c=_stats.abc80Count||{};
+  var labels=['A (80%)','B (15%)','C (5%)','D (sin venta)'];
+  var vals=[abc80c['A']||0,abc80c['B']||0,abc80c['C']||0,abc80c['D']||0];
+  if(_cABC) _cABC.destroy();
+  _cABC=new Chart(document.getElementById('cABC'),{type:'bar',data:{labels:labels,datasets:[{label:'SKUs',data:vals,backgroundColor:['#dc2626','#f97316','#d97706','#9ca3af'],borderRadius:8,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var total=vals.reduce(function(a,b){return a+b;},0);return ctx.parsed.y+' SKUs ('+((ctx.parsed.y/total)*100).toFixed(1)+'%)';}}}},scales:{y:{ticks:{callback:function(v){return v>=1000?Math.round(v/1000)+'K':v;}}}}}});
+}
+function renderA(){
+  var tipo=(document.getElementById('faFiltro').value||'').toUpperCase();
+  var marc=document.getElementById('faMarca').value||'';
+  var q=(document.getElementById('faBuscar').value||'').toLowerCase();
+  var fl=getProds().filter(function(p){
+    if(tipo&&(p.tipo||'').toUpperCase().trim()!==tipo) return false;
+    if(marc&&(p.marca||'').trim()!==marc) return false;
+    if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  fl.sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);});
+  var s=(_p.a-1)*PAGE,page=fl.slice(s,s+PAGE);
+  var h='<table class="tbl"><thead><tr><th>Código</th><th>Marca</th><th>Descripción</th><th>Tipo XLSM</th><th>ABC80</th><th>Stock</th><th>Cob.</th><th>Venta 2026</th><th>Venta Año Móvil</th><th>Familia</th><th>Estado</th></tr></thead><tbody>';
+  if(!page.length) h+='<tr><td colspan="11" style="text-align:center;color:var(--g);padding:22px">Sin resultados</td></tr>';
+  page.forEach(function(p){
+    var isA=(p.abc80||'D')==='A';
+    h+='<tr'+(isA&&p.quiebre?' class="row-A"':'')+'>';
+    h+='<td><code style="font-size:11px">'+esc(p.codigo)+'</code></td>';
+    h+='<td style="font-size:11px;color:var(--g)">'+esc(p.marca||'—')+'</td>';
+    h+='<td style="max-width:180px;font-size:12px">'+esc(p.descripcion)+'</td>';
+    h+='<td>'+bTipo(p.tipo)+'</td>';
+    h+='<td>'+abc80Badge(p.abc80)+'</td>';
+    h+='<td>'+fn(p.stockTotal)+'</td>';
+    h+='<td>'+cobBadge(p.mesesCobertura||0)+'</td>';
+    h+='<td>'+fn(p.venta||0)+'</td>';
+    h+='<td style="font-weight:600;color:var(--R)">'+fn(p.ventaAnioMovil||0)+'</td>';
+    h+='<td style="font-size:11px;color:var(--g)">'+esc(p.familia||'—')+'</td>';
+    h+='<td>'+(p.quiebre?'<span class="badge b-err">⚠ Quiebre</span>':'<span class="badge b-ok">OK</span>')+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('tblA').innerHTML=h;
+  buildPag('pagA',fl.length,'a','renderA()');
+}
+
+// ── RANKING ──────────────────────────────────────────────
+function renderR(){
+  var q=(document.getElementById('frBuscar').value||'').toLowerCase();
+  var fam=document.getElementById('frFamilia').value||'';
+  var fl=_ranking.filter(function(p){
+    if(fam&&(p.familia||'')!==fam) return false;
+    if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  var s=(_p.r-1)*PAGE,page=fl.slice(s,s+PAGE);
+  var h='<table class="tbl"><thead><tr><th>#</th><th>Código</th><th>Descripción</th><th>Hiperfamilia</th><th>Familia</th><th>Subfamilia</th><th>Cantidad</th><th>Valor Total</th></tr></thead><tbody>';
+  if(!page.length) h+='<tr><td colspan="8" style="text-align:center;color:var(--g);padding:22px">Sin datos de ranking</td></tr>';
+  page.forEach(function(p,i){
+    var pos=s+i+1,med=pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':'';
+    h+='<tr><td style="font-weight:700;color:var(--g)">'+med+' '+pos+'</td>';
+    h+='<td><code style="font-size:11px">'+esc(p.codigo)+'</code></td>';
+    h+='<td style="max-width:240px;font-size:12px">'+esc(p.descripcion)+'</td>';
+    h+='<td style="font-size:11px;color:var(--g)">'+esc(p.hiperfamilia||'—')+'</td>';
+    h+='<td style="font-size:11px;color:var(--g)">'+esc(p.familia||'—')+'</td>';
+    h+='<td style="font-size:11px;color:var(--g)">'+esc(p.subfamilia||'—')+'</td>';
+    h+='<td><strong>'+fn(p.cantidad)+'</strong></td>';
+    h+='<td style="font-weight:700;color:var(--R)">$'+fn(p.valorTotal||0)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('tblR').innerHTML=h;
+  buildPag('pagR',fl.length,'r','renderR()');
+}
+
+// ── DETALLE PRODUCTO ──────────────────────────────────────
+function showDet(fuente,idx){
+  var list=fuente==='q'?filtQ():_prods;
+  var p=list[idx]; if(!p)return;
+  var bods=_stats.bodegas||BODEGAS;
+  var totDisp=(p.stockTotal||0)+(p.transitoCD||0)+(p.transitoPEM||0);
+  var flags=[];
+  if(p.isDD) flags.push('<span class="badge b-warn">(DD)</span>');
+  if(p.isDescontinuado) flags.push('<span class="badge b-gray">Descontinuado</span>');
+  if(p.isOutlet) flags.push('<span class="badge b-info">Outlet</span>');
+  if(p.quiebre) flags.push('<span class="badge b-err">⚠ Quiebre</span>');
+
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">';
+  h+='<div><div style="font-size:10px;color:var(--g)">CÓDIGO</div><div style="font-size:22px;font-weight:800;font-family:monospace">'+esc(p.codigo)+'</div></div>';
+  h+='<div style="display:flex;flex-direction:column;gap:4px;justify-content:center">';
+  h+=bTipo(p.tipo)+' '+abc80Badge(p.abc80);
+  if(flags.length) h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">'+flags.join('')+'</div>';
+  h+='</div>';
+  h+='<div style="grid-column:1/-1"><div style="font-size:10px;color:var(--g)">DESCRIPCIÓN</div><div style="font-size:14px;font-weight:600;margin-top:2px">'+esc(p.descripcion)+'</div></div>';
+  h+='<div><div style="font-size:10px;color:var(--g)">MARCA</div><div style="font-weight:700">'+esc(p.marca||'—')+'</div></div>';
+  h+='<div><div style="font-size:10px;color:var(--g)">FAMILIA</div><div style="font-size:13px">'+esc(p.familia||'—')+'</div></div>';
+  h+='<div><div style="font-size:10px;color:var(--g)">SUBFAMILIA</div><div style="font-size:12px;color:var(--g)">'+esc(p.subfamilia||'—')+'</div></div>';
+  h+='<div><div style="font-size:10px;color:var(--g)">HIPERFAMILIA</div><div style="font-size:12px;color:var(--g)">'+esc(p.hiperfamilia||'—')+'</div></div>';
+  h+='</div>';
+
+  // KPIs row
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">';
+  h+='<div style="text-align:center;background:#f9fafb;border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g)">VENTA 2026</div><div style="font-size:17px;font-weight:800">'+fn(p.venta)+'</div></div>';
+  h+='<div style="text-align:center;background:#fff5f5;border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g)">VENTA AÑO MÓVIL</div><div style="font-size:17px;font-weight:800;color:var(--R)">'+fn(p.ventaAnioMovil||0)+'</div></div>';
+  h+='<div style="text-align:center;background:'+(p.stockTotal>0?'#f0fdf4':'#fff5f5')+';border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g)">STOCK TOTAL</div><div style="font-size:17px;font-weight:800;color:'+(p.stockTotal>0?'var(--verde)':'var(--rojo)')+'">'+fn(p.stockTotal)+'</div></div>';
+  h+='</div>';
+
+  // Cobertura + Sugerido + Temporada
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">';
+  h+='<div style="background:#f9fafb;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--g)">COBERTURA</div><div style="font-size:20px;margin-top:4px">'+cobBadge(p.mesesCobertura||0)+'</div></div>';
+  h+='<div style="background:'+(p.sugerido>0?'#fff5f5':'#f0fdf4')+';border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--g)">SUGERIDO COMPRA</div><div style="font-size:17px;font-weight:800;color:'+(p.sugerido>0?'var(--rojo)':'var(--verde)')+';">'+(p.sugerido>0?fn(p.sugerido)+' uds':'—')+'</div></div>';
+  h+='<div style="background:#f9fafb;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--g)">TEMPORADA</div><div style="font-size:15px;margin-top:4px">'+(TEMP_ICONS[p.temporada||'GENERAL']||'⚙️')+' '+(p.temporada||'GENERAL')+'</div></div>';
+  h+='</div>';
+
+  // Tránsitos
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">';
+  h+='<div style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--g)">TRÁNSITO CD</div><div style="font-size:17px;font-weight:800;color:var(--azul)">'+fn(p.transitoCD||0)+'</div></div>';
+  h+='<div style="background:#faf5ff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--g)">TRÁNSITO PEM</div><div style="font-size:17px;font-weight:800;color:#7c3aed">'+fn(p.transitoPEM||0)+'</div></div>';
+  h+='<div style="background:'+(totDisp>0?'#f0fdf4':'#fff5f5')+';border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--g)">TOTAL DISPONIBLE</div><div style="font-size:17px;font-weight:800;color:'+(totDisp>0?'var(--verde)':'var(--rojo)')+'">'+fn(totDisp)+'</div></div>';
+  h+='</div>';
+
+  // Stock por bodega
+  h+='<div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:6px">STOCK POR BODEGA</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">';
+  bods.forEach(function(b){var v=(p.stocks&&p.stocks[b])||0;h+='<div style="text-align:center;padding:6px;background:'+(v>0?'#d1fae5':'#fee2e2')+';border-radius:6px"><div style="font-size:10px;color:var(--g)">'+b+'</div><div style="font-size:13px;font-weight:800;color:'+(v>0?'var(--verde)':'var(--rojo)')+'">'+fn(v)+'</div></div>';});
+  h+='</div>';
+
+  document.getElementById('detTitle').textContent='Detalle: '+p.codigo;
+  document.getElementById('detBody').innerHTML=h;
+  document.getElementById('moDet').classList.add('open');
+}
+function closeDet(){document.getElementById('moDet').classList.remove('open');}
+
+// ── CHART HELPER ─────────────────────────────────────────
+function mkChart(id,type,labels,data,colors,plugOpts){
+  var el=document.getElementById(id); if(!el)return;
+  if(_charts[id]) _charts[id].destroy();
+  var ds=[{data:data,backgroundColor:Array.isArray(colors)&&colors.length>1?colors:Array(data.length).fill(colors[0]),borderRadius:type==='bar'?6:0,borderWidth:type==='doughnut'?2:0,borderSkipped:false}];
+  _charts[id]=new Chart(el,{type:type,data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:plugOpts||{legend:{display:false}}}});
+}
+
+// ── RECARGAR ─────────────────────────────────────────────
+function recargar(){
+  var sp=document.getElementById('recargarSt');if(sp)sp.textContent='Recargando...';
+  fetch(DATA_URL+'?t='+Date.now()).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(j){applyData(j,'hosting');if(sp)sp.textContent='Actualizado ✓';}).catch(function(e){if(sp)sp.textContent='Error: '+e.message;});
+}
+
+// ── XLSM LOCAL ───────────────────────────────────────────
+(function(){
+  var dz=document.getElementById('dropZone');
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('over');});
+  dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');var f=e.dataTransfer.files[0];if(f)loadXLSM(f);});
+})();
+
+function loadXLSM(file){
+  if(!file)return;
+  var st=document.getElementById('xlsmSt');
+  st.innerHTML='<div class="ds warn">⏳ Procesando '+file.name+'...</div>';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'binary'});
+      var wsN=wb.SheetNames.find(function(n){return n.toUpperCase().includes('RESUMEN');})||wb.SheetNames[0];
+      var ws=wb.Sheets[wsN];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      var hIdx=0,header=null;
+      for(var i=0;i<Math.min(rows.length,20);i++){
+        var vals=rows[i].map(function(c){return String(c||'').toUpperCase();});
+        if(vals.indexOf('CODIGO')>=0){hIdx=i;header=vals;break;}
+      }
+      if(!header){st.innerHTML='<div class="ds err">❌ No se encontró encabezado</div>';return;}
+      var BODS2=BODEGAS;
+      var bodCols={};
+      BODS2.forEach(function(b){var j=header.indexOf(b);if(j>=0)bodCols[b]=j;});
+      var cVenta=-1,cTipo=-1,cMar=-1,cDesc=-1,cTrCD=-1,cTrPEM=-1;
+      header.forEach(function(h2,j){
+        if(h2==='MARCA'&&cMar<0)cMar=j;
+        if((h2==='DESCRIPCION'||h2==='DESCRIPCIÓN')&&cDesc<0)cDesc=j;
+        if(h2==='TIPO'&&cTipo<0)cTipo=j;
+        if(h2.includes('ENERO')||h2.includes('VENTA')&&cVenta<0)cVenta=j;
+        if(h2.includes('TRANSITO CD'))cTrCD=j;
+        if(h2.includes('TRANSITO PEM'))cTrPEM=j;
+      });
+      var prods=[],qC=0,tc={};
+      for(var r=hIdx+1;r<rows.length;r++){
+        var row=rows[r];if(!row||row.every(function(v){return v==null;}))continue;
+        var cod=String(row[0]||'').trim();if(!cod||cod.toUpperCase().startsWith('TOTAL'))continue;
+        var mar=cMar>=0?String(row[cMar]||'').trim():'';
+        var desc=cDesc>=0?String(row[cDesc]||'').trim():'';
+        var tipo=cTipo>=0?String(row[cTipo]||'').trim():'';
+        var venta=cVenta>=0?parseFloat(row[cVenta]||0)||0:0;
+        var trCD=cTrCD>=0?parseFloat(row[cTrCD]||0)||0:0;
+        var trPEM=cTrPEM>=0?parseFloat(row[cTrPEM]||0)||0:0;
+        var stocks={},stT=0;
+        BODS2.forEach(function(b){var v=bodCols[b]!=null?parseFloat(row[bodCols[b]]||0)||0:0;stocks[b]=v;stT+=v;});
+        var tu=tipo.toUpperCase().trim();tc[tu]=(tc[tu]||0)+1;
+        var q=tu==='SIN STOCK'||(stT===0&&['A','B','C','D'].includes(tu));
+        if(q)qC++;
+        prods.push({codigo:cod,marca:mar,descripcion:desc,tipo:tipo,stocks:stocks,stockTotal:stT,pedir:0,venta:venta,ventaAnioMovil:0,familia:'',subfamilia:'',transitoCD:trCD,transitoPEM:trPEM,quiebre:q});
+      }
+      // Calcular marca stats localmente
+      var ms=calcMarcaStats(prods);
+      var topA=ms.filter(function(m){return m.quiebresA>0&&m.marca!=='Sin marca'&&!m.marca.toUpperCase().includes('DESCONTINUADO');}).slice(0,30);
+      applyData({generado:new Date().toISOString().slice(0,10),fuente:file.name,stats:{total:prods.length,quiebres:qC,conPedir:0,tiposCount:tc,bodegas:BODS2,totalMarcas:new Set(prods.map(function(p){return p.marca;}).filter(Boolean)).size,marcaStats:ms,topQuiebresA:topA},productos:prods,ranking:[]},'local');
+      st.innerHTML='<div class="ds ok">✅ '+prods.length+' productos cargados desde archivo local</div>';
+      showTab('dash');
+    }catch(ex){st.innerHTML='<div class="ds err">❌ Error: '+ex.message+'</div>';}
+  };
+  reader.readAsBinaryString(file);
+}
+
+function calcMarcaStats(prods){
+  var m={};
+  prods.forEach(function(p){
+    var mar=(p.marca||'Sin marca').trim()||'Sin marca';
+    if(!m[mar])m[mar]={marca:mar,totalSKU:0,skuA:0,quiebresA:0,ventaA:0,ventaAnioA:0,skuB:0,quiebresB:0,skuC:0,quiebresC:0,skuD:0,quiebresD:0,totalQuiebres:0,totalVenta:0,totalVentaAnio:0,pctQuiebreA:0};
+    var tu=(p.tipo||'').toUpperCase().trim(),o=m[mar];
+    o.totalSKU++;o.totalVenta+=p.venta||0;
+    if(p.quiebre)o.totalQuiebres++;
+    if(tu==='A'){o.skuA++;o.ventaA+=p.venta||0;if(p.quiebre)o.quiebresA++;}
+    else if(tu==='B'){o.skuB++;if(p.quiebre)o.quiebresB++;}
+    else if(tu==='C'){o.skuC++;if(p.quiebre)o.quiebresC++;}
+    else if(tu==='D'){o.skuD++;if(p.quiebre)o.quiebresD++;}
+  });
+  return Object.values(m).map(function(o){o.pctQuiebreA=o.skuA>0?+(o.quiebresA/o.skuA*100).toFixed(1):0;return o;}).sort(function(a,b){return b.quiebresA-a.quiebresA;});
+}
+
+// ── EMAIL ────────────────────────────────────────────────
+var _emailTipo='quiebres_A';
+function openEmail(tipo){
+  if(tipo) _emailTipo=tipo;
+  // Pre-seleccionar radio
+  var radios=document.querySelectorAll('input[name="erpt"]');
+  radios.forEach(function(r){if(r.value===_emailTipo)r.checked=true;});
+  document.getElementById('moEmail').classList.add('open');
+}
+function closeEmail(){document.getElementById('moEmail').classList.remove('open');}
+function getEmailTipo(){
+  var r=document.querySelector('input[name="erpt"]:checked');
+  return r?r.value:'quiebres_A';
+}
+function getReporteData(){
+  var tipo=getEmailTipo();
+  if(tipo==='quiebres_A') return getProds().filter(function(p){return p.quiebre&&(p.tipo||'').toUpperCase().trim()==='A';});
+  if(tipo==='quiebres_AB') return getProds().filter(function(p){return p.quiebre&&['A','B'].includes((p.tipo||'').toUpperCase().trim());});
+  if(tipo==='todos_quiebres') return getProds().filter(function(p){return p.quiebre;});
+  if(tipo==='marcas') return (_stats.marcaStats||[]).filter(function(m){return m.quiebresA>0;});
+  if(tipo==='resumen') return null;
+  if(tipo==='temporada') return getProds().filter(function(p){return p.quiebre&&(p.abc80==='A'||p.abc80==='B');});
+  return [];
+}
+function nomReporte(){
+  var tipo=getEmailTipo();
+  var map={quiebres_A:'Quiebres Tipo A',quiebres_AB:'Quiebres A+B',todos_quiebres:'Todos los Quiebres',marcas:'Quiebres por Marca',resumen:'Resumen Ejecutivo',temporada:'Análisis por Temporada'};
+  return map[tipo]||tipo;
+}
+
+function enviarInforme(){
+  var prods=getProds();
+  if(!prods.length){showAlert('Sin datos para exportar','err');return;}
+  var tipo=getEmailTipo();
+  var wb2=XLSX.utils.book_new();
+  var gen=(_data&&_data.generado)||new Date().toISOString().slice(0,10);
+  var tc=_stats.tiposCount||{};
+  var abc80c=_stats.abc80Count||{};
+
+  if(tipo==='resumen'){
+    var qA=prods.filter(function(p){return p.quiebre&&(p.tipo||'').toUpperCase().trim()==='A';}).length;
+    var qB=prods.filter(function(p){return p.quiebre&&(p.tipo||'').toUpperCase().trim()==='B';}).length;
+    var sv12=prods.filter(function(p){return (p.ventaAnioMovil||0)===0&&(p.stockTotal||0)>0;}).length;
+    var rows=[
+      ['INFORME RESUMEN — FERRETERÍA OVIEDO',''],
+      ['Generado',gen],['Fuente',(_data&&_data.fuente)||'—'],['',''],
+      ['INDICADOR','VALOR'],
+      ['Total SKUs',prods.length],
+      ['ABC80 A (80% venta)',abc80c['A']||0],['ABC80 B (15%)',abc80c['B']||0],['ABC80 C (5%)',abc80c['C']||0],['ABC80 D (sin venta)',abc80c['D']||0],
+      ['',''],
+      ['QUIEBRES',''],
+      ['Total quiebres',_stats.quiebres||0],
+      ['Quiebres Tipo A',qA],['Quiebres Tipo B',qB],
+      ['% venta en riesgo (A)',(_stats.pctRiesgoA||0)+'%'],
+      ['Stock sin movimiento 12m',sv12],
+      ['',''],
+      ['TOP 10 MARCAS CON QUIEBRES A',''],
+      ['Marca','Quiebres A','% Quiebre A','SKUs A']
+    ];
+    (_stats.topQuiebresA||[]).slice(0,10).forEach(function(m){
+      rows.push([m.marca,m.quiebresA,m.pctQuiebreA+'%',m.skuA]);
+    });
+    XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(rows),'Resumen');
+  } else if(tipo==='marcas'){
+    var ms=(_stats.marcaStats||[]).filter(function(m){return m.quiebresA>0;});
+    var head=[['Marca','SKUs A','Quiebres A','% Quiebre A','SKUs B','Quiebres B','Total SKUs','Venta Acumulada','Venta Año Móvil']];
+    var rw=ms.map(function(m){return[m.marca,m.skuA,m.quiebresA,m.pctQuiebreA+'%',m.skuB,m.quiebresB,m.totalSKU,m.totalVenta,m.totalVentaAnio||0];});
+    XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(head.concat(rw)),'Quiebres por Marca');
+  } else if(tipo==='temporada'){
+    var fl=getProds().filter(function(p){return p.quiebre&&(p.abc80==='A'||p.abc80==='B');});
+    fl.sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);});
+    var hd=[['Temporada','Código','Marca','Descripción','ABC80','Tipo','Stock','Tr.CD','Tr.PEM','Cob.(m)','Venta 2026','Venta Año','Sugerido','Familia']];
+    var rd=fl.map(function(p){return[p.temporada||'GENERAL',p.codigo,p.marca||'',p.descripcion,p.abc80||'D',p.tipo||'',p.stockTotal||0,p.transitoCD||0,p.transitoPEM||0,p.mesesCobertura||0,p.venta||0,p.ventaAnioMovil||0,p.sugerido||0,p.familia||''];});
+    XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'Temporada Quiebres A+B');
+  } else {
+    var fl=getReporteData();
+    var bods=_stats.bodegas||BODEGAS;
+    var hd=[['Código','Marca','Descripción','Tipo','Stock Total','Venta Ene-Abr 2026','Venta Año Móvil'].concat(bods).concat(['Tránsito CD','Tránsito PEM'])];
+    var rd=fl.map(function(p){return[p.codigo,p.marca||'',p.descripcion,p.tipo||'',p.stockTotal||0,p.venta||0,p.ventaAnioMovil||0].concat(bods.map(function(b){return(p.stocks&&p.stocks[b])||0;})).concat([p.transitoCD||0,p.transitoPEM||0]);});
+    XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),nomReporte().slice(0,28));
+  }
+  XLSX.writeFile(wb2,'oviedo_'+tipo+'_'+gen.slice(0,10)+'.xlsx');
+  showAlert('Excel descargado ✓','ok');
+}
+
+function abrirCorreo(){
+  var destino=document.getElementById('emailTo').value.trim();
+  if(!destino){showAlert('Ingresa el correo de destino','err');document.getElementById('emailTo').focus();return;}
+  var tipo=getEmailTipo();
+  var gen=(_data&&_data.generado||'').slice(0,10)||new Date().toISOString().slice(0,10);
+  var tc=_stats.tiposCount||{};
+  var qA=getProds().filter(function(p){return p.quiebre&&(p.tipo||'').toUpperCase().trim()==='A';}).length;
+  var asunto='[Oviedo Compras] '+nomReporte()+' — '+gen;
+  var msg=document.getElementById('emailMsg').value.trim();
+  var cuerpo='Estimado/a,\n\n'+(msg?msg+'\n\n':'');
+  cuerpo+='Se adjunta informe: '+nomReporte()+'\n';
+  cuerpo+='Generado: '+gen+'\n\n';
+  cuerpo+='RESUMEN EJECUTIVO\n';
+  cuerpo+='━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  var prods2=getProds();
+  var sv12c=prods2.filter(function(p){return (p.ventaAnioMovil||0)===0&&(p.stockTotal||0)>0;}).length;
+  cuerpo+='Total SKUs en catálogo:  '+prods2.length+'\n';
+  cuerpo+='Quiebres totales:        '+(_stats.quiebres||0)+'\n';
+  cuerpo+='Quiebres Tipo A (crítico): '+qA+'\n';
+  cuerpo+='ABC80 A (80% venta):     '+(_stats.abc80Count&&_stats.abc80Count['A']||0)+'\n';
+  cuerpo+='% venta en riesgo:       '+(_stats.pctRiesgoA||0)+'%\n';
+  cuerpo+='Stock sin movimiento 12m: '+sv12c+'\n';
+  if(tipo==='temporada'){
+    var ts2=_stats.temporadaStats||{};
+    cuerpo+='\nANÁLISIS POR TEMPORADA\n';
+    cuerpo+='━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    cuerpo+='Temporada actual: '+(ts2.temporadaActual||'—')+'\n';
+    cuerpo+='Temporada próxima: '+(ts2.temporadaProxima||'—')+'\n';
+    var tempQ=getProds().filter(function(p){return p.quiebre&&(p.abc80==='A'||p.abc80==='B');});
+    var byT={};tempQ.forEach(function(p){var t=p.temporada||'GENERAL';if(!byT[t])byT[t]=0;byT[t]++;});
+    Object.keys(byT).sort().forEach(function(t){cuerpo+=t+': '+byT[t]+' quiebres A/B\n';});
+    cuerpo+='\n(Se adjunta Excel con detalle completo por SKU)\n';
+  }
+  if(tipo==='marcas'||tipo==='quiebres_A'||tipo==='quiebres_AB'){
+    var top=(_stats.topQuiebresA||[]).slice(0,5);
+    if(top.length){
+      cuerpo+='\nTOP 5 MARCAS CON QUIEBRES TIPO A\n';
+      cuerpo+='━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+      top.forEach(function(m,i){cuerpo+=(i+1)+'. '+m.marca+': '+m.quiebresA+' quiebres A ('+m.pctQuiebreA+'% del total A)\n';});
+    }
+  }
+  cuerpo+='\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  cuerpo+='Remitente: Alejandro González — Jefe Sucursal El Manzano\n';
+  cuerpo+='Email: agonzalez@oviedo.cl\n';
+  cuerpo+='(Adjuntar archivo Excel descargado)\n';
+  var mailto='mailto:'+encodeURIComponent(destino)+'?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo);
+  window.location.href=mailto;
+}
+
+// ── EXPORTAR PDF ─────────────────────────────────────────
+function exportQPDF(){
+  var fl=filtQ();
+  var doc=new jspdf.jsPDF('l','mm','a4');
+  var gen=(_data&&_data.generado||'');
+  doc.setFont('helvetica','bold');doc.setFontSize(12);
+  doc.text('Ferretería Oviedo — Quiebres de Stock',14,13);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);
+  doc.text('Quiebres: '+fl.length+' · Tipo A: '+fl.filter(function(p){return(p.tipo||'').toUpperCase().trim()==='A';}).length+' · '+gen.slice(0,10),14,18);
+  doc.autoTable({startY:22,head:[['Código','Marca','Descripción','Tipo','Venta E-A','Venta Año','PEM','CD']],
+    body:fl.slice(0,800).map(function(p){return[p.codigo,p.marca||'',p.descripcion.substring(0,40),p.tipo||'',p.venta||0,p.ventaAnioMovil||0,(p.stocks&&p.stocks.PEM)||0,(p.stocks&&p.stocks.CD)||0];}),
+    styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[218,0,0],textColor:255,fontStyle:'bold'},
+    didParseCell:function(data){if(data.row.raw&&data.row.raw[3]==='A')data.cell.styles.fillColor=[255,245,245];}});
+  doc.save('quiebres_'+gen.slice(0,10)+'.pdf');
+}
+function exportQXLSX(){
+  var fl=filtQ();var bods=_stats.bodegas||BODEGAS;
+  var hd=[['Código','Marca','Descripción','Tipo','Stock Total','Venta E-A 2026','Venta Año Móvil'].concat(bods).concat(['Tránsito CD','Tránsito PEM'])];
+  var rd=fl.map(function(p){return[p.codigo,p.marca||'',p.descripcion,p.tipo||'',p.stockTotal||0,p.venta||0,p.ventaAnioMovil||0].concat(bods.map(function(b){return(p.stocks&&p.stocks[b])||0;})).concat([p.transitoCD||0,p.transitoPEM||0]);});
+  var wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'Quiebres');XLSX.writeFile(wb2,'quiebres_oviedo.xlsx');
+}
+// ── HELPERS ABC80 / COB ─────────────────────────────────
+function abc80Badge(v){
+  var c={'A':'abc80-A','B':'abc80-B','C':'abc80-C','D':'abc80-D'}[v]||'abc80-D';
+  return '<span class="abc80 '+c+'">'+(v||'D')+'</span>';
+}
+function cobBadge(c){
+  if(c===999||c===0) return '<span class="cob-high">∞</span>';
+  if(c<1) return '<span class="cob-low">'+c+'m</span>';
+  if(c>6) return '<span class="cob-high">'+c+'m</span>';
+  return '<span class="cob-ok">'+c+'m</span>';
+}
+function fmtN(n){return n==null?'—':(n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':n);}
+
+// ── SIN MOVIMIENTO ───────────────────────────────────────
+function renderSVKPI(){
+  var sv=_stats.sinVentaStats||{};
+  var prods=getProds();
+  var sv12=prods.filter(function(p){return (p.ventaAnioMovil||0)===0&&(p.stockTotal||0)>0;}).length;
+  var sv6 =prods.filter(function(p){return (p.venta||0)===0&&(p.ventaAnioMovil||0)>0&&(p.stockTotal||0)>0;}).length;
+  var cob12p=prods.filter(function(p){var c=p.mesesCobertura||0;return c>12&&c<999&&(p.stockTotal||0)>0;}).length;
+  var el=document.getElementById('svKPI'); if(!el)return;
+  el.innerHTML=[
+    ['📦','Sin venta 12+ meses',sv12,'danger'],
+    ['⚠️','Sin venta reciente (~4-6m)',sv6,'warn'],
+    ['📊','Cobertura >12 meses',cob12p,''],
+    ['💰','Total con stock sin mover',prods.filter(function(p){return (p.ventaAnioMovil||0)===0&&(p.stockTotal||0)>0;}).length,'danger'],
+  ].map(function(k){return '<div class="sc'+(k[3]?' '+k[3]:'')+'"><div class="si">'+k[0]+'</div><div class="sv">'+k[2]+'</div><div class="sl">'+k[1]+'</div></div>';}).join('');
+}
+function renderSV(){
+  _p.sv=_p.sv||1;
+  var periodo =document.getElementById('fsvPeriodo').value;
+  var abc80v  =document.getElementById('fsvAbc').value;
+  var marcav  =document.getElementById('fsvMarca').value;
+  var q       =(document.getElementById('fsvBuscar').value||'').toLowerCase();
+  var fl=getProds().filter(function(p){
+    if((p.stockTotal||0)===0) return false;
+    if(periodo==='12m'  &&(p.ventaAnioMovil||0)!==0) return false;
+    if(periodo==='6m'   &&!((p.venta||0)===0&&(p.ventaAnioMovil||0)>0)) return false;
+    if(periodo==='cob12p'){var c=p.mesesCobertura||0;if(!(c>12&&c<999)) return false;}
+    if(periodo==='cob6') {var c=p.mesesCobertura||0;if(!(c>=6&&c<=12)) return false;}
+    if(abc80v&&(p.abc80||'D')!==abc80v) return false;
+    if(marcav&&(p.marca||'')!==marcav) return false;
+    if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q)&&!(p.marca||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  fl.sort(function(a,b){return (b.mesesCobertura||0)-(a.mesesCobertura||0);});
+  var total=fl.length, pp=_p.sv, start=(pp-1)*PAGE;
+  var html='<table class="tbl"><thead><tr><th>Código</th><th>Marca</th><th>Descripción</th><th>ABC80</th><th>Tipo XLSM</th><th>Stock</th><th>Cob. meses</th><th>Venta 2026</th><th>Venta Año</th><th>Familia</th></tr></thead><tbody>';
+  fl.slice(start,start+PAGE).forEach(function(p){
+    var c=p.mesesCobertura||0;
+    var cls=c===999?'sv-12':(p.venta||0)===0&&(p.ventaAnioMovil||0)>0?'sv-6':'';
+    html+='<tr class="'+cls+'"><td>'+esc(p.codigo)+'</td><td>'+esc(p.marca||'')+'</td><td>'+esc(p.descripcion)+'</td><td>'+abc80Badge(p.abc80)+'</td><td>'+esc(p.tipo||'')+'</td><td>'+fmtN(p.stockTotal)+'</td><td>'+cobBadge(c)+'</td><td>'+fmtN(p.venta)+'</td><td>'+fmtN(p.ventaAnioMovil)+'</td><td style="font-size:11px">'+esc(p.familia||'')+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('tblSV').innerHTML=html;
+  document.getElementById('pagSV').innerHTML=buildPag2(total,pp,'sv');
+}
+function exportSVXLSX(){
+  var fl=getProds().filter(function(p){return (p.stockTotal||0)>0;});
+  fl.sort(function(a,b){return (b.mesesCobertura||0)-(a.mesesCobertura||0);});
+  var hd=[['Código','Marca','Descripción','ABC80','Tipo','Stock','Meses Cobertura','Venta 2026','Venta Año Móvil','Familia','Subfamilia']];
+  var rd=fl.map(function(p){return[p.codigo,p.marca||'',p.descripcion,p.abc80||'D',p.tipo||'',p.stockTotal||0,p.mesesCobertura||0,p.venta||0,p.ventaAnioMovil||0,p.familia||'',p.subfamilia||''];});
+  var wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'SinMovimiento');XLSX.writeFile(wb2,'stock_sin_movimiento.xlsx');
+}
+
+// ── SUGERIDO COMPRA ──────────────────────────────────────
+function setSugVista(v,btn){
+  _sugVista=v;
+  document.querySelectorAll('.tsb').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderSugerido();
+}
+function renderSugKPI(){
+  var prods=getProds();
+  var conSug=prods.filter(function(p){return (p.sugerido||0)>0;});
+  var totalUnid=conSug.reduce(function(s,p){return s+(p.sugerido||0);},0);
+  var totalQ=prods.filter(function(p){return p.quiebre;}).length;
+  var el=document.getElementById('sugKPI'); if(!el)return;
+  el.innerHTML=[
+    ['💡','SKUs a reponer',conSug.length,'warn'],
+    ['📦','Unidades sugeridas',fmtN(totalUnid),''],
+    ['🔴','En quiebre',totalQ,'danger'],
+    ['📊','Con cob.<1 mes',prods.filter(function(p){return (p.mesesCobertura||0)<1&&(p.ventaAnioMovil||0)>0;}).length,'warn'],
+  ].map(function(k){return '<div class="sc'+(k[3]?' '+k[3]:'')+'"><div class="si">'+k[0]+'</div><div class="sv">'+k[2]+'</div><div class="sl">'+k[1]+'</div></div>';}).join('');
+}
+function renderSugerido(){
+  var q=(document.getElementById('fSugBuscar').value||'').toLowerCase();
+  var key={'marca':'porMarca','familia':'porFamilia','subfamilia':'porSubfamilia','hiperfamilia':'porHiperfamilia'}[_sugVista]||'porMarca';
+  var labelKey={'marca':'marca','familia':'familia','subfamilia':'subfamilia','hiperfamilia':'hiperfamilia'}[_sugVista]||'marca';
+  var data=(_sugerido[key]||[]).filter(function(r){
+    var lbl=(r[labelKey]||'').toLowerCase();
+    return !q||lbl.includes(q);
+  });
+  var html='<table class="tbl"><thead><tr><th>'+labelKey.charAt(0).toUpperCase()+labelKey.slice(1)+'</th><th>Total SKUs</th><th>SKUs a reponer</th><th>Unidades sugeridas</th><th>Quiebres</th><th>Venta Año</th></tr></thead><tbody>';
+  if(!data.length){html+='<tr><td colspan="6" style="text-align:center;color:var(--g);padding:20px">Sin datos para reponer</td></tr>';}
+  data.forEach(function(r){
+    var lbl=esc(r[labelKey]||'Sin clasificar');
+    var unid=r.unidadesSugeridas||0;
+    var cls=unid>0?'sug-alta':'';
+    html+='<tr><td><strong>'+lbl+'</strong></td><td>'+r.totalSKU+'</td><td class="'+cls+'">'+r.skusSugeridos+'</td><td class="'+cls+'">'+fmtN(unid)+'</td><td>'+(r.totalQuiebres||0)+'</td><td>'+fmtN(r.ventaAnio||0)+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('tblSug').innerHTML=html;
+}
+function exportSugXLSX(){
+  var key={'marca':'porMarca','familia':'porFamilia','subfamilia':'porSubfamilia','hiperfamilia':'porHiperfamilia'}[_sugVista]||'porMarca';
+  var labelKey={'marca':'marca','familia':'familia','subfamilia':'subfamilia','hiperfamilia':'hiperfamilia'}[_sugVista]||'marca';
+  var data=_sugerido[key]||[];
+  var hd=[[labelKey,'Total SKUs','SKUs a reponer','Unidades sugeridas','Quiebres','Venta Año']];
+  var rd=data.map(function(r){return[r[labelKey]||'',r.totalSKU,r.skusSugeridos,r.unidadesSugeridas||0,r.totalQuiebres||0,r.ventaAnio||0];});
+  var wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'Sugerido');XLSX.writeFile(wb2,'sugerido_compra_'+_sugVista+'.xlsx');
+}
+
+// ── TEMPORADA ────────────────────────────────────────────
+var TEMP_ICONS={'VERANO':'🌞','OTOÑO':'🍂','INVIERNO':'❄️','PRIMAVERA':'🌸','GENERAL':'⚙️'};
+var TEMP_MESES={'VERANO':'Dic-Feb','OTOÑO':'Mar-May','INVIERNO':'Jun-Ago','PRIMAVERA':'Sep-Nov','GENERAL':'Todo el año'};
+function renderTempCards(){
+  var ts=(_stats.temporadaStats||{});
+  var actual=ts.temporadaActual||'';
+  var prox=ts.temporadaProxima||'';
+  var prods=getProds();
+  var byTemp={};
+  prods.forEach(function(p){var t=p.temporada||'GENERAL';if(!byTemp[t])byTemp[t]={skus:0,quiebres:0,ventaAnio:0,sugerido:0};byTemp[t].skus++;byTemp[t].ventaAnio+=p.ventaAnioMovil||0;if(p.quiebre)byTemp[t].quiebres++;byTemp[t].sugerido+=p.sugerido||0;});
+  var order=['VERANO','OTOÑO','INVIERNO','PRIMAVERA','GENERAL'];
+  var html=order.map(function(t){
+    var d=byTemp[t]||{skus:0,quiebres:0,ventaAnio:0,sugerido:0};
+    var isAct=t===actual,isProx=t===prox;
+    var badge=isAct?'<span class="temp-badge actual">Temporada actual</span>':isProx?'<span class="temp-badge proxima">Próxima</span>':'';
+    return '<div class="temp-card'+(isAct?' actual':isProx?' proxima':'')+'" onclick="filtrarTemp(\''+t+'\')">'
+      +'<div class="temp-icon">'+TEMP_ICONS[t]+'</div>'
+      +'<div class="temp-name">'+t+badge+'</div>'
+      +'<div style="font-size:10px;color:var(--g)">'+TEMP_MESES[t]+'</div>'
+      +'<div class="temp-stat">'+d.skus+' SKUs · '+d.quiebres+' quiebres</div>'
+      +'<div class="temp-stat">Venta año: '+fmtN(d.ventaAnio)+'</div>'
+      +(d.sugerido>0?'<div class="temp-stat" style="color:var(--rojo);font-weight:600">Sugerido: '+fmtN(d.sugerido)+' uds</div>':'')
+      +'</div>';
+  }).join('');
+  document.getElementById('tempCards').innerHTML=html;
+}
+function filtrarTemp(t){document.getElementById('ftTemp').value=t;_p.t=1;renderTemp();}
+function renderTemp(){
+  _p.t=_p.t||1;
+  var temp  =(document.getElementById('ftTemp').value||'');
+  var abc80v=(document.getElementById('ftAbc').value||'');
+  var soloQ =document.getElementById('ftSoloQ').checked;
+  var q     =(document.getElementById('ftBuscar').value||'').toLowerCase();
+  var fl=getProds().filter(function(p){
+    if(temp&&(p.temporada||'GENERAL')!==temp) return false;
+    if(abc80v&&(p.abc80||'D')!==abc80v) return false;
+    if(soloQ&&!p.quiebre) return false;
+    if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q)&&!(p.marca||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  fl.sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);});
+  var total=fl.length,pp=_p.t,start=(pp-1)*PAGE;
+  var html='<table class="tbl"><thead><tr><th>Temporada</th><th>Código</th><th>Marca</th><th>Descripción</th><th>ABC80</th><th>Stock</th><th>Cob.</th><th>Venta Año</th><th>Quiebre</th><th>Sugerido</th></tr></thead><tbody>';
+  fl.slice(start,start+PAGE).forEach(function(p){
+    var t=p.temporada||'GENERAL';
+    var qbadge=p.quiebre?'<span style="color:var(--rojo);font-weight:700">SÍ</span>':'No';
+    html+='<tr class="'+(p.quiebre&&(p.abc80==='A'||p.abc80==='B')?'row-A':'')+'"><td>'+TEMP_ICONS[t]+' '+t+'</td><td>'+esc(p.codigo)+'</td><td>'+esc(p.marca||'')+'</td><td>'+esc(p.descripcion)+'</td><td>'+abc80Badge(p.abc80)+'</td><td>'+fmtN(p.stockTotal)+'</td><td>'+cobBadge(p.mesesCobertura||0)+'</td><td>'+fmtN(p.ventaAnioMovil)+'</td><td>'+qbadge+'</td><td>'+(p.sugerido>0?'<strong class="sug-alta">'+fmtN(p.sugerido)+'</strong>':'—')+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('tblTemp').innerHTML=html;
+  document.getElementById('pagTemp').innerHTML=buildPag2(total,pp,'t');
+}
+function exportTempXLSX(){
+  var temp=(document.getElementById('ftTemp').value||'');
+  var fl=getProds().filter(function(p){return !temp||(p.temporada||'GENERAL')===temp;});
+  fl.sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);});
+  var hd=[['Temporada','Código','Marca','Descripción','ABC80','Tipo','Stock','Tr.CD','Tr.PEM','Meses Cobertura','Venta 2026','Venta Año','Quiebre','Sugerido','Familia']];
+  var rd=fl.map(function(p){return[p.temporada||'GENERAL',p.codigo,p.marca||'',p.descripcion,p.abc80||'D',p.tipo||'',p.stockTotal||0,p.transitoCD||0,p.transitoPEM||0,p.mesesCobertura||0,p.venta||0,p.ventaAnioMovil||0,p.quiebre?'Sí':'No',p.sugerido||0,p.familia||''];});
+  var wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'Temporada');XLSX.writeFile(wb2,'analisis_temporada'+(temp?'_'+temp:'')+'.xlsx');
+}
+function exportTempPDF(){
+  var temp=(document.getElementById('ftTemp').value||'');
+  var abc80v=(document.getElementById('ftAbc').value||'');
+  var soloQ=document.getElementById('ftSoloQ').checked;
+  var fl=getProds().filter(function(p){
+    if(temp&&(p.temporada||'GENERAL')!==temp) return false;
+    if(abc80v&&(p.abc80||'D')!==abc80v) return false;
+    if(soloQ&&!p.quiebre) return false;
+    return true;
+  });
+  fl.sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);});
+  var gen=(_data&&_data.generado||'').slice(0,10)||new Date().toISOString().slice(0,10);
+  var ts=_stats.temporadaStats||{};
+  var doc=new jspdf.jsPDF('l','mm','a4');
+  doc.setFont('helvetica','bold');doc.setFontSize(13);
+  doc.text('Ferretería Oviedo — Análisis por Temporada'+(temp?' ('+temp+')':''),14,13);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);
+  doc.text('Temporada actual: '+(ts.temporadaActual||'—')+' · Generado: '+gen+' · SKUs: '+fl.length+' · Quiebres: '+fl.filter(function(p){return p.quiebre;}).length,14,19);
+  doc.autoTable({startY:24,
+    head:[['Temporada','Código','Marca','Descripción','ABC80','Stock','Tr.CD','Tr.PEM','Cob.','Venta Año','Quiebre','Sugerido']],
+    body:fl.slice(0,600).map(function(p){return[
+      p.temporada||'GENERAL',p.codigo,(p.marca||'').substring(0,14),p.descripcion.substring(0,35),
+      p.abc80||'D',p.stockTotal||0,p.transitoCD||0,p.transitoPEM||0,
+      p.mesesCobertura===999?'∞':(p.mesesCobertura||0)+'m',
+      p.ventaAnioMovil||0,p.quiebre?'SÍ':'No',p.sugerido||0
+    ];}),
+    styles:{fontSize:6.5,cellPadding:1.5},
+    headStyles:{fillColor:[218,0,0],textColor:255,fontStyle:'bold'},
+    didParseCell:function(data){
+      if(data.row.raw&&data.row.raw[10]==='SÍ') data.cell.styles.textColor=[180,0,0];
+    }
+  });
+  doc.save('temporada'+(temp?'_'+temp:'')+'.pdf');
+}
+
+// ── PAGINACIÓN genérica ──────────────────────────────────
+function buildPag2(total,cur,key){
+  var pages=Math.ceil(total/PAGE); if(pages<=1)return '';
+  var html='';
+  for(var i=1;i<=Math.min(pages,8);i++){
+    html+='<button class="pb'+(i===cur?' active':'')+'" onclick="_p.'+key+'='+i+';render'+key.toUpperCase()+'_dispatch()">'+i+'</button>';
+  }
+  if(pages>8) html+='<span style="font-size:12px;color:var(--g)"> … '+pages+' páginas</span>';
+  return html;
+}
+function renderSV_dispatch(){renderSV();}
+function renderT_dispatch(){renderTemp();}
+
+function exportMarcasPDF(){
+  var ms=(_stats.marcaStats||[]).filter(function(m){return m.quiebresA>0;});
+  var doc=new jspdf.jsPDF('p','mm','a4');
+  doc.setFont('helvetica','bold');doc.setFontSize(12);
+  doc.text('Ferretería Oviedo — Quiebres por Marca',14,13);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);
+  doc.text('Marcas con quiebres Tipo A: '+ms.length,14,18);
+  doc.autoTable({startY:22,head:[['Marca','SKUs A','Quiebres A','% Q.A','SKUs B','Quiebres B','Total SKUs']],
+    body:ms.slice(0,100).map(function(m){return[m.marca,m.skuA,m.quiebresA,m.pctQuiebreA+'%',m.skuB,m.quiebresB,m.totalSKU];}),
+    styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[218,0,0],textColor:255,fontStyle:'bold'}});
+  doc.save('quiebres_marcas.pdf');
+}
+function exportMarcasXLSX(){
+  var ms=(_stats.marcaStats||[]).filter(function(m){return m.quiebresA>0||m.quiebresB>0;});
+  var hd=[['Marca','SKUs A','Quiebres A','% Quiebre A','SKUs B','Quiebres B','SKUs C','Quiebres C','Total SKUs','Venta Acumulada']];
+  var rd=ms.map(function(m){return[m.marca,m.skuA,m.quiebresA,m.pctQuiebreA+'%',m.skuB,m.quiebresB,m.skuC,m.quiebresC,m.totalSKU,m.totalVenta];});
+  var wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'Marcas');XLSX.writeFile(wb2,'quiebres_marcas.xlsx');
+}
+function exportABCXLSX(){
+  var tipo=(document.getElementById('faFiltro').value||'').toUpperCase();
+  var marc=document.getElementById('faMarca').value||'';
+  var fl=getProds().filter(function(p){
+    if(tipo&&(p.tipo||'').toUpperCase().trim()!==tipo) return false;
+    if(marc&&(p.marca||'').trim()!==marc) return false;
+    return true;
+  });
+  fl.sort(function(a,b){return (b.ventaAnioMovil||0)-(a.ventaAnioMovil||0);});
+  var hd=[['Código','Marca','Descripción','Tipo XLSM','ABC80','Stock Total','Meses Cobertura','Venta 2026','Venta Año Móvil','Sugerido','Familia','Subfamilia','Quiebre']];
+  var rd=fl.map(function(p){return[p.codigo,p.marca||'',p.descripcion,p.tipo||'',p.abc80||'D',p.stockTotal||0,p.mesesCobertura||0,p.venta||0,p.ventaAnioMovil||0,p.sugerido||0,p.familia||'',p.subfamilia||'',p.quiebre?'Sí':'No'];});
+  var wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'ABC80');XLSX.writeFile(wb2,'abc80_oviedo.xlsx');
+}
+function exportRPDF(){
+  var q=(document.getElementById('frBuscar').value||'').toLowerCase();
+  var fam=document.getElementById('frFamilia').value||'';
+  var fl=_ranking.filter(function(p){if(fam&&(p.familia||'')!==fam)return false;if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q))return false;return true;});
+  var doc=new jspdf.jsPDF('l','mm','a4');
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('Ferretería Oviedo — Ranking de Ventas',14,13);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('Período: Ene 2025 - May 2025',14,18);
+  doc.autoTable({startY:22,head:[['#','Código','Descripción','Familia','Subfamilia','Cantidad','Valor Total']],
+    body:fl.slice(0,200).map(function(p,i){return[i+1,p.codigo,p.descripcion.substring(0,40),p.familia||'',p.subfamilia||'',p.cantidad||0,p.valorTotal||0];}),
+    styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[218,0,0],textColor:255,fontStyle:'bold'}});
+  doc.save('ranking_oviedo.pdf');
+}
+function exportRXLSX(){
+  var q=(document.getElementById('frBuscar').value||'').toLowerCase();
+  var fam=document.getElementById('frFamilia').value||'';
+  var fl=_ranking.filter(function(p){if(fam&&(p.familia||'')!==fam)return false;if(q&&!(p.codigo||'').toLowerCase().includes(q)&&!(p.descripcion||'').toLowerCase().includes(q))return false;return true;});
+  var hd=[['#','Código','Descripción','Hiperfamilia','Familia','Subfamilia','Cantidad','Valor Neto','Valor Total']];
+  var rd=fl.map(function(p,i){return[i+1,p.codigo,p.descripcion,p.hiperfamilia||'',p.familia||'',p.subfamilia||'',p.cantidad||0,p.valorNeto||0,p.valorTotal||0];});
+  var wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(hd.concat(rd)),'Ranking');XLSX.writeFile(wb2,'ranking_oviedo.xlsx');
+}
+
+// ── SERVICE WORKER ──────────────────────────────────────
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(function(reg){
+    // Ya hay una versión esperando (p.ej. recarga de página tras deploy)
+    if(reg.waiting && navigator.serviceWorker.controller){
+      document.getElementById('updateBanner').classList.add('show');
+    }
+    reg.addEventListener('updatefound',function(){
+      var nw=reg.installing;
+      nw.addEventListener('statechange',function(){
+        if(nw.state==='installed' && navigator.serviceWorker.controller){
+          document.getElementById('updateBanner').classList.add('show');
+        }
+      });
+    });
+  }).catch(function(){});
+  // Cuando el nuevo SW toma control → recargar para servir versión fresca
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    location.reload();
+  });
+}
+function doUpdate(){
+  navigator.serviceWorker.getRegistration().then(function(reg){
+    if(reg && reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+    else location.reload();
+  }).catch(function(){location.reload();});
+}
+</script>
+
+<!-- BANNER NUEVA VERSIÓN -->
+<div id="updateBanner">
+  <span class="ub-text">🔄 Nueva versión disponible — datos actualizados</span>
+  <div class="ub-actions">
+    <button class="ub-btn" onclick="doUpdate()">Actualizar ahora</button>
+    <button class="ub-close" onclick="document.getElementById('updateBanner').classList.remove('show')">✕</button>
+  </div>
+</div>
+
+</body>
+</html>

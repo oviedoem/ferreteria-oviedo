@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario · El Manzano</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-icon">🔧</span>
+    <div>
+      <div class="brand-title">El Manzano · Inventario</div>
+      <div class="brand-sub">Ferretería Oviedo</div>
+    </div>
+  </div>
+  <nav class="mode-tabs">
+    <button class="tab-btn active" data-mode="2025">📊 Análisis 2025</button>
+    <button class="tab-btn" data-mode="2026">📈 Análisis 2026</button>
+    <button class="tab-btn" data-mode="comparative">⚖️ Comparativo</button>
+    <button class="tab-btn" data-mode="checklist">📋 CheckList</button>
+    <button class="tab-btn" data-mode="planos">🗺️ Planos</button>
+    <button class="tab-btn" data-mode="mejoras">🎯 Mejoras 2026</button>
+    <button class="tab-btn" data-mode="2025v2">🔬 Análisis Avanzado</button>
+  </nav>
+</header>
+
+<div class="app-body">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <div class="upload-zone" id="drop-2025">
+      <div class="upload-icon">📁</div>
+      <p><strong>Inventario 2025</strong></p>
+      <p class="upload-hint">Arrastra .xlsx/.csv aquí<br>o haz clic en el botón</p>
+      <input type="file" id="input-2025" multiple accept=".xlsx,.xls,.csv,.xlsm" hidden>
+      <button class="btn btn-orange w-full" id="btn-load-2025">📂 Cargar 2025</button>
+      <div class="upload-status" id="status-2025">Sin archivos</div>
+    </div>
+
+    <div class="upload-zone" id="drop-2026">
+      <div class="upload-icon">📁</div>
+      <p><strong>Inventario 2026</strong></p>
+      <p class="upload-hint">Arrastra .xlsx/.csv aquí<br>o haz clic en el botón</p>
+      <input type="file" id="input-2026" multiple accept=".xlsx,.xls,.csv,.xlsm" hidden>
+      <button class="btn btn-blue w-full" id="btn-load-2026">📂 Cargar 2026</button>
+      <div class="upload-status" id="status-2026">Sin archivos</div>
+    </div>
+
+    <div class="upload-zone" id="drop-checklist">
+      <div class="upload-icon">📋</div>
+      <p><strong>CheckList</strong></p>
+      <p class="upload-hint">Arrastra el .xlsx del<br>CheckList aquí</p>
+      <input type="file" id="input-checklist" accept=".xlsx,.xls,.xlsm" hidden>
+      <button class="btn btn-sm w-full" id="btn-load-checklist">📂 Cargar CheckList</button>
+      <div class="upload-status" id="status-checklist">Sin archivo</div>
+    </div>
+
+    <div class="upload-zone" id="drop-planos">
+      <div class="upload-icon">🗺️</div>
+      <p><strong>Planos Patentes</strong></p>
+      <p class="upload-hint">Arrastra el .xlsx de<br>Planos aquí</p>
+      <input type="file" id="input-planos" accept=".xlsx,.xls,.xlsm" hidden>
+      <button class="btn btn-sm w-full" id="btn-load-planos">📂 Cargar Planos</button>
+      <div class="upload-status" id="status-planos">Sin archivo</div>
+    </div>
+
+    <button class="btn btn-ghost w-full" onclick="clearAllData()">🗑 Limpiar todo</button>
+
+    <div class="sidebar-info" id="sidebar-info"></div>
+  </aside>
+
+  <!-- ── MAIN ───────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Bienvenida -->
+    <div id="welcome-screen" class="welcome">
+      <div class="welcome-icon">📦</div>
+      <h2>Analizador de Inventario</h2>
+      <p>Carga archivos Excel o CSV de <strong>2025</strong> y/o <strong>2026</strong> para comenzar.</p>
+      <p class="welcome-hint">Arrastra los archivos a los paneles de la izquierda o usa los botones "Cargar".</p>
+    </div>
+
+    <!-- ── MODO 2025 ─────────────────────────────────────────────── -->
+    <div id="view-2025" class="view hidden">
+      <div class="view-header">
+        <h2>Análisis Inventario 2025</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportDrilldownTable('2025')">⬇ Excel</button>
+          <button class="btn btn-sm" onclick="generateReport('2025')">📄 Reporte</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('2025')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('2025')">✉ Email</button>
+        </div>
+      </div>
+      <div class="filters-bar" id="filters-2025"></div>
+      <div class="kpi-grid" id="kpi-2025"></div>
+      <div class="kpi-count" id="kpi-count-2025"></div>
+      <div class="kpi-monetary" id="kpi-monetary-2025"></div>
+      <div class="insights-card" id="insights-2025"></div>
+      <div class="charts-mode-bar" id="charts-mode-bar-2025"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h4>Diferencia Unidades por Familia (Top 10)</h4>
+          <div class="chart-wrap"><canvas id="chart-familia-unid-2025"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Diferencia Unidades por Marca (Top 10)</h4>
+          <div class="chart-wrap"><canvas id="chart-marca-peso-2025"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Diferencia por Hiperfamilia</h4>
+          <div class="chart-wrap"><canvas id="chart-pie-hiper-2025"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Diferencia por Marca</h4>
+          <div class="chart-wrap"><canvas id="chart-pie-marca-2025"></canvas></div>
+        </div>
+        <div class="chart-card chart-full">
+          <h4>Unidades Sistema vs Real por Zona</h4>
+          <div class="chart-wrap"><canvas id="chart-zona-2025"></canvas></div>
+        </div>
+      </div>
+      <div class="tables-section">
+        <div id="drilldown-2025"></div>
+        <div class="table-block">
+          <div class="table-header">
+            <h3>Resumen por Marca</h3>
+            <button class="btn btn-xs" onclick="exportTableToExcel('resumen-marca-2025','Resumen_Marca_2025')">⬇ xlsx</button>
+          </div>
+          <div class="table-scroll"><table id="resumen-marca-2025" class="data-table"></table></div>
+        </div>
+        <div class="table-block">
+          <div class="table-header">
+            <h3>Resumen por Familia / Hiperfamilia</h3>
+            <button class="btn btn-xs" onclick="exportTableToExcel('resumen-familia-2025','Resumen_Familia_2025')">⬇ xlsx</button>
+          </div>
+          <div class="table-scroll"><table id="resumen-familia-2025" class="data-table"></table></div>
+        </div>
+        <div class="table-block">
+          <div class="table-header">
+            <h3>Resumen por Zona / Área</h3>
+            <button class="btn btn-xs" onclick="exportTableToExcel('resumen-zona-2025','Resumen_Zona_2025')">⬇ xlsx</button>
+          </div>
+          <div class="table-scroll"><table id="resumen-zona-2025" class="data-table"></table></div>
+        </div>
+      </div>
+    </div><!-- /view-2025 -->
+
+    <!-- ── MODO 2026 ─────────────────────────────────────────────── -->
+    <div id="view-2026" class="view hidden">
+      <div class="view-header">
+        <h2>Análisis Inventario 2026</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportDrilldownTable('2026')">⬇ Excel</button>
+          <button class="btn btn-sm" onclick="generateReport('2026')">📄 Reporte</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('2026')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('2026')">✉ Email</button>
+        </div>
+      </div>
+      <div class="filters-bar" id="filters-2026"></div>
+      <div class="kpi-grid" id="kpi-2026"></div>
+      <div class="kpi-count" id="kpi-count-2026"></div>
+      <div class="kpi-monetary" id="kpi-monetary-2026"></div>
+      <div class="insights-card" id="insights-2026"></div>
+      <div class="charts-mode-bar" id="charts-mode-bar-2026"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h4>Diferencia Unidades por Familia (Top 10)</h4>
+          <div class="chart-wrap"><canvas id="chart-familia-unid-2026"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Diferencia Unidades por Marca (Top 10)</h4>
+          <div class="chart-wrap"><canvas id="chart-marca-peso-2026"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Diferencia por Hiperfamilia</h4>
+          <div class="chart-wrap"><canvas id="chart-pie-hiper-2026"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Diferencia por Marca</h4>
+          <div class="chart-wrap"><canvas id="chart-pie-marca-2026"></canvas></div>
+        </div>
+        <div class="chart-card chart-full">
+          <h4>Unidades Sistema vs Real por Zona</h4>
+          <div class="chart-wrap"><canvas id="chart-zona-2026"></canvas></div>
+        </div>
+      </div>
+      <div class="tables-section">
+        <div id="drilldown-2026"></div>
+        <div class="table-block">
+          <div class="table-header">
+            <h3>Resumen por Marca</h3>
+            <button class="btn btn-xs" onclick="exportTableToExcel('resumen-marca-2026','Resumen_Marca_2026')">⬇ xlsx</button>
+          </div>
+          <div class="table-scroll"><table id="resumen-marca-2026" class="data-table"></table></div>
+        </div>
+        <div class="table-block">
+          <div class="table-header">
+            <h3>Resumen por Familia / Hiperfamilia</h3>
+            <button class="btn btn-xs" onclick="exportTableToExcel('resumen-familia-2026','Resumen_Familia_2026')">⬇ xlsx</button>
+          </div>
+          <div class="table-scroll"><table id="resumen-familia-2026" class="data-table"></table></div>
+        </div>
+        <div class="table-block">
+          <div class="table-header">
+            <h3>Resumen por Zona / Área</h3>
+            <button class="btn btn-xs" onclick="exportTableToExcel('resumen-zona-2026','Resumen_Zona_2026')">⬇ xlsx</button>
+          </div>
+          <div class="table-scroll"><table id="resumen-zona-2026" class="data-table"></table></div>
+        </div>
+      </div>
+    </div><!-- /view-2026 -->
+
+    <!-- ── MODO COMPARATIVO ──────────────────────────────────────── -->
+    <div id="view-comparative" class="view hidden">
+      <div class="view-header">
+        <h2>Comparativo 2025 vs 2026</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportTableToExcel('table-comparative','Comparativo_2025_2026')">⬇ Excel</button>
+          <button class="btn btn-sm" onclick="generateReport('comparative')">📄 Reporte</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('comparative')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('comparative')">✉ Email</button>
+        </div>
+      </div>
+      <div class="filters-bar" id="filters-comparative"></div>
+      <div class="kpi-grid" id="kpi-comparative"></div>
+      <div class="insights-card" id="insights-comparative"></div>
+      <div class="charts-grid">
+        <div class="chart-card chart-full">
+          <h4>Diferencia Unidades por Familia: 2025 vs 2026 (Top 12)</h4>
+          <div class="chart-wrap"><canvas id="chart-comp-familia-unid"></canvas></div>
+        </div>
+        <div class="chart-card chart-full">
+          <h4>% Exactitud Unidades por Familia: 2025 vs 2026 (Top 12)</h4>
+          <div class="chart-wrap"><canvas id="chart-comp-familia-exact"></canvas></div>
+        </div>
+      </div>
+      <div class="tables-section">
+        <div class="table-block">
+          <div class="table-header">
+            <h3>Tabla comparativa Marca + Familia + Producto</h3>
+            <button class="btn btn-xs" onclick="exportTableToExcel('table-comparative','Comparativo_2025_2026')">⬇ xlsx</button>
+          </div>
+          <div class="table-scroll"><table id="table-comparative" class="data-table"></table></div>
+        </div>
+      </div>
+    </div><!-- /view-comparative -->
+
+    <!-- ── MODO CHECKLIST ────────────────────────────────────────── -->
+    <div id="view-checklist" class="view hidden">
+      <div class="view-header">
+        <h2>📋 CheckList de Inventario</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportChecklistExcel()">⬇ Excel</button>
+          <button class="btn btn-sm" onclick="generateReport('checklist')">📄 Reporte</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('checklist')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('checklist')">✉ Email</button>
+        </div>
+      </div>
+
+      <!-- Correlativo tracker -->
+      <div class="section-card" id="correlativo-section">
+        <div class="section-card-header">
+          <h3>🔢 Correlativo de Patentes</h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span class="badge-info" id="corr-counter">0 iniciadas</span>
+            <button class="btn btn-xs" onclick="resetCorrelativo()">↺ Reiniciar</button>
+            <button class="btn btn-xs" onclick="exportCorrelatjvoExcel()">⬇ Exportar</button>
+          </div>
+        </div>
+        <p class="section-hint">Escribe <strong>1</strong> en el campo "Inicio" cuando comiences a inventariar esa patente. El correlativo se asigna automáticamente.</p>
+        <div class="table-scroll" style="max-height:340px">
+          <table id="table-correlativo" class="data-table corr-table">
+            <thead><tr>
+              <th style="width:60px">Corr.</th>
+              <th>Zona / Área</th>
+              <th>Patente</th>
+              <th>Responsable</th>
+              <th style="width:80px">Estado</th>
+              <th style="width:70px;text-align:center">Inicio</th>
+              <th style="width:70px;text-align:center">Fin</th>
+            </tr></thead>
+            <tbody id="corr-tbody"></tbody>
+          </table>
+        </div>
+        <p class="section-hint" id="corr-empty" style="text-align:center;padding:20px">
+          Carga el archivo de Planos para ver las patentes, o usa el botón para agregar manualmente.
+          <br><br>
+          <button class="btn btn-sm btn-orange" onclick="addCorrelatjvoRow()">+ Agregar patente manualmente</button>
+        </p>
+      </div>
+
+      <!-- Gantt -->
+      <div class="section-card" id="gantt-section" style="display:none">
+        <div class="section-card-header">
+          <h3>📅 Cronograma de Tareas</h3>
+          <button class="btn btn-xs" onclick="exportTableToExcel('gantt-table','CheckList_Cronograma')">⬇ Excel</button>
+        </div>
+        <div class="table-scroll" style="max-height:420px;overflow-x:auto">
+          <table id="gantt-table" class="gantt-table"></table>
+        </div>
+      </div>
+    </div><!-- /view-checklist -->
+
+    <!-- ── MODO PLANOS ─────────────────────────────────────────────── -->
+    <div id="view-planos" class="view hidden">
+      <div class="view-header">
+        <h2>🗺️ Planos de Patentes</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportPlanosExcel()">⬇ Excel</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('planos')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('planos')">✉ Email</button>
+        </div>
+      </div>
+
+      <!-- Tabs de hojas del plano -->
+      <div class="plano-tabs" id="plano-tabs"></div>
+
+      <!-- Leyenda -->
+      <div class="plano-legend" id="plano-legend"></div>
+
+      <!-- Contenido de cada hoja del plano (imprimible por página) -->
+      <div id="planos-content"></div>
+
+      <p class="section-hint" id="planos-empty" style="text-align:center;padding:40px">
+        Carga el archivo <strong>Planos patentes 2026 EM.xlsx</strong> para ver los planos.
+      </p>
+    </div><!-- /view-planos -->
+
+    <!-- ── MODO MEJORAS 2026 ─────────────────────────────────────── -->
+    <div id="view-mejoras" class="view hidden">
+      <div class="view-header">
+        <h2>🎯 Plan de Mejoras · Inventario 2026</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="generateReport('mejoras')">📄 Reporte</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('mejoras')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('mejoras')">✉ Email</button>
+        </div>
+      </div>
+
+      <!-- ── Diagnóstico ejecutivo ── -->
+      <div class="mej-header-banner">
+        <div class="mej-banner-icon">📊</div>
+        <div>
+          <div class="mej-banner-title">Diagnóstico 2025 → 2026 · El Manzano</div>
+          <div class="mej-banner-sub">Basado en 9.163 productos · Inventario completo</div>
+        </div>
+      </div>
+
+      <!-- KPI comparativo 2025 vs 2026 -->
+      <div class="mej-kpi-row">
+        <div class="mej-kpi-card mej-kpi-2025">
+          <div class="mej-kpi-year">Inventario 2025</div>
+          <div class="mej-kpi-grid">
+            <div class="mej-kpi-item"><span class="mej-kpi-val">84,0%</span><span class="mej-kpi-lbl">Items exactos</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val">95,43%</span><span class="mej-kpi-lbl">Exactitud unid.</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-bad">$26,0M</span><span class="mej-kpi-lbl">Dispersión total</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-bad">2,37%</span><span class="mej-kpi-lbl">% Dispersión</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-bad">$16,8M</span><span class="mej-kpi-lbl">Faltante valor</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val">$9,2M</span><span class="mej-kpi-lbl">Exceso valor</span></div>
+          </div>
+        </div>
+        <div class="mej-kpi-arrow">→</div>
+        <div class="mej-kpi-card mej-kpi-2026">
+          <div class="mej-kpi-year">Inventario 2026 <span class="badge-wip">En curso</span></div>
+          <div class="mej-kpi-grid">
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-bad">83,2%</span><span class="mej-kpi-lbl">Items exactos ▼</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-bad">94,56%</span><span class="mej-kpi-lbl">Exactitud unid. ▼</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-critical">$48,5M</span><span class="mej-kpi-lbl">Dispersión total ▲</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-critical">4,41%</span><span class="mej-kpi-lbl">% Dispersión ▲</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-critical">$29,6M</span><span class="mej-kpi-lbl">Faltante valor ▲</span></div>
+            <div class="mej-kpi-item"><span class="mej-kpi-val mej-bad">$18,9M</span><span class="mej-kpi-lbl">Exceso valor ▲</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerta principal -->
+      <div class="mej-alert mej-alert-critical">
+        <strong>⚠️ Situación crítica:</strong> La dispersión monetaria <strong>casi se duplicó</strong> de 2025 a 2026 ($26M → $48,5M).
+        De 1.463 productos con diferencia en 2025, <strong>1.456 siguen con diferencia en 2026</strong>. Solo 7 productos mejoraron completamente.
+        El inventario no está mejorando — se necesita acción estructural.
+      </div>
+
+      <!-- ── ÁREAS CRÍTICAS ── -->
+      <div class="mej-section-title">🔴 Áreas Críticas · Problemas por Categoría</div>
+
+      <!-- FERRETERÍA -->
+      <div class="mej-accordion">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">🔩</span>
+          <span class="mej-acc-title">Ferretería · Artículos menudos a granel</span>
+          <span class="mej-acc-meta"><span class="badge-crit">33% con dif</span> <span class="badge-val">$5,09M dispersión</span></span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-problem-row">
+            <div class="mej-problem">
+              <div class="mej-problem-title">🔍 Problema detectado</div>
+              <ul>
+                <li>Tarugos plásticos #10 y #12: diferencias de <strong>−942</strong> y <strong>−307 unidades</strong> respectivamente</li>
+                <li>Sogas y cuerdas por metro: −376 y −188 unidades (difícil medir metros exactos)</li>
+                <li>PVC Conduit coplas: diferencias bidireccionales (falta en un código, exceso en otro)</li>
+                <li>Cadenas por metro y canaletas eléctricas: diferencias persistentes en ambos años</li>
+              </ul>
+              <div class="mej-root-cause">Causa raíz: productos de <strong>conteo masivo/granel</strong> y <strong>venta por metro</strong> — el sistema registra unidades pero el conteo físico pierde fracciones y sobrantes.</div>
+            </div>
+            <div class="mej-actions">
+              <div class="mej-problem-title">✅ Acciones a implementar</div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> Crear <strong>bandejas/gavetas etiquetadas con cantidad mínima</strong> para tarugos, tornillos y conectores. Controlar por gaveta llena/vacía, no por unidad.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> Para productos por metro (sogas, cadenas): establecer <strong>puntos de corte estándar</strong> (ej: bobinas completas) y registrar diferencia en kg o por bobina, no por metro.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> PVC y canaletas: revisar si hay <strong>doble ubicación</strong> del mismo SKU en distintas patentes — unificar ubicación física.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Definir <strong>tolerancia aceptable ±3%</strong> para productos de granel en el KPI de exactitud.
+              </div>
+              <div class="mej-action-item mej-prio-low">
+                <span class="mej-prio-badge">Baja</span> Depurar catálogo: revisar si los códigos de copla/codo duplicados corresponden a distintos tamaños o son errores de catalogación.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTLET / DESCONTINUADOS -->
+      <div class="mej-accordion">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">🏷️</span>
+          <span class="mej-acc-title">Outlet / Descontinuados · Alto valor sin control</span>
+          <span class="mej-acc-meta"><span class="badge-crit">5% con dif</span> <span class="badge-val">$4,49M dispersión 2026</span></span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-problem-row">
+            <div class="mej-problem">
+              <div class="mej-problem-title">🔍 Problema detectado</div>
+              <ul>
+                <li>Solo 5-7% de items tiene diferencia, pero el <strong>valor monetario es enorme</strong> ($4,5M+)</li>
+                <li>Productos "(DD)" — Doble Despacho — aparecen con exceso o faltante alto en valor</li>
+                <li>2.137 items descontinuados en 2026 con $3.86M de faltante</li>
+                <li>Items de alto valor individual (lentes, mangueras especiales) con diferencias de $90.000–$200.000 por producto</li>
+              </ul>
+              <div class="mej-root-cause">Causa raíz: productos <strong>marcados como descontinuados en sistema pero aún físicamente presentes</strong> (o ya vendidos pero con stock "fantasma"). Los "(DD)" indican doble rotulación o mala contabilización de despachos.</div>
+            </div>
+            <div class="mej-actions">
+              <div class="mej-problem-title">✅ Acciones a implementar</div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Pre-inventario de Outlet/DD</strong>: hacer conteo dedicado 1 semana antes del inventario general. Son pocos items pero de alto impacto.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Solicitar depuración del maestro</strong>: dar de baja definitiva en sistema todos los descontinuados que no tengan stock físico real. Reducir los 2.137 items a cero.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> Crear zona física separada y claramente marcada para <strong>Outlet y liquidación</strong>. Un solo punto de conteo.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Para productos "(DD)": verificar si el doble despacho está correctamente ingresado en sistema o si hay recepciones/despachos no contabilizados.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MADERA -->
+      <div class="mej-accordion">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">🪵</span>
+          <span class="mej-acc-title">Madera · Peor tasa de error</span>
+          <span class="mej-acc-meta"><span class="badge-crit">57–78% con dif</span> <span class="badge-val">$1,64M dispersión 2026</span></span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-problem-row">
+            <div class="mej-problem">
+              <div class="mej-problem-title">🔍 Problema detectado</div>
+              <ul>
+                <li>Madera Verde con <strong>78% de items con diferencia</strong> en 2026 — la categoría más imprecisa de todo el inventario</li>
+                <li>Pino bruto 2×3: +142 unidades de exceso ($265.824)</li>
+                <li>Pino cuartón 3×3: +448 unidades de exceso ($1.21M) — diferencia masiva</li>
+                <li>OSB Borde Rojo: +164 unidades de exceso ($1.13M)</li>
+                <li>Madera a granel: conteo físico en piezas vs sistema en unidades distintas</li>
+              </ul>
+              <div class="mej-root-cause">Causa raíz: la madera se vende a veces en partes (metro lineal, cortes), pero el sistema registra en unidades completas. El stock en patio es difícil de contar (apilado, variadas medidas).</div>
+            </div>
+            <div class="mej-actions">
+              <div class="mej-problem-title">✅ Acciones a implementar</div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Protocolo de conteo por paquete/pallet</strong>: no contar pieza a pieza. Contar paquetes × cantidad declarada por paquete. Verificar con proveedor el contenido estándar.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Doble verificación</strong> para madera de alto valor (OSB, pino cuartón): asignar 2 personas al conteo y comparar antes de registrar.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Revisar si hay piezas cortadas/fraccionadas que el sistema registra como unidad completa → crear SKU específico para "restos de madera".
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Fotodocumentar el stock de madera antes y después del inventario para tener respaldo visual en caso de discrepancias.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATERIALES CONSTRUCCIÓN / GASFITERÍA -->
+      <div class="mej-accordion">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">🏗️</span>
+          <span class="mej-acc-title">Construcción / Gasfitería / Terminaciones</span>
+          <span class="mej-acc-meta"><span class="badge-crit">27–40% con dif</span> <span class="badge-val">$9,3M dispersión 2026</span></span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-problem-row">
+            <div class="mej-problem">
+              <div class="mej-problem-title">🔍 Problema detectado</div>
+              <ul>
+                <li>Gasfitería: 40% con dif, 177 productos persistentes entre ambos años</li>
+                <li>Cemento Bio Bio 25kg: −142 sacos ($394.476) — clásico error por conteo de pallets incompletos</li>
+                <li>Metalcon montante: −136 unidades ($846.192) — perfiles difíciles de contar en pila</li>
+                <li>Terminaciones (pisos, pinturas): 27% con dif, $3.62M en 2025</li>
+                <li>Pisos flotantes: alto valor unitario amplifica las diferencias</li>
+              </ul>
+              <div class="mej-root-cause">Causa raíz mixta: sacos en pallets (fracciones), perfiles metálicos apilados (conteo visual impreciso), cajas de pisos con unidades variables por caja.</div>
+            </div>
+            <div class="mej-actions">
+              <div class="mej-problem-title">✅ Acciones a implementar</div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Contar sacos y pallets por peso</strong>: usar báscula para calcular cantidad real cuando el pallet está incompleto. Registrar resultado.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> Para perfiles y metalcon: <strong>marcar físicamente cada paquete</strong> con sticker de cantidad antes del inventario. El conteo es de stickers, no de piezas.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> Gasfitería tiene 177 productos persistentes: <strong>spot check mensual</strong> de los top 30 códigos — no esperar al inventario anual.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Pisos: verificar si hay cajas mezcladas de distintos modelos en misma ubicación. Unificar por SKU antes del inventario.
+              </div>
+              <div class="mej-action-item mej-prio-low">
+                <span class="mej-prio-badge">Baja</span> Solicitar a proveedor metalcon que los paquetes vengan con cantidad impresa/marcada — reduce error en ingreso y en conteo.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAQUINARIA Y ACERO -->
+      <div class="mej-accordion">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">⚙️</span>
+          <span class="mej-acc-title">Maquinaria / Acero / Perfiles</span>
+          <span class="mej-acc-meta"><span class="badge-warn">12–34% con dif</span> <span class="badge-val">$4,5M dispersión 2025</span></span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-problem-row">
+            <div class="mej-problem">
+              <div class="mej-problem-title">🔍 Problema detectado</div>
+              <ul>
+                <li>Maquinaria: 12% con dif pero $2.57M de impacto por el alto valor individual</li>
+                <li>Acero: 34% con dif, $1.92M — tubos y perfiles difíciles de contar</li>
+                <li>Perfil galvanizado 2026: 68% con dif, $1.64M — la tasa peor de 2026</li>
+                <li>Motosierra Stihl: diferencia de +1 unidad = $203.959 — un error cuesta caro</li>
+              </ul>
+              <div class="mej-root-cause">Causa raíz: en maquinaria los errores son puntuales pero de alto costo. En acero y perfiles el problema es el conteo visual de tubos apilados (diferente a los que muestra el sistema).</div>
+            </div>
+            <div class="mej-actions">
+              <div class="mej-problem-title">✅ Acciones a implementar</div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Doble conteo obligatorio</strong> para todo producto con costo unitario &gt; $100.000. Dos personas cuentan de forma independiente y concilian.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> Acero y perfiles: <strong>marcación de extremo</strong> — pintar o marcar con tiza la cantidad contada en cada atado/paquete para no contar dos veces ni saltar.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Revisar si los perfiles están todos en una sola patente o dispersos — concentrar la ubicación física reduce error en conteo.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Para maquinaria de exhibición (motosierra, etc.): inventariar primero los productos en exhibición, luego bodega. Evitar contar el mismo producto dos veces.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIN CLASIFICAR -->
+      <div class="mej-accordion">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">❓</span>
+          <span class="mej-acc-title">Sin Clasificar · Producto fantasma con mayor diferencia</span>
+          <span class="mej-acc-meta"><span class="badge-crit">$10,5M en 2026</span> <span class="badge-val">Crece sin control</span></span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-problem-row">
+            <div class="mej-problem">
+              <div class="mej-problem-title">🔍 Problema detectado</div>
+              <ul>
+                <li>Existe un producto <strong>sin código ni descripción</strong> que tiene diferencia de −2.706 unidades en 2025 y −2.213 en 2026</li>
+                <li>El impacto monetario de este solo ítem es <strong>$5.35M en 2026</strong></li>
+                <li>En 2025 era el 3° mayor problema ($3.81M), en 2026 es el 1° ($7.1M faltante)</li>
+                <li>492 productos sin familia/clasificación en 2026 (vs 1 en 2025) — el catálogo se está deteriorando</li>
+              </ul>
+              <div class="mej-root-cause">Causa raíz: hay productos ingresados al sistema sin completar la ficha técnica (sin familia, sin clasificación). El catálogo está creciendo desordenadamente.</div>
+            </div>
+            <div class="mej-actions">
+              <div class="mej-problem-title">✅ Acciones a implementar</div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Identificar urgente</strong> el producto sin código con diferencia de 2.213 unidades — hablar con el equipo de bodega para saber qué producto es físicamente. Regularizar en sistema.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> <strong>Completar fichas</strong> de los 492 productos sin familia en 2026 — asignar a categoría correcta antes del cierre del inventario.
+              </div>
+              <div class="mej-action-item mej-prio-high">
+                <span class="mej-prio-badge">Alta</span> Establecer <strong>validación obligatoria</strong> al crear productos en sistema: no se puede guardar sin familia + hiperfamilia. Pedirlo al equipo IT/ERP.
+              </div>
+              <div class="mej-action-item mej-prio-med">
+                <span class="mej-prio-badge">Media</span> Auditoría semestral del catálogo: revisar todos los productos sin clasificación y depurar duplicados.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PLAN DE ACCIÓN ── -->
+      <div class="mej-section-title" style="margin-top:28px">📅 Plan de Acción · 3 Fases</div>
+
+      <div class="mej-accordion mej-acc-green">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">🟢</span>
+          <span class="mej-acc-title">Fase 1 · Antes del inventario (−30 días)</span>
+          <span class="mej-acc-meta">Preparación y depuración</span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-checklist">
+            <label class="mej-check-item"><input type="checkbox"> <span>Depurar maestro: dar de baja descontinuados sin stock físico (objetivo: reducir de 2.137 a 0)</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Clasificar los 492 productos "Sin Clasificar" — asignar familia correcta</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Identificar y regularizar el producto fantasma (−2.213 unidades, $5.35M)</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Concentrar el Outlet en una zona física única y delimitada</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Marcar con stickers de cantidad todos los paquetes de perfiles, metalcon y madera</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Spot check previo: contar los 50 productos más problemáticos del 2025 y cuadrar antes del inventario</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Capacitar al equipo en protocolos de conteo por familia (granel, madera, acero)</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Verificar que todos los productos de exhibición tienen código/ubicación correcta en sistema</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="mej-accordion mej-acc-orange">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">🟡</span>
+          <span class="mej-acc-title">Fase 2 · Durante el inventario</span>
+          <span class="mej-acc-meta">Ejecución con control de calidad</span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-checklist">
+            <label class="mej-check-item"><input type="checkbox"> <span>Doble conteo en productos &gt; $100.000 costo unitario (maquinaria, acero, madera OSB)</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Asignar responsable fijo por zona — nadie cuenta dos zonas distintas en paralelo</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Contar Outlet y descontinuados en turno separado, antes del inventario general</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Usar báscula para sacos de cemento/áridos en pallets incompletos</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Fotodocumentar madera en patio (foto + n° de piezas contadas)</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Para granel (tarugos, cuerdas): contar por gaveta/bandeja llena, no pieza a pieza</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Marcar con sticker "CONTADO" cada patente/zona al terminar</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Revisar en tiempo real las diferencias &gt; 50 unidades antes de cerrar la patente</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="mej-accordion mej-acc-blue">
+        <button class="mej-acc-header" onclick="toggleAcc(this)">
+          <span class="mej-acc-icon">🔵</span>
+          <span class="mej-acc-title">Fase 3 · Después del inventario</span>
+          <span class="mej-acc-meta">Análisis, ajustes y seguimiento</span>
+          <span class="mej-acc-arrow">▼</span>
+        </button>
+        <div class="mej-acc-body">
+          <div class="mej-checklist">
+            <label class="mej-check-item"><input type="checkbox"> <span>Analizar diferencias por familia y priorizar los ajustes de mayor impacto monetario</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Para diferencias &gt; $500.000: investigar causa antes de ajustar sistema (¿error conteo, robo, producto equivocado?)</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Ajustar stock en sistema solo después de validación con jefe de tienda</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Generar reporte por responsable de zona: ¿quién tuvo mejor exactitud?</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Implementar spot checks mensuales para los 100 productos más problemáticos</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Comparar resultados con este dashboard para medir mejora real</span></label>
+            <label class="mej-check-item"><input type="checkbox"> <span>Documentar el protocolo actualizado para el inventario 2027</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RESUMEN DE IDEAS ── -->
+      <div class="mej-section-title" style="margin-top:28px">💡 Ideas Clave a Implementar</div>
+      <div class="mej-ideas-grid">
+        <div class="mej-idea-card mej-idea-high">
+          <div class="mej-idea-icon">⚖️</div>
+          <div class="mej-idea-title">Contar por peso / paquete</div>
+          <div class="mej-idea-body">Para sacos, bobinas y paquetes — usar peso o unidad de embalaje como unidad de conteo. Mucho más preciso que pieza a pieza.</div>
+          <div class="mej-idea-impact">Impacto estimado: ↓30–50% dif en Madera, Construcción</div>
+        </div>
+        <div class="mej-idea-card mej-idea-high">
+          <div class="mej-idea-icon">🏷️</div>
+          <div class="mej-idea-title">Pre-marcar todo antes de contar</div>
+          <div class="mej-idea-body">Stickers en paquetes de metalcon, perfiles, madera y pallets. Contar stickers es 5× más rápido y preciso que contar piezas sueltas.</div>
+          <div class="mej-idea-impact">Impacto estimado: ↓40–60% dif en Acero/Perfiles</div>
+        </div>
+        <div class="mej-idea-card mej-idea-high">
+          <div class="mej-idea-icon">👥</div>
+          <div class="mej-idea-title">Doble conteo para alto valor</div>
+          <div class="mej-idea-body">Todo producto &gt; $100.000 costo unitario debe ser contado por 2 personas independientes. Con 12% de tasa de error en Maquinaria, un error vale $200.000+.</div>
+          <div class="mej-idea-impact">Impacto estimado: ↓80% dif en Maquinaria</div>
+        </div>
+        <div class="mej-idea-card mej-idea-med">
+          <div class="mej-idea-icon">🧹</div>
+          <div class="mej-idea-title">Depuración masiva del catálogo</div>
+          <div class="mej-idea-body">2.137 descontinuados + 492 sin clasificar = $15M de dispersión artificial. Limpiar el maestro antes del inventario es la acción de mayor ROI.</div>
+          <div class="mej-idea-impact">Impacto estimado: ↓31% dispersión total</div>
+        </div>
+        <div class="mej-idea-card mej-idea-med">
+          <div class="mej-idea-icon">📍</div>
+          <div class="mej-idea-title">Spot checks mensuales</div>
+          <div class="mej-idea-body">Los 1.456 productos persistentes no pueden esperar al inventario anual. Contar los top 30 por valor cada mes permite detectar problemas antes de que se acumulen.</div>
+          <div class="mej-idea-impact">Impacto estimado: detectar problemas 11 meses antes</div>
+        </div>
+        <div class="mej-idea-card mej-idea-med">
+          <div class="mej-idea-icon">🗂️</div>
+          <div class="mej-idea-title">Zona única para Outlet</div>
+          <div class="mej-idea-body">Concentrar todos los items de liquidación y descontinuados en un área física delimitada. Pre-inventariar esta zona 1 semana antes.</div>
+          <div class="mej-idea-impact">Impacto estimado: ↓90% dispersión Outlet ($4.5M)</div>
+        </div>
+        <div class="mej-idea-card mej-idea-low">
+          <div class="mej-idea-icon">📷</div>
+          <div class="mej-idea-title">Fotodocumentación patio/bodega</div>
+          <div class="mej-idea-body">Tomar fotos de la madera y materiales en patio antes y después del conteo. Respaldo en caso de disputas y útil para calibrar el protocolo del año siguiente.</div>
+          <div class="mej-idea-impact">Reducción de disputas post-inventario</div>
+        </div>
+        <div class="mej-idea-card mej-idea-low">
+          <div class="mej-idea-icon">🔒</div>
+          <div class="mej-idea-title">Validación obligatoria en ERP</div>
+          <div class="mej-idea-body">Pedir al equipo IT que el sistema no permita crear productos sin familia/categoría. Evita que el catálogo "Sin Clasificar" siga creciendo (492 en 2026 vs 1 en 2025).</div>
+          <div class="mej-idea-impact">Prevención de problemas futuros</div>
+        </div>
+      </div>
+
+      <!-- Meta 2026 -->
+      <div class="mej-meta-card">
+        <div class="mej-meta-title">🎯 Meta propuesta para cierre inventario 2026</div>
+        <div class="mej-meta-kpis">
+          <div class="mej-meta-kpi"><span class="mej-meta-val">≥ 87%</span><span class="mej-meta-lbl">Items exactos</span><span class="mej-meta-now">Hoy: 83,2%</span></div>
+          <div class="mej-meta-kpi"><span class="mej-meta-val">≥ 96%</span><span class="mej-meta-lbl">Exactitud unid.</span><span class="mej-meta-now">Hoy: 94,56%</span></div>
+          <div class="mej-meta-kpi"><span class="mej-meta-val">≤ $28M</span><span class="mej-meta-lbl">Dispersión total</span><span class="mej-meta-now">Hoy: $48,5M</span></div>
+          <div class="mej-meta-kpi"><span class="mej-meta-val">≤ 2,5%</span><span class="mej-meta-lbl">% Dispersión</span><span class="mej-meta-now">Hoy: 4,41%</span></div>
+        </div>
+        <div class="mej-meta-sub">Las metas propuestas son alcanzables con depuración de catálogo + mejoras de protocolo, sin necesidad de inversión tecnológica.</div>
+      </div>
+
+    </div><!-- /view-mejoras -->
+
+    <!-- ── MODO ANÁLISIS AVANZADO 2025 ───────────────────────────── -->
+    <div id="view-2025v2" class="view hidden">
+      <div class="view-header">
+        <h2>🔬 Análisis Avanzado · Inventario 2025</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="renderModeV2()">🔄 Actualizar</button>
+        </div>
+      </div>
+
+      <div class="filters-bar" id="filters-2025v2"></div>
+
+      <!-- Resumen por Patente -->
+      <div class="v2-section">
+        <div class="v2-section-header">
+          <div>
+            <h3 class="v2-section-title">📍 Resumen por Patente / Sala</h3>
+            <p class="v2-section-desc">Exactitud, correctos, faltantes, sobrantes y valor en riesgo agrupados por patente física.</p>
+          </div>
+          <button class="btn btn-xs" onclick="exportTableToExcel('v2-pat-tbl','Resumen_Patentes_2025')">⬇ xlsx</button>
+        </div>
+        <div id="v2-patente-table"></div>
+      </div>
+
+      <!-- Análisis por Rango de Costo Unitario -->
+      <div class="v2-section">
+        <div class="v2-section-header">
+          <div>
+            <h3 class="v2-section-title">💲 Exactitud por Rango de Costo Unitario</h3>
+            <p class="v2-section-desc">¿Los productos de mayor valor unitario son más o menos exactos? Segmentación por precio.</p>
+          </div>
+        </div>
+        <div id="v2-costo-rangos"></div>
+      </div>
+
+      <!-- Top 30 Mayor Riesgo $ -->
+      <div class="v2-section">
+        <div class="v2-section-header">
+          <div>
+            <h3 class="v2-section-title">⚠️ Top 30 · Mayor Riesgo $</h3>
+            <p class="v2-section-desc">Productos ordenados por diferencia monetaria absoluta — los que generan mayor impacto en la dispersión.</p>
+          </div>
+          <button class="btn btn-xs" onclick="exportTableToExcel('v2-riesgo-tbl','Top_Riesgo_2025')">⬇ xlsx</button>
+        </div>
+        <div id="v2-riesgo-table"></div>
+      </div>
+
+      <!-- Sin Encontrar & Fantasmas -->
+      <div class="v2-section">
+        <div class="v2-section-header">
+          <div>
+            <h3 class="v2-section-title">👻 Sin Encontrar & Fantasmas</h3>
+            <p class="v2-section-desc">Productos con stock en sistema pero conteo = 0 (no encontrados físicamente) y productos contados sin stock en sistema.</p>
+          </div>
+          <button class="btn btn-xs" onclick="exportTableToExcel('v2-perdidos-tbl','Sin_Encontrar_2025')">⬇ xlsx Perdidos</button>
+        </div>
+        <div id="v2-especiales"></div>
+      </div>
+
+    </div><!-- /view-2025v2 -->
+
+  </main>
+</div><!-- /app-body -->
+
+<!-- ── MODAL MAPEO DE COLUMNAS ───────────────────────────────────── -->
+<div id="mapping-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>⚠️ Mapear columnas del archivo</h3>
+    <p id="mapping-info"></p>
+    <div id="mapping-fields"></div>
+    <div class="modal-footer">
+      <button class="btn btn-orange" id="btn-apply-mapping">✓ Aplicar y cargar</button>
+      <button class="btn btn-ghost" onclick="cancelMapping()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ─────────────────────────────────────────────────────── -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
