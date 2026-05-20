@@ -743,7 +743,6 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('sobrestock')">📦 Sobre-stock</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('transito')">🚚 Tránsito</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('bajrot')">📉 Baja Rotación</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('vvsstock')">📊 Venta vs Stock</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('mem')">🔧 Merma MEM</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')">🔖 Liquidación</button>
       </div>
@@ -770,6 +769,12 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
         <button class="nav-btn" id="cuponNavBtn" onclick="showTab('cupones',this)">🏷️ Cupones <span id="cuponNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
         <button class="nav-btn" onclick="showTab('banner',this);bannerAdminCargar()">🖼️ Banner Principal</button>
+      </div>
+    </div>
+    <div class="sidebar-group">
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Adquisiciones <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('adquisiciones',this)">📋 Solicitud Stock</button>
       </div>
     </div>
     <div class="sidebar-group">
@@ -909,7 +914,6 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <button class="vadm-stab vadm-stab-inv"        id="vstab-sobrestock" onclick="vadmSubTab('sobrestock')">📦 Sobre-stock</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-transito"   onclick="vadmSubTab('transito')">🚚 Tránsito PEM</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-merma"      onclick="vadmSubTab('merma')">🔖 Merma / Remate</button>
-          <button class="vadm-stab vadm-stab-inv"        id="vstab-vvsstock"   onclick="vadmSubTab('vvsstock')">📊 Venta vs Stock</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-bajrot"     onclick="vadmSubTab('bajrot')">📉 Baja Rotación</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-mem"        onclick="vadmSubTab('mem')">🔧 MEM Merma</button>
         </div>
@@ -1355,30 +1359,22 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           </div>
         </div><!-- /vsec-quiebre -->
 
-        <!-- ── SUB-TAB: VENTA VS STOCK ── -->
-        <div class="vadm-section" id="vsec-vvsstock">
-          <div class="vadm-anal-bar">
-            <button class="ven-adm-btn" onclick="vadmRenderVvsStock()">🔄 Actualizar</button>
-            <div id="vadmVSStatus" style="font-size:12px;color:#9ca3af;padding:5px 8px"></div>
-          </div>
-          <div style="padding:14px 18px" id="vadmVSBody">
-            <div class="ven-adm-empty">Haz clic en <strong>🔄 Actualizar</strong> para ver la comparación venta vs stock.</div>
-          </div>
-        </div><!-- /vsec-vvsstock -->
 
         <!-- ── SUB-TAB: SOBRE-STOCK ── -->
         <div class="vadm-section" id="vsec-sobrestock">
           <div class="vadm-anal-bar">
             <button class="ven-adm-btn" onclick="vadmRenderSobreStock()">🔄 Actualizar</button>
-            <span style="font-size:11px;color:#6b7280;padding:4px 8px">Cobertura mínima:</span>
+            <span style="font-size:11px;color:#6b7280;padding:4px 8px">Cobertura min:</span>
             <select id="vadmSSMesesMin" onchange="vadmRenderSobreStock()" style="font-size:11px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;background:#fff">
               <option value="3">3 meses</option>
-              <option value="6" selected>6 meses</option>
-              <option value="9">9 meses</option>
-              <option value="12">12 meses</option>
-              <option value="0">Solo sin venta 90d</option>
+              <option value="6">6 meses</option>
+              <option value="12" selected>12 meses</option>
+              <option value="18">18 meses</option>
+              <option value="24">24 meses</option>
+              <option value="36">36 meses</option>
             </select>
             <select id="vadmSSMarcaSel" onchange="vadmRenderSobreStock()" style="font-size:11px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;background:#fff;max-width:130px"><option value="">Todas las marcas</option></select>
+            <input id="vadmSSBusc" type="text" placeholder="🔍 Código o descripción..." oninput="vadmRenderSobreStock()" style="font-size:11px;padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;background:#fff;min-width:180px">
             <div id="vadmSSStatus" style="font-size:12px;color:#9ca3af;padding:5px 8px"></div>
           </div>
           <div style="padding:14px 18px" id="vadmSSBody">
@@ -2636,6 +2632,64 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 
     </div>
     <!-- ── FIN TAB SESIONES ──────────────────────────────────────────────────── -->
+
+<div class="tab-pane" id="tab-adquisiciones">
+  <div class="card">
+    <div class="card-title"><span>📋</span> Solicitud Semanal de Stock — El Manzano</div>
+
+    <!-- Filtros -->
+    <div class="vadm-anal-bar" style="gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <label style="font-size:12px;font-weight:600;color:#374151">Desde
+        <input type="date" id="reqDesde" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">Hasta
+        <input type="date" id="reqHasta" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">Cobertura
+        <select id="reqDias" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+          <option value="30">30 días</option>
+          <option value="60">60 días</option>
+          <option value="90" selected>90 días</option>
+        </select>
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">Marca
+        <select id="reqMarca" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+          <option value="">Todas</option>
+        </select>
+      </label>
+      <button class="btn btn-sm" onclick="reqStockPrellenar()">🔄 Pre-llenar Top 10</button>
+      <button class="btn btn-sm" style="background:#059669;color:white" onclick="reqStockEnviarEmail()">📧 Enviar a Adquisiciones</button>
+    </div>
+
+    <!-- Badge AYER -->
+    <div style="margin-bottom:8px">
+      <span class="vadm-filter-tag">📅 Stock del momento: datos AYER</span>
+    </div>
+
+    <!-- Tabla -->
+    <div class="ven-adm-table-wrap">
+      <table class="vadm-rank-table" id="reqStockTable" style="width:100%">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>SKU</th>
+            <th>Producto</th>
+            <th class="r">Stock Mín</th>
+            <th class="r">Pedido</th>
+            <th class="r">Stock Momento</th>
+            <th class="r">Stock Mín Solicitado</th>
+            <th class="r">Pedido Máx Solicitado</th>
+          </tr>
+        </thead>
+        <tbody id="reqStockBody">
+          <tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">
+            Selecciona rango de fechas y presiona "Pre-llenar Top 10"
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
   </div><!-- /content -->
   </div><!-- /main-content -->
@@ -6469,7 +6523,6 @@ function vadmSubTab(id){
   if(id==='merma')                              vadmRenderMerma();
   if(id==='rankingmarca' && _vadmLineas.length) vadmRenderRankingMarca();
   if(id==='estaciones'   && _vadmLineas.length) vadmRenderEstaciones();
-  if(id==='vvsstock'    && _vadmLineas.length) vadmRenderVvsStock();
   if(id==='bajrot'){
     // Pre-rellenar fechas con el mes actual si están vacíos
     var br1=document.getElementById('vadmBRdesde'); var br2=document.getElementById('vadmBRhasta');
@@ -6496,6 +6549,7 @@ function vadmSubTab(id){
   if(id==='marcavend2') vadmRenderMarcaVend2();
   if(id==='preciodiff') vadmRenderPrecioDiff();
   if(id==='mem')        vadmRenderMEM();
+  if(id==='adquisiciones') renderReqStock();
 }
 
 // ── MÓDULO ANÁLISIS POR CATEGORÍA ────────────────────────────────────────────
@@ -6516,6 +6570,7 @@ var _vadmRMABCFiltro   = '';
 var _vadmQuiebresTimer = null;
 var _vadmStockMap      = null;   // { cod: {stock,marca,desc} } desde Datos.json
 var _vadmStockLoading  = false;
+var _vadmSSProds       = [];     // cache último render sobre-stock (para email/Excel)
 var _vadmQuiebresVistas= {};     // marca → timestamp última vez mostrada
 // ── Estado compartido modal de email (sincroniza HTML + texto + Excel) ────────
 var _vadmEmailCurrentTab      = null;   // tab activo cuando se abrió el modal
@@ -8930,6 +8985,13 @@ function _vadmDiasHabilesN(n){
 // ══════════════════════════════════════════════════════════════════════════════
 // ── SOBRE-STOCK ───────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
+function vadmSSMarcaClick(el){
+  var m=el.getAttribute('data-marca')||'';
+  var s=document.getElementById('vadmSSMarcaSel');
+  s.value=(s.value===m?'':m);
+  vadmRenderSobreStock();
+}
+
 function vadmRenderSobreStock(){
   var st=document.getElementById('vadmSSStatus'), bd=document.getElementById('vadmSSBody');
   if(!_vadmLineas.length){ bd.innerHTML='<div class="ven-adm-empty">Sin datos de ventas.</div>'; return; }
@@ -8937,47 +8999,46 @@ function vadmRenderSobreStock(){
     bd.innerHTML='<div class="ven-adm-loading">Cargando catálogo...</div>';
     _vadmCargarStockMap(function(){ vadmRenderSobreStock(); }); return;
   }
-  var mesesMin=parseInt((document.getElementById('vadmSSMesesMin')||{}).value||'6');
+  var mesesMin=parseInt((document.getElementById('vadmSSMesesMin')||{}).value||'12');
   var filtMarca=((document.getElementById('vadmSSMarcaSel')||{}).value||'');
-  var hoy=new Date();
-  var c90=new Date(hoy); c90.setDate(c90.getDate()-90); c90.setHours(0,0,0,0);
-  function parseFR(s){var p=(s||'').split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null;}
+  var filtBusc=((document.getElementById('vadmSSBusc')||{}).value||'').toLowerCase().trim();
 
-  // Calcular qty90, lastSale, totalVenta por código
-  var qty90m={},lastSaleM={},totalVentaM={};
-  _vadmLineas.forEach(function(r){
-    if(!r.codigo)return;
-    var d=parseFR(r.fecha||'');
-    totalVentaM[r.codigo]=(totalVentaM[r.codigo]||0)+(r.valorNeto||0);
-    if(d&&d>=c90&&d<=hoy) qty90m[r.codigo]=(qty90m[r.codigo]||0)+(r.cantidad||0);
-    if(d&&(!lastSaleM[r.codigo]||d>lastSaleM[r.codigo])) lastSaleM[r.codigo]=d;
-  });
+  // Qty vendida por código — respeta filtro bodega global
+  var qtyMap={};
+  var lineasV=(_vadmBodSel&&_vadmBodSel.length>0)
+    ?_vadmLineas.filter(function(r){return _vadmBodSel.indexOf(r.bodegaCorta)>=0;})
+    :_vadmLineas;
+  lineasV.forEach(function(r){ if(r.codigo) qtyMap[r.codigo]=(qtyMap[r.codigo]||0)+(r.cantidad||0); });
 
-  // Construir lista de productos con sobre-stock
-  var dh90ss=_vadmDiasHabilesN(90);
+  // Meses de datos cargados → velocidad mensual promedio
+  var perSet={};
+  _vadmLineas.forEach(function(r){ if(r.periodo) perSet[r.periodo]=1; });
+  var nMeses=Math.max(1,Object.keys(perSet).length);
+
+  // Construir sobre-stock: cobertura = stock ÷ (qty/nMeses)
   var prods=[];
   Object.keys(_vadmStockMap).forEach(function(cod){
     var sm=_vadmStockMap[cod];
-    var stockVR=sm.stock||0; // stock comercial = PEM + SEM + CEM + MEM
+    var stockVR;
+    if(_vadmBodSel&&_vadmBodSel.length>0){
+      stockVR=0; _vadmBodSel.forEach(function(b){ stockVR+=(sm[b.toLowerCase()]||0); });
+    } else { stockVR=sm.stock||0; }
     if(stockVR<=0) return;
     if(filtMarca&&sm.marca!==filtMarca) return;
-    var q90=qty90m[cod]||0;
-    var velDia=q90/dh90ss;
-    var cobDias=velDia>0?Math.round(stockVR/velDia):null;
-    var diasSinVenta=lastSaleM[cod]?_vadmDiasHabiles(lastSaleM[cod], hoy):null;
-    var sinVenta90=q90===0;
-    var sobrestock=(mesesMin===0)?sinVenta90:(cobDias!==null&&cobDias>mesesMin*30)||sinVenta90;
-    if(!sobrestock) return;
+    var qty=qtyMap[cod]||0;
+    var velMes=qty/nMeses;
+    var cobMeses=velMes>0?stockVR/velMes:999;
+    if(cobMeses<=mesesMin) return;
     var markupX=sm.costo>0?Math.round((sm.precio/sm.costo)*10)/10:null;
-    var valorStock=stockVR*sm.costo;
     prods.push({cod:cod,desc:sm.desc,marca:sm.marca,subfam:sm.subfam,
-      pem:sm.pem||0,sem:sm.sem||0,cd:sm.cd||0,cd_trans:sm.cd_trans||0,stock:stockVR,
-      velDia:velDia,cobDias:cobDias,diasSinVenta:diasSinVenta,sinVenta90:sinVenta90,
-      costo:sm.costo,precio:sm.precio,markupX:markupX,valorStock:valorStock,totalVenta:totalVentaM[cod]||0});
+      pem:sm.pem||0,sem:sm.sem||0,stock:stockVR,
+      qty:qty,cobMeses:cobMeses,
+      costo:sm.costo,precio:sm.precio,markupX:markupX,valorStock:stockVR*(sm.costo||0)});
   });
-  prods.sort(function(a,b){ return (b.cobDias||99999)-(a.cobDias||99999); });
+  prods.sort(function(a,b){ return b.cobMeses-a.cobMeses; });
+  _vadmSSProds=prods;
 
-  // Poblar marcas
+  // Poblar marcas (solo primera vez)
   var mSel=document.getElementById('vadmSSMarcaSel');
   if(mSel&&mSel.options.length<=1){
     var ms={};Object.keys(_vadmStockMap).forEach(function(c){var m=_vadmStockMap[c].marca;if(m)ms[m]=1;});
@@ -8985,32 +9046,36 @@ function vadmRenderSobreStock(){
   }
 
   var totalValor=prods.reduce(function(s,p){return s+p.valorStock;},0);
-  var sinMov=prods.filter(function(p){return p.sinVenta90;}).length;
-  st.textContent=prods.length+' productos · Valor stock: '+venAdmFmt(totalValor)+' · Sin mov. 90d: '+sinMov;
+  st.textContent=prods.length+' productos · Valor a costo: '+venAdmFmt(totalValor)+' · Cobertura ≥'+mesesMin+' meses';
 
-  if(!prods.length){ bd.innerHTML='<div class="ven-adm-empty">No hay productos con sobre-stock según los filtros seleccionados.</div>'; return; }
+  if(!prods.length){ bd.innerHTML='<div class="ven-adm-empty">No hay productos con cobertura mayor a '+mesesMin+' meses.</div>'; return; }
+
+  // Aplicar buscador solo para display (no afecta cache ni email)
+  var prodsVis=filtBusc?prods.filter(function(p){
+    return p.cod.toLowerCase().indexOf(filtBusc)>=0||p.desc.toLowerCase().indexOf(filtBusc)>=0;
+  }):prods;
 
   // KPIs
   var kpiHtml='<div class="vadm-kpi-row" style="margin-bottom:12px">'+
     '<div class="vadm-kpi" style="border-top:4px solid #7c3aed"><div class="vadm-kpi-val" style="color:#7c3aed">'+prods.length+'</div><div class="vadm-kpi-lbl">Productos</div></div>'+
-    '<div class="vadm-kpi" style="border-top:4px solid #dc2626"><div class="vadm-kpi-val" style="color:#dc2626">'+sinMov+'</div><div class="vadm-kpi-lbl">Sin mov. 90d</div></div>'+
     '<div class="vadm-kpi" style="border-top:4px solid #d97706"><div class="vadm-kpi-val" style="color:#d97706">'+venAdmFmt(totalValor)+'</div><div class="vadm-kpi-lbl">Valor a costo</div></div>'+
-    '<div class="vadm-kpi" style="border-top:4px solid #6b7280"><div class="vadm-kpi-val" style="color:#6b7280">'+prods.filter(function(p){return p.markupX&&p.markupX>3;}).length+'</div><div class="vadm-kpi-lbl">Markup &gt;3×</div></div>'+
+    '<div class="vadm-kpi" style="border-top:4px solid #dc2626"><div class="vadm-kpi-val" style="color:#dc2626">'+prods.filter(function(p){return p.cobMeses>=999;}).length+'</div><div class="vadm-kpi-lbl">Sin venta</div></div>'+
+    '<div class="vadm-kpi" style="border-top:4px solid #6b7280"><div class="vadm-kpi-val" style="color:#6b7280">'+nMeses+'</div><div class="vadm-kpi-lbl">Meses datos</div></div>'+
     '</div>';
 
-  // Resumen por marca
+  // Top marcas — clic para filtrar
   var byMarca={};
   prods.forEach(function(p){
-    if(!byMarca[p.marca])byMarca[p.marca]={marca:p.marca,n:0,valor:0,sinMov:0};
+    if(!byMarca[p.marca])byMarca[p.marca]={marca:p.marca,n:0,valor:0};
     byMarca[p.marca].n++;byMarca[p.marca].valor+=p.valorStock;
-    if(p.sinVenta90)byMarca[p.marca].sinMov++;
   });
   var marcaArr=Object.values(byMarca).sort(function(a,b){return b.valor-a.valor;});
   var marcaRows=marcaArr.slice(0,10).map(function(m){
-    return '<tr><td style="padding:5px 8px;font-size:11px;font-weight:600;color:#7c3aed">'+venAdmEsc(m.marca)+'</td>'+
+    var isActive=filtMarca===m.marca;
+    return '<tr style="cursor:pointer'+(isActive?';background:#ede9fe':'')+'" onclick="vadmSSMarcaClick(this)" data-marca="'+venAdmEsc(m.marca)+'">'+
+      '<td style="padding:5px 8px;font-size:11px;font-weight:600;color:'+(isActive?'#5b21b6':'#7c3aed')+'">'+venAdmEsc(m.marca)+(isActive?' ✓':'')+'</td>'+
       '<td class="r" style="padding:5px 8px;font-size:11px">'+m.n+'</td>'+
-      '<td class="r" style="padding:5px 8px;font-size:11px">'+venAdmFmt(m.valor)+'</td>'+
-      '<td class="r" style="padding:5px 8px;font-size:11px;color:#dc2626">'+m.sinMov+'</td></tr>';
+      '<td class="r" style="padding:5px 8px;font-size:11px">'+venAdmFmt(m.valor)+'</td></tr>';
   }).join('');
 
   var head='<thead><tr style="background:#1e1b4b;color:#fff">'+
@@ -9020,51 +9085,44 @@ function vadmRenderSobreStock(){
     '<th style="padding:8px 6px;font-size:10px">Subfamilia</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#14532d;color:#bbf7d0">PEM</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#0f4c75;color:#bae6fd">SEM</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:10px;background:#92400e;color:#fde68a">CD DISP</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:10px;background:#78350f;color:#fde68a">CD TRANS</th>'+
     '<th class="r" style="padding:8px 6px;font-size:11px">Costo</th>'+
     '<th class="r" style="padding:8px 6px;font-size:11px">Precio</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:10px">Markup</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:10px">$/día vel.</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:10px">Cobertura</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:10px">Días sin venta</th>'+
+    '<th class="r" style="padding:8px 6px;font-size:10px" title="Markup = Precio ÷ Costo  (ej: 3× significa que el precio es 3 veces el costo)">Markup ⓘ</th>'+
+    '<th class="r" style="padding:8px 6px;font-size:10px;background:#7c3aed;color:#ede9fe" title="Unidades vendidas en el período cargado">Qty vend.</th>'+
+    '<th class="r" style="padding:8px 6px;font-size:10px;background:#b45309;color:#fef3c7" title="Stock ÷ (ventas/mes) — meses que cubre el stock actual">Meses cob.</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px">Valor stock</th>'+
     '</tr></thead>';
-  var rows=prods.map(function(v){
-    var cobTxt=v.cobDias!==null?(v.cobDias+'d'):'-';
-    var cobCol=v.cobDias!==null&&v.cobDias>365?'#dc2626':v.cobDias>180?'#f97316':v.cobDias>90?'#eab308':'#374151';
+  var rows=prodsVis.map(function(v){
     var mkTxt=v.markupX!==null?v.markupX+'×':'-';
     var mkCol=v.markupX>5?'#dc2626':v.markupX>3?'#f97316':'#374151';
-    var sinMovBg=v.sinVenta90?'background:#fef2f2':'';
     var stPEM=v.pem>0?'<td class="r" style="padding:5px 8px;font-weight:700;color:#14532d">'+v.pem.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:5px 8px;color:#9ca3af">—</td>';
     var stSEM=v.sem>0?'<td class="r" style="padding:5px 8px;font-weight:700;color:#0369a1">'+v.sem.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:5px 8px;color:#9ca3af">—</td>';
-    var stCD=v.cd>0?'<td class="r" style="padding:5px 8px;font-weight:700;color:#92400e;background:#fef3c7">'+v.cd.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:5px 8px;color:#9ca3af">—</td>';
-    var stCT=v.cd_trans>0?'<td class="r" style="padding:5px 8px;font-weight:700;color:#78350f;background:#fde68a">'+v.cd_trans.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:5px 8px;color:#9ca3af">—</td>';
-    return '<tr style="'+sinMovBg+'">'+
+    var cobTxt=v.cobMeses>=999?'Sin venta':Math.round(v.cobMeses)+'m';
+    var cobCol=v.cobMeses>=999?'#dc2626':v.cobMeses>=24?'#b45309':v.cobMeses>=12?'#d97706':'#374151';
+    return '<tr style="background:#fef2f2">'+
       '<td style="padding:5px 6px;font-family:monospace;font-size:10px">'+venAdmEsc(v.cod)+'</td>'+
       '<td style="padding:5px 10px;font-size:11px;max-width:200px">'+venAdmEsc(v.desc)+'</td>'+
       '<td style="padding:5px 6px;font-size:10px;color:#7c3aed">'+venAdmEsc(v.marca)+'</td>'+
       '<td style="padding:5px 6px;font-size:10px;color:#6b7280">'+venAdmEsc(v.subfam)+'</td>'+
-      stPEM+stSEM+stCD+stCT+
+      stPEM+stSEM+
       '<td class="r" style="padding:5px 8px;font-size:10px;color:#6b7280">'+venAdmFmt(v.costo)+'</td>'+
       '<td class="r" style="padding:5px 8px;font-size:10px">'+venAdmFmt(v.precio)+'</td>'+
       '<td class="r" style="padding:5px 8px;font-weight:700;color:'+mkCol+'">'+mkTxt+'</td>'+
-      '<td class="r" style="padding:5px 8px;font-size:10px;color:#9ca3af">'+venAdmFmt(v.velDia)+'</td>'+
+      '<td class="r" style="padding:5px 8px;font-size:10px;color:#374151">'+(v.qty>0?v.qty.toLocaleString('es-CL'):'0')+'</td>'+
       '<td class="r" style="padding:5px 8px;font-weight:700;color:'+cobCol+'">'+cobTxt+'</td>'+
-      '<td class="r" style="padding:5px 8px;font-size:10px;color:'+(v.sinVenta90?'#dc2626':'#9ca3af')+'">'+
-        (v.diasSinVenta!==null?v.diasSinVenta+'d':'—')+'</td>'+
       '<td class="r" style="padding:5px 8px;font-size:10px">'+venAdmFmt(v.valorStock)+'</td>'+
     '</tr>';
   }).join('');
 
   bd.innerHTML=kpiHtml+
     '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">'+
-    '<div style="flex:1;min-width:280px"><div class="vadm-section-title">🏷️ Top marcas con sobre-stock</div>'+
+    '<div style="flex:1;min-width:280px"><div class="vadm-section-title">🏷️ Top marcas con sobre-stock <span style="font-size:10px;font-weight:400;color:#9ca3af">(clic para filtrar)</span></div>'+
     '<div class="ven-adm-table-wrap"><table class="vtbl"><thead><tr style="background:#1e1b4b;color:#fff">'+
     '<th style="padding:6px 8px">Marca</th><th class="r" style="padding:6px">Productos</th>'+
-    '<th class="r" style="padding:6px">Valor</th><th class="r" style="padding:6px;color:#fca5a5">Sin mov.</th>'+
+    '<th class="r" style="padding:6px">Valor</th>'+
     '</tr></thead><tbody>'+marcaRows+'</tbody></table></div></div></div>'+
-    '<div class="vadm-section-title">📋 Detalle por producto</div>'+
+    (prodsVis.length<prods.length?'<div style="font-size:11px;color:#6b7280;padding:4px 0 8px">🔍 Mostrando '+prodsVis.length+' de '+prods.length+' productos</div>':'')+
+    '<div class="vadm-section-title">📋 Detalle por producto — Cobertura ≥'+mesesMin+' meses <span style="font-size:10px;font-weight:400;color:#9ca3af"> · '+nMeses+' meses de datos · Markup = Precio ÷ Costo</span></div>'+
     '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody></table></div>';
 }
 
@@ -9434,16 +9492,25 @@ function vadmRenderBajaRot(){
     if(st){ st.textContent='⚠️ Selecciona ambas fechas'; st.style.color='#d97706'; } return;
   }
 
-  // 2. Ventas: usar _vadmLineas si ya está cargado, o fetch independiente
-  if(!_vadmLineas.length){
-    if(st){ st.textContent='Cargando ventas…'; st.style.color='#9ca3af'; }
-    if(bd) bd.innerHTML='<div class="ven-adm-loading">Cargando datos de ventas…</div>';
-    fetch('/data/ventas-manzano.json?t='+Math.floor(Date.now()/3600000))
-      .then(function(r){ if(!r.ok) throw new Error('404'); return r.json(); })
+  // 2. Verificar que _vadmLineas cubre el rango seleccionado
+  // Por defecto solo carga el mes actual; Baja Rotación puede pedir un rango más largo
+  var desdeYear = desde.substring(0,4);
+  var _ts2 = Math.floor(Date.now()/3600000);
+  var _minPer = '';
+  _vadmLineas.forEach(function(r){ if(r.periodo&&(!_minPer||r.periodo<_minPer)) _minPer=r.periodo; });
+  var needsReload = !_vadmLineas.length || (_minPer && desde.substring(0,7) < _minPer);
+
+  if(needsReload){
+    if(st){ st.textContent='⏳ Cargando datos de '+desdeYear+'…'; st.style.color='#9ca3af'; }
+    if(bd) bd.innerHTML='<div class="ven-adm-loading">Cargando datos de ventas de '+desdeYear+'…</div>';
+    fetch('/data/ventas-manzano-'+desdeYear+'.json?t='+_ts2)
+      .then(function(r){
+        if(!r.ok) return fetch('/data/ventas-manzano.json?t='+_ts2).then(function(r2){ if(!r2.ok) throw new Error('404'); return r2.json(); });
+        return r.json();
+      })
       .then(function(json){
         var arr=json.registros||[];
         if(!arr.length) throw new Error('vacío');
-        // Poblar _vadmLineas con la estructura mínima necesaria
         _vadmLineas=arr.map(function(r){
           return {codigo:r.codigo||'',fecha:r.fecha||'',valorNeto:r.valorNeto||0,
                   cantidad:r.cantidad||0,marca:r.marca||'',periodo:r.periodo||'',
@@ -9452,8 +9519,8 @@ function vadmRenderBajaRot(){
         vadmRenderBajaRot();
       })
       .catch(function(){
-        if(st){ st.textContent='⚠️ Sin datos de ventas. Ejecuta PREPARAR_Y_PUBLICAR.bat'; st.style.color='#d97706'; }
-        if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay datos de ventas disponibles.<br>Ejecuta <strong>PREPARAR_Y_PUBLICAR.bat</strong> para generar los datos.</div>';
+        if(st){ st.textContent='⚠️ Sin datos de ventas para '+desdeYear+'. Ejecuta PREPARAR_Y_PUBLICAR.bat'; st.style.color='#d97706'; }
+        if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay datos de ventas disponibles para '+desdeYear+'.<br>Ejecuta <strong>PREPARAR_Y_PUBLICAR.bat</strong> para generarlos.</div>';
       });
     return;
   }
@@ -9491,11 +9558,14 @@ function vadmRenderBajaRot(){
     return selFields.some(function(f){return (s[f]||0)>0;});
   }).map(function(c){
     var s=_vadmStockMap[c], v=ventaMap[c]||{qty:0,neto:0};
+    var _pem=selFields.indexOf('pem')>=0?(s.pem||0):0;
+    var _sem=selFields.indexOf('sem')>=0?(s.sem||0):0;
+    var _cd =selFields.indexOf('cd') >=0?(s.cd ||0):0;
+    var _cos=s.costo||0;
     return {cod:c,desc:s.desc||'',marca:s.marca||'',hiper:s.hiperfam||'',fam:s.fam||'',sub:s.subfam||'',
-            pem:selFields.indexOf('pem')>=0?(s.pem||0):0,
-            sem:selFields.indexOf('sem')>=0?(s.sem||0):0,
-            cd: selFields.indexOf('cd') >=0?(s.cd ||0):0,
-            cd_trans:s.cd_trans||0,qty:v.qty,neto:v.neto,abc:''};
+            pem:_pem,sem:_sem,cd:_cd,cd_trans:s.cd_trans||0,
+            costo:_cos,val:(_pem+_sem)*_cos,
+            qty:v.qty,neto:v.neto,abc:''};
   });
 
   if(!prods.length){
@@ -9596,6 +9666,7 @@ function _vadmRenderBajaRotTabla(filtrados){
     '<th class="r" style="padding:8px 6px;font-size:11px;background:#1e3a5f;color:#93c5fd">TOTAL</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#92400e;color:#fde68a">CD</th>'+
     '<th class="r" style="padding:8px 6px;font-size:11px;background:#374151">Qty Vendida</th>'+
+    '<th class="r" style="padding:8px 6px;font-size:10px;background:#1e3a8a;color:#bfdbfe">Valor stock</th>'+
     '<th style="padding:8px 8px;font-size:11px;text-align:center">TIPO</th>'+
     '</tr></thead>';
 
@@ -9620,6 +9691,7 @@ function _vadmRenderBajaRotTabla(filtrados){
       '<td class="r" style="padding:6px 8px;font-weight:700;color:#93c5fd;background:#1e3a5f">'+tot.toLocaleString('es-CL')+'</td>'+
       (p.cd>0?'<td class="r" style="padding:6px 8px;font-weight:700;color:#92400e;background:#fef3c7">'+p.cd.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:6px 8px;color:#9ca3af">—</td>')+
       '<td class="r" style="padding:6px 8px">'+qtyStr+'</td>'+
+      '<td class="r" style="padding:6px 8px;font-size:10px;color:#1e3a8a">'+(p.val>0?venAdmFmt(p.val):'—')+'</td>'+
       '<td style="padding:6px 8px;text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:'+abg+';color:'+ac+'">'+p.abc+'</span></td>'+
     '</tr>';
   }).join('');
@@ -9628,6 +9700,7 @@ function _vadmRenderBajaRotTabla(filtrados){
   var totPem=filtrados.reduce(function(s,p){return s+(p.pem||0);},0);
   var totSem=filtrados.reduce(function(s,p){return s+(p.sem||0);},0);
   var totQty=filtrados.reduce(function(s,p){return s+(p.qty||0);},0);
+  var totVal=filtrados.reduce(function(s,p){return s+(p.val||0);},0);
   var tfoot='<tfoot><tr>'+
     '<td colspan="5" style="padding:7px 10px;font-weight:700;background:#f3f4f6">TOTAL ('+filtrados.length+' productos)</td>'+
     '<td class="r" style="padding:7px 8px;font-weight:700;background:#f3f4f6;color:#14532d">'+totPem.toLocaleString('es-CL')+'</td>'+
@@ -9635,6 +9708,7 @@ function _vadmRenderBajaRotTabla(filtrados){
     '<td class="r" style="padding:7px 8px;font-weight:700;background:#1e3a5f;color:#93c5fd">'+(totPem+totSem).toLocaleString('es-CL')+'</td>'+
     '<td style="background:#f3f4f6"></td>'+
     '<td class="r" style="padding:7px 8px;font-weight:700;background:#f3f4f6">'+totQty.toLocaleString('es-CL')+'</td>'+
+    '<td class="r" style="padding:7px 8px;font-weight:700;background:#dbeafe;color:#1e3a8a">'+venAdmFmt(totVal)+'</td>'+
     '<td style="background:#f3f4f6"></td>'+
     '</tr></tfoot>';
 
@@ -9790,17 +9864,17 @@ function _vadmExcelInventario(inv){
   } else if(inv.tab==='sobrestock'){
     wsName='Sobre-stock';
     rows.push('<Row ss:Height="26">'+tc('N°','h')+tc('Código','hL')+tc('Descripción','hL')+tc('Marca','hL')+
-      tc('PEM','hG')+tc('SEM','hB')+tc('CD DISP','hAm')+tc('CD TRANS','hAmD')+tc('Costo U.','hR')+tc('Markup %','hR')+tc('Valor','hR')+'</Row>');
+      tc('PEM','hG')+tc('SEM','hB')+tc('Costo U.','hR')+tc('Markup','hR')+tc('Qty vend.','hR')+tc('Meses cob.','hR')+tc('Valor','hR')+'</Row>');
     inv.items.forEach(function(v,i){
-      var odd=i%2===0; var markup=v.costo>0?((v.precio/v.costo-1)*100):0;
+      var odd=i%2===0; var markup=v.markupX||0;
+      var cobTxt=v.cobMeses>=999?'Sin venta':Math.round(v.cobMeses)+'m';
       rows.push('<Row>'+nc(i+1,odd?'n':'an')+tc(v.cod,odd?'tx':'al')+tc(v.desc,odd?'tx':'al')+tc(v.marca,odd?'tx':'al')+
-        nc(v.pem||0,'warn')+nc(v.sem||0,'warn')+nc(v.cd||0,'amn')+nc(v.cd_trans||0,'amdn')+nc(v.costo,odd?'n':'an')+nc(markup,odd?'n1':'an1')+nc(v.val,odd?'n':'an')+'</Row>');
+        nc(v.pem||0,'warn')+nc(v.sem||0,'warn')+nc(v.costo,odd?'n':'an')+nc(markup,odd?'n1':'an1')+
+        nc(v.qty||0,odd?'n':'an')+tc(cobTxt,odd?'tx':'al')+nc(v.val,odd?'n':'an')+'</Row>');
     });
     rows.push('<Row>'+tc('','tot')+tc('TOTAL','tot')+tc('','tot')+tc('','tot')+
       nc(inv.items.reduce(function(s,v){return s+(v.pem||0);},0),'totn')+
       nc(inv.items.reduce(function(s,v){return s+(v.sem||0);},0),'totn')+
-      nc(inv.items.reduce(function(s,v){return s+(v.cd||0);},0),'totn')+
-      nc(inv.items.reduce(function(s,v){return s+(v.cd_trans||0);},0),'totn')+
       tc('','tot')+tc('','tot')+nc(inv.totalVal,'totn')+'</Row>');
   } else if(inv.tab==='transito'){
     wsName='Tránsito';
@@ -10820,7 +10894,6 @@ function vadmReRenderTabActivo(){
   else if(id==='tipodoc')  vadmRenderTipoDoc();
   else if(id==='facturacion') vadmRenderFacturacion();
   else if(id==='quiebre')  vadmRenderQuiebre();
-  else if(id==='vvsstock') vadmRenderVvsStock();
   else if(id==='bajrot')   vadmRenderBajaRot();
   else if(id==='pagoanalisis') vadmRenderPagoAnalisis();
   else if(id==='pagorankings') vadmRenderPagoRankings();
@@ -10840,6 +10913,7 @@ function vadmReRenderTabActivo(){
   else if(id==='marcavend2')   vadmRenderMarcaVend2();
   else if(id==='preciodiff')   vadmRenderPrecioDiff();
   else if(id==='mem')          vadmRenderMEM();
+  else if(id==='adquisiciones'){} // stub — no usa filtros globales
 }
 
 // ── Helper: comprueba si un registro XLSM pasa el filtro global _vadmVendSel ──
@@ -12393,7 +12467,6 @@ function _vadmDespacharHtmlEmail(datos, perStr, tab){
   if(tab==='transito')     return _vadmHtmlEmailTransito();
   if(tab==='merma')        return _vadmHtmlEmailMerma();
   if(tab==='bajrot')       return _vadmHtmlEmailBajaRot();
-  if(tab==='vvsstock')     return _vadmHtmlEmailVvsStock(datos, perStr);
   // Árbol de descomposición
   if(tab==='arbol'||tab==='arboltabla'||tab==='arbolheat')
                            return _vadmHtmlEmailArbol(datos, perStr, tab);
@@ -12707,49 +12780,34 @@ function _vadmHtmlEmailQuiebre(){
 
 // ── Inventario: Sobre-stock ───────────────────────────────────────────────────
 function _vadmHtmlEmailSobreStock(){
-  if(!_vadmStockMap){
+  if(!_vadmSSProds.length){
     return '<div style="padding:30px;text-align:center;color:#9ca3af;font-family:Arial,sans-serif">'+
       '<div style="font-size:36px;margin-bottom:12px">📦</div>'+
-      '<div style="font-size:14px">Abre el tab <strong>Sobre-stock</strong> primero para cargar los datos, luego vuelve a enviar.</div></div>';
+      '<div style="font-size:14px">Abre el tab <strong>Sobre-stock</strong>, haz clic en 🔄 Actualizar y luego vuelve a enviar.</div></div>';
   }
-  var hoy=Date.now(), d90=90*24*3600*1000;
-  var dh90ss2=_vadmDiasHabilesN(90);
-  var vendidos90=new Set();
-  _vadmLineas.forEach(function(r){ if(r.codigo&&hoy-venAdmParseFecha(r.fecha)<=d90) vendidos90.add(r.codigo); });
-  var sobre=Object.keys(_vadmStockMap).filter(function(c){
-    var s=_vadmStockMap[c]; return (s.stock||0)>0 && !vendidos90.has(c);
-  }).map(function(c){
-    var s=_vadmStockMap[c];
-    var stockVR=s.stock||0;
-    var val=stockVR*(s.costo||0);
-    return {cod:c,desc:s.desc||'',marca:s.marca||'',pem:s.pem||0,sem:s.sem||0,
-      cd:s.cd||0,cd_trans:s.cd_trans||0,
-      stock:stockVR,costo:s.costo||0,precio:s.precio||0,val:val};
-  }).sort(function(a,b){return b.val-a.val;}).slice(0,25);
-  var totalVal=sobre.reduce(function(s,v){return s+v.val;},0);
-  if(!sobre.length){
-    return _emailHdr('#d97706','📦','Sobre-stock — Sin Venta',dh90ss2+' días hábiles (90 cal.)',[['Sin sobre-stock detectado','✓','#059669']])+
-      '<div style="padding:20px;text-align:center;color:#059669">Todos los productos tuvieron ventas en los últimos 90 días.</div></div>';
-  }
+  var mesesMin=parseInt((document.getElementById('vadmSSMesesMin')||{}).value||'12');
+  var sobre=_vadmSSProds.slice(0,25);
+  var totalVal=_vadmSSProds.reduce(function(s,v){return s+v.valorStock;},0);
   var rows=sobre.map(function(v,i){
-    var markup=v.costo>0?((v.precio/v.costo-1)*100).toFixed(0)+' %':'-';
+    var markup=v.markupX!==null?v.markupX+'×':'-';
+    var cobTxt=v.cobMeses>=999?'Sin venta':Math.round(v.cobMeses)+'m';
     return '<tr style="background:'+(i%2===0?'#fff':'#fffbeb')+'">'+
       '<td style="padding:7px 10px;font-size:11px;font-family:monospace;color:#6b7280">'+_emailEsc(v.cod)+'</td>'+
       '<td style="padding:7px 10px;font-size:12px">'+_emailEsc(v.desc)+'</td>'+
       '<td style="padding:7px 10px;font-size:11px;color:#7c3aed">'+_emailEsc(v.marca)+'</td>'+
       '<td style="padding:7px 10px;font-size:11px;text-align:right;font-weight:700;color:#14532d">'+v.pem+'</td>'+
       '<td style="padding:7px 10px;font-size:11px;text-align:right;font-weight:700;color:#0369a1">'+v.sem+'</td>'+
-      (v.cd>0?'<td style="padding:7px 10px;font-size:11px;text-align:right;font-weight:700;color:#92400e">'+v.cd+'</td>':'<td style="padding:7px 10px;font-size:11px;text-align:right;color:#9ca3af">—</td>')+
-      (v.cd_trans>0?'<td style="padding:7px 10px;font-size:11px;text-align:right;font-weight:700;color:#78350f">'+v.cd_trans+'</td>':'<td style="padding:7px 10px;font-size:11px;text-align:right;color:#9ca3af">—</td>')+
       '<td style="padding:7px 10px;font-size:12px;text-align:right">'+_emailFmt(v.costo)+'</td>'+
       '<td style="padding:7px 10px;font-size:12px;text-align:right">'+markup+'</td>'+
-      '<td style="padding:7px 10px;font-size:12px;text-align:right;font-weight:700">'+_emailFmt(v.val)+'</td></tr>';
+      '<td style="padding:7px 10px;font-size:12px;text-align:right;text-align:right">'+(v.qty>0?v.qty:'0')+'</td>'+
+      '<td style="padding:7px 10px;font-size:12px;text-align:right;font-weight:700;color:#b45309">'+cobTxt+'</td>'+
+      '<td style="padding:7px 10px;font-size:12px;text-align:right;font-weight:700">'+_emailFmt(v.valorStock)+'</td></tr>';
   }).join('');
-  return _emailHdr('#d97706','📦','Sobre-stock — Sin Venta 90 días',dh90ss2+' días hábiles',[
-    ['Productos inmovilizados',sobre.length,'#d97706'],['Valor en bodega',_emailFmt(totalVal),'#d97706'],
-    ['Período (días hábiles)',dh90ss2,'#374151']
-  ])+_emailTbl('📦 Productos sin movimiento — últimos '+dh90ss2+' días hábiles (90 calendario)','#d97706',
-    [['Código',false],['Descripción',false],['Marca',false],['PEM',true],['SEM',true],['CD DISP',true],['CD TRANS',true],['Costo U.',true],['Markup',true],['Valor',true]],rows)+'</div>';
+  return _emailHdr('#d97706','📦','Sobre-stock — Cobertura ≥'+mesesMin+' meses','Período cargado',[
+    ['Productos sobre-stock',_vadmSSProds.length,'#d97706'],['Valor en bodega',_emailFmt(totalVal),'#d97706'],
+    ['Cobertura mínima',mesesMin+' meses','#374151']
+  ])+_emailTbl('📦 Productos con sobre-stock (cobertura ≥'+mesesMin+' meses)','#d97706',
+    [['Código',false],['Descripción',false],['Marca',false],['PEM',true],['SEM',true],['Costo U.',true],['Markup',true],['Qty vend.',true],['Meses cob.',true],['Valor',true]],rows)+'</div>';
 }
 
 // ── Inventario: Tránsito PEM ──────────────────────────────────────────────────
@@ -13397,21 +13455,15 @@ function _vadmComputeInventarioData(tab){
     return {tab:'quiebre',items:items,dh:dh,totalNeto:items.reduce(function(s,v){return s+v.neto;},0)};
   }
   if(tab==='sobrestock'){
-    if(!_vadmStockMap) return null;
-    var hoy=Date.now(), d90=90*24*3600*1000;
-    var dh=_vadmDiasHabilesN(90);
-    var vendidos90=new Set();
-    _vadmLineas.forEach(function(r){if(r.codigo&&hoy-venAdmParseFecha(r.fecha)<=d90)vendidos90.add(r.codigo);});
-    var items=Object.keys(_vadmStockMap).filter(function(c){
-        var s=_vadmStockMap[c]; return (s.stock||0)>0&&!vendidos90.has(c);
-      }).map(function(c){
-        var s=_vadmStockMap[c];
-        var stockVR=s.stock||0;
-        return {cod:c,desc:s.desc||'',marca:s.marca||'',
-          pem:s.pem||0,sem:s.sem||0,cd:s.cd||0,cd_trans:s.cd_trans||0,
-          stock:stockVR,costo:s.costo||0,precio:s.precio||0,val:stockVR*(s.costo||0)};
-      }).sort(function(a,b){return b.val-a.val;}).slice(0,25);
-    return {tab:'sobrestock',items:items,dh:dh,totalVal:items.reduce(function(s,v){return s+v.val;},0)};
+    if(!_vadmSSProds.length) return null;
+    var mesesMin=parseInt((document.getElementById('vadmSSMesesMin')||{}).value||'12');
+    var items=_vadmSSProds.slice(0,25).map(function(p){
+      return {cod:p.cod,desc:p.desc,marca:p.marca,
+        pem:p.pem,sem:p.sem,stock:p.stock,
+        costo:p.costo,precio:p.precio,markupX:p.markupX,
+        qty:p.qty,cobMeses:p.cobMeses,val:p.valorStock};
+    });
+    return {tab:'sobrestock',items:items,mesesMin:mesesMin,totalVal:_vadmSSProds.reduce(function(s,v){return s+v.valorStock;},0)};
   }
   if(tab==='transito'){
     if(!_vadmStockMap) return null;
@@ -13545,15 +13597,17 @@ function vadmEnviarOutlook(){
           ' | Qty:'+String(v.qty).padStart(5)+' | '+v.velDH.toFixed(2)+' u/dh | '+_emailFmt(v.neto)+'\n';
       });
     } else if(inv.tab==='sobrestock'){
-      lineas +='=== SOBRE-STOCK — SIN VENTA 90 DÍAS ===\n';
-      lineas +='Productos inmovilizados : '+inv.items.length+'\n';
+      lineas +='=== SOBRE-STOCK — COBERTURA ≥'+(inv.mesesMin||12)+' MESES ===\n';
+      lineas +='Productos sobre-stock   : '+inv.items.length+'\n';
       lineas +='Valor en bodega         : '+_emailFmt(inv.totalVal)+'\n';
-      lineas +='Período análisis        : '+inv.dh+' días hábiles\n\n';
-      lineas +='=== PRODUCTOS SIN MOVIMIENTO ===\n';
+      lineas +='Cobertura mínima        : '+(inv.mesesMin||12)+' meses\n\n';
+      lineas +='=== DETALLE PRODUCTOS ===\n';
       inv.items.forEach(function(v,i){
-        var markup=v.costo>0?((v.precio/v.costo-1)*100).toFixed(0)+'%':'—';
+        var markup=v.markupX!==null?v.markupX+'×':'—';
+        var cobTxt=v.cobMeses>=999?'SinVta':Math.round(v.cobMeses)+'m';
         lineas+=(i+1)+'. '+(v.cod+'          ').substring(0,10)+' '+v.desc.substring(0,32).padEnd(32)+
           ' | PEM:'+String(v.pem).padStart(4)+' SEM:'+String(v.sem).padStart(4)+
+          ' | Qty:'+String(v.qty||0).padStart(4)+' Cob:'+cobTxt.padStart(6)+
           ' | Markup:'+markup.padStart(5)+' | '+_emailFmt(v.val)+'\n';
       });
     } else if(inv.tab==='transito'){
@@ -14472,6 +14526,153 @@ function cacheRecargarDuro(){
   }).catch(function(){
     location.href = location.href.split('?')[0] + '?nocache=' + Date.now();
   });
+}
+
+
+// ── SOLICITUD SEMANAL DE STOCK ───────────────────────────────────────────────
+
+function renderReqStock(){
+  var rd = document.getElementById('reqDesde');
+  var rh = document.getElementById('reqHasta');
+  if(rd && !rd.value){
+    var hoy = new Date();
+    var ini = new Date(hoy); ini.setDate(hoy.getDate()-90);
+    rd.value = ini.toISOString().slice(0,10);
+    rh.value = hoy.toISOString().slice(0,10);
+  }
+  _reqStockPoblarMarcas();
+}
+
+function _reqStockPoblarMarcas(){
+  var sel = document.getElementById('reqMarca');
+  if(!sel || sel.options.length > 1) return;
+  if(!_vadmLineas || !_vadmLineas.length) return;
+  var ms = {};
+  _vadmLineas.forEach(function(r){ if(r.marca) ms[r.marca] = 1; });
+  Object.keys(ms).sort().forEach(function(m){
+    var o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o);
+  });
+}
+
+function reqStockPrellenar(){
+  var desde = document.getElementById('reqDesde').value;
+  var hasta = document.getElementById('reqHasta').value;
+  var dias  = parseInt(document.getElementById('reqDias').value)||90;
+
+  if(!desde||!hasta){ alert('Selecciona rango de fechas.'); return; }
+  if(!_vadmLineas||!_vadmLineas.length){ alert('Carga ventas primero (abre cualquier tab de Ventas).'); return; }
+  if(!_vadmStockMap||!Object.keys(_vadmStockMap).length){ alert('Carga inventario primero (abre cualquier tab de Inventario).'); return; }
+
+  _reqStockPoblarMarcas();
+  var marcaSel = document.getElementById('reqMarca').value;
+
+  var desdeTs = new Date(desde).getTime();
+  var hastaTs = new Date(hasta).getTime() + 86399999;
+  var diasRango = Math.max(1, Math.round((hastaTs - desdeTs) / 86400000));
+
+  var qtyMap = {};
+  _vadmLineas.forEach(function(r){
+    var ts = venAdmParseFecha(r.fecha);
+    if(!ts||ts<desdeTs||ts>hastaTs) return;
+    if(marcaSel && r.marca !== marcaSel) return;
+    qtyMap[r.codigo] = (qtyMap[r.codigo]||0) + (parseFloat(r.cantidad)||0);
+  });
+
+  var top = Object.keys(qtyMap)
+    .map(function(cod){
+      var p = _vadmStockMap[cod]||{};
+      var qty = qtyMap[cod];
+      var vel = qty / diasRango;
+      var stockMin  = Math.round(vel * dias);
+      var stockMom  = (p.pem||0) + (p.sem||0);
+      var pedido    = Math.max(0, stockMin - stockMom);
+      return { cod:cod, desc:p.desc||cod, qty:qty, vel:vel,
+               stockMin:stockMin, pedido:pedido, stockMom:stockMom };
+    })
+    .sort(function(a,b){ return b.qty-a.qty; })
+    .slice(0,10);
+
+  if(!top.length){ alert('Sin ventas en el rango seleccionado.'); return; }
+
+  var inp = 'style="width:80px;text-align:right;padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"';
+  var rows = top.map(function(p,i){
+    return '<tr>'+
+      '<td>'+(i+1)+'</td>'+
+      '<td style="font-family:monospace;font-size:11px">'+p.cod+'</td>'+
+      '<td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+p.desc+'">'+p.desc+'</td>'+
+      '<td class="r"><input type="number" '+inp+' class="req-stockmin" value="'+p.stockMin+'"></td>'+
+      '<td class="r"><input type="number" '+inp+' class="req-pedido" value="'+p.pedido+'"></td>'+
+      '<td class="r"><input type="number" '+inp+' class="req-stockmom" value="'+p.stockMom+'"></td>'+
+      '<td class="r"><input type="number" '+inp+' class="req-stocksol" value="'+p.stockMin+'"></td>'+
+      '<td class="r"><input type="number" '+inp+' class="req-pedidosol" value="'+p.pedido+'"></td>'+
+    '</tr>';
+  }).join('');
+
+  document.getElementById('reqStockBody').innerHTML = rows;
+}
+
+function reqStockEnviarEmail(){
+  var filas = document.querySelectorAll('#reqStockTable tbody tr');
+  if(!filas.length||filas[0].cells.length<3||filas[0].querySelector('td[colspan]')){
+    alert('Pre-llena la tabla primero.'); return;
+  }
+
+  var desde = document.getElementById('reqDesde').value||'';
+  var hasta = document.getElementById('reqHasta').value||'';
+  var dias  = document.getElementById('reqDias').value||'90';
+  var hoy   = new Date().toLocaleDateString('es-CL');
+
+  var lineas = [];
+  filas.forEach(function(tr, i){
+    var cds = tr.querySelectorAll('input');
+    if(!cds.length) return;
+    var sku     = tr.cells[1].textContent.trim();
+    var prod    = tr.cells[2].textContent.trim();
+    var sMin    = cds[0].value;
+    var ped     = cds[1].value;
+    var sMom    = cds[2].value;
+    var sMinS   = cds[3].value;
+    var pedMaxS = cds[4].value;
+    lineas.push((i+1)+'. '+sku+' — '+prod+
+      '%0A   Stock Mín: '+sMin+' | Pedido: '+ped+
+      ' | Stock Momento: '+sMom+
+      ' | Stock Mín Sol.: '+sMinS+
+      ' | Pedido Máx Sol.: '+pedMaxS);
+  });
+
+  var cuerpo =
+    'Estimado Francisco,%0A%0A'+
+    'Le envío el listado semanal de reposición de stock para sucursal El Manzano, '+
+    'correspondiente al lunes '+hoy+'.%0A%0A'+
+    'DETALLE DE PRODUCTOS — TOP 10 ALTA ROTACIÓN%0A'+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%0A%0A'+
+    lineas.join('%0A%0A')+
+    '%0A%0A━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%0A'+
+    'Cobertura calculada: '+dias+' días%0A'+
+    'Período analizado: '+desde+' al '+hasta+'%0A%0A'+
+    'Saludos,%0A'+
+    'Alejandro González%0A'+
+    'Ferretería Oviedo — El Manzano';
+
+  var mailto = 'mailto:paco@oviedo.cl'+
+    '?cc=rrojas@oviedo.cl'+
+    '&subject=Solicitud%20de%20Stock%20—%20Semana%20'+hoy.replace(/\//g,'%2F')+'%20·%20El%20Manzano'+
+    '&body='+cuerpo;
+
+  if(mailto.length > 1900){
+    var texto = decodeURIComponent(cuerpo.replace(/%0A/g,'\n'));
+    try{
+      navigator.clipboard.writeText(texto).then(function(){
+        alert('El correo es muy largo para mailto. Texto copiado al portapapeles — pégalo manualmente en tu cliente de correo.');
+      });
+    }catch(e){
+      alert('Texto listo. Cópialo desde la consola o usa el cliente de correo directamente.');
+      console.log(texto);
+    }
+    return;
+  }
+
+  window.open(mailto);
 }
 
 </script>
