@@ -56,10 +56,15 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 .app-body{display:flex;min-height:calc(100vh - 60px)}
 .sidebar{width:230px;background:var(--card);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;transition:transform .25s}
 .sidebar-brand{padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;border-bottom:2px solid var(--naranja);background:#1a1a1a}
-.sidebar-group{padding:6px 0;border-bottom:1px solid var(--border)}
+.sidebar-group{border-bottom:1px solid var(--border)}
 .sidebar-group:last-child{border-bottom:none}
-.sidebar-group-lbl{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.8px;padding:8px 16px 3px;display:block}
-.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 16px;font-size:13px;font-weight:600;color:var(--gris);cursor:pointer;font-family:inherit;background:none;border:none;border-left:3px solid transparent;white-space:nowrap;transition:.15s;text-align:left}
+.sidebar-group-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:9px 16px 6px;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.8px;background:none;border:none;cursor:pointer;font-family:inherit;transition:color .15s;user-select:none}
+.sidebar-group-toggle:hover{color:#6b7280;background:#fafafa}
+.sgt-chevron{font-size:9px;transition:transform .22s;flex-shrink:0;opacity:.7}
+.sidebar-group-toggle.open .sgt-chevron{transform:rotate(180deg)}
+.sidebar-group-items{overflow:hidden;max-height:500px;transition:max-height .25s ease,padding .25s ease;padding-bottom:4px}
+.sidebar-group-items.collapsed{max-height:0;padding-bottom:0}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 16px;font-size:13px;font-weight:600;color:var(--gris);cursor:pointer;font-family:inherit;background:none;border:none;border-left:3px solid transparent;white-space:nowrap;transition:.15s;text-align:left}
 .nav-btn.active{color:var(--naranja);background:#fff6f5;border-left-color:var(--naranja)}
 .nav-btn:hover:not(.active){background:#f9fafb;color:var(--dark)}
 .main-content{flex:1;min-width:0;overflow-x:hidden}
@@ -712,56 +717,67 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       <div style="font-size:10px;font-weight:700;color:var(--naranja);margin-top:5px;letter-spacing:.4px;text-transform:uppercase">Panel Administrador</div>
     </div>
     <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Principal</span>
-      <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
-      <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
-      <button class="nav-btn" onclick="showTab('usuarios',this)">👥 Usuarios</button>
-      <button class="nav-btn" onclick="showTab('sesiones',this);adminSesionesCargar()">🔒 Sesiones</button>
-      <button class="nav-btn" id="notifNavBtn" onclick="showTab('notificaciones',this)">🔔 Notificaciones <span id="notifNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
+      <button class="sidebar-group-toggle open" onclick="toggleSidebarGroup(this)">Principal <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items">
+        <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
+        <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
+        <button class="nav-btn" onclick="showTab('usuarios',this)">👥 Usuarios</button>
+        <button class="nav-btn" onclick="showTab('sesiones',this);adminSesionesCargar()">🔒 Sesiones</button>
+        <button class="nav-btn" id="notifNavBtn" onclick="showTab('notificaciones',this)">🔔 Notificaciones <span id="notifNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
+      </div>
     </div>
     <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Ventas</span>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('detalle')">📋 Detalle</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('analisis')">📊 Análisis</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings')">🏆 Rankings</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('temporal')">📅 Temporal</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('clientes')">👤 Clientes</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('analisis');vadmSubTab('sector')">📍 Sector</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings');vadmSubTab('nc')">🔴 NC Vendedor</button>
+      <button class="sidebar-group-toggle open" onclick="toggleSidebarGroup(this)">Ventas <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items">
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('detalle')">📋 Detalle</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('analisis')">📊 Análisis</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings')">🏆 Rankings</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('temporal')">📅 Temporal</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('clientes')">👤 Clientes</button>
+      </div>
     </div>
     <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Inventario</span>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('quiebre')">🔴 Quiebre</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('sobrestock')">📦 Sobre-stock</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('transito')">🚚 Tránsito</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('bajrot')">📉 Baja Rotación</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('vvsstock')">📊 Venta vs Stock</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('mem')">🔧 Merma MEM</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')">🔖 Liquidación</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings');vadmSubTab('preciodiff')">💲 Diff Precios</button>
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Inventario <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('quiebre')">🔴 Quiebre</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('sobrestock')">📦 Sobre-stock</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('transito')">🚚 Tránsito</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('bajrot')">📉 Baja Rotación</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('vvsstock')">📊 Venta vs Stock</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('mem')">🔧 Merma MEM</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')">🔖 Liquidación</button>
+      </div>
     </div>
     <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Árbol Retail</span>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbol')">🌳 Árbol</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arboltabla')">📋 Tabla KPIs</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbolheat')">🗓️ Mapa Calor</button>
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Árbol Retail <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbol')">🌳 Árbol</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arboltabla')">📋 Tabla KPIs</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbolheat')">🗓️ Mapa Calor</button>
+      </div>
     </div>
     <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Catálogo</span>
-      <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
-      <button class="nav-btn" onclick="showTab('url',this);adminUI_iniciarSeccionDispositivos()">⚙️ Configuración ERP</button>
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Catálogo <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
+        <button class="nav-btn" onclick="showTab('url',this);adminUI_iniciarSeccionDispositivos()">⚙️ Configuración ERP</button>
+      </div>
     </div>
     <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Marketing</span>
-      <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
-      <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
-      <button class="nav-btn" id="cuponNavBtn" onclick="showTab('cupones',this)">🏷️ Cupones <span id="cuponNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
-      <button class="nav-btn" onclick="showTab('banner',this);bannerAdminCargar()">🖼️ Banner Principal</button>
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Marketing <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
+        <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
+        <button class="nav-btn" id="cuponNavBtn" onclick="showTab('cupones',this)">🏷️ Cupones <span id="cuponNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
+        <button class="nav-btn" onclick="showTab('banner',this);bannerAdminCargar()">🖼️ Banner Principal</button>
+      </div>
     </div>
     <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Sistema</span>
-      <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
-      <button class="nav-btn" onclick="showTab('mejoras',this)">💡 Mejoras</button>
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Sistema <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
+        <button class="nav-btn" onclick="showTab('mejoras',this)">💡 Mejoras</button>
+      </div>
     </div>
   </nav>
 
@@ -849,31 +865,6 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
     <!-- ── VENTAS VENDEDORES ── -->
     <div class="tab-pane" id="tab-ventas">
       <div class="card" style="padding:0">
-
-        <!-- Nivel 1: Grupos principales -->
-        <div class="vadm-groups">
-          <button class="vadm-group active" id="vgrp-detalle"  onclick="vadmGrupo('detalle')">
-            <span class="vgrp-icon">📋</span>DETALLE
-          </button>
-          <button class="vadm-group" id="vgrp-analisis" onclick="vadmGrupo('analisis')">
-            <span class="vgrp-icon">📊</span>ANÁLISIS
-          </button>
-          <button class="vadm-group" id="vgrp-rankings" onclick="vadmGrupo('rankings')">
-            <span class="vgrp-icon">🏆</span>RANKINGS
-          </button>
-          <button class="vadm-group" id="vgrp-temporal" onclick="vadmGrupo('temporal')">
-            <span class="vgrp-icon">📅</span>TEMPORADA
-          </button>
-          <button class="vadm-group" id="vgrp-clientes" onclick="vadmGrupo('clientes')">
-            <span class="vgrp-icon">👤</span>CLIENTES
-          </button>
-          <button class="vadm-group" id="vgrp-inventario" onclick="vadmGrupo('inventario')">
-            <span class="vgrp-icon">📦</span>INVENTARIO
-          </button>
-          <button class="vadm-group" id="vgrp-arbol" onclick="vadmGrupo('arbol')">
-            <span class="vgrp-icon">🌳</span>ÁRBOL RETAIL
-          </button>
-        </div>
 
         <!-- Nivel 2: Sub-tabs por grupo (uno visible a la vez) -->
         <!-- DETALLE: sin subtabs (btn oculto para compatibilidad JS) -->
@@ -3277,6 +3268,17 @@ function mostrarApp(){
 })();
 
 // ── SIDEBAR ──────────────────────────────────────────
+function toggleSidebarGroup(btn){
+  var items = btn.nextElementSibling;
+  var isOpen = btn.classList.contains('open');
+  if(isOpen){
+    btn.classList.remove('open');
+    items.classList.add('collapsed');
+  } else {
+    btn.classList.add('open');
+    items.classList.remove('collapsed');
+  }
+}
 function toggleSidebar(){
   var sb = document.getElementById('sidebar');
   var ov = document.getElementById('sidebarOverlay');
