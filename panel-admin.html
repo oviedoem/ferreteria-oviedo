@@ -48,7 +48,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 .top-title{font-size:15px;font-weight:700}
 .top-sub{font-size:11px;color:#9ca3af}
 .top-right{display:flex;align-items:center;gap:10px}
-.badge-online{background:#059669;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.badge-online{background:#059669;color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;cursor:default;user-select:none}
 @media(max-width:480px){.btn-logout{padding:6px 10px;font-size:12px}}
 .btn-logout{background:rgba(255,255,255,.1);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 .btn-logout:hover{background:rgba(255,255,255,.18)}
@@ -76,6 +76,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 .card-title{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .card-title span{font-size:18px}
 /* STATS */
+.stats-section-lbl{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;padding-left:2px}
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
 @media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
 .stat-card{background:white;border-radius:12px;padding:16px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06)}
@@ -662,18 +663,15 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       <img src="logo_oviedo.jpg" alt="Ferreterías Oviedo" class="top-logo" style="height:30px;width:auto;display:block">
     </div>
     <div class="top-right">
-      <!-- Campana de notificaciones -->
-      <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" title="Notificaciones">
-        🔔
-        <span class="notif-bell-count" id="notifCount">0</span>
-      </button>
       <button class="btn-install" id="pwaInstall" onclick="instalarPWA()" title="Instalar app">📲</button>
-      <button class="quota-badge ok" id="quotaTopBadge" onclick="quotaAbrirModal()" title="Monitor cuota Firebase — clic para detalle">
+      <button class="quota-badge ok" id="quotaTopBadge" onclick="quotaAbrirModal()" title="Lecturas y escrituras Firestore del día — clic para ver detalle y historial">
         <span id="quotaBadgeIcon">🔥</span>
         <span id="quotaBadgeText">FS —</span>
       </button>
       <span class="badge-online" id="onlineBadge">● 0 en línea</span>
-      <button class="btn-logout" onclick="doLogout()">Salir</button>
+      <button class="btn-logout" onclick="doLogout()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;margin-bottom:1px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir
+      </button>
     </div>
   </div>
 
@@ -717,18 +715,41 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       <span class="sidebar-group-lbl">Principal</span>
       <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
       <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
-    </div>
-    <div class="sidebar-group">
-      <span class="sidebar-group-lbl">Gestión</span>
       <button class="nav-btn" onclick="showTab('usuarios',this)">👥 Usuarios</button>
-      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar()">📈 Ventas Vendedores</button>
       <button class="nav-btn" onclick="showTab('sesiones',this);adminSesionesCargar()">🔒 Sesiones</button>
       <button class="nav-btn" id="notifNavBtn" onclick="showTab('notificaciones',this)">🔔 Notificaciones <span id="notifNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
     </div>
     <div class="sidebar-group">
+      <span class="sidebar-group-lbl">Ventas</span>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('detalle')">📋 Detalle</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('analisis')">📊 Análisis</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings')">🏆 Rankings</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('temporal')">📅 Temporal</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('clientes')">👤 Clientes</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('analisis');vadmSubTab('sector')">📍 Sector</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings');vadmSubTab('nc')">🔴 NC Vendedor</button>
+    </div>
+    <div class="sidebar-group">
+      <span class="sidebar-group-lbl">Inventario</span>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('quiebre')">🔴 Quiebre</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('sobrestock')">📦 Sobre-stock</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('transito')">🚚 Tránsito</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('bajrot')">📉 Baja Rotación</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('vvsstock')">📊 Venta vs Stock</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('mem')">🔧 Merma MEM</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')">🔖 Liquidación</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings');vadmSubTab('preciodiff')">💲 Diff Precios</button>
+    </div>
+    <div class="sidebar-group">
+      <span class="sidebar-group-lbl">Árbol Retail</span>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbol')">🌳 Árbol</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arboltabla')">📋 Tabla KPIs</button>
+      <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbolheat')">🗓️ Mapa Calor</button>
+    </div>
+    <div class="sidebar-group">
       <span class="sidebar-group-lbl">Catálogo</span>
       <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
-      <button class="nav-btn" onclick="showTab('url',this);adminUI_iniciarSeccionDispositivos()">🔗 URL / Conexión</button>
+      <button class="nav-btn" onclick="showTab('url',this);adminUI_iniciarSeccionDispositivos()">⚙️ Configuración ERP</button>
     </div>
     <div class="sidebar-group">
       <span class="sidebar-group-lbl">Marketing</span>
@@ -750,17 +771,19 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 
     <!-- ── DASHBOARD ── -->
     <div class="tab-pane active" id="tab-dashboard">
+      <div class="stats-section-lbl">Usuarios</div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val" id="statTotalCli">—</div><div class="stat-lbl">Usuarios Clientes</div></div>
         <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="statTotalVend">—</div><div class="stat-lbl">Usuarios Vendedores</div></div>
         <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-val" id="statOnline">0</div><div class="stat-lbl">Sesiones activas</div></div>
-        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-val" id="statProds">—</div><div class="stat-lbl">Productos catálogo</div></div>
+        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-val" id="statProds">…</div><div class="stat-lbl">Productos catálogo</div></div>
       </div>
+      <div class="stats-section-lbl">Cotizaciones</div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-val" id="statTotalCotiz">0</div><div class="stat-lbl">Total cotizaciones</div></div>
         <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val" id="statMontoTotal">$0</div><div class="stat-lbl">Monto total cotizado</div></div>
-        <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-val" id="statCotizCli">0</div><div class="stat-lbl">Cotiz. App Clientes</div></div>
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-val" id="statCotizVend">0</div><div class="stat-lbl">Cotiz. App Vendedores</div></div>
+        <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-val" id="statCotizCli">0</div><div class="stat-lbl">Cotizaciones App Clientes</div></div>
+        <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-val" id="statCotizVend">0</div><div class="stat-lbl">Cotizaciones App Vendedores</div></div>
       </div>
       <div class="card">
         <div class="card-title"><span>🟢</span> Usuarios en línea ahora</div>
@@ -870,11 +893,10 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <div class="vadm-subtabs vadm-subtabs-rank" id="vstabs-rankings" style="display:none">
           <button class="vadm-stab vadm-stab-rank active" id="vstab-top"          onclick="vadmSubTab('top')">🏆 Top Productos</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-vendrank"     onclick="vadmSubTab('vendrank')">👥 Vendedores</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-marcavend"    onclick="vadmSubTab('marcavend')">🏅 Marca × Vendedor</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-rankingmarca" onclick="vadmSubTab('rankingmarca')">🏷️ Ranking por Marca</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-pagorankings" onclick="vadmSubTab('pagorankings')">💳 Pago × Vendedor</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-rankingmarca" onclick="vadmSubTab('rankingmarca')">🏷️ Por Marca</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-pagorankings" onclick="vadmSubTab('pagorankings')">💳 Por Pago</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-nc"           onclick="vadmSubTab('nc')">🔴 NC Vendedor</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-marcavend2"   onclick="vadmSubTab('marcavend2')">🏷️ Vendedor vs Marca</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-marcavend2"   onclick="vadmSubTab('marcavend2')">🏷️ Vend × Marca</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-preciodiff"   onclick="vadmSubTab('preciodiff')">💲 Diff Precios</button>
         </div>
         <!-- TEMPORAL -->
@@ -929,38 +951,43 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
               <div id="vadmVendCheckList"></div>
             </div>
           </div>
-          <span style="font-size:11px;font-weight:600;color:#9ca3af;margin-left:10px">BODEGA</span>
-          <div class="vadm-vend-drop-wrap">
-            <button class="vadm-vend-btn" id="vadmBodBtn" onclick="vadmBodToggleDrop()">
-              <span id="vadmBodLabel">🏪 Todas las bodegas</span>
-              <span>▾</span>
-            </button>
-            <div class="vadm-vend-drop" id="vadmBodDrop" style="display:none">
-              <label class="vadm-vend-opt">
-                <input type="checkbox" id="vadmBodAll" checked onchange="vadmBodSelAll(this.checked)">
-                <span style="font-weight:700">Todas</span>
-              </label>
-              <div class="vadm-vend-sep"></div>
-              <div id="vadmBodCheckList"></div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span class="ven-adm-filter-lbl">Bodega</span>
+            <div class="vadm-vend-drop-wrap">
+              <button class="vadm-vend-btn" id="vadmBodBtn" onclick="vadmBodToggleDrop()">
+                <span id="vadmBodLabel">🏪 Todas las bodegas</span>
+                <span>▾</span>
+              </button>
+              <div class="vadm-vend-drop" id="vadmBodDrop" style="display:none">
+                <label class="vadm-vend-opt">
+                  <input type="checkbox" id="vadmBodAll" checked onchange="vadmBodSelAll(this.checked)">
+                  <span style="font-weight:700">Todas</span>
+                </label>
+                <div class="vadm-vend-sep"></div>
+                <div id="vadmBodCheckList"></div>
+              </div>
             </div>
           </div>
-          <span style="font-size:11px;font-weight:600;color:#9ca3af;margin-left:10px">VER TODOS</span>
-          <div class="vadm-vend-drop-wrap">
-            <button class="vadm-vend-btn" id="vadmVend2Btn" onclick="vadmVend2ToggleDrop()">
-              <span id="vadmVend2Label">👥 Ver todos</span>
-              <span>▾</span>
-            </button>
-            <div class="vadm-vend-drop" id="vadmVend2Drop" style="display:none">
-              <label class="vadm-vend-opt">
-                <input type="checkbox" id="vadmVend2All" checked onchange="vadmVend2SelAll(this.checked)">
-                <span style="font-weight:700">Todos los vendedores</span>
-              </label>
-              <div class="vadm-vend-sep"></div>
-              <div id="vadmVend2CheckList"></div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span class="ven-adm-filter-lbl">Ver todos</span>
+            <div class="vadm-vend-drop-wrap">
+              <button class="vadm-vend-btn" id="vadmVend2Btn" onclick="vadmVend2ToggleDrop()">
+                <span id="vadmVend2Label">👥 Ver todos</span>
+                <span>▾</span>
+              </button>
+              <div class="vadm-vend-drop" id="vadmVend2Drop" style="display:none">
+                <label class="vadm-vend-opt">
+                  <input type="checkbox" id="vadmVend2All" checked onchange="vadmVend2SelAll(this.checked)">
+                  <span style="font-weight:700">Todos los vendedores</span>
+                </label>
+                <div class="vadm-vend-sep"></div>
+                <div id="vadmVend2CheckList"></div>
+              </div>
             </div>
           </div>
-          <span style="font-size:11px;font-weight:600;color:#9ca3af;margin-left:10px">TIPO DOC</span>
-          <div class="vadm-vend-drop-wrap">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span class="ven-adm-filter-lbl">Tipo doc</span>
+            <div class="vadm-vend-drop-wrap">
             <button class="vadm-vend-btn" id="vadmDocBtn" onclick="vadmDocToggleDrop()">
               <span id="vadmDocLabel">💳 Todos</span>
               <span>▾</span>
@@ -975,6 +1002,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
               <label class="vadm-vend-opt"><input type="checkbox" class="vadm-doc-cb" value="Factura" onchange="vadmDocToggleOne('Factura',this)" checked> 🏢 Factura</label>
               <label class="vadm-vend-opt"><input type="checkbox" class="vadm-doc-cb" value="Nota Crédito" onchange="vadmDocToggleOne('Nota Crédito',this)" checked> ↩️ Nota Crédito</label>
             </div>
+          </div>
           </div>
           <!-- Botón email reporte -->
           <div style="margin-left:auto">
@@ -1004,7 +1032,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
                 <span class="ven-adm-filter-lbl">Hasta</span>
                 <input type="date" id="vadmFt" class="ven-adm-input">
               </div>
-              <button class="ven-adm-btn" onclick="venAdmCargar()">🔍 Buscar</button>
+              <button class="ven-adm-btn" onclick="venAdmCargar()" style="background:#1e3a8a;border-color:#1e3a8a">🔍 Buscar</button>
             </div>
           </div>
           <div style="padding:14px 18px">
@@ -2303,11 +2331,11 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <span><strong>Notificar cuando ingrese un Vendedor</strong><br><span style="font-size:12px;color:var(--gris)">Muestra aviso con sonido cada vez que un vendedor inicia sesión</span></span>
           </label>
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0;border-bottom:1px solid #f3f4f6">
-            <input type="checkbox" id="cfgNotifCliente" checked onchange="guardarCfgNotif()" style="width:16px;height:16px;accent-color:var(--naranja)">
+            <input type="checkbox" id="cfgNotifCliente" onchange="guardarCfgNotif()" style="width:16px;height:16px;accent-color:var(--naranja)">
             <span><strong>Notificar cuando ingrese un Cliente</strong><br><span style="font-size:12px;color:var(--gris)">Muestra aviso con sonido cada vez que un cliente inicia sesión</span></span>
           </label>
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0">
-            <input type="checkbox" id="cfgNotifCotiz" checked onchange="guardarCfgNotif()" style="width:16px;height:16px;accent-color:var(--naranja)">
+            <input type="checkbox" id="cfgNotifCotiz" onchange="guardarCfgNotif()" style="width:16px;height:16px;accent-color:var(--naranja)">
             <span><strong>Notificar nueva cotización</strong><br><span style="font-size:12px;color:var(--gris)">Aviso cada vez que se genera una cotización PDF</span></span>
           </label>
         </div>
@@ -2571,23 +2599,8 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
     ═══════════════════════════════════════════════════════════════════════ -->
     <div class="tab-pane" id="tab-sesiones">
 
-      <!-- Cupones sin cotización vinculada (Bloque 2) -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title"><span>🧹</span> Cupones sin cotización aplicada</div>
-        <p style="font-size:12px;color:#6b7280;margin-bottom:12px">
-          Cupones aprobados que aún no han sido aplicados por el cliente. Puedes eliminarlos individualmente o hacer limpieza masiva.
-        </p>
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="adminCuponesHuerfanosCargar()">🔍 Buscar cupones sin aplicar</button>
-          <button class="btn" style="background:#fee2e2;color:#dc2626" onclick="adminCuponesHuerfanosBorrarTodos()">🗑 Eliminar todos</button>
-        </div>
-        <div id="adminCuponesHuerfanosLista">
-          <p style="font-size:13px;color:#9ca3af;text-align:center;padding:16px">Haz clic en "Buscar" para cargar la lista.</p>
-        </div>
-      </div>
-
       <!-- Cierre remoto de sesiones (Bloque 3) -->
-      <div class="card">
+      <div class="card" style="margin-bottom:16px">
         <div class="card-title"><span>🔒</span> Gestión de Sesiones Remotas</div>
         <p style="font-size:12px;color:#6b7280;margin-bottom:14px">
           Visualiza las sesiones activas en Panel Cliente y Panel Vendedor. Puedes cerrar una sesión individualmente o todas a la vez.
@@ -2612,6 +2625,21 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <button class="btn btn-danger" onclick="sesionesRefrescar()">🔄 Refrescar</button>
           <button class="btn" style="background:#fee2e2;color:#dc2626" onclick="adminCerrarTodasSesiones('Cliente')">🔒 Cerrar todas — Cliente</button>
           <button class="btn" style="background:#fee2e2;color:#dc2626" onclick="adminCerrarTodasSesiones('Vendedor')">🔒 Cerrar todas — Vendedor</button>
+        </div>
+      </div>
+
+      <!-- Cupones sin cotización vinculada (Bloque 2) -->
+      <div class="card">
+        <div class="card-title"><span>🧹</span> Cupones sin cotización aplicada</div>
+        <p style="font-size:12px;color:#6b7280;margin-bottom:12px">
+          Cupones aprobados que aún no han sido aplicados por el cliente. Puedes eliminarlos individualmente o hacer limpieza masiva.
+        </p>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="adminCuponesHuerfanosCargar()">🔍 Buscar cupones sin aplicar</button>
+          <button class="btn" style="background:#fee2e2;color:#dc2626" onclick="adminCuponesHuerfanosBorrarTodos()">🗑 Eliminar todos</button>
+        </div>
+        <div id="adminCuponesHuerfanosLista">
+          <p style="font-size:13px;color:#9ca3af;text-align:center;padding:16px">Haz clic en "Buscar" para cargar la lista.</p>
         </div>
       </div>
 
@@ -3426,7 +3454,7 @@ function renderSesionesOnline(activas){
 // ── DASHBOARD ────────────────────────────────────────
 function renderDashboard(){
   // statTotalCli y statTotalVend se actualizan via listener de Firestore
-  document.getElementById('statProds').textContent = PRODS_CACHE.length || '—';
+  document.getElementById('statProds').textContent = PRODS_CACHE.length;
 
   // Sesiones: si no hay realtime activo, leer localStorage
   if(!window.db){
@@ -3461,10 +3489,16 @@ function renderDashboard(){
           '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
           '<td>'+(Array.isArray(c.items)?c.items.reduce(function(a,it){return a+(it.qty||1);},0):c.items)+'</td>'+
           '<td>'+fmtCLP(c.total)+'</td>'+
-          '<td><button class="btn btn-sm btn-primary" onclick="verCotizacion('+i+')">Ver</button></td>'+
+          '<td><button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="verCotizacion('+i+')">Ver</button></td>'+
         '</tr>';
       }).join('')+
-    '</table></div>';
+    '</table></div>'+
+    '<div style="margin-top:10px;text-align:right">'+
+      '<button class="btn btn-sm" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb" '+
+        'onclick="showTab(\'cotizaciones\',document.querySelector(\'[onclick*=cotizaciones]\'))">'+
+        'Ver todas las cotizaciones →'+
+      '</button>'+
+    '</div>';
   }
 
   renderTopProductos('topProductos', cotiz);
@@ -6504,18 +6538,20 @@ function _vadmCargarStockMap(cb){
       var cod=(p.CODIGO||p.codigo||'').trim();
       if(!cod) return;
       var _pem=Number(p.pem||p.PEM_DISP||0), _sem=Number(p.sem||p.SEM_DISP||0);
-      // Fallback: Datos.json antiguo solo trae campo "stock" genérico → usarlo como pem
-      if(!_pem&&!_sem) _pem=Number(p.stock||0);
+      var _cem=Number(p.cem||p.CEM_DISP||0), _mem=Number(p.mem||p.MEM_DISP||p.mem_disp||p.MEM||0);
+      // Fallback: Datos.json antiguo solo trae campo "stock" generico -> usarlo como pem
+      if(!_pem&&!_sem&&!_cem&&!_mem) _pem=Number(p.stock||0);
       _vadmStockMap[cod]={
         pem:_pem, pem_trans:Number(p.pem_trans||p.PEM_TRANS||p.transito||0),
         sem:_sem,
+        cem:_cem,
         iem:Number(p.iem||p.IEM_DISP||0),
         tem:Number(p.tem||p.TEM_DISP||0),
         rce:Number(p.rce||p.RCE_DISP||0),
         cd:Number(p.cd||p.CD_DISP||0),
         cd_trans:Number(p.cd_trans||p.CD_TRANS||0),
-        mem:Number(p.mem||p.MEM_DISP||p.mem_disp||p.MEM||0),
-        stock:_pem+_sem,                       // total venta real (PEM+SEM)
+        mem:_mem,
+        stock:_pem+_sem+_cem+_mem,             // total comercial (PEM+SEM+CEM+MEM)
         transito:Number(p.pem_trans||p.PEM_TRANS||0),
         marca:(p.marca||p.MARCA||''),
         desc:(p.descripcion||p.DESCRIPCION||''),
@@ -7627,6 +7663,18 @@ var _vadmMarcaSel = '';
 function vadmRenderMarcas(){
   var datos = vadmDatosFiltrados();
   if(!datos.length){ document.getElementById('vadmMarcasBody').innerHTML='<div class="ven-adm-empty">Sin datos.</div>'; return; }
+
+  // El JSON de ventas no incluye campo marca — enriquecer desde stock map
+  if(!_vadmStockMap || !Object.keys(_vadmStockMap).length){
+    document.getElementById('vadmMarcasStatus').textContent = 'Cargando catálogo de marcas...';
+    _vadmCargarStockMap(function(){ vadmRenderMarcas(); });
+    return;
+  }
+  datos = datos.map(function(r){
+    if(r.marca) return r;
+    var sm = _vadmStockMap[r.codigo];
+    return sm ? Object.assign({}, r, {marca: sm.marca||''}) : r;
+  });
 
   var totalNeto = datos.reduce(function(s,r){ return s+(r.valorNeto||0); }, 0);
 
@@ -8780,7 +8828,7 @@ function vadmRenderQuiebre(){
       '<td class="r" style="padding:4px 6px;font-size:10px;font-weight:700;color:#78350f;background:#fde68a">'+trans.toLocaleString('es-CL')+'</td>';
     return cd+ct;
   }
-  // Severidad CD para productos sin stock en PEM+SEM (estado=zero)
+  // Severidad CD para productos sin stock comercial (estado=zero)
   function cdSeverityBadge(sm){
     var cd=sm.cd||0, ct=sm.cd_trans||0;
     if(cd>0)  return '<span title="Hay stock en CD — puede surtir" style="font-size:10px">🟡</span>';
@@ -8908,7 +8956,7 @@ function vadmRenderSobreStock(){
   var prods=[];
   Object.keys(_vadmStockMap).forEach(function(cod){
     var sm=_vadmStockMap[cod];
-    var stockVR=(sm.pem||0)+(sm.sem||0); // stock venta real = PEM + SEM
+    var stockVR=sm.stock||0; // stock comercial = PEM + SEM + CEM + MEM
     if(stockVR<=0) return;
     if(filtMarca&&sm.marca!==filtMarca) return;
     var q90=qty90m[cod]||0;
@@ -9055,7 +9103,7 @@ function vadmRenderTransito(){
     if(filtMarca&&sm.marca!==filtMarca) return;
     var q90=qty90m[cod]||0;
     var velDia=q90/dh90tr;
-    var stockVR=(sm.pem||0)+(sm.sem||0);
+    var stockVR=sm.stock||0;
     var stockTotal=stockVR+pemTrans;
     var cobConTransito=velDia>0?Math.round(stockTotal/velDia):null;
     var cobSinTransito=velDia>0&&stockVR>0?Math.round(stockVR/velDia):null;
@@ -9411,10 +9459,10 @@ function vadmRenderBajaRot(){
   if(st){ st.textContent='Calculando…'; st.style.color='#9ca3af'; }
 
   // 3. Mapeo bodega → campo de stock
-  var BOD_STOCK={PEM:'pem',SEM:'sem',MEM:'pem',CD:'cd'};
+  var BOD_STOCK={PEM:'pem',SEM:'sem',CEM:'cem',MEM:'mem',CD:'cd'};
   var bodSel=_vadmBodSel||[];
   // Campos de stock activos según selección (sin duplicados)
-  var selFields=bodSel.length===0?['pem','sem']:
+  var selFields=bodSel.length===0?['pem','sem','cem','mem']:
     bodSel.map(function(b){return BOD_STOCK[b];}).filter(Boolean)
           .filter(function(f,i,a){return a.indexOf(f)===i;});
   // Bodegas de ventas activas (CD no tiene ventas propias)
@@ -9450,7 +9498,7 @@ function vadmRenderBajaRot(){
 
   if(!prods.length){
     if(st){ st.textContent='Sin productos con stock en PEM o SEM.'; st.style.color='#d97706'; }
-    if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay productos con stock de venta (PEM+SEM = 0).<br>Actualiza el catálogo ejecutando <strong>ACTUALIZAR_Y_PUBLICAR.bat</strong>.</div>';
+    if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay productos con stock comercial (PEM+SEM+CEM+MEM = 0).<br>Actualiza el catálogo ejecutando <strong>ACTUALIZAR_Y_PUBLICAR.bat</strong>.</div>';
     return;
   }
 
@@ -11077,6 +11125,11 @@ function vadmRenderMEM(){
   var st = document.getElementById('vadmMEMStatus');
   var bd = document.getElementById('vadmMEMBody');
   if(st) st.textContent = 'Cargando stock MEM...';
+  // Si el mapa está en caché vacío (carga previa fallida), forzar recarga
+  if(_vadmStockMap !== null && !Object.keys(_vadmStockMap).length){
+    _vadmStockMap = null;
+    _vadmStockLoading = false;
+  }
   _vadmCargarStockMap(function(){
     if(!_vadmStockMap){
       if(st) st.textContent = 'Sin datos de stock.';
@@ -11474,13 +11527,13 @@ function vadmBodBuildCheckList(){
   _vadmLineas.forEach(function(r){ if(r.bodegaCorta) bods[r.bodegaCorta]=1; });
   var bodArr=Object.keys(bods).sort();
   // Agregar CD (bodega de stock, no de ventas) si no aparece ya
-  if(bodArr.indexOf('CD')<0) bodArr.push('CD');
+  ['CEM','MEM','SEM','CD'].forEach(function(b){ if(bodArr.indexOf(b)<0) bodArr.push(b); });
   bodArr.sort();
   if(!bodArr.length) return;
   var html='';
   bodArr.forEach(function(b){
     var sel=_vadmBodSel.length===0 || _vadmBodSel.indexOf(b)>=0;
-    var lbl=b==='CD'?'CD (stock)':b;
+    var lbl=b==='CD'?'CD (stock)':(b==='CEM'?'CEM (stock)':(b==='MEM'?'MEM (stock)':b));
     html+='<label class="vadm-vend-opt"><input type="checkbox"'+(sel?' checked':'')+' onchange="vadmBodToggleOne(\''+venAdmEsc(b)+'\',this)"><span>'+venAdmEsc(lbl)+'</span></label>';
   });
   container.innerHTML=html;
@@ -11547,7 +11600,7 @@ function venAdmRenderizarTabla(datos){
     html += '<td>'+venAdmEsc(r.responsable||'')+'</td>';
     html += '<td><span class="vadm-vend-chip">'+venAdmEsc(vnom)+'</span></td>';
     html += '<td>'+vadmFPagoTag(r.documento)+'</td>';
-    html += '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">'+venAdmEsc(r.cliente||'—')+'</td>';
+    html += '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+venAdmEsc(r.cliente||'')+'">'+venAdmEsc(r.cliente||'—')+'</td>';
     html += '<td style="font-family:monospace;font-size:10px;color:#6b7280">'+venAdmEsc(r.rut||'—')+'</td>';
     html += '<td class="r" style="font-weight:700">'+venAdmFmt(r.valorNeto)+'</td>';
     html += '<td class="r">'+venAdmFmt(r.descto)+'</td>';
@@ -12607,7 +12660,7 @@ function _vadmHtmlEmailQuiebre(){
     mapVel[r.codigo].qty+=(r.cantidad||1); mapVel[r.codigo].neto+=(r.valorNeto||0);
   });
   var sinStock=Object.keys(_vadmStockMap).filter(function(c){
-    var s=_vadmStockMap[c]; return (s.pem||0)+(s.sem||0)<=0 && mapVel[c];
+    var s=_vadmStockMap[c]; return (s.stock||0)<=0 && mapVel[c];
   }).map(function(c){
     var s=_vadmStockMap[c], v=mapVel[c];
     var velDH=v.qty/dh60q;
@@ -12662,10 +12715,10 @@ function _vadmHtmlEmailSobreStock(){
   var vendidos90=new Set();
   _vadmLineas.forEach(function(r){ if(r.codigo&&hoy-venAdmParseFecha(r.fecha)<=d90) vendidos90.add(r.codigo); });
   var sobre=Object.keys(_vadmStockMap).filter(function(c){
-    var s=_vadmStockMap[c]; return (s.pem||0)+(s.sem||0)>0 && !vendidos90.has(c);
+    var s=_vadmStockMap[c]; return (s.stock||0)>0 && !vendidos90.has(c);
   }).map(function(c){
     var s=_vadmStockMap[c];
-    var stockVR=(s.pem||0)+(s.sem||0);
+    var stockVR=s.stock||0;
     var val=stockVR*(s.costo||0);
     return {cod:c,desc:s.desc||'',marca:s.marca||'',pem:s.pem||0,sem:s.sem||0,
       cd:s.cd||0,cd_trans:s.cd_trans||0,
@@ -13331,7 +13384,7 @@ function _vadmComputeInventarioData(tab){
       mapVel[r.codigo].qty+=(r.cantidad||1); mapVel[r.codigo].neto+=(r.valorNeto||0);
     });
     var items=Object.keys(_vadmStockMap).filter(function(c){
-        var s=_vadmStockMap[c]; return (s.pem||0)+(s.sem||0)<=0&&mapVel[c];
+        var s=_vadmStockMap[c]; return (s.stock||0)<=0&&mapVel[c];
       }).map(function(c){
         var s=_vadmStockMap[c],v=mapVel[c];
         return {cod:c,desc:s.desc||'',marca:s.marca||'',
@@ -13348,10 +13401,10 @@ function _vadmComputeInventarioData(tab){
     var vendidos90=new Set();
     _vadmLineas.forEach(function(r){if(r.codigo&&hoy-venAdmParseFecha(r.fecha)<=d90)vendidos90.add(r.codigo);});
     var items=Object.keys(_vadmStockMap).filter(function(c){
-        var s=_vadmStockMap[c]; return (s.pem||0)+(s.sem||0)>0&&!vendidos90.has(c);
+        var s=_vadmStockMap[c]; return (s.stock||0)>0&&!vendidos90.has(c);
       }).map(function(c){
         var s=_vadmStockMap[c];
-        var stockVR=(s.pem||0)+(s.sem||0);
+        var stockVR=s.stock||0;
         return {cod:c,desc:s.desc||'',marca:s.marca||'',
           pem:s.pem||0,sem:s.sem||0,cd:s.cd||0,cd_trans:s.cd_trans||0,
           stock:stockVR,costo:s.costo||0,precio:s.precio||0,val:stockVR*(s.costo||0)};
@@ -13986,7 +14039,7 @@ function quotaActualizar(){
   if(badge){
     badge.className = 'quota-badge ' + _quotaColor(maxPct);
     if(badgeIcon) badgeIcon.textContent = maxPct >= 90 ? '🚨' : maxPct >= 70 ? '⚠️' : '🔥';
-    if(badgeText) badgeText.textContent = 'R:'+_quotaFmt(reads)+' W:'+_quotaFmt(writes);
+    if(badgeText) badgeText.textContent = 'Lecturas: '+_quotaFmt(reads)+' / Escrituras: '+_quotaFmt(writes);
   }
 
   // ── Inline gauges en tab-mejoras ──

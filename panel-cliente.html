@@ -1609,7 +1609,7 @@ function iniciarApp(){
         SubFamilia: (it.SubFamilia||it.subfamilia||it.SUBFAMILIA||it.Sub||it.sub||'').toString().trim(),
         PrecioIVA: num(it.PrecioIVA||it.precioiva||it.PRECIO_IVA||it.precioiva||it.precio_iva||it.precio||'0'),
         SocioIVA: num(it.SocioIVA||it.socioiva||it.SOCIO_IVA||it.socioiva||it.socio_iva||'0'),
-        Stock: parseInt(it.Stock||it.stock||it.STOCK||0)||(parseInt(it.pem||0)+parseInt(it.sem||0)+parseInt(it.iem||0)+parseInt(it.tem||0)+parseInt(it.rce||0)+parseInt(it.cd||0))
+        Stock: parseInt(it.Stock||it.stock||it.STOCK||0)||(parseInt(it.pem||0)+parseInt(it.sem||0)+parseInt(it.cem||0)+parseInt(it.mem||0))
       };
     }).filter(function(p){ return p.Codigo && (p.PrecioIVA||p.SocioIVA); });
   }
