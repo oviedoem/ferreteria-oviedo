@@ -252,7 +252,7 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 .btn-install{background:rgba(255,255,255,.1);color:white;border:none;border-radius:8px;padding:7px 10px;font-size:14px;cursor:pointer;transition:.15s;display:none;align-items:center}
 .btn-install:hover{background:rgba(255,255,255,.2)}
 /* VERSION BADGE */
-.version-badge{position:fixed;bottom:8px;right:10px;z-index:1000;background:rgba(17,24,39,.45);color:rgba(255,255,255,.45);font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;pointer-events:none;letter-spacing:.3px}
+.version-badge{position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px}
 
 /* ── MONITOR CUOTA FIREBASE ─────────────────────────────────────── */
 .quota-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:.15s;white-space:nowrap}
@@ -883,7 +883,8 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <button class="vadm-stab"        id="vstab-hora"        onclick="vadmSubTab('hora')">🕐 Por Hora</button>
               <button class="vadm-stab" id="vstab-pagoanalisis" onclick="vadmSubTab('pagoanalisis')">💳 Forma de Pago</button>
           <button class="vadm-stab" id="vstab-sector" onclick="vadmSubTab('sector')">📍 Por Sector</button>
-          <button class="vadm-stab" id="vstab-impacto" onclick="vadmSubTab('impacto')">📉 Q vs $</button>
+          <button class="vadm-stab" id="vstab-impacto"   onclick="vadmSubTab('impacto')">📉 Q vs $</button>
+          <button class="vadm-stab" id="vstab-marcavend" onclick="vadmSubTab('marcavend')">🏅 Marca × Vendedor</button>
         </div>
         <!-- RANKINGS -->
         <div class="vadm-subtabs vadm-subtabs-rank" id="vstabs-rankings" style="display:none">
@@ -1498,6 +1499,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <input type="date" id="vadmNCdesde" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
             <input type="date" id="vadmNChasta" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
             <button class="ven-adm-btn" onclick="vadmRenderNC()">🔍 Analizar</button>
+            <button class="ven-adm-btn" style="background:#059669" onclick="vadmExportNCExcel()">📥 Excel</button>
           </div>
           <div id="vadmNCStatus" style="font-size:12px;color:#9ca3af;padding:8px 16px"></div>
           <div id="vadmNCBody"></div>
@@ -2708,7 +2710,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 </div>
 
 <div id="toast"></div>
-<div class="version-badge">V32 · A.G. · 2026-05-11</div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V36.3<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">21-05-2026</span></div>
 
 <script>
 
@@ -6614,6 +6616,7 @@ function _vadmCargarStockMap(cb){
         sem:_sem,
         cem:_cem,
         iem:Number(p.iem||p.IEM_DISP||0),
+        iem_trans:Number(p.iem_trans||p.IEM_TRANS||0),
         tem:Number(p.tem||p.TEM_DISP||0),
         rce:Number(p.rce||p.RCE_DISP||0),
         cd:Number(p.cd||p.CD_DISP||0),
@@ -7808,7 +7811,7 @@ function vadmRenderMarcas(){
 // ══════════════════════════════════════════════════════════════════════════════
 function vadmRenderComparativa(){
   var bd=document.getElementById('vadmCompBody');
-  var datos=_vadmLineas;
+  var datos=vadmDatosFiltrados();
   if(!datos.length){ bd.innerHTML='<div class="ven-adm-empty">Sin datos.</div>'; return; }
 
   var MNOM=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -10929,7 +10932,7 @@ function vadmReRenderTabActivo(){
   else if(id==='sobrestock')   vadmRenderSobreStock();
   else if(id==='transito')     vadmRenderTransito();
   else if(id==='merma')        vadmRenderMerma();
-  else if(id==='entrefechas')  { var _d=document.getElementById('vadmEFdesde'),_h=document.getElementById('vadmEFhasta'); if(_d&&_h&&_d.value&&_h.value) vadmRenderEntrefechas(); }
+  else if(id==='entrefechas')  { var _d=document.getElementById('vadmEFdesde'),_h=document.getElementById('vadmEFhasta'); if(_d&&_h&&_d.value&&_h.value) vadmBuscarEntreFechas(); }
   else if(id==='sector')       vadmRenderSector();
   else if(id==='impacto')      vadmRenderImpacto();
   else if(id==='nc')           vadmRenderNC();
@@ -11123,35 +11126,53 @@ function vadmRenderNC(){
       map[v].totalNC += Math.abs(r.neto||0);
       map[v].cantNC++;
       if(r.obsNo) map[v].docs.push({obs:r.obsNo});
+      if(r.obsImp) map[v].docs.push({obs:r.obsImp});
     });
     var arr = Object.values(map).sort(function(a,b){ return b.totalNC - a.totalNC; });
+    _vadmNCData = arr;
     if(!arr.length){
       if(st) st.textContent = 'Sin NCs en el periodo.';
       if(bd) bd.innerHTML = '<div class="ven-adm-empty">Sin notas de crédito en el rango seleccionado.</div>';
       return;
     }
-    if(st) st.textContent = arr.length + ' vendedores · ' + ncs.length + ' NCs en el periodo';
+    var totalNC = arr.reduce(function(s,v){ return s+v.totalNC; }, 0);
+    var totalCant = arr.reduce(function(s,v){ return s+v.cantNC; }, 0);
+    if(st) st.textContent = arr.length + ' vendedores · ' + ncs.length + ' NCs en el periodo · ' + venAdmFmt(totalNC) + ' total';
     var head = '<thead><tr style="background:#7f1d1d;color:#fff">' +
       '<th style="padding:8px 10px;font-size:11px">#</th>' +
       '<th style="padding:8px 10px;font-size:11px">Vendedor</th>' +
       '<th class="r" style="padding:8px 10px;font-size:11px">Total NC</th>' +
+      '<th class="r" style="padding:8px 10px;font-size:11px">%</th>' +
       '<th class="r" style="padding:8px 10px;font-size:11px">Cantidad</th>' +
       '<th style="padding:8px 10px;font-size:11px">OBS frecuente</th>' +
       '</tr></thead>';
     var rows = arr.map(function(v,i){
+      var nomVend = v.vendedor;
+      Object.keys(VEN_CONFIG).forEach(function(k){
+        if(k === v.vendedor || VEN_CONFIG[k].gmailUser === v.vendedor) nomVend = VEN_CONFIG[k].nombre;
+      });
       var obsMap = {};
       v.docs.forEach(function(d){ if(d.obs){ obsMap[d.obs]=(obsMap[d.obs]||0)+1; } });
       var topObs = Object.entries(obsMap).sort(function(a,b){return b[1]-a[1];})[0];
+      var pct = totalNC > 0 ? (v.totalNC/totalNC*100).toFixed(1) : '0.0';
       var bg = i%2===0?'#fff':'#fff5f5';
       return '<tr style="background:'+bg+'">' +
         '<td style="padding:6px 10px;color:#9ca3af;font-size:10px">'+(i+1)+'</td>' +
-        '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(v.vendedor)+'</td>' +
+        '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(nomVend)+'</td>' +
         '<td class="r" style="padding:6px 10px;font-weight:700;color:#dc2626">'+venAdmFmt(v.totalNC)+'</td>' +
+        '<td class="r" style="padding:6px 10px;font-size:11px;color:#9ca3af">'+pct+'%</td>' +
         '<td class="r" style="padding:6px 10px">'+v.cantNC+'</td>' +
         '<td style="padding:6px 10px;font-size:11px;color:#6b7280;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+venAdmEsc(topObs?topObs[0]:'—')+'</td>' +
       '</tr>';
     }).join('');
-    if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody></table></div>';
+    var foot = '<tfoot><tr style="background:#fef2f2;font-weight:700">' +
+      '<td colspan="2" style="padding:7px 10px">TOTAL</td>' +
+      '<td class="r" style="padding:7px 10px;color:#dc2626">'+venAdmFmt(totalNC)+'</td>' +
+      '<td class="r" style="padding:7px 10px">100%</td>' +
+      '<td class="r" style="padding:7px 10px">'+totalCant+'</td>' +
+      '<td></td>' +
+    '</tr></tfoot>';
+    if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>';
   }
 
   if(anio1 === anio2){
@@ -11175,7 +11196,34 @@ function vadmRenderNC(){
   }
 }
 
+function vadmExportNCExcel(){
+  if(!_vadmNCData || !_vadmNCData.length){
+    alert('Primero ejecuta Analizar para generar los datos.');
+    return;
+  }
+  var totalNC = _vadmNCData.reduce(function(s,v){ return s+v.totalNC; }, 0);
+  var data = [['#','Vendedor','Código ERP','Total NC ($)','Cantidad','% del Total','OBS más frecuente']];
+  _vadmNCData.forEach(function(v, i){
+    var nomVend = v.vendedor;
+    Object.keys(VEN_CONFIG).forEach(function(k){
+      if(k === v.vendedor || VEN_CONFIG[k].gmailUser === v.vendedor) nomVend = VEN_CONFIG[k].nombre;
+    });
+    var obsMap = {};
+    v.docs.forEach(function(d){ if(d.obs){ obsMap[d.obs]=(obsMap[d.obs]||0)+1; } });
+    var topObs = Object.entries(obsMap).sort(function(a,b){return b[1]-a[1];})[0];
+    var pct = totalNC > 0 ? (v.totalNC/totalNC*100).toFixed(1)+'%' : '0.0%';
+    data.push([i+1, nomVend, v.vendedor, v.totalNC, v.cantNC, pct, topObs ? topObs[0] : '—']);
+  });
+  data.push(['','TOTAL','',totalNC,_vadmNCData.reduce(function(s,v){return s+v.cantNC;},0),'100%','']);
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:4},{wch:22},{wch:14},{wch:14},{wch:10},{wch:10},{wch:40}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'NC por Vendedor');
+  XLSX.writeFile(wb, 'nc_vendedor_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
 // ── DIFF PRECIOS ──────────────────────────────────────────────────────────────
+var _vadmNCData = [];
 var _vadmPrecioDiffData = null;
 function vadmRenderPrecioDiff(){
   var st = document.getElementById('vadmPDStatus');
@@ -11412,7 +11460,7 @@ function vadmRenderMarcaVend2(){
     return;
   }
   function _parseFR(s){ var p=(s||'').split('/'); return p.length===3?p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0'):''; }
-  var datos = _vadmLineas.filter(function(r){
+  var datos = vadmDatosFiltrados().filter(function(r){
     if(desde||hasta){
       var fd=_parseFR(r.fecha||'');
       if(desde && fd<desde) return false;
@@ -11937,7 +11985,7 @@ function _arKpis(arr){
 
 // ── Filtrar datos del árbol ────────────────────────────────────────────────────
 function _arFiltrar(periodoVal, suc, marca, fam, tipoDoc, normDias){
-  var datos = _vadmLineas;
+  var datos = vadmDatosFiltrados();
   // Filtro período (puede ser "2026", "2026-05", "todos", o array de periodos)
   if(periodoVal && periodoVal!=='todos'){
     if(periodoVal.length===4){ // año completo
@@ -12189,20 +12237,21 @@ function vadmRenderArbolTabla(){
   var bd = document.getElementById('vadmArbolTablaBody');
   var st = document.getElementById('varbolTablaStatus');
   if(!_vadmLineas.length){ bd.innerHTML='<div class="ven-adm-empty">Sin datos.</div>'; return; }
+  var datos = vadmDatosFiltrados();
 
   // Obtener períodos disponibles agrupados por año
   var anios = {};
-  _vadmLineas.forEach(function(r){ if(r.periodo){ var a=r.periodo.slice(0,4); if(!anios[a])anios[a]=[]; if(anios[a].indexOf(r.periodo)<0)anios[a].push(r.periodo); } });
+  datos.forEach(function(r){ if(r.periodo){ var a=r.periodo.slice(0,4); if(!anios[a])anios[a]=[]; if(anios[a].indexOf(r.periodo)<0)anios[a].push(r.periodo); } });
   var aArr = Object.keys(anios).sort();
 
   // KPIs por año
   var kpisAnio = {};
   aArr.forEach(function(a){
-    var d = _vadmLineas.filter(function(r){return (r.periodo||'').startsWith(a);});
+    var d = datos.filter(function(r){return (r.periodo||'').startsWith(a);});
     kpisAnio[a] = _arKpis(d);
   });
 
-  if(st) st.textContent = aArr.map(function(a){return a+': '+_vadmLineas.filter(function(r){return (r.periodo||'').startsWith(a);}).length+' líneas';}).join(' · ');
+  if(st) st.textContent = aArr.map(function(a){return a+': '+datos.filter(function(r){return (r.periodo||'').startsWith(a);}).length+' líneas';}).join(' · ');
 
   function fmtV(v,fmt){
     if(v===null||v===undefined) return '<span style="color:#d1d5db">—</span>';
@@ -12270,12 +12319,13 @@ function vadmRenderArbolHeat(){
   var bd = document.getElementById('vadmArbolHeatBody');
   var st = document.getElementById('varbolHeatStatus');
   if(!_vadmLineas.length){ bd.innerHTML='<div class="ven-adm-empty">Sin datos.</div>'; return; }
+  var datos = vadmDatosFiltrados();
 
   var meses2=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   // Construir mapa periodo → {neto, trx, tp, mgn}
   var mapP = {};
-  _vadmLineas.forEach(function(r){
+  datos.forEach(function(r){
     var p = r.periodo||''; if(!p) return;
     if(!mapP[p]) mapP[p]={neto:0,margen:0,docs:new Set()};
     mapP[p].neto   += r.valorNeto||0;
