@@ -11174,104 +11174,87 @@ function vadmRenderNC(){
   if(bd) bd.innerHTML = '<div class="ven-adm-loading">Cargando...</div>';
   var desde = (document.getElementById('vadmNCdesde')||{}).value||'';
   var hasta  = (document.getElementById('vadmNChasta')||{}).value||'';
-  var anio1  = desde ? desde.substring(0,4) : String(new Date().getFullYear());
-  var anio2  = hasta ? hasta.substring(0,4) : anio1;
 
-  function _procesar(registros){
-    var ncs = registros.filter(function(r){
-      if(!r.esNC) return false;
-      if(!_xlsmVendOk(r)) return false;
-      var fd = _vadmFechaToISO(r.fecha);
-      if(desde && fd < desde) return false;
-      if(hasta && fd > hasta)  return false;
-      return true;
-    });
-    // Paso 1: agrupar líneas por (vendedor, numero) → un registro por documento NC
-    var docMap = {};
-    ncs.forEach(function(r){
-      var v   = r.vendedor||'?';
-      var num = r.numero||'?';
-      var key = v + '|' + num;
-      if(!docMap[key]) docMap[key] = {vendedor:v, numero:num, neto:0, cantidad:0, obs:''};
-      docMap[key].neto     += Math.abs(r.neto||0);
-      docMap[key].cantidad += (r.cantidad||1);
-      if(!docMap[key].obs) docMap[key].obs = r.obsNo||r.obsImp||'';
-    });
-    // Paso 2: agrupar documentos únicos por vendedor
-    var map = {};
-    Object.values(docMap).forEach(function(d){
-      var v = d.vendedor;
-      if(!map[v]) map[v] = {vendedor:v, totalNC:0, cantNC:0, docs:[]};
-      map[v].totalNC += d.neto;
-      map[v].cantNC++;
-      if(d.obs) map[v].docs.push({obs:d.obs});
-    });
-    var arr = Object.values(map).sort(function(a,b){ return b.totalNC - a.totalNC; });
-    _vadmNCData = arr;
-    if(!arr.length){
-      if(st) st.textContent = 'Sin NCs en el periodo.';
-      if(bd) bd.innerHTML = '<div class="ven-adm-empty">Sin notas de crédito en el rango seleccionado.</div>';
-      return;
-    }
-    var totalNC = arr.reduce(function(s,v){ return s+v.totalNC; }, 0);
-    var totalCant = arr.reduce(function(s,v){ return s+v.cantNC; }, 0);
-    if(st) st.textContent = arr.length + ' vendedores · ' + ncs.length + ' NCs en el periodo · ' + venAdmFmt(totalNC) + ' total';
-    var head = '<thead><tr style="background:#7f1d1d;color:#fff">' +
-      '<th style="padding:8px 10px;font-size:11px">#</th>' +
-      '<th style="padding:8px 10px;font-size:11px">Vendedor</th>' +
-      '<th class="r" style="padding:8px 10px;font-size:11px">Total NC</th>' +
-      '<th class="r" style="padding:8px 10px;font-size:11px">%</th>' +
-      '<th class="r" style="padding:8px 10px;font-size:11px">Cantidad</th>' +
-      '<th style="padding:8px 10px;font-size:11px">OBS frecuente</th>' +
-      '</tr></thead>';
-    var rows = arr.map(function(v,i){
-      var nomVend = v.vendedor;
-      Object.keys(VEN_CONFIG).forEach(function(k){
-        if(k === v.vendedor || VEN_CONFIG[k].gmailUser === v.vendedor) nomVend = VEN_CONFIG[k].nombre;
-      });
-      var obsMap = {};
-      v.docs.forEach(function(d){ if(d.obs){ obsMap[d.obs]=(obsMap[d.obs]||0)+1; } });
-      var topObs = Object.entries(obsMap).sort(function(a,b){return b[1]-a[1];})[0];
-      var pct = totalNC > 0 ? (v.totalNC/totalNC*100).toFixed(1) : '0.0';
-      var bg = i%2===0?'#fff':'#fff5f5';
-      return '<tr style="background:'+bg+'">' +
-        '<td style="padding:6px 10px;color:#9ca3af;font-size:10px">'+(i+1)+'</td>' +
-        '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(nomVend)+'</td>' +
-        '<td class="r" style="padding:6px 10px;font-weight:700;color:#dc2626">'+venAdmFmt(v.totalNC)+'</td>' +
-        '<td class="r" style="padding:6px 10px;font-size:11px;color:#9ca3af">'+pct+'%</td>' +
-        '<td class="r" style="padding:6px 10px">'+v.cantNC+'</td>' +
-        '<td style="padding:6px 10px;font-size:11px;color:#6b7280;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+venAdmEsc(topObs?topObs[0]:'—')+'</td>' +
-      '</tr>';
-    }).join('');
-    var foot = '<tfoot><tr style="background:#fef2f2;font-weight:700">' +
-      '<td colspan="2" style="padding:7px 10px">TOTAL</td>' +
-      '<td class="r" style="padding:7px 10px;color:#dc2626">'+venAdmFmt(totalNC)+'</td>' +
-      '<td class="r" style="padding:7px 10px">100%</td>' +
-      '<td class="r" style="padding:7px 10px">'+totalCant+'</td>' +
-      '<td></td>' +
-    '</tr></tfoot>';
-    if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>';
-  }
+  // Usa _vadmLineas (ERP, todos los vendedores) en lugar de XLSM parcial
+  var ncs = (_vadmLineas||[]).filter(function(r){
+    var doc = (r.documento||'').toLowerCase();
+    if(doc.indexOf('nota')<0 && doc.indexOf('cred')<0) return false;
+    if(_vadmVendSel.length>0 && !_vadmVendSel.some(function(v){
+      return r.vendedor===v||r.vendedorErp===v;
+    })) return false;
+    var fd = _vadmFechaToISO(r.fecha);
+    if(desde && fd < desde) return false;
+    if(hasta && fd > hasta)  return false;
+    return true;
+  });
 
-  if(anio1 === anio2){
-    _vadmCargarXlsmAnio(anio1, function(json){
-      if(!json){
-        if(st) st.textContent = 'Sin datos. Ejecuta ACTUALIZAR_TODO.bat.';
-        if(bd) bd.innerHTML = '<div class="ven-adm-empty">Sin datos XLSM para '+anio1+'.</div>';
-        return;
-      }
-      _procesar(json.registros||[]);
-    });
-  } else {
-    // Rango cross-year: cargar ambos años y combinar
-    var r1=null, r2=null, done=0;
-    function _check(){
-      if(++done < 2) return;
-      _procesar((r1||[]).concat(r2||[]));
-    }
-    _vadmCargarXlsmAnio(anio1, function(j){ r1=(j&&j.registros)||[]; _check(); });
-    _vadmCargarXlsmAnio(anio2, function(j){ r2=(j&&j.registros)||[]; _check(); });
+  // Paso 1: agrupar líneas por (vendedor, numero) → un registro por documento NC
+  var docMap = {};
+  ncs.forEach(function(r){
+    var v   = r.vendedor||'?';
+    var num = r.numero||'?';
+    var key = v + '|' + num;
+    if(!docMap[key]) docMap[key] = {vendedor:v, numero:num, neto:0, cantidad:0, obs:''};
+    docMap[key].neto     += Math.abs(r.valorNeto||0);
+    docMap[key].cantidad += (r.cantidad||1);
+    if(!docMap[key].obs) docMap[key].obs = r.observacion||'';
+  });
+  // Paso 2: agrupar documentos únicos por vendedor
+  var map = {};
+  Object.values(docMap).forEach(function(d){
+    var v = d.vendedor;
+    if(!map[v]) map[v] = {vendedor:v, totalNC:0, cantNC:0, docs:[]};
+    map[v].totalNC += d.neto;
+    map[v].cantNC++;
+    if(d.obs) map[v].docs.push({obs:d.obs});
+  });
+
+  var arr = Object.values(map).sort(function(a,b){ return b.totalNC - a.totalNC; });
+  _vadmNCData = arr;
+  if(!arr.length){
+    if(st) st.textContent = 'Sin NCs en el periodo.';
+    if(bd) bd.innerHTML = '<div class="ven-adm-empty">Sin notas de crédito en el rango seleccionado.</div>';
+    return;
   }
+  var totalNC   = arr.reduce(function(s,v){ return s+v.totalNC; }, 0);
+  var totalCant = arr.reduce(function(s,v){ return s+v.cantNC; }, 0);
+  var nDocUnicos = Object.keys(docMap).length;
+  if(st) st.textContent = arr.length + ' vendedores · ' + nDocUnicos + ' NCs en el periodo · ' + venAdmFmt(totalNC) + ' total';
+  var head = '<thead><tr style="background:#7f1d1d;color:#fff">' +
+    '<th style="padding:8px 10px;font-size:11px">#</th>' +
+    '<th style="padding:8px 10px;font-size:11px">Vendedor</th>' +
+    '<th class="r" style="padding:8px 10px;font-size:11px">Total NC</th>' +
+    '<th class="r" style="padding:8px 10px;font-size:11px">%</th>' +
+    '<th class="r" style="padding:8px 10px;font-size:11px">Cantidad</th>' +
+    '<th style="padding:8px 10px;font-size:11px">OBS frecuente</th>' +
+    '</tr></thead>';
+  var rows = arr.map(function(v,i){
+    var nomVend = v.vendedor;
+    Object.keys(VEN_CONFIG).forEach(function(k){
+      if(k === v.vendedor || VEN_CONFIG[k].gmailUser === v.vendedor) nomVend = VEN_CONFIG[k].nombre;
+    });
+    var obsMap = {};
+    v.docs.forEach(function(d){ if(d.obs){ obsMap[d.obs]=(obsMap[d.obs]||0)+1; } });
+    var topObs = Object.entries(obsMap).sort(function(a,b){return b[1]-a[1];})[0];
+    var pct = totalNC > 0 ? (v.totalNC/totalNC*100).toFixed(1) : '0.0';
+    var bg = i%2===0?'#fff':'#fff5f5';
+    return '<tr style="background:'+bg+'">' +
+      '<td style="padding:6px 10px;color:#9ca3af;font-size:10px">'+(i+1)+'</td>' +
+      '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(nomVend)+'</td>' +
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:#dc2626">'+venAdmFmt(v.totalNC)+'</td>' +
+      '<td class="r" style="padding:6px 10px;font-size:11px;color:#9ca3af">'+pct+'%</td>' +
+      '<td class="r" style="padding:6px 10px">'+v.cantNC+'</td>' +
+      '<td style="padding:6px 10px;font-size:11px;color:#6b7280;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+venAdmEsc(topObs?topObs[0]:'—')+'</td>' +
+    '</tr>';
+  }).join('');
+  var foot = '<tfoot><tr style="background:#fef2f2;font-weight:700">' +
+    '<td colspan="2" style="padding:7px 10px">TOTAL</td>' +
+    '<td class="r" style="padding:7px 10px;color:#dc2626">'+venAdmFmt(totalNC)+'</td>' +
+    '<td class="r" style="padding:7px 10px">100%</td>' +
+    '<td class="r" style="padding:7px 10px">'+totalCant+'</td>' +
+    '<td></td>' +
+  '</tr></tfoot>';
+  if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>';
 }
 
 function vadmExportNCExcel(){
