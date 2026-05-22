@@ -11186,14 +11186,25 @@ function vadmRenderNC(){
       if(hasta && fd > hasta)  return false;
       return true;
     });
-    var map = {};
+    // Paso 1: agrupar líneas por (vendedor, numero) → un registro por documento NC
+    var docMap = {};
     ncs.forEach(function(r){
-      var v = r.vendedor||'?';
+      var v   = r.vendedor||'?';
+      var num = r.numero||'?';
+      var key = v + '|' + num;
+      if(!docMap[key]) docMap[key] = {vendedor:v, numero:num, neto:0, cantidad:0, obs:''};
+      docMap[key].neto     += Math.abs(r.neto||0);
+      docMap[key].cantidad += (r.cantidad||1);
+      if(!docMap[key].obs) docMap[key].obs = r.obsNo||r.obsImp||'';
+    });
+    // Paso 2: agrupar documentos únicos por vendedor
+    var map = {};
+    Object.values(docMap).forEach(function(d){
+      var v = d.vendedor;
       if(!map[v]) map[v] = {vendedor:v, totalNC:0, cantNC:0, docs:[]};
-      map[v].totalNC += Math.abs(r.neto||0);
+      map[v].totalNC += d.neto;
       map[v].cantNC++;
-      if(r.obsNo) map[v].docs.push({obs:r.obsNo});
-      if(r.obsImp) map[v].docs.push({obs:r.obsImp});
+      if(d.obs) map[v].docs.push({obs:d.obs});
     });
     var arr = Object.values(map).sort(function(a,b){ return b.totalNC - a.totalNC; });
     _vadmNCData = arr;
