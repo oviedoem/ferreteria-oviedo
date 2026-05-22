@@ -1,50 +1,31 @@
-# Credenciales - NUNCA subir
+# Credenciales y configuracion sensible — NUNCA AL REPO
 *.ini
 *.env
-*.env.local
-serviceAccountKey.json
-*credentials*
-*secret*
-
-# Datos reales de ventas - NUNCA subir
-data/ventas-manzano*.json
-data/ventas-xlsm*.json
-data/ranking-unidades.json
-data/precios-diff.json
-data/ventas-manzano-meta.json
-data/*.zip
+credenciales*
+SEGURIDAD_CREDENCIALES*
 users_export.json
 
-# Datos sensibles del negocio
-CATALOGO PRODUCTOS/Datos.csv
-CATALOGO PRODUCTOS/Datos.json
-CATALOGO PRODUCTOS/merma.json
-CATALOGO PRODUCTOS/actualizar.xlsx
-
-# Scripts con rutas internas
-*.bat
+# Scripts internos
 *.py
+*.bat
 *.sh
+*.sql
 
-# Carpetas confidenciales
-VENTAS EL MANZANO/
-SERVIDOR2_DATOS_AYER/
-VENTAS EL MANZANO LOCAL/
-backups/
-
-# Archivos multimedia y Excel
-*.mp4
+# Datos internos — demasiado grandes y sensibles
+data/*.json
 *.xlsm
-*.xlsx
-*.xls
 *.xlsb
-*.pptm
+*.xlsx
+*.xltm
 *.pptx
+*.mp4
+*.exe
+*.pdf
 
-# Sistema y cache
-node_modules/
-.firebase/
+# Directorios internos
+VENTAS EL MANZANO/
+backups/
 .claude/
-Thumbs.db
-*.log
-.DS_Store
+_ARCHIVO/
+FLUJOS .MD/
+node_modules/
