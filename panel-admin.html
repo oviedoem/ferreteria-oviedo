@@ -3366,6 +3366,7 @@ function showTab(id, btn){
   if(id==='redes')        loadRedes();
   if(id==='precios')      cargarConfigPrecios();
   if(id==='tutoriales')   renderTutVendTable();
+  if(id==='adquisiciones') renderReqStock();
 }
 
 // ── INIT ─────────────────────────────────────────────
@@ -6576,6 +6577,16 @@ var _vadmQuiebresVistas= {};     // marca → timestamp última vez mostrada
 var _vadmEmailCurrentTab      = null;   // tab activo cuando se abrió el modal
 var _vadmEmailInventarioData  = null;   // datos estructurados para tabs de inventario
 
+// Enriquece r.marca en _vadmLineas desde _vadmStockMap (JSON V36+ no incluye marca en ventas)
+function _vadmEnriquecerMarca(){
+  if(!_vadmLineas || !_vadmLineas.length) return;
+  if(!_vadmStockMap || !Object.keys(_vadmStockMap).length) return;
+  _vadmLineas.forEach(function(r){
+    if(!r.marca && r.codigo && _vadmStockMap[r.codigo])
+      r.marca = _vadmStockMap[r.codigo].marca || '';
+  });
+}
+
 function _vadmCargarStockMap(cb){
   if(_vadmStockMap){ if(cb) cb(); return; }
   if(_vadmStockLoading){ if(cb) setTimeout(function(){ _vadmCargarStockMap(cb); },600); return; }
@@ -6620,6 +6631,7 @@ function _vadmCargarStockMap(cb){
       };
     });
     _vadmStockLoading=false;
+    _vadmEnriquecerMarca();
     if(cb) cb();
   }
   function _intentar(idx){
@@ -6809,6 +6821,7 @@ function _vadmAplicarDatos(arr, status, fuente){
   });
 
   _vadmLineas    = data;
+  _vadmEnriquecerMarca();
   _vadmHiperSel  = '';
   _vadmFamSel    = '';
   _vadmSubFamSel = '';
@@ -6985,14 +6998,22 @@ function vadmRenderAnalisis(){
 }
 
 function vadmBuildRanking(datos){
+  // Mapa gmailUser/appUser → nombre desde VEN_CONFIG
+  var vnMap={};
+  Object.keys(VEN_CONFIG).forEach(function(k){
+    var c=VEN_CONFIG[k]; vnMap[c.gmailUser]=c.nombre; vnMap[k]=c.nombre;
+  });
   var map={};
   datos.forEach(function(r){
-    if(!map[r.gmailUser]) map[r.gmailUser]={nombre:r.nombre,neto:0,costo:0,margen:0,cant:0,nCli:{}};
-    map[r.gmailUser].neto  +=r.valorNeto||0;
-    map[r.gmailUser].costo +=r.costo||0;
-    map[r.gmailUser].margen+=r.margen||0;
-    map[r.gmailUser].cant  +=r.cantidad||0;
-    if(r.cliente) map[r.gmailUser].nCli[r.cliente]=1;
+    // JSON V36: r.vendedor = gmailUser (ej. 'alejandrog45'); no existe r.gmailUser
+    var key = r.vendedor || r.gmailUser || r.vendedorErp || '(sin vendedor)';
+    var nom = vnMap[key] || r.nombre || key;
+    if(!map[key]) map[key]={nombre:nom,neto:0,costo:0,margen:0,cant:0,nCli:{}};
+    map[key].neto  +=r.valorNeto||0;
+    map[key].costo +=r.costo||0;
+    map[key].margen+=r.margen||0;
+    map[key].cant  +=r.cantidad||0;
+    if(r.cliente) map[key].nCli[r.cliente]=1;
   });
   var arr=Object.keys(map).map(function(k){return Object.assign({key:k},map[k]);});
   arr.sort(function(a,b){return b.neto-a.neto;});
@@ -7608,6 +7629,7 @@ function venAdmCargar(){
     .then(function(res){ if(!res.ok) throw new Error('no-json'); return res.json(); })
     .then(function(json){
       _vadmLineas = json.registros || [];
+      _vadmEnriquecerMarca();
       vadmVendBuildCheckList();
       vadmBodBuildCheckList();
       vadmIniciarQuiebresAlert();
@@ -9516,6 +9538,7 @@ function vadmRenderBajaRot(){
                   cantidad:r.cantidad||0,marca:r.marca||'',periodo:r.periodo||'',
                   bodegaCorta:r.bodegaCorta||''};
         });
+        _vadmEnriquecerMarca();
         vadmRenderBajaRot();
       })
       .catch(function(){
@@ -14548,7 +14571,10 @@ function _reqStockPoblarMarcas(){
   if(!sel || sel.options.length > 1) return;
   if(!_vadmLineas || !_vadmLineas.length) return;
   var ms = {};
-  _vadmLineas.forEach(function(r){ if(r.marca) ms[r.marca] = 1; });
+  _vadmLineas.forEach(function(r){
+    var m = r.marca || (_vadmStockMap && r.codigo && _vadmStockMap[r.codigo] && _vadmStockMap[r.codigo].marca) || '';
+    if(m) ms[m] = 1;
+  });
   Object.keys(ms).sort().forEach(function(m){
     var o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o);
   });
@@ -14572,9 +14598,11 @@ function reqStockPrellenar(){
 
   var qtyMap = {};
   _vadmLineas.forEach(function(r){
+    if(!r.codigo) return;
     var ts = venAdmParseFecha(r.fecha);
     if(!ts||ts<desdeTs||ts>hastaTs) return;
-    if(marcaSel && r.marca !== marcaSel) return;
+    var marca = r.marca || (_vadmStockMap && _vadmStockMap[r.codigo] && _vadmStockMap[r.codigo].marca) || '';
+    if(marcaSel && marca !== marcaSel) return;
     qtyMap[r.codigo] = (qtyMap[r.codigo]||0) + (parseFloat(r.cantidad)||0);
   });
 

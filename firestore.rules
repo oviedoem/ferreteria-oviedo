@@ -2,82 +2,102 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── HELPER: verifica si el usuario autenticado es admin ───────────────────
+    // ── FUNCIONES HELPER ──────────────────────────────────────
     function esAdmin() {
       return request.auth != null &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // ── ADMIN: acceso total a cualquier colección ─────────────────────────────
-    match /{document=**} {
+    function esVendedor() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendedor';
+    }
+
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function esElMismoUsuario(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── USUARIOS ──────────────────────────────────────────────
+    // Admin: lectura/escritura total
+    // Cada usuario: solo lee su propio documento
+    match /users/{userId} {
+      allow read: if esAdmin() || esElMismoUsuario(userId);
+      allow write: if esAdmin();
+    }
+
+    // ── COTIZACIONES ──────────────────────────────────────────
+    // Admin y vendedor: lectura total
+    // Cliente: solo lee SUS cotizaciones (por uid)
+    // Escritura: cualquier autenticado puede crear (vendedor crea para cliente)
+    match /cotizaciones/{cotId} {
+      allow read: if esAdmin() || esVendedor() ||
+                    (estaAutenticado() && resource.data.clienteUid == request.auth.uid);
+      allow create: if estaAutenticado();
+      allow update, delete: if esAdmin();
+    }
+
+    // ── CONFIG ────────────────────────────────────────────────
+    // Lectura pública (panel-cliente lee config/precios antes del login)
+    // Escritura: solo admin
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // ── SESIONES ACTIVAS ──────────────────────────────────────
+    // Cada usuario escribe/lee su propia sesión
+    // Admin lee todas
+    match /sesiones_activas/{uid} {
+      allow read, write: if esAdmin() || esElMismoUsuario(uid);
+    }
+
+    // ── SESIONES LOG ──────────────────────────────────────────
+    match /sesionesLog/{docId} {
+      allow read: if esAdmin();
+      allow create: if estaAutenticado();
+      allow update: if esAdmin() || estaAutenticado();
+    }
+
+    // ── AUDIT LOG ─────────────────────────────────────────────
+    match /auditLog/{docId} {
+      allow read: if esAdmin();
+      allow create: if estaAutenticado();
+    }
+
+    // ── PROMOS ────────────────────────────────────────────────
+    // Lectura pública (catálogo visible sin login)
+    // Escritura solo admin
+    match /promos/{docId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // ── CUPONES ──────────────────────────────────────────────
+    match /cupones/{docId} {
+      allow read: if estaAutenticado();
+      allow write: if esAdmin() || esVendedor();
+    }
+
+    // ── NOTIFICACIONES ────────────────────────────────────────
+    match /notificaciones/{docId} {
+      allow read: if estaAutenticado();
+      allow write: if esAdmin() || esVendedor();
+    }
+
+    // ── TAREAS CLAUDE (buzon) ─────────────────────────────────
+    match /tareasClaude/{docId} {
       allow read, write: if esAdmin();
     }
 
-    // ── USUARIOS — Bloque A ──────────────────────────────────────────────────
-    // Lectura pública (apps sincronizan credenciales legacy)
-    // Escritura: el propio usuario o un admin
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if request.auth != null &&
-                   (request.auth.uid == userId || esAdmin());
-      // Compatibilidad legacy: apps sin Auth (modo offline) necesitan leer
-      // Los paneles usan lectura para validar usuarios hardcoded + Firestore
-    }
-
-    // ── CONFIG — Bloque B ────────────────────────────────────────────────────
-    // config/registroControl: solo admin puede escribir
-    // Otros docs de config (urls, cupones, ping): mantener acceso actual
-    match /config/{docId} {
-      allow read: if true;
-      allow write: if docId == "registroControl"
-                   ? esAdmin()
-                   : true;   // resto de config mantiene acceso libre (urls, cupones, ping)
-    }
-
-    // ── COTIZACIONES ─────────────────────────────────────────────────────────
-    match /cotizaciones/{cotizId} {
-      allow read, write: if true;
-    }
-
-    // ── SESIONES ACTIVAS (presencia online) ──────────────────────────────────
-    match /sesiones_activas/{uid} {
-      allow read, write: if true;
-    }
-
-    // ── PROMOCIONES ──────────────────────────────────────────────────────────
-    match /promos/{promoId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // ── PRODUCTOS (catálogo fallback) ─────────────────────────────────────────
-    match /productos/{prodId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // ── SOLICITUDES DE CUPONES ────────────────────────────────────────────────
-    match /solicitudes_cupon/{docId} {
-      allow read, write: if true;
-    }
-
-    // ── SESIONES LOG — dedup notificaciones (Bloque G) ───────────────────────
-    // Escritura: cualquier usuario autenticado (los paneles escriben al login)
-    // Lectura: solo admin (para cruzar notificaciones)
-    match /sesionesLog/{docId} {
-      allow read: if true;           // Simplificado: admin lo lee desde el panel sin Auth Firebase
-      allow write: if true;          // Los paneles legacy no tienen Auth → mantener write:true
-    }
-
-    // ── BLOQUEO DE COLECCIONES OBSOLETAS ─────────────────────────────────────
-    match /sessions/{docId} {
-      allow read: if false;
-      allow write: if false;
-    }
-    match /notificaciones/{docId} {
-      allow read: if false;
-      allow write: if false;
+    // ── BLOQUEO POR DEFECTO ───────────────────────────────────
+    // Todo lo que no esté listado arriba → denegado
+    // Incluye: productos, solicitudes_cupon, sessions (obsoletas)
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
