@@ -9554,7 +9554,7 @@ function vadmRenderBajaRot(){
   if(st){ st.textContent='Calculando…'; st.style.color='#9ca3af'; }
 
   // 3. Mapeo bodega → campo de stock
-  var BOD_STOCK={PEM:'pem',SEM:'sem',CEM:'cem',MEM:'mem',CD:'cd'};
+  var BOD_STOCK={PEM:'pem',SEM:'sem',CEM:'cem',RCE:'rce',MEM:'mem',TEM:'tem',IEM:'iem',CD:'cd'};
   var bodSel=_vadmBodSel||[];
   // Campos de stock activos según selección (sin duplicados)
   var selFields=bodSel.length===0?['pem','sem','cem','mem']:
@@ -11674,13 +11674,12 @@ function vadmBodBuildCheckList(){
   _vadmLineas.forEach(function(r){ if(r.bodegaCorta) bods[r.bodegaCorta]=1; });
   var bodArr=Object.keys(bods).sort();
   // Agregar CD (bodega de stock, no de ventas) si no aparece ya
-  ['CEM','MEM','SEM','CD'].forEach(function(b){ if(bodArr.indexOf(b)<0) bodArr.push(b); });
   bodArr.sort();
   if(!bodArr.length) return;
   var html='';
   bodArr.forEach(function(b){
     var sel=_vadmBodSel.length===0 || _vadmBodSel.indexOf(b)>=0;
-    var lbl=b==='CD'?'CD (stock)':(b==='CEM'?'CEM (stock)':(b==='MEM'?'MEM (stock)':b));
+    var lbl=b;
     html+='<label class="vadm-vend-opt"><input type="checkbox"'+(sel?' checked':'')+' onchange="vadmBodToggleOne(\''+venAdmEsc(b)+'\',this)"><span>'+venAdmEsc(lbl)+'</span></label>';
   });
   container.innerHTML=html;
