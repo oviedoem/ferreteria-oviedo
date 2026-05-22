@@ -9808,8 +9808,10 @@ function _vadmRenderBajaRotTabla(filtrados){
 
 // ── Datos filtrados (vendedor + bodega + periodo) ────────────────────────────
 function vadmDatosFiltrados(){
-  var datos = _vadmLineas;
-  if(_vadmBodSel.length>0)  datos = datos.filter(function(r){ return _vadmBodSel.indexOf(r.bodegaCorta)>=0; });
+  // Normalizar bodegas legacy: SAL→SEM (datos pre-V36.6), excluir EXH (exhibición)
+  var _BOD_NORM={'SAL':'SEM'};
+  var datos = _vadmLineas.filter(function(r){ return r.bodegaCorta!=='EXH'; });
+  if(_vadmBodSel.length>0)  datos = datos.filter(function(r){ return _vadmBodSel.indexOf(_BOD_NORM[r.bodegaCorta]||r.bodegaCorta)>=0; });
   if(_vadmVendSel.length>0) datos = datos.filter(function(r){ return _vadmVendSel.some(function(v){ return r.gmailUser===v||r.vendedor===v||r.vendedorErp===v; }); });
   if(_vadmPeriodoSel)        datos = datos.filter(function(r){ return r.periodo===_vadmPeriodoSel; });
   if(_vadmDocSel.length>0) datos = datos.filter(function(r){ return _vadmDocSel.indexOf(vadmFPago(r.documento).label)>=0; });
@@ -11734,21 +11736,15 @@ function vadmBodActualizar(){
 function vadmBodBuildCheckList(){
   var container=document.getElementById('vadmBodCheckList');
   if(!container) return;
-  // Colectar bodegas únicas presentes en los datos de ventas
-  var bods={};
-  _vadmLineas.forEach(function(r){ if(r.bodegaCorta) bods[r.bodegaCorta]=1; });
-  var bodArr=Object.keys(bods).sort();
-  // Agregar CD (bodega de stock, no de ventas) si no aparece ya
-  bodArr.sort();
-  if(!bodArr.length) return;
+  // 8 bodegas oficiales — siempre visibles (AGENTS.md V36.6)
+  // EXH y SAL no son bodegas oficiales y nunca deben aparecer
+  var BODS=['PEM','SEM','CEM','MEM','RCE','TEM','CD','IEM'];
   var html='';
-  bodArr.forEach(function(b){
+  BODS.forEach(function(b){
     var sel=_vadmBodSel.length===0 || _vadmBodSel.indexOf(b)>=0;
-    var lbl=b;
-    html+='<label class="vadm-vend-opt"><input type="checkbox"'+(sel?' checked':'')+' onchange="vadmBodToggleOne(\''+venAdmEsc(b)+'\',this)"><span>'+venAdmEsc(lbl)+'</span></label>';
+    html+='<label class="vadm-vend-opt"><input type="checkbox"'+(sel?' checked':'')+' onchange="vadmBodToggleOne(\''+b+'\',this)"><span>'+b+'</span></label>';
   });
   container.innerHTML=html;
-  // Asegurar que la barra esté visible
   document.getElementById('vadmVendBar').style.display='flex';
 }
 
