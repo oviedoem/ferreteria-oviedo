@@ -13729,10 +13729,32 @@ function vadmAbrirEmailModal(){
       '<code style="font-size:11px">'+_emailEsc(String(e))+'</code></div>';
   }
   prev.innerHTML = html;
-  document.getElementById('vadmEmailHtmlArea').value = _vadmEmailFullDoc(html);
+  // Post-process: table-layout:fixed evita que las celdas se expandan al pegar en Outlook/Gmail
+  prev.querySelectorAll('table').forEach(function(t){
+    t.style.tableLayout    = 'fixed';
+    t.style.borderCollapse = 'collapse';
+    t.style.width          = '100%';
+  });
+  prev.querySelectorAll('td,th').forEach(function(c){
+    c.style.overflow  = 'hidden';
+    c.style.wordBreak = 'break-word';
+    c.style.boxSizing = 'border-box';
+  });
+  // Textarea recibe el DOM corregido, no el html crudo
+  document.getElementById('vadmEmailHtmlArea').value = _vadmEmailFullDoc(prev.innerHTML);
   document.getElementById('vadmEmailFeedback').textContent='';
   vadmCambiarTabEmail('vista');
   document.getElementById('vadmEmailModal').style.display='flex';
+  // Auto-copiar como rich HTML al abrir (mismo patrón que Adquisiciones)
+  if(window.ClipboardItem){
+    var _richBlob = new Blob([prev.innerHTML], {type:'text/html'});
+    var _textBlob = new Blob([document.getElementById('vadmEmailAsunto').value], {type:'text/plain'});
+    navigator.clipboard.write([new ClipboardItem({'text/html':_richBlob,'text/plain':_textBlob})])
+      .then(function(){
+        document.getElementById('vadmEmailFeedback').textContent='✅ HTML copiado — pegá directo en Outlook o Gmail (Ctrl+V)';
+      })
+      .catch(function(){});
+  }
 }
 
 function vadmCerrarEmailModal(){
