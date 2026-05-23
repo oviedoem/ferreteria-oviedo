@@ -13702,9 +13702,6 @@ function vadmAbrirEmailModal(){
   var perStr=pArr.length===1?vadmFmtPeriodo(pArr[0]):
              pArr.length>1?vadmFmtPeriodo(pArr[0])+' – '+vadmFmtPeriodo(pArr[pArr.length-1]):
              'Todos los períodos';
-  document.getElementById('vadmEmailAsunto').value =
-    'Reporte Ventas El Manzano — '+perStr+' — generado '+new Date().toLocaleDateString('es-CL');
-
   // Indicador de tab activo
   var tabLabels={detalle:'📋 Detalle',analisis:'📊 Categorías',hora:'🕐 Por Hora',top:'🏆 Top Productos',
     marcas:'🏷️ Por Marca',rankingmarca:'🏷️ Ranking por Marca',estaciones:'🌤️ Temporada',
@@ -13715,6 +13712,13 @@ function vadmAbrirEmailModal(){
     merma:'🔖 Merma',bajrot:'📉 Baja Rotación',vvsstock:'📊 Venta vs Stock',arbol:'🌳 Árbol',arboltabla:'📋 Tabla KPIs',arbolheat:'🗓️ Mapa Calor'};
   var lbl=document.getElementById('vadmEmailTabLabel');
   if(lbl) lbl.textContent='Reporte: '+(tabLabels[tabId]||tabId)+' · '+datos.length+' líneas';
+
+  // Asunto tab-aware: inventario no dice "Ventas"
+  var _invNombres={quiebre:'Stock & Quiebre',sobrestock:'Sobre-stock',transito:'Tránsito',merma:'Merma',bajrot:'Baja Rotación'};
+  var asunto=_invNombres[tabId]
+    ? 'Inventario '+_invNombres[tabId]+' El Manzano — '+new Date().toLocaleDateString('es-CL')
+    : 'Reporte Ventas El Manzano — '+perStr+' — generado '+new Date().toLocaleDateString('es-CL');
+  document.getElementById('vadmEmailAsunto').value = asunto;
 
   // Limpiar preview antes de generar — evita que quede contenido anterior si la función falla
   var prev=document.getElementById('vadmEmailPreview');
@@ -13746,14 +13750,19 @@ function vadmAbrirEmailModal(){
   vadmCambiarTabEmail('vista');
   document.getElementById('vadmEmailModal').style.display='flex';
   // Auto-copiar como rich HTML al abrir (mismo patrón que Adquisiciones)
+  var _plainText = asunto+'\n\nGenerado desde panel.ferreteria-oviedo.web.app';
   if(window.ClipboardItem){
     var _richBlob = new Blob([prev.innerHTML], {type:'text/html'});
-    var _textBlob = new Blob([document.getElementById('vadmEmailAsunto').value], {type:'text/plain'});
+    var _textBlob = new Blob([_plainText], {type:'text/plain'});
     navigator.clipboard.write([new ClipboardItem({'text/html':_richBlob,'text/plain':_textBlob})])
       .then(function(){
         document.getElementById('vadmEmailFeedback').textContent='✅ HTML copiado — pegá directo en Outlook o Gmail (Ctrl+V)';
       })
-      .catch(function(){});
+      .catch(function(){
+        navigator.clipboard.writeText(_plainText).then(function(){
+          document.getElementById('vadmEmailFeedback').textContent='📋 Texto copiado — pegá en tu cliente de correo';
+        }).catch(function(){});
+      });
   }
 }
 
