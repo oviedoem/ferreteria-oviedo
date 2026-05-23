@@ -1464,7 +1464,6 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
               <option value="">Todos los documentos</option>
               <option value="factura">Facturas</option>
               <option value="boleta">Boletas</option>
-              <option value="nc">Solo NC</option>
             </select>
             <select id="vadmSEhora" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
               <option value="">Todas las horas</option>
@@ -1475,6 +1474,16 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           </div>
           <div id="vadmSEStatus" style="font-size:12px;color:#9ca3af;padding:8px 16px"></div>
           <div id="vadmSEBody"></div>
+        </div>
+        <!-- ── MODAL DETALLE SECTOR ── -->
+        <div id="vadmSEModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;overflow:auto" onclick="if(event.target===this)this.style.display='none'">
+          <div style="background:#fff;margin:40px auto;max-width:880px;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.25);overflow:hidden">
+            <div style="background:#7f1d1d;color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+              <span id="vadmSEModalTitle" style="font-weight:700;font-size:14px"></span>
+              <button onclick="document.getElementById('vadmSEModal').style.display='none'" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:0 4px">×</button>
+            </div>
+            <div id="vadmSEModalBody" style="padding:16px;max-height:72vh;overflow-y:auto"></div>
+          </div>
         </div>
 
         <!-- ── Q vs $ IMPACTO PRECIO ── -->
@@ -11040,7 +11049,6 @@ function vadmRenderSector(){
   var bd = document.getElementById('vadmSEBody');
   if(st) st.textContent = 'Cargando...';
   if(bd) bd.innerHTML = '<div class="ven-adm-loading">Cargando...</div>';
-  // Default: 2026-01-01 → hoy
   var hoyS = new Date();
   var sef1 = document.getElementById('vadmSEdesde');
   var sef2 = document.getElementById('vadmSEhasta');
@@ -11054,13 +11062,11 @@ function vadmRenderSector(){
   function _render(){
     function _esNC(r){ var d=(r.documento||r.doc||'').toLowerCase(); return d.indexOf('nota')>=0||d.indexOf('cred')>=0; }
     var lineas = _vadmLineas.filter(function(r){
-      if(!r.sector) return false;
+      if(_esNC(r)) return false;
       if(_vadmVendSel.length>0 && !_vadmVendSel.some(function(v){ return r.vendedor===v||r.gmailUser===v||r.vendedorErp===v; })) return false;
       if(_vadmBodSel.length>0  && _vadmBodSel.indexOf(r.bodegaCorta)<0) return false;
-      var nc=_esNC(r);
-      if(docFil==='nc'      && !nc) return false;
-      if(docFil==='factura' && (nc||!/factura/i.test(r.documento||r.doc||''))) return false;
-      if(docFil==='boleta'  && (nc||!/boleta/i.test(r.documento||r.doc||'')))  return false;
+      if(docFil==='factura' && !/factura/i.test(r.documento||r.doc||'')) return false;
+      if(docFil==='boleta'  && !/boleta/i.test(r.documento||r.doc||''))  return false;
       if(horaFil){ var hn=_seHoraNum(r.hora||''); if(horaFil==='am'&&hn>=12) return false; if(horaFil==='pm'&&(hn<12||hn<0)) return false; }
       var fd=_vadmFechaToISO(r.fecha);
       if(desde && fd<desde) return false;
@@ -11072,11 +11078,13 @@ function vadmRenderSector(){
       if(bd) bd.innerHTML='<div class="ven-adm-empty">Sin datos para el filtro activo.</div>';
       return;
     }
-    // Paso 2 — dedup por documento
+    // Paso 2 — dedup por documento; sin sector → RETIRO CLIENTE
     var docMap={};
     lineas.forEach(function(r){
-      var nc=_esNC(r), key=(r.numero||'_')+'\x01'+r.sector;
-      if(!docMap[key]) docMap[key]={sector:r.sector,neto:0,esNC:nc,
+      var sKey=r.sector||'RETIRO CLIENTE';
+      var key=(r.numero||'_')+'\x01'+sKey;
+      if(!docMap[key]) docMap[key]={sector:sKey,numero:r.numero||'—',fecha:r.fecha||'',
+        tipo:r.documento||r.doc||'',neto:0,
         vendedor:r.vendedor||r.vendedorErp||'?',
         razonSocial:r.razonSocial||'',rut:r.rut||'',hora:r.hora||''};
       docMap[key].neto+=(r.valorNeto||r.neto||0);
@@ -11085,31 +11093,35 @@ function vadmRenderSector(){
     var map={};
     Object.keys(docMap).forEach(function(k){
       var d=docMap[k],s=d.sector;
-      if(!map[s]) map[s]={sector:s,neto:0,cnt:0,nc:0,vendedores:{},clientes:{}};
+      if(!map[s]) map[s]={sector:s,neto:0,cnt:0,vendedores:{},clientes:{},docs:[]};
       map[s].neto+=d.neto; map[s].cnt++;
-      if(d.esNC) map[s].nc++;
+      map[s].docs.push(d);
       map[s].vendedores[d.vendedor]=(map[s].vendedores[d.vendedor]||0)+1;
       if(d.razonSocial){
         if(!map[s].clientes[d.razonSocial]) map[s].clientes[d.razonSocial]={neto:0,rut:d.rut};
         map[s].clientes[d.razonSocial].neto+=d.neto;
       }
     });
-    var arr=Object.values(map).sort(function(a,b){return b.neto-a.neto;});
+    // RETIRO CLIENTE siempre al final; resto por neto desc
+    var arr=Object.values(map).sort(function(a,b){
+      if(a.sector==='RETIRO CLIENTE') return 1;
+      if(b.sector==='RETIRO CLIENTE') return -1;
+      return b.neto-a.neto;
+    });
     var totalN=arr.reduce(function(s,v){return s+v.neto;},0);
     var totalCnt=arr.reduce(function(s,v){return s+v.cnt;},0);
-    var totalNC=arr.reduce(function(s,v){return s+v.nc;},0);
-    var maxNeto=arr.length?arr[0].neto:1;
+    var maxNeto=arr.reduce(function(m,v){return Math.max(m,v.neto);},1);
     var vendLabel=_vadmVendSel.length?_vadmVendLabelText():'Todos';
     if(st) st.textContent=arr.length+' sectores · '+totalCnt+' documentos · '+(docFil||'todos')+' · '+vendLabel;
     var head='<thead><tr style="background:#1a1d3a;color:#fff">'+
       '<th style="width:24px">#</th><th>Sector</th><th class="r">Neto</th>'+
       '<th style="width:120px">Participación</th>'+
-      '<th class="r">Vis.</th><th class="r">NC</th><th class="r">NC%</th>'+
+      '<th class="r">DESP</th>'+
       '<th>Vendedor top</th><th>Cliente top</th><th>RUT</th></tr></thead>';
-    var rows=arr.map(function(v,i){
+    var rows=[];
+    arr.forEach(function(v,i){
       var pct=totalN>0?(v.neto/totalN*100):0;
       var barW=maxNeto>0?Math.round(v.neto/maxNeto*100):0;
-      var ncPct=v.cnt>0?(v.nc/v.cnt*100).toFixed(1):'0.0';
       var topV=Object.keys(v.vendedores).sort(function(a,b){return v.vendedores[b]-v.vendedores[a];})[0];
       var topNom='—',topCnt=0;
       if(topV){ topNom=topV; topCnt=v.vendedores[topV];
@@ -11121,37 +11133,77 @@ function vadmRenderSector(){
         topCliente=tc; var rn=String(v.clientes[tc].rut||'').replace(/\D/g,'');
         topRut=rn?rn.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'—';
       }
-      var bg=i%2===0?'':'background:#f9fafb';
-      return '<tr style="'+bg+'">'+
+      var isRetiro=v.sector==='RETIRO CLIENTE';
+      var rowBg=isRetiro?'background:#f0f4ff':(i%2===0?'':'background:#f9fafb');
+      var sectorCell=isRetiro
+        ?'<span style="color:#6366f1;font-style:italic">'+venAdmEsc(v.sector)+'</span>'
+        :venAdmEsc(v.sector);
+      rows.push('<tr style="'+rowBg+';cursor:pointer" data-sector="'+venAdmEsc(v.sector)+'" onclick="vadmSEToggleDetalle(this)">'+
         '<td style="color:#9ca3af;font-size:10px">'+(i+1)+'</td>'+
-        '<td style="font-weight:600;font-size:12px">'+venAdmEsc(v.sector)+'</td>'+
+        '<td style="font-weight:600;font-size:12px"><span class="se-arrow" style="margin-right:5px;font-size:10px;color:#6b7280;display:inline-block">▶</span>'+sectorCell+'</td>'+
         '<td class="r" style="font-weight:700">'+venAdmFmt(v.neto)+'</td>'+
         '<td><div style="display:flex;align-items:center;gap:4px">'+
           '<div style="flex:1;background:#e5e7eb;border-radius:3px;height:8px">'+
           '<div style="width:'+barW+'%;background:#5b6ee8;height:8px;border-radius:3px"></div></div>'+
           '<span style="font-size:10px;color:#6b7280;white-space:nowrap">'+pct.toFixed(1)+'%</span></div></td>'+
         '<td class="r">'+v.cnt+'</td>'+
-        '<td class="r" style="color:'+(v.nc>0?'#dc2626':'#9ca3af')+'">'+v.nc+'</td>'+
-        '<td class="r" style="font-size:11px;color:'+(parseFloat(ncPct)>5?'#dc2626':'#9ca3af')+'">'+ncPct+'%</td>'+
         '<td style="font-size:11px;color:#059669">'+venAdmEsc(topNom)+(topCnt>1?' <span style="color:#9ca3af">('+topCnt+')</span>':'')+' </td>'+
         '<td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+venAdmEsc(topCliente)+'">'+venAdmEsc(topCliente)+'</td>'+
         '<td style="font-size:11px;color:#6b7280;white-space:nowrap">'+venAdmEsc(topRut)+'</td>'+
-      '</tr>';
-    }).join('');
+      '</tr>');
+      // Fila de detalle acordeón (oculta por defecto)
+      var detDocs=v.docs.slice().sort(function(a,b){return a.fecha>b.fecha?-1:1;});
+      var detTotal=detDocs.reduce(function(s,d){return s+d.neto;},0);
+      var dHead='<thead><tr style="background:#3730a3;color:#fff">'+
+        '<th style="padding:6px 8px;font-size:10px;text-align:left">N° Doc</th>'+
+        '<th style="padding:6px 8px;font-size:10px;text-align:left">Fecha</th>'+
+        '<th style="padding:6px 8px;font-size:10px;text-align:left">Tipo</th>'+
+        '<th style="padding:6px 8px;font-size:10px;text-align:left">Cliente</th>'+
+        '<th style="padding:6px 8px;font-size:10px;text-align:left">RUT</th>'+
+        '<th style="padding:6px 8px;font-size:10px;text-align:left">Vendedor</th>'+
+        '<th style="padding:6px 8px;font-size:10px;text-align:right">Neto</th>'+
+        '</tr></thead>';
+      var dRows=detDocs.map(function(d,j){
+        var nomV=d.vendedor;
+        Object.keys(VEN_CONFIG).forEach(function(k){ if(k===d.vendedor||VEN_CONFIG[k].gmailUser===d.vendedor) nomV=VEN_CONFIG[k].nombre; });
+        var rn=String(d.rut||'').replace(/\D/g,'');
+        var rutFmt=rn?rn.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'—';
+        return '<tr style="background:'+(j%2===0?'#fff':'#ede9fe')+'">'+
+          '<td style="padding:5px 8px;font-family:monospace;font-size:10px">'+venAdmEsc(d.numero)+'</td>'+
+          '<td style="padding:5px 8px;font-size:10px;white-space:nowrap">'+venAdmEsc(d.fecha)+'</td>'+
+          '<td style="padding:5px 8px;font-size:10px">'+venAdmEsc(d.tipo)+'</td>'+
+          '<td style="padding:5px 8px;font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+venAdmEsc(d.razonSocial)+'">'+venAdmEsc(d.razonSocial||'—')+'</td>'+
+          '<td style="padding:5px 8px;font-size:10px;color:#6b7280">'+venAdmEsc(rutFmt)+'</td>'+
+          '<td style="padding:5px 8px;font-size:10px;color:#059669">'+venAdmEsc(nomV)+'</td>'+
+          '<td style="padding:5px 8px;font-weight:700;font-size:10px;text-align:right;color:'+(d.neto<0?'#dc2626':'#111')+'">'+venAdmFmt(d.neto)+'</td>'+
+        '</tr>';
+      }).join('');
+      var dFoot='<tfoot><tr style="background:#ede9fe;font-weight:700">'+
+        '<td colspan="6" style="padding:5px 8px;font-size:10px">TOTAL</td>'+
+        '<td style="padding:5px 8px;font-size:10px;text-align:right">'+venAdmFmt(detTotal)+'</td>'+
+      '</tr></tfoot>';
+      rows.push('<tr class="se-detail-row" style="display:none">'+
+        '<td colspan="8" style="padding:0;border-top:2px solid #6366f1">'+
+          '<div style="padding:10px 16px 14px;background:#faf5ff">'+
+            '<div style="font-weight:700;font-size:11px;color:#4338ca;margin-bottom:8px">'+
+              venAdmEsc(v.sector)+' — '+detDocs.length+' documento'+(detDocs.length!==1?'s':'')+
+            '</div>'+
+            '<div class="ven-adm-table-wrap"><table class="vtbl" style="font-size:10px">'+dHead+'<tbody>'+dRows+'</tbody>'+dFoot+'</table></div>'+
+          '</div>'+
+        '</td>'+
+      '</tr>');
+    });
     var foot='<tfoot><tr style="background:#f3f4f6">'+
       '<td colspan="2" style="font-weight:700">TOTAL</td>'+
       '<td class="r" style="font-weight:700">'+venAdmFmt(totalN)+'</td>'+
       '<td></td>'+
       '<td class="r" style="font-weight:700">'+totalCnt+'</td>'+
-      '<td class="r" style="font-weight:700;color:'+(totalNC>0?'#dc2626':'#9ca3af')+'">'+totalNC+'</td>'+
-      '<td class="r" style="font-weight:700">'+(totalCnt>0?(totalNC/totalCnt*100).toFixed(1):'0.0')+'%</td>'+
       '<td colspan="3"></td></tr></tfoot>';
-    if(bd) bd.innerHTML='<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>'+
+    if(bd) bd.innerHTML='<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows.join('')+'</tbody>'+foot+'</table></div>'+
       '<div id="vadmSEChartWrap" style="padding:16px;max-width:720px"></div>';
     _vadmSEHoraChart(lineas);
   }
 
-  // Auto-load anual si el rango pide más datos de los que hay en _vadmLineas
   var _minPer=''; _vadmLineas.forEach(function(r){ if(!_minPer||r.periodo<_minPer) _minPer=r.periodo; });
   if(_vadmLineas.length && (!desde || desde.substring(0,7)>=_minPer)){ _render(); return; }
   var yr=desde?desde.substring(0,4):hoyS.getFullYear().toString();
@@ -11160,6 +11212,82 @@ function vadmRenderSector(){
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(function(json){ _vadmLineas=json.registros||[]; _render(); })
     .catch(function(){ _render(); });
+}
+function vadmSEDetalle(el){
+  var sector = el.getAttribute('data-sector');
+  var desde  = (document.getElementById('vadmSEdesde')||{}).value||'';
+  var hasta  = (document.getElementById('vadmSEhasta')||{}).value||'';
+  var docFil = (document.getElementById('vadmSEdoc') ||{}).value||'';
+  function _esNC(r){ var d=(r.documento||r.doc||'').toLowerCase(); return d.indexOf('nota')>=0||d.indexOf('cred')>=0; }
+  var lineas = (_vadmLineas||[]).filter(function(r){
+    if(r.sector !== sector) return false;
+    if(_vadmVendSel.length>0 && !_vadmVendSel.some(function(v){ return r.vendedor===v||r.gmailUser===v||r.vendedorErp===v; })) return false;
+    if(_vadmBodSel.length>0  && _vadmBodSel.indexOf(r.bodegaCorta)<0) return false;
+    var nc=_esNC(r);
+    if(docFil==='nc'      && !nc) return false;
+    if(docFil==='factura' && (nc||!/factura/i.test(r.documento||r.doc||''))) return false;
+    if(docFil==='boleta'  && (nc||!/boleta/i.test(r.documento||r.doc||'')))  return false;
+    var fd=_vadmFechaToISO(r.fecha);
+    if(desde && fd<desde) return false;
+    if(hasta && fd>hasta)  return false;
+    return true;
+  });
+  var docMap={};
+  lineas.forEach(function(r){
+    var key=r.numero||('_'+r.fecha+Math.random());
+    if(!docMap[key]) docMap[key]={numero:r.numero||'—',fecha:r.fecha||'',tipo:r.documento||r.doc||'',
+      cliente:r.razonSocial||'—',rut:r.rut||'',vendedor:r.vendedor||r.vendedorErp||'?',neto:0};
+    docMap[key].neto+=(r.valorNeto||r.neto||0);
+  });
+  var docs=Object.values(docMap).sort(function(a,b){ return a.fecha>b.fecha?-1:1; });
+  var totalNeto=docs.reduce(function(s,d){return s+d.neto;},0);
+  document.getElementById('vadmSEModalTitle').textContent=sector+' — '+docs.length+' docs · '+venAdmFmt(totalNeto);
+  var head='<thead><tr style="background:#7f1d1d;color:#fff">'+
+    '<th style="padding:8px 10px;font-size:11px">N° Doc</th>'+
+    '<th style="padding:8px 10px;font-size:11px">Fecha</th>'+
+    '<th style="padding:8px 10px;font-size:11px">Tipo</th>'+
+    '<th style="padding:8px 10px;font-size:11px">Cliente</th>'+
+    '<th style="padding:8px 10px;font-size:11px">RUT</th>'+
+    '<th style="padding:8px 10px;font-size:11px">Vendedor</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">Neto</th>'+
+    '</tr></thead>';
+  var rows=docs.map(function(d,i){
+    var nomVend=d.vendedor;
+    Object.keys(VEN_CONFIG).forEach(function(k){ if(k===d.vendedor||VEN_CONFIG[k].gmailUser===d.vendedor) nomVend=VEN_CONFIG[k].nombre; });
+    var rn=String(d.rut||'').replace(/\D/g,'');
+    var rutFmt=rn?rn.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'—';
+    return '<tr style="background:'+(i%2===0?'#fff':'#fff5f5')+'">'+
+      '<td style="padding:6px 10px;font-family:monospace;font-size:11px">'+venAdmEsc(d.numero)+'</td>'+
+      '<td style="padding:6px 10px;font-size:11px;white-space:nowrap">'+venAdmEsc(d.fecha)+'</td>'+
+      '<td style="padding:6px 10px;font-size:10px;color:#dc2626">'+venAdmEsc(d.tipo)+'</td>'+
+      '<td style="padding:6px 10px;font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+venAdmEsc(d.cliente)+'">'+venAdmEsc(d.cliente)+'</td>'+
+      '<td style="padding:6px 10px;font-size:11px;color:#6b7280">'+venAdmEsc(rutFmt)+'</td>'+
+      '<td style="padding:6px 10px;font-size:11px;color:#059669">'+venAdmEsc(nomVend)+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+(d.neto<0?'#dc2626':'#111')+'">'+venAdmFmt(d.neto)+'</td>'+
+    '</tr>';
+  }).join('');
+  var foot='<tfoot><tr style="background:#fef2f2;font-weight:700">'+
+    '<td colspan="6" style="padding:7px 10px">TOTAL</td>'+
+    '<td class="r" style="padding:7px 10px;color:#dc2626">'+venAdmFmt(totalNeto)+'</td>'+
+  '</tr></tfoot>';
+  document.getElementById('vadmSEModalBody').innerHTML='<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>';
+  document.getElementById('vadmSEModal').style.display='block';
+}
+function vadmSEToggleDetalle(tr){
+  var detRow=tr.nextElementSibling;
+  if(!detRow||!detRow.classList.contains('se-detail-row')) return;
+  var isOpen=detRow.style.display!=='none';
+  var body=document.getElementById('vadmSEBody');
+  if(body){
+    body.querySelectorAll('.se-detail-row').forEach(function(r){r.style.display='none';});
+    body.querySelectorAll('.se-arrow').forEach(function(a){a.textContent='▶';});
+  }
+  if(!isOpen){
+    detRow.style.display='';
+    var arrow=tr.querySelector('.se-arrow');
+    if(arrow) arrow.textContent='▼';
+    setTimeout(function(){detRow.scrollIntoView({behavior:'smooth',block:'nearest'});},80);
+  }
 }
 function _vadmSEHoraChart(lineas){
   var wrap=document.getElementById('vadmSEChartWrap');

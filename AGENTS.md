@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Ferretería Oviedo V36.8
+﻿# AGENTS.md — Ferretería Oviedo V36.9
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
 # Última actualización: 2026-05-22
 
@@ -17,8 +17,8 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 ## PROYECTO
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
-- Versión activa: V36.8
-- Deploy confirmado: 2026-05-22 18:23 — 174 archivos
+- Versión activa: V36.9
+- Deploy confirmado: 2026-05-23 11:00 — sector tab: NC excluidas, dropdown limpio, DESP, RETIRO CLIENTE, acordeón inline
 
 ---
 
@@ -272,7 +272,8 @@ ERP: hora topMarcas comparativa vendrank marcavend clientes tipodoc
      facturacion quiebre sobrestock transito merma rankingmarca
      estaciones bajrot pagoanalisis pagorankings pagotemporal
      entrefechas arbol arboltabla arbolheat
-XLSM: sector nc marcavend2 preciodiff mem
+ERP (migrado V36.9): sector
+XLSM: nc marcavend2 preciodiff mem
 Stubs: impacto
 
 ---
@@ -344,3 +345,53 @@ VENTAS EL MANZANO, backups, .claude, .ini, .xlsm, .mp4
 - descargarventaserp.py lineas 179 y 222 bodegaCorta=PEM hardcodeado
 - Reporte ERP no expone bodega por fila. Decision 21-05-2026 no arreglar
 - Solo leerxlsm.py tiene bodegaCorta real desde VENTAS.xlsm columna BODEGA
+
+---
+
+## HISTORIAL V36.9b — 2026-05-23 (sector tab acordeón + NC)
+
+vadmRenderSector — 6 cambios coordinados:
+- Columnas NC y NC% eliminadas de tabla y footer
+- Dropdown TIPO DOC: eliminada opción "Solo NC" (solo Todos/Factura/Boleta)
+- NC excluidas siempre del cálculo: if(_esNC(r)) return false — primer filtro
+- Columna Vis. renombrada a DESP
+- Nuevo sector RETIRO CLIENTE: registros sin r.sector agrupados con clave 'RETIRO CLIENTE'
+  aparece al final en azul/itálica, fondo #f0f4ff
+- Acordeón inline: clic en fila de sector despliega fila de detalle (se-detail-row)
+  con tabla docs (N° Doc / Fecha / Tipo / Cliente / RUT / Vendedor / Neto)
+  pre-renderizada al momento del Analizar, oculta con style="display:none"
+  solo un sector abierto a la vez, flecha ▶/▼, scroll suave
+
+vadmSEToggleDetalle(tr) — nueva función:
+- Toggle del se-detail-row siguiente al tr clickeado
+- Cierra todos los demás detalles y resetea flechas antes de abrir
+
+Tabla: 8 columnas (#, Sector, Neto, Participación, DESP, Vendedor top, Cliente top, RUT)
+Footer: colspan ajustado a 8 (eliminados totalNC y ncPct)
+vadmSEDetalle() — conservada como código muerto inofensivo (no tiene trigger)
+
+Deploy: 2026-05-23 11:00
+
+## HISTORIAL V36.9 — 2026-05-23
+
+vadmRenderSector — migrado de ventas-xlsm-sector.json a _vadmLineas:
+- Fix: filtro vendedor funcionaba solo para Rafaela (XLSM vendedor=ERP code vs gmailUser)
+- Ahora: _vadmLineas tiene r.vendedor=gmailUser → filtro funciona para todos
+- Default fechas: 2026-01-01 a hoy (antes: mes actual)
+- Auto-load: si rango > _vadmLineas cargado → fetch ventas-manzano-YYYY.json
+- Columnas nuevas: Cliente top (razonSocial con mayor neto) + RUT
+- Filtro hora: select AM/PM en barra de filtros
+- Grafico: Chart.js barra (docs por hora) + linea (neto) debajo de tabla
+- Sin _vadmSectorData — cache eliminado, usa _vadmLineas directamente
+
+leer_xlsm.py — xlsm-enrich.json fix:
+- Antes: sector=raw obsImp (no normalizado), faltaban hora y razonSocial
+- Ahora: sector=_extraer_sector()->_SECTOR_DISPLAY (normalizado), +hora, +razonSocial
+- 12092 documentos indexados
+
+main.py — enriquecer_desde_xlsm:
+- Agrega hora y razonSocial a registros de _vadmLineas
+- 34375/38297 registros actualizados en el pipeline
+
+Split JSONs actualizado: ventas-manzano-2026.json + mensuales 2026-01 a 2026-05
+con campos hora y razonSocial. Deploy: 2026-05-23.
