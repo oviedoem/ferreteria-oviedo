@@ -1,12 +1,13 @@
-﻿# AGENTS.md — Ferretería Oviedo V36.9
+﻿# AGENTS.md — Ferretería Oviedo V36.9c
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
-# Última actualización: 2026-05-22
+# Última actualización: 2026-05-23
 
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
 ```
 Proyecto activo:   D:\ferreteria-oviedo\
 GitHub (solo sync):D:\ferreteria-oviedo-github\
+Archivados:        D:\ferreteria-oviedo\_ARCHIVADOS\  (scripts obsoletos con prefijo YYYYMMDD_)
 Memory Claude:     C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\
 MEMORY.md index:   C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\MEMORY.md
 CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
@@ -45,15 +46,17 @@ El ciclo que se repite: se arregla X, se rompe Y que estaba bien.
 
 ## REGLA COMMIT OBLIGATORIO
 
-Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN:
+Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde PowerShell:
 
-  powershell -Command "cd D:\ferreteria-oviedo-github; git add .; git commit -m 'V36 <desc>'; git push"
+  "V36.X desc breve sin tildes" | cmd /c "D:\ferreteria-oviedo\ACTUALIZAR_GITHUB.bat"
 
-- Si el bat pide descripción: 4 palabras en minúsculas, sin tildes.
+- El bat sincroniza con robocopy los archivos permitidos y hace git add/commit/push.
+- La descripción va por stdin (máximo 5 palabras, minúsculas, sin tildes).
   Ejemplo: fix bodega dropdown panel
 - No preguntar al usuario. No esperar confirmación.
 - Ejecutar siempre como último paso.
-- Si falla: reportar el error pero NO omitir el intento.
+- Si BLOQUEADO: revisar archivo sensible en repo antes de reintentar.
+- Si falla por red: reportar el error pero NO omitir el intento.
 
 ---
 
@@ -236,10 +239,14 @@ NO intentar arreglarlo.
 7. firebase deploy
 
 BATs disponibles:
-- ACTUALIZARTODO.bat  → pipeline completo
-- PUBLICAR.bat        → solo firebase deploy
+- ACTUALIZARTODO.bat   → pipeline completo (único punto de entrada)
+- PUBLICAR.bat         → solo firebase deploy
 - ACTUALIZARGITHUB.bat → sync github
 - ACTUALIZARVENTAS.bat → solo ventas (llama main.py)
+
+BATs archivados en _ARCHIVADOS\ (NO ejecutar — llaman scripts inexistentes):
+- 20260523_PREPARAR_Y_PUBLICAR.bat  (llamaba exportar_consulta_ventas.py y preparar_datos.py)
+- 20260523_ACTUALIZAR_AUTO.bat      (llamaba preparar_datos.py --auto)
 
 ---
 
@@ -395,3 +402,33 @@ main.py — enriquecer_desde_xlsm:
 
 Split JSONs actualizado: ventas-manzano-2026.json + mensuales 2026-01 a 2026-05
 con campos hora y razonSocial. Deploy: 2026-05-23.
+
+## HISTORIAL V36.9c — 2026-05-23 (limpieza pipeline)
+
+ARCHIVADOS (movidos a _ARCHIVADOS\, no eliminados):
+- VENTAS EL MANZANO LOCAL\PREPARAR_Y_PUBLICAR.bat → 20260523_PREPARAR_Y_PUBLICAR.bat
+  Motivo: llamaba exportar_consulta_ventas.py y preparar_datos.py (no existen)
+- VENTAS EL MANZANO LOCAL\ACTUALIZAR_AUTO.bat → 20260523_ACTUALIZAR_AUTO.bat
+  Motivo: llamaba preparar_datos.py --auto (no existe); era tarea 7PM obsoleta
+
+csv_a_json.py — 2 bugs corregidos (P3 + P4):
+- P3: pd.read_excel(Datos.xlsx) → pd.read_csv(Datos.csv, encoding=utf-8-sig)
+  xlsx_a_csv.py generaba Datos.csv que nunca se usaba. Ahora el pipeline es coherente.
+- P4: "TEM_TRANS": "tem_trans" agregado al mapa de columnas
+  tem_trans ausente de Datos.json a pesar de estar en la conversión numérica.
+  Regenerado Datos.json: 6011 productos con tem_trans incluido.
+
+panel-admin.html — _vadmCargarStockMap: tem_trans agregado al mapa de stock
+- Antes: tem_trans ausente del objeto _vadmStockMap → reqStockPrellenar() calculaba
+  transito como (p.pem_trans||0)+(p.tem_trans||0) pero p.tem_trans era undefined → 0
+- Ahora: tem_trans:Number(p.tem_trans||p.TEM_TRANS||0) entre campos tem y rce
+- Impacto: tránsito TEM ahora se suma correctamente en Solicitud Semanal de Stock
+- Riesgo: NULO — campo aditivo, no modifica firma ni lógica existente
+
+Pipeline timing log creado: logs/20260523_pipeline.log
+- 7 pasos ejecutados: descargar_erp(102s) + procesar-actualizacion(11s) +
+  xlsx_a_csv(4s) + csv_a_json(2s) + leer_xlsm(9s) + descargar_ventas_erp(73s) +
+  actualizar_config_precios(2s) = 203s total (~3m 23s, sin alerta 5min)
+- 0 errores, datos actualizados a 2026-05-23 19:07
+
+ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.

@@ -1508,13 +1508,20 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <div class="vadm-section" id="vsec-nc">
           <div class="vadm-anal-bar">
             <span class="vadm-filter-tag" style="background:#fff1f2;color:#9f1239;border-color:#fecdd3">🔴 NC por Vendedor</span>
-            <span class="vadm-filter-tag" style="background:#fef3c7;color:#92400e;border-color:#fde68a">AYER</span>
             <input type="date" id="vadmNCdesde" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
             <input type="date" id="vadmNChasta" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
             <button class="ven-adm-btn" onclick="vadmRenderNC()">🔍 Analizar</button>
             <button class="ven-adm-btn" style="background:#059669" onclick="vadmExportNCExcel()">📥 Excel</button>
           </div>
+          <!-- Filtro por motivo (chips) -->
+          <div id="vadmNCMotivos" style="display:none;padding:6px 16px 2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            <span style="font-size:11px;color:#6b7280;font-weight:600;margin-right:4px">Motivo:</span>
+          </div>
           <div id="vadmNCStatus" style="font-size:12px;color:#9ca3af;padding:8px 16px"></div>
+          <!-- Gráfico Obs × Vendedor × Cantidad NC -->
+          <div id="vadmNCChartWrap" style="padding:8px 16px 4px;max-width:820px;display:none">
+            <canvas id="vadmNCChart" height="200"></canvas>
+          </div>
           <div id="vadmNCBody"></div>
         </div>
 
@@ -6696,6 +6703,7 @@ function _vadmCargarStockMap(cb){
         iem:Number(p.iem||p.IEM_DISP||0),
         iem_trans:Number(p.iem_trans||p.IEM_TRANS||0),
         tem:Number(p.tem||p.TEM_DISP||0),
+        tem_trans:Number(p.tem_trans||p.TEM_TRANS||0),
         rce:Number(p.rce||p.RCE_DISP||0),
         cd:Number(p.cd||p.CD_DISP||0),
         cd_trans:Number(p.cd_trans||p.CD_TRANS||0),
@@ -11346,10 +11354,11 @@ function vadmRenderNC(){
   var bd = document.getElementById('vadmNCBody');
   if(st) st.textContent = 'Cargando...';
   if(bd) bd.innerHTML = '<div class="ven-adm-loading">Cargando...</div>';
+  _vadmNCMotivoSel = '';
+
   var desde = (document.getElementById('vadmNCdesde')||{}).value||'';
   var hasta  = (document.getElementById('vadmNChasta')||{}).value||'';
 
-  // Usa _vadmLineas (ERP, todos los vendedores) en lugar de XLSM parcial
   var ncs = (_vadmLineas||[]).filter(function(r){
     var doc = (r.documento||'').toLowerCase();
     if(doc.indexOf('nota')<0 && doc.indexOf('cred')<0) return false;
@@ -11362,73 +11371,60 @@ function vadmRenderNC(){
     return true;
   });
 
-  // Paso 1: agrupar líneas por (vendedor, numero) → un registro por documento NC
+  // PASO 1: agrupar líneas por (vendedor|numero) → un doc NC por entrada
   var docMap = {};
   ncs.forEach(function(r){
     var v   = r.vendedor||'?';
     var num = r.numero||'?';
     var key = v + '|' + num;
-    if(!docMap[key]) docMap[key] = {vendedor:v, numero:num, neto:0, cantidad:0, obs:''};
-    docMap[key].neto     += Math.abs(r.valorNeto||0);
-    docMap[key].cantidad += (r.cantidad||1);
+    if(!docMap[key]) docMap[key] = {
+      vendedor:v, numero:num,
+      fecha:r.fecha||'',
+      razonSocial:r.razonSocial||r.cliente||'—',
+      rut:r.rut||'',
+      neto:0, obs:r.observacion||''
+    };
+    docMap[key].neto += Math.abs(r.valorNeto||0);
     if(!docMap[key].obs) docMap[key].obs = r.observacion||'';
   });
-  // Paso 2: agrupar documentos únicos por vendedor
+  Object.values(docMap).forEach(function(d){ d.categoria = _vadmNCCategoria(d.obs); });
+
+  // PASO 2: agrupar docs por vendedor, ordenar por cantNC DESC
   var map = {};
   Object.values(docMap).forEach(function(d){
     var v = d.vendedor;
     if(!map[v]) map[v] = {vendedor:v, totalNC:0, cantNC:0, docs:[]};
     map[v].totalNC += d.neto;
     map[v].cantNC++;
-    if(d.obs) map[v].docs.push({obs:d.obs});
+    map[v].docs.push(d);
   });
-
-  var arr = Object.values(map).sort(function(a,b){ return b.totalNC - a.totalNC; });
+  Object.values(map).forEach(function(v){
+    v.docs.sort(function(a,b){ return a.fecha>b.fecha?-1:1; });
+  });
+  var arr = Object.values(map).sort(function(a,b){ return b.cantNC - a.cantNC; });
   _vadmNCData = arr;
+
+  var motiWrap  = document.getElementById('vadmNCMotivos');
+  var chartWrap = document.getElementById('vadmNCChartWrap');
   if(!arr.length){
     if(st) st.textContent = 'Sin NCs en el periodo.';
     if(bd) bd.innerHTML = '<div class="ven-adm-empty">Sin notas de crédito en el rango seleccionado.</div>';
+    if(motiWrap)  motiWrap.style.display='none';
+    if(chartWrap) chartWrap.style.display='none';
     return;
   }
-  var totalNC   = arr.reduce(function(s,v){ return s+v.totalNC; }, 0);
-  var totalCant = arr.reduce(function(s,v){ return s+v.cantNC; }, 0);
   var nDocUnicos = Object.keys(docMap).length;
-  if(st) st.textContent = arr.length + ' vendedores · ' + nDocUnicos + ' NCs en el periodo · ' + venAdmFmt(totalNC) + ' total';
-  var head = '<thead><tr style="background:#7f1d1d;color:#fff">' +
-    '<th style="padding:8px 10px;font-size:11px">#</th>' +
-    '<th style="padding:8px 10px;font-size:11px">Vendedor</th>' +
-    '<th class="r" style="padding:8px 10px;font-size:11px">Total NC</th>' +
-    '<th class="r" style="padding:8px 10px;font-size:11px">%</th>' +
-    '<th class="r" style="padding:8px 10px;font-size:11px">Cantidad</th>' +
-    '<th style="padding:8px 10px;font-size:11px">OBS frecuente</th>' +
-    '</tr></thead>';
-  var rows = arr.map(function(v,i){
-    var nomVend = v.vendedor;
-    Object.keys(VEN_CONFIG).forEach(function(k){
-      if(k === v.vendedor || VEN_CONFIG[k].gmailUser === v.vendedor) nomVend = VEN_CONFIG[k].nombre;
-    });
-    var obsMap = {};
-    v.docs.forEach(function(d){ if(d.obs){ obsMap[d.obs]=(obsMap[d.obs]||0)+1; } });
-    var topObs = Object.entries(obsMap).sort(function(a,b){return b[1]-a[1];})[0];
-    var pct = totalNC > 0 ? (v.totalNC/totalNC*100).toFixed(1) : '0.0';
-    var bg = i%2===0?'#fff':'#fff5f5';
-    return '<tr style="background:'+bg+'">' +
-      '<td style="padding:6px 10px;color:#9ca3af;font-size:10px">'+(i+1)+'</td>' +
-      '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(nomVend)+'</td>' +
-      '<td class="r" style="padding:6px 10px;font-weight:700;color:#dc2626">'+venAdmFmt(v.totalNC)+'</td>' +
-      '<td class="r" style="padding:6px 10px;font-size:11px;color:#9ca3af">'+pct+'%</td>' +
-      '<td class="r" style="padding:6px 10px">'+v.cantNC+'</td>' +
-      '<td style="padding:6px 10px;font-size:11px;color:#6b7280;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+venAdmEsc(topObs?topObs[0]:'—')+'</td>' +
-    '</tr>';
-  }).join('');
-  var foot = '<tfoot><tr style="background:#fef2f2;font-weight:700">' +
-    '<td colspan="2" style="padding:7px 10px">TOTAL</td>' +
-    '<td class="r" style="padding:7px 10px;color:#dc2626">'+venAdmFmt(totalNC)+'</td>' +
-    '<td class="r" style="padding:7px 10px">100%</td>' +
-    '<td class="r" style="padding:7px 10px">'+totalCant+'</td>' +
-    '<td></td>' +
-  '</tr></tfoot>';
-  if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>';
+  var totalNC    = arr.reduce(function(s,v){ return s+v.totalNC; }, 0);
+  if(st) st.textContent = arr.length+' vendedores · '+nDocUnicos+' NCs · '+venAdmFmt(totalNC)+' total';
+
+  _vadmNCMotivoMap = {};
+  arr.forEach(function(v){
+    v.docs.forEach(function(d){ _vadmNCMotivoMap[d.categoria]=(_vadmNCMotivoMap[d.categoria]||0)+1; });
+  });
+
+  _vadmNCBuildChips(_vadmNCMotivoMap);
+  _vadmNCRenderTabla();
+  _vadmNCRenderChart();
 }
 
 function vadmExportNCExcel(){
@@ -11457,8 +11453,227 @@ function vadmExportNCExcel(){
   XLSX.writeFile(wb, 'nc_vendedor_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
+// ── NC VENDEDOR — helpers ─────────────────────────────────────────────────────
+var _vadmNCData      = [];
+var _vadmNCChart     = null;
+var _vadmNCMotivoSel = '';
+var _vadmNCMotivoMap = {};
+var _NC_MOTIVOS = ['cambio producto','mal estado','error cliente','error vendedor',
+  'sin stock','desiste compra','boleta a factura','calidad','sin motivo'];
+
+function _vadmNCNorm(s){
+  return (s||'').toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n');
+}
+function _vadmNCCategoria(obs){
+  var s=_vadmNCNorm(obs);
+  if(!s) return 'sin motivo';
+  if(s.indexOf('cambio')>=0 && s.indexOf('prod')>=0) return 'cambio producto';
+  if(s.indexOf('mal')>=0 && s.indexOf('estado')>=0) return 'mal estado';
+  if(s.indexOf('error')>=0 && s.indexOf('cliente')>=0) return 'error cliente';
+  if(s.indexOf('error')>=0 && (s.indexOf('vend')>=0)) return 'error vendedor';
+  if(s.indexOf('sin')>=0 && s.indexOf('stock')>=0) return 'sin stock';
+  if(s.indexOf('desiste')>=0) return 'desiste compra';
+  if(s.indexOf('boleta')>=0 && s.indexOf('factura')>=0) return 'boleta a factura';
+  if(s.indexOf('calidad')>=0) return 'calidad';
+  return 'sin motivo';
+}
+function _vadmNCBuildChips(motivosMap){
+  var wrap=document.getElementById('vadmNCMotivos');
+  if(!wrap) return;
+  var keys=Object.keys(motivosMap).sort(function(a,b){return motivosMap[b]-motivosMap[a];});
+  if(!keys.length){ wrap.style.display='none'; return; }
+  wrap.style.display='flex';
+  var bBase='font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer;border:1px solid ';
+  var bAct=bBase+'#7f1d1d;background:#7f1d1d;color:#fff;font-weight:700';
+  var bOff=bBase+'#e5e7eb;background:#f9fafb;color:#374151;font-weight:400';
+  var html='<span style="font-size:11px;color:#6b7280;font-weight:600;margin-right:4px">Motivo:</span>'+
+    '<button onclick="vadmNCSetMotivo(\'\')" style="'+(!_vadmNCMotivoSel?bAct:bOff)+'">Todos</button>';
+  keys.forEach(function(m){
+    var isA=_vadmNCMotivoSel===m;
+    html+='<button data-ncm="'+venAdmEsc(m)+'" onclick="vadmNCSetMotivo(this.getAttribute(\'data-ncm\'))" style="'+(isA?bAct:bOff)+'">'+
+      venAdmEsc(m)+' <span style="opacity:.7">('+motivosMap[m]+')</span></button>';
+  });
+  wrap.innerHTML=html;
+}
+function vadmNCToggleDetalle(tr){
+  var detRow=tr.nextElementSibling;
+  if(!detRow||!detRow.classList.contains('nc-detail-row')) return;
+  var isOpen=detRow.style.display!=='none';
+  var body=document.getElementById('vadmNCBody');
+  if(body){
+    body.querySelectorAll('.nc-detail-row').forEach(function(r){r.style.display='none';});
+    body.querySelectorAll('.nc-arrow').forEach(function(a){a.textContent='▶';});
+    body.querySelectorAll('tr[data-ncvend]').forEach(function(r){
+      r.style.background=r.getAttribute('data-origbg')||'';
+    });
+  }
+  if(!isOpen){
+    detRow.style.display='';
+    var arrow=tr.querySelector('.nc-arrow');
+    if(arrow) arrow.textContent='▼';
+    tr.style.background='#fee2e2';
+    setTimeout(function(){detRow.scrollIntoView({behavior:'smooth',block:'nearest'});},80);
+  }
+}
+function vadmNCSetMotivo(m){
+  _vadmNCMotivoSel=(_vadmNCMotivoSel===m&&m!=='')?'':m;
+  _vadmNCBuildChips(_vadmNCMotivoMap||{});
+  _vadmNCRenderTabla();
+  _vadmNCRenderChart();
+}
+function _vadmNCRenderTabla(){
+  var bd=document.getElementById('vadmNCBody');
+  if(!bd||!_vadmNCData.length) return;
+
+  var src=_vadmNCMotivoSel ? _vadmNCData.map(function(v){
+    var fd=v.docs.filter(function(d){return d.categoria===_vadmNCMotivoSel;});
+    if(!fd.length) return null;
+    return {vendedor:v.vendedor, totalNC:fd.reduce(function(s,d){return s+d.neto;},0), cantNC:fd.length, docs:fd};
+  }).filter(Boolean).sort(function(a,b){return b.cantNC-a.cantNC;}) : _vadmNCData;
+
+  if(!src.length){ bd.innerHTML='<div class="ven-adm-empty">Sin NCs con ese motivo.</div>'; return; }
+
+  var totalG=src.reduce(function(s,v){return s+v.totalNC;},0);
+  var cantG =src.reduce(function(s,v){return s+v.cantNC; },0);
+
+  var head='<thead><tr style="background:#7f1d1d;color:#fff">'+
+    '<th style="padding:8px 10px;font-size:11px">#</th>'+
+    '<th style="padding:8px 10px;font-size:11px">Vendedor</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">Cant NC</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">Monto Neto NC</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">%</th>'+
+    '<th style="padding:8px 10px;font-size:11px">Cliente top</th>'+
+    '<th style="padding:8px 10px;font-size:11px">Motivo top</th>'+
+    '</tr></thead>';
+
+  var rows=[];
+  src.forEach(function(v,i){
+    var nomVend=v.vendedor;
+    Object.keys(VEN_CONFIG).forEach(function(k){
+      if(k===v.vendedor||VEN_CONFIG[k].gmailUser===v.vendedor) nomVend=VEN_CONFIG[k].nombre;
+    });
+    var cliMap={},motiMap={};
+    v.docs.forEach(function(d){
+      var c=d.razonSocial||'—'; cliMap[c]=(cliMap[c]||0)+1;
+      var m=d.categoria||'sin motivo'; motiMap[m]=(motiMap[m]||0)+1;
+    });
+    var topCli=Object.entries(cliMap).sort(function(a,b){return b[1]-a[1];})[0];
+    var topMot=Object.entries(motiMap).sort(function(a,b){return b[1]-a[1];})[0];
+    var pct=totalG>0?(v.totalNC/totalG*100).toFixed(1):'0.0';
+    var origBg=i%2===0?'#fff':'#fff5f5';
+    rows.push('<tr style="background:'+origBg+';cursor:pointer" data-ncvend="'+venAdmEsc(v.vendedor)+'" data-origbg="'+origBg+'" onclick="vadmNCToggleDetalle(this)">'+
+      '<td style="padding:6px 10px;color:#9ca3af;font-size:10px">'+
+        '<span class="nc-arrow" style="margin-right:4px;font-size:10px;color:#6b7280;display:inline-block">▶</span>'+(i+1)+
+      '</td>'+
+      '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(nomVend)+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:#dc2626">'+v.cantNC+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:#dc2626">'+venAdmFmt(v.totalNC)+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-size:11px;color:#9ca3af">'+pct+'%</td>'+
+      '<td style="padding:6px 10px;font-size:11px;color:#059669;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+venAdmEsc(topCli?topCli[0]:'—')+'</td>'+
+      '<td style="padding:6px 10px;font-size:11px;color:#6b7280">'+venAdmEsc(topMot?topMot[0]:'—')+'</td>'+
+    '</tr>');
+    // Fila detalle acordeón (oculta por defecto)
+    var dHead='<thead><tr style="background:#991b1b;color:#fff">'+
+      '<th style="padding:5px 8px;font-size:10px">N° Doc</th>'+
+      '<th style="padding:5px 8px;font-size:10px">Fecha</th>'+
+      '<th style="padding:5px 8px;font-size:10px">Cliente</th>'+
+      '<th style="padding:5px 8px;font-size:10px">RUT</th>'+
+      '<th class="r" style="padding:5px 8px;font-size:10px">Monto Neto</th>'+
+      '<th style="padding:5px 8px;font-size:10px">Observación</th>'+
+    '</tr></thead>';
+    var dRows=v.docs.map(function(d,j){
+      var rn=String(d.rut||'').replace(/\D/g,'');
+      var rutFmt=rn?rn.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'—';
+      return '<tr style="background:'+(j%2===0?'#fff':'#fef2f2')+'">'+
+        '<td style="padding:4px 8px;font-family:monospace;font-size:10px">'+venAdmEsc(d.numero)+'</td>'+
+        '<td style="padding:4px 8px;font-size:10px;white-space:nowrap">'+venAdmEsc(d.fecha)+'</td>'+
+        '<td style="padding:4px 8px;font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+venAdmEsc(d.razonSocial)+'">'+venAdmEsc(d.razonSocial)+'</td>'+
+        '<td style="padding:4px 8px;font-size:10px;color:#6b7280">'+venAdmEsc(rutFmt)+'</td>'+
+        '<td class="r" style="padding:4px 8px;font-weight:700;font-size:10px;color:#dc2626">'+venAdmFmt(d.neto)+'</td>'+
+        '<td style="padding:4px 8px;font-size:10px;color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+venAdmEsc(d.obs||'')+'">'+venAdmEsc(d.obs||'—')+'</td>'+
+      '</tr>';
+    }).join('');
+    var dFoot='<tfoot><tr style="background:#fef2f2;font-weight:700">'+
+      '<td colspan="4" style="padding:5px 8px;font-size:10px">TOTAL</td>'+
+      '<td class="r" style="padding:5px 8px;font-size:10px;color:#dc2626">'+venAdmFmt(v.totalNC)+'</td>'+
+      '<td></td></tr></tfoot>';
+    rows.push('<tr class="nc-detail-row" style="display:none">'+
+      '<td colspan="7" style="padding:0;border-top:2px solid #dc2626">'+
+        '<div style="padding:10px 16px 14px;background:#fff5f5">'+
+          '<div style="font-weight:700;font-size:11px;color:#991b1b;margin-bottom:8px">'+
+            venAdmEsc(nomVend)+' — '+v.docs.length+' NC'+(v.docs.length!==1?'s':'')+
+          '</div>'+
+          '<div class="ven-adm-table-wrap"><table class="vtbl" style="font-size:10px">'+
+            dHead+'<tbody>'+dRows+'</tbody>'+dFoot+
+          '</table></div>'+
+        '</div>'+
+      '</td></tr>');
+  });
+  var foot='<tfoot><tr style="background:#fef2f2;font-weight:700">'+
+    '<td colspan="2" style="padding:7px 10px">TOTAL</td>'+
+    '<td class="r" style="padding:7px 10px;color:#dc2626">'+cantG+'</td>'+
+    '<td class="r" style="padding:7px 10px;color:#dc2626">'+venAdmFmt(totalG)+'</td>'+
+    '<td class="r" style="padding:7px 10px">100%</td>'+
+    '<td colspan="2"></td>'+
+  '</tr></tfoot>';
+  bd.innerHTML='<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows.join('')+'</tbody>'+foot+'</table></div>';
+}
+function _vadmNCRenderChart(){
+  var wrap=document.getElementById('vadmNCChartWrap');
+  var canvas=document.getElementById('vadmNCChart');
+  if(!wrap||!canvas||typeof Chart==='undefined') return;
+  if(_vadmNCChart){ try{_vadmNCChart.destroy();}catch(e){} _vadmNCChart=null; }
+  if(!_vadmNCData.length){ wrap.style.display='none'; return; }
+  var allM=_NC_MOTIVOS.filter(function(m){return _vadmNCMotivoMap[m]>0;});
+  var labels=_vadmNCMotivoSel?[_vadmNCMotivoSel]:allM;
+  if(!labels.length){ wrap.style.display='none'; return; }
+  var palette=['#dc2626','#2563eb','#059669','#d97706','#7c3aed','#db2777','#0891b2','#65a30d'];
+  var datasets=_vadmNCData.map(function(v,idx){
+    var nom=v.vendedor;
+    Object.keys(VEN_CONFIG).forEach(function(k){
+      if(k===v.vendedor||VEN_CONFIG[k].gmailUser===v.vendedor) nom=VEN_CONFIG[k].nombre;
+    });
+    var color=palette[idx%palette.length];
+    var data=labels.map(function(m){
+      return v.docs.filter(function(d){return d.categoria===m;}).length;
+    });
+    return {label:nom,data:data,backgroundColor:color+'cc',borderColor:color,borderWidth:1,borderRadius:3};
+  }).filter(function(ds){return ds.data.some(function(n){return n>0;});});
+  if(!datasets.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  var ctx=canvas.getContext('2d');
+  _vadmNCChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels,datasets:datasets},
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{position:'top',labels:{font:{size:11},padding:10}},
+        tooltip:{callbacks:{label:function(ctx){
+          var vItem=_vadmNCData.find(function(v){
+            var nom=v.vendedor;
+            Object.keys(VEN_CONFIG).forEach(function(k){
+              if(k===v.vendedor||VEN_CONFIG[k].gmailUser===v.vendedor) nom=VEN_CONFIG[k].nombre;
+            });
+            return nom===ctx.dataset.label||v.vendedor===ctx.dataset.label;
+          });
+          var m=labels[ctx.dataIndex];
+          var docs=vItem?vItem.docs.filter(function(d){return d.categoria===m;}):[];
+          var neto=docs.reduce(function(s,d){return s+d.neto;},0);
+          return ctx.dataset.label+': '+ctx.parsed.y+' NC · '+venAdmFmt(neto);
+        }}}
+      },
+      scales:{
+        x:{ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{precision:0,font:{size:10}},title:{display:true,text:'Cantidad NC',font:{size:10}}}
+      }
+    }
+  });
+}
+
 // ── DIFF PRECIOS ──────────────────────────────────────────────────────────────
-var _vadmNCData = [];
 var _vadmPrecioDiffData = null;
 function vadmRenderPrecioDiff(){
   var st = document.getElementById('vadmPDStatus');
