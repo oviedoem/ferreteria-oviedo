@@ -1455,10 +1455,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <div class="vadm-section" id="vsec-sector">
           <div class="vadm-anal-bar">
             <span class="vadm-filter-tag">📍 Ventas por Sector</span>
-            <span class="vadm-filter-tag" style="background:#fef3c7;color:#92400e;border-color:#fde68a">AYER</span>
+            <button class="vadm-pill" onclick="(function(){var h=new Date();document.getElementById('vadmSEdesde').value=h.getFullYear()+'-01-01';document.getElementById('vadmSEhasta').value=h.toISOString().slice(0,10);vadmRenderSector();})()">Año actual</button>
             <button class="vadm-pill" onclick="(function(){var m=venAdmFechasMes(0);document.getElementById('vadmSEdesde').value=m.fi;document.getElementById('vadmSEhasta').value=m.ft;vadmRenderSector();})()">Mes actual</button>
             <button class="vadm-pill" onclick="(function(){var m=venAdmFechasMes(-1);document.getElementById('vadmSEdesde').value=m.fi;document.getElementById('vadmSEhasta').value=m.ft;vadmRenderSector();})()">Mes anterior</button>
-            <button class="vadm-pill" onclick="(function(){document.getElementById('vadmSEdesde').value='';document.getElementById('vadmSEhasta').value='';vadmRenderSector();})()">Todo</button>
             <input type="date" id="vadmSEdesde" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
             <input type="date" id="vadmSEhasta" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
             <select id="vadmSEdoc" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
@@ -1466,6 +1465,11 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
               <option value="factura">Facturas</option>
               <option value="boleta">Boletas</option>
               <option value="nc">Solo NC</option>
+            </select>
+            <select id="vadmSEhora" style="font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
+              <option value="">Todas las horas</option>
+              <option value="am">Solo AM</option>
+              <option value="pm">Solo PM</option>
             </select>
             <button class="ven-adm-btn" onclick="vadmRenderSector()">🔍 Analizar</button>
           </div>
@@ -11023,144 +11027,175 @@ function _xlsmVendOk(r){
 }
 
 // ── VENTAS POR SECTOR ────────────────────────────────────────────────────────
-var _vadmSectorData = null;
+var _vadmSEChart = null;
+function _seHoraNum(s){
+  var m = String(s||'').match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if(!m) return -1;
+  var h = parseInt(m[1]), pm = /pm/i.test(m[3]);
+  if(pm && h!==12) h+=12; else if(!pm && h===12) h=0;
+  return h;
+}
 function vadmRenderSector(){
   var st = document.getElementById('vadmSEStatus');
   var bd = document.getElementById('vadmSEBody');
-  if(st) st.textContent = 'Cargando datos de sector...';
+  if(st) st.textContent = 'Cargando...';
   if(bd) bd.innerHTML = '<div class="ven-adm-loading">Cargando...</div>';
-  // Pre-rellenar fechas con mes actual si estan vacias
+  // Default: 2026-01-01 → hoy
   var hoyS = new Date();
   var sef1 = document.getElementById('vadmSEdesde');
   var sef2 = document.getElementById('vadmSEhasta');
-  if(sef1 && !sef1.value){
-    sef1.value = new Date(hoyS.getFullYear(), hoyS.getMonth(), 1)
-                   .toISOString().slice(0,10);
-  }
-  if(sef2 && !sef2.value){
-    sef2.value = hoyS.toISOString().slice(0,10);
-  }
-  var desde  = (sef1||{}).value||'';
-  var hasta  = (sef2||{}).value||'';
-  var docFil = (document.getElementById('vadmSEdoc')||{}).value||'';
+  if(sef1 && !sef1.value) sef1.value = hoyS.getFullYear()+'-01-01';
+  if(sef2 && !sef2.value) sef2.value = hoyS.toISOString().slice(0,10);
+  var desde   = (sef1||{}).value||'';
+  var hasta   = (sef2||{}).value||'';
+  var docFil  = (document.getElementById('vadmSEdoc') ||{}).value||'';
+  var horaFil = (document.getElementById('vadmSEhora')||{}).value||'';
 
-  function _procesar(json){
-    // Paso 1 — filtrar líneas
-    var lineas = (json.registros||[]).filter(function(r){
+  function _render(){
+    function _esNC(r){ var d=(r.documento||r.doc||'').toLowerCase(); return d.indexOf('nota')>=0||d.indexOf('cred')>=0; }
+    var lineas = _vadmLineas.filter(function(r){
       if(!r.sector) return false;
-      if(!_xlsmVendOk(r)) return false;
-      if(_vadmBodSel.length>0 && _vadmBodSel.indexOf(r.bodegaCorta)<0) return false;
-      if(docFil==='nc'      && !r.esNC) return false;
-      if(docFil==='factura' && (r.esNC || !/factura/i.test(r.doc||''))) return false;
-      if(docFil==='boleta'  && (r.esNC || !/boleta/i.test(r.doc||'')))  return false;
-      if(desde && _vadmFechaToISO(r.fecha) < desde) return false;
-      if(hasta && _vadmFechaToISO(r.fecha) > hasta)  return false;
+      if(_vadmVendSel.length>0 && !_vadmVendSel.some(function(v){ return r.vendedor===v||r.gmailUser===v||r.vendedorErp===v; })) return false;
+      if(_vadmBodSel.length>0  && _vadmBodSel.indexOf(r.bodegaCorta)<0) return false;
+      var nc=_esNC(r);
+      if(docFil==='nc'      && !nc) return false;
+      if(docFil==='factura' && (nc||!/factura/i.test(r.documento||r.doc||''))) return false;
+      if(docFil==='boleta'  && (nc||!/boleta/i.test(r.documento||r.doc||'')))  return false;
+      if(horaFil){ var hn=_seHoraNum(r.hora||''); if(horaFil==='am'&&hn>=12) return false; if(horaFil==='pm'&&(hn<12||hn<0)) return false; }
+      var fd=_vadmFechaToISO(r.fecha);
+      if(desde && fd<desde) return false;
+      if(hasta && fd>hasta)  return false;
       return true;
     });
-
     if(!lineas.length){
-      if(st) st.textContent = 'Sin datos en el periodo/filtro seleccionado.';
-      if(bd) bd.innerHTML = '<div class="ven-adm-empty">Sin datos para el filtro activo.</div>';
+      if(st) st.textContent='Sin datos en el periodo/filtro seleccionado.';
+      if(bd) bd.innerHTML='<div class="ven-adm-empty">Sin datos para el filtro activo.</div>';
       return;
     }
-
-    // Paso 2 — deduplicar por documento (mismo patrón que vadmRenderNC)
-    var docMap = {};
+    // Paso 2 — dedup por documento
+    var docMap={};
     lineas.forEach(function(r){
-      var key = (r.numero||'_')+'\x01'+r.sector;
-      if(!docMap[key]) docMap[key] = {sector:r.sector, neto:0, esNC:!!r.esNC, vendedor:r.vendedor||'?'};
-      docMap[key].neto += r.neto||0;
+      var nc=_esNC(r), key=(r.numero||'_')+'\x01'+r.sector;
+      if(!docMap[key]) docMap[key]={sector:r.sector,neto:0,esNC:nc,
+        vendedor:r.vendedor||r.vendedorErp||'?',
+        razonSocial:r.razonSocial||'',rut:r.rut||'',hora:r.hora||''};
+      docMap[key].neto+=(r.valorNeto||r.neto||0);
     });
-
     // Paso 3 — agrupar por sector
-    var map = {};
+    var map={};
     Object.keys(docMap).forEach(function(k){
-      var d = docMap[k], s = d.sector;
-      if(!map[s]) map[s] = {sector:s, neto:0, cnt:0, nc:0, vendedores:{}};
-      map[s].neto += d.neto;
-      map[s].cnt++;
+      var d=docMap[k],s=d.sector;
+      if(!map[s]) map[s]={sector:s,neto:0,cnt:0,nc:0,vendedores:{},clientes:{}};
+      map[s].neto+=d.neto; map[s].cnt++;
       if(d.esNC) map[s].nc++;
-      map[s].vendedores[d.vendedor] = (map[s].vendedores[d.vendedor]||0)+1;
-    });
-
-    var MAX_ROWS = 100;
-    var arr = Object.values(map).sort(function(a,b){ return b.neto - a.neto; });
-    var arrShow = arr.slice(0, MAX_ROWS);
-    var statusExtra = arr.length > MAX_ROWS
-      ? ' · mostrando ' + MAX_ROWS + ' de ' + arr.length + ' sectores'
-      : '';
-    var totalN   = arr.reduce(function(s,v){ return s+v.neto; },0);
-    var totalCnt = arr.reduce(function(s,v){ return s+v.cnt; },0);
-    var totalNC  = arr.reduce(function(s,v){ return s+v.nc; },0);
-    var maxNeto  = arr.length ? arr[0].neto : 1;
-
-    var vendLabel = _vadmVendSel.length ? _vadmVendLabelText() : 'Todos';
-    if(st) st.textContent = arr.length+' sectores · '+totalCnt+' documentos' +
-      statusExtra + ' · ' + (docFil||'todos')+' · '+vendLabel;
-
-    var head = '<thead><tr style="background:#1a1d3a;color:#fff">' +
-      '<th style="width:28px">#</th>' +
-      '<th>Sector</th>' +
-      '<th class="r">Neto</th>' +
-      '<th style="width:130px">Participación</th>' +
-      '<th class="r">Visitas</th>' +
-      '<th class="r">NC</th>' +
-      '<th class="r">NC %</th>' +
-      '<th>Vendedor top</th>' +
-      '</tr></thead>';
-
-    var rows = arrShow.map(function(v,i){
-      var pct   = totalN>0 ? (v.neto/totalN*100) : 0;
-      var barW  = maxNeto>0 ? Math.round(v.neto/maxNeto*100) : 0;
-      var ncPct = v.cnt>0  ? (v.nc/v.cnt*100).toFixed(1) : '0.0';
-      // vendedor top por documentos (no por neto)
-      var topV  = Object.keys(v.vendedores).sort(function(a,b){ return v.vendedores[b]-v.vendedores[a]; })[0];
-      var topNom = '—', topCnt = 0;
-      if(topV){
-        topNom = topV; topCnt = v.vendedores[topV];
-        Object.keys(VEN_CONFIG).forEach(function(k){ if(VEN_CONFIG[k].gmailUser===topV||k===topV) topNom=VEN_CONFIG[k].nombre; });
-        if(topNom===topV && !VEN_CONFIG[topV]) topNom=topV;
+      map[s].vendedores[d.vendedor]=(map[s].vendedores[d.vendedor]||0)+1;
+      if(d.razonSocial){
+        if(!map[s].clientes[d.razonSocial]) map[s].clientes[d.razonSocial]={neto:0,rut:d.rut};
+        map[s].clientes[d.razonSocial].neto+=d.neto;
       }
-      var rowBg = i%2===0 ? '' : 'background:#f9fafb';
-      return '<tr style="'+rowBg+'">' +
-        '<td style="color:#9ca3af;font-size:10px">'+(i+1)+'</td>' +
-        '<td style="font-weight:600;font-size:12px">'+venAdmEsc(v.sector)+'</td>' +
-        '<td class="r" style="font-weight:700">'+venAdmFmt(v.neto)+'</td>' +
+    });
+    var arr=Object.values(map).sort(function(a,b){return b.neto-a.neto;});
+    var totalN=arr.reduce(function(s,v){return s+v.neto;},0);
+    var totalCnt=arr.reduce(function(s,v){return s+v.cnt;},0);
+    var totalNC=arr.reduce(function(s,v){return s+v.nc;},0);
+    var maxNeto=arr.length?arr[0].neto:1;
+    var vendLabel=_vadmVendSel.length?_vadmVendLabelText():'Todos';
+    if(st) st.textContent=arr.length+' sectores · '+totalCnt+' documentos · '+(docFil||'todos')+' · '+vendLabel;
+    var head='<thead><tr style="background:#1a1d3a;color:#fff">'+
+      '<th style="width:24px">#</th><th>Sector</th><th class="r">Neto</th>'+
+      '<th style="width:120px">Participación</th>'+
+      '<th class="r">Vis.</th><th class="r">NC</th><th class="r">NC%</th>'+
+      '<th>Vendedor top</th><th>Cliente top</th><th>RUT</th></tr></thead>';
+    var rows=arr.map(function(v,i){
+      var pct=totalN>0?(v.neto/totalN*100):0;
+      var barW=maxNeto>0?Math.round(v.neto/maxNeto*100):0;
+      var ncPct=v.cnt>0?(v.nc/v.cnt*100).toFixed(1):'0.0';
+      var topV=Object.keys(v.vendedores).sort(function(a,b){return v.vendedores[b]-v.vendedores[a];})[0];
+      var topNom='—',topCnt=0;
+      if(topV){ topNom=topV; topCnt=v.vendedores[topV];
+        Object.keys(VEN_CONFIG).forEach(function(k){ if(VEN_CONFIG[k].gmailUser===topV||k===topV) topNom=VEN_CONFIG[k].nombre; });
+      }
+      var topCliente='—',topRut='—';
+      var ck=Object.keys(v.clientes);
+      if(ck.length){ var tc=ck.sort(function(a,b){return v.clientes[b].neto-v.clientes[a].neto;})[0];
+        topCliente=tc; var rn=String(v.clientes[tc].rut||'').replace(/\D/g,'');
+        topRut=rn?rn.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'—';
+      }
+      var bg=i%2===0?'':'background:#f9fafb';
+      return '<tr style="'+bg+'">'+
+        '<td style="color:#9ca3af;font-size:10px">'+(i+1)+'</td>'+
+        '<td style="font-weight:600;font-size:12px">'+venAdmEsc(v.sector)+'</td>'+
+        '<td class="r" style="font-weight:700">'+venAdmFmt(v.neto)+'</td>'+
         '<td><div style="display:flex;align-items:center;gap:4px">'+
           '<div style="flex:1;background:#e5e7eb;border-radius:3px;height:8px">'+
-            '<div style="width:'+barW+'%;background:#5b6ee8;height:8px;border-radius:3px"></div></div>'+
-          '<span style="font-size:10px;color:#6b7280;white-space:nowrap">'+pct.toFixed(1)+'%</span>'+
-        '</div></td>' +
-        '<td class="r">'+v.cnt+'</td>' +
-        '<td class="r" style="color:'+(v.nc>0?'#dc2626':'#9ca3af')+'">'+v.nc+'</td>' +
-        '<td class="r" style="font-size:11px;color:'+(parseFloat(ncPct)>5?'#dc2626':'#9ca3af')+'">'+ncPct+'%</td>' +
-        '<td style="font-size:11px;color:#059669">'+venAdmEsc(topNom)+
-          (topCnt>1?' <span style="color:#9ca3af">('+topCnt+')</span>':'')+
-        '</td>' +
+          '<div style="width:'+barW+'%;background:#5b6ee8;height:8px;border-radius:3px"></div></div>'+
+          '<span style="font-size:10px;color:#6b7280;white-space:nowrap">'+pct.toFixed(1)+'%</span></div></td>'+
+        '<td class="r">'+v.cnt+'</td>'+
+        '<td class="r" style="color:'+(v.nc>0?'#dc2626':'#9ca3af')+'">'+v.nc+'</td>'+
+        '<td class="r" style="font-size:11px;color:'+(parseFloat(ncPct)>5?'#dc2626':'#9ca3af')+'">'+ncPct+'%</td>'+
+        '<td style="font-size:11px;color:#059669">'+venAdmEsc(topNom)+(topCnt>1?' <span style="color:#9ca3af">('+topCnt+')</span>':'')+' </td>'+
+        '<td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+venAdmEsc(topCliente)+'">'+venAdmEsc(topCliente)+'</td>'+
+        '<td style="font-size:11px;color:#6b7280;white-space:nowrap">'+venAdmEsc(topRut)+'</td>'+
       '</tr>';
     }).join('');
-
-    var foot = '<tfoot><tr style="background:#f3f4f6">' +
-      '<td colspan="2" style="font-weight:700">TOTAL</td>' +
-      '<td class="r" style="font-weight:700">'+venAdmFmt(totalN)+'</td>' +
-      '<td></td>' +
-      '<td class="r" style="font-weight:700">'+totalCnt+'</td>' +
-      '<td class="r" style="font-weight:700;color:'+(totalNC>0?'#dc2626':'#9ca3af')+'">'+totalNC+'</td>' +
-      '<td class="r" style="font-weight:700">'+(totalCnt>0?(totalNC/totalCnt*100).toFixed(1):'0.0')+'%</td>' +
-      '<td></td>' +
-    '</tr></tfoot>';
-
-    if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>';
+    var foot='<tfoot><tr style="background:#f3f4f6">'+
+      '<td colspan="2" style="font-weight:700">TOTAL</td>'+
+      '<td class="r" style="font-weight:700">'+venAdmFmt(totalN)+'</td>'+
+      '<td></td>'+
+      '<td class="r" style="font-weight:700">'+totalCnt+'</td>'+
+      '<td class="r" style="font-weight:700;color:'+(totalNC>0?'#dc2626':'#9ca3af')+'">'+totalNC+'</td>'+
+      '<td class="r" style="font-weight:700">'+(totalCnt>0?(totalNC/totalCnt*100).toFixed(1):'0.0')+'%</td>'+
+      '<td colspan="3"></td></tr></tfoot>';
+    if(bd) bd.innerHTML='<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+foot+'</table></div>'+
+      '<div id="vadmSEChartWrap" style="padding:16px;max-width:720px"></div>';
+    _vadmSEHoraChart(lineas);
   }
 
-  if(_vadmSectorData){ _procesar(_vadmSectorData); return; }
-  fetch('/data/ventas-xlsm-sector.json?t='+Math.floor(Date.now()/3600000))
-    .then(function(r){ if(!r.ok) throw new Error('404'); return r.json(); })
-    .then(function(json){ _vadmSectorData = json; _procesar(json); })
-    .catch(function(){
-      if(st) st.textContent = 'Sin datos. Ejecuta ACTUALIZAR_TODO.bat.';
-      if(bd) bd.innerHTML = '<div class="ven-adm-empty">ventas-xlsm-sector.json no encontrado.</div>';
-    });
+  // Auto-load anual si el rango pide más datos de los que hay en _vadmLineas
+  var _minPer=''; _vadmLineas.forEach(function(r){ if(!_minPer||r.periodo<_minPer) _minPer=r.periodo; });
+  if(_vadmLineas.length && (!desde || desde.substring(0,7)>=_minPer)){ _render(); return; }
+  var yr=desde?desde.substring(0,4):hoyS.getFullYear().toString();
+  if(st) st.textContent='Cargando datos '+yr+'...';
+  fetch('/data/ventas-manzano-'+yr+'.json?t='+Math.floor(Date.now()/3600000))
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(json){ _vadmLineas=json.registros||[]; _render(); })
+    .catch(function(){ _render(); });
+}
+function _vadmSEHoraChart(lineas){
+  var wrap=document.getElementById('vadmSEChartWrap');
+  if(!wrap) return;
+  var horaDoc={};
+  lineas.forEach(function(r){
+    var hn=_seHoraNum(r.hora||''); if(hn<0) return;
+    if(!horaDoc[hn]) horaDoc[hn]={docs:{},neto:0};
+    horaDoc[hn].docs[r.numero||Math.random()]=1;
+    horaDoc[hn].neto+=(r.valorNeto||r.neto||0);
+  });
+  var horas=Object.keys(horaDoc).map(Number).sort(function(a,b){return a-b;});
+  if(!horas.length){ wrap.innerHTML=''; return; }
+  var labels=horas.map(function(h){ return (h<10?'0':'')+h+':00'+(h<12?' AM':(h===12?' MD':' PM')); });
+  var docCounts=horas.map(function(h){ return Object.keys(horaDoc[h].docs).length; });
+  var netoData =horas.map(function(h){ return Math.round(horaDoc[h].neto); });
+  wrap.innerHTML='<div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">⏰ Hora pico de ventas</div>'+
+    '<canvas id="vadmSECanvasHora" height="110"></canvas>';
+  if(_vadmSEChart){ try{_vadmSEChart.destroy();}catch(e){} _vadmSEChart=null; }
+  var ctx=document.getElementById('vadmSECanvasHora');
+  if(!ctx||typeof Chart==='undefined') return;
+  _vadmSEChart=new Chart(ctx,{
+    type:'bar',
+    data:{ labels:labels,
+      datasets:[
+        {label:'Documentos',data:docCounts,backgroundColor:'rgba(91,110,232,0.75)',borderRadius:4,yAxisID:'y'},
+        {label:'Neto $',data:netoData,type:'line',borderColor:'#059669',backgroundColor:'rgba(5,150,105,0.08)',
+         borderWidth:2,pointRadius:3,yAxisID:'y2',tension:0.3}
+      ]},
+    options:{responsive:true,
+      plugins:{legend:{position:'top',labels:{font:{size:11}}}},
+      scales:{
+        y: {type:'linear',position:'left', title:{display:true,text:'Docs',font:{size:10}},ticks:{font:{size:10}}},
+        y2:{type:'linear',position:'right',title:{display:true,text:'Neto',font:{size:10}},ticks:{font:{size:10}},grid:{drawOnChartArea:false}}
+      }}
+  });
 }
 function _vadmFechaToISO(ddmmyyyy){
   if(!ddmmyyyy) return '';
