@@ -778,6 +778,12 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       </div>
     </div>
     <div class="sidebar-group">
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Análisis <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('analisis',this)">📊 Bodegas FEM / RCE</button>
+      </div>
+    </div>
+    <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Sistema <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
         <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
@@ -2655,6 +2661,52 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
     </div>
     <!-- ── FIN TAB SESIONES ──────────────────────────────────────────────────── -->
 
+<!-- ── ANÁLISIS BODEGAS ── -->
+<div class="tab-pane" id="tab-analisis">
+  <div class="card">
+    <div class="card-title"><span>📊</span> Análisis de Bodegas — FEM / RCE</div>
+    <div class="vadm-anal-bar" style="gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+      <label style="font-size:12px;font-weight:600;color:#374151">Buscar
+        <input type="text" id="bfBuscar" placeholder="Código o descripción" oninput="vadmFiltrarBodFem()"
+          style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:200px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">Bodega
+        <select id="bfBodega" onchange="vadmFiltrarBodFem()" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+          <option value="">Todas</option>
+        </select>
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">Días ≥
+        <input type="number" id="bfDiasMin" min="0" value="" placeholder="0" oninput="vadmFiltrarBodFem()"
+          style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:70px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">Días ≤
+        <input type="number" id="bfDiasMax" min="0" value="" placeholder="∞" oninput="vadmFiltrarBodFem()"
+          style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:70px">
+      </label>
+      <span id="bfCount" style="font-size:12px;color:#6b7280;margin-left:6px"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="bfTabla" style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1a1d3a;color:white">
+            <th style="padding:8px 10px;text-align:left">Bodega</th>
+            <th style="padding:8px 10px;text-align:left">Tipo Doc</th>
+            <th style="padding:8px 10px;text-align:right">Folio</th>
+            <th style="padding:8px 10px;text-align:left">Código</th>
+            <th style="padding:8px 10px;text-align:left">Descripción</th>
+            <th style="padding:8px 10px;text-align:right">Cant.</th>
+            <th style="padding:8px 10px;text-align:center">Fecha Registro</th>
+            <th style="padding:8px 10px;text-align:right">Días Antigüedad</th>
+            <th style="padding:8px 10px;text-align:left">Observación</th>
+          </tr>
+        </thead>
+        <tbody id="bfTbody"></tbody>
+      </table>
+    </div>
+    <div id="bfEmpty" style="display:none;color:#9ca3af;font-size:13px;padding:16px 0;text-align:center">Sin datos cargados.</div>
+  </div>
+</div>
+
 <div class="tab-pane" id="tab-adquisiciones">
   <div class="card">
     <div class="card-title"><span>📋</span> Solicitud Semanal de Stock — El Manzano</div>
@@ -3454,6 +3506,7 @@ function showTab(id, btn){
   if(id==='precios')      cargarConfigPrecios();
   if(id==='tutoriales')   renderTutVendTable();
   if(id==='adquisiciones') renderReqStock();
+  if(id==='analisis')     vadmRenderBodFem();
 }
 
 // ── INIT ─────────────────────────────────────────────
@@ -11028,6 +11081,7 @@ function vadmReRenderTabActivo(){
   else if(id==='preciodiff')   vadmRenderPrecioDiff();
   else if(id==='mem')          vadmRenderMEM();
   else if(id==='adquisiciones'){} // stub — no usa filtros globales
+  else if(id==='analisis'){}     // stub — no usa filtros globales
 }
 
 // ── Helper: comprueba si un registro XLSM pasa el filtro global _vadmVendSel ──
@@ -15378,6 +15432,88 @@ function reqEmailAbrirCliente(){
 
 function reqEmailCerrar(){
   document.getElementById('reqEmailModal').style.display = 'none';
+}
+
+// ── ANÁLISIS BODEGAS FEM / RCE ────────────────────────────────────────────────
+var _bfDatos = [];
+
+function vadmRenderBodFem(){
+  fetch('/data/bod-fem-registros.json?_='+Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      _bfDatos = (data.registros||[]).slice().sort(function(a,b){
+        return (b.diasAntiguedad||0)-(a.diasAntiguedad||0);
+      });
+      var bods = [];
+      _bfDatos.forEach(function(r){ if(r.bodega && bods.indexOf(r.bodega)<0) bods.push(r.bodega); });
+      bods.sort();
+      var sel = document.getElementById('bfBodega');
+      sel.innerHTML = '<option value="">Todas</option>';
+      bods.forEach(function(b){ sel.innerHTML += '<option value="'+b+'">'+b+'</option>'; });
+      document.getElementById('bfBuscar').value = '';
+      document.getElementById('bfDiasMin').value = '';
+      document.getElementById('bfDiasMax').value = '';
+      vadmFiltrarBodFem();
+    })
+    .catch(function(){
+      var e = document.getElementById('bfEmpty');
+      e.textContent = 'Error al cargar bod-fem-registros.json — ejecutar leer_xlsm.py primero.';
+      e.style.display = '';
+      document.getElementById('bfTabla').style.display = 'none';
+    });
+}
+
+function vadmFiltrarBodFem(){
+  var buscar  = (document.getElementById('bfBuscar').value||'').trim().toLowerCase();
+  var bodega  = document.getElementById('bfBodega').value;
+  var diasMin = parseInt(document.getElementById('bfDiasMin').value);
+  var diasMax = parseInt(document.getElementById('bfDiasMax').value);
+  if(isNaN(diasMin)) diasMin = 0;
+  if(isNaN(diasMax)) diasMax = Infinity;
+  var fil = _bfDatos.filter(function(r){
+    if(bodega && r.bodega !== bodega) return false;
+    var d = r.diasAntiguedad !== null && r.diasAntiguedad !== undefined ? r.diasAntiguedad : Infinity;
+    if(d < diasMin || d > diasMax) return false;
+    if(buscar){
+      var hay = (r.codigoTecnico||'').toLowerCase().indexOf(buscar)>=0 ||
+                (r.descripcion||'').toLowerCase().indexOf(buscar)>=0;
+      if(!hay) return false;
+    }
+    return true;
+  });
+  var tbody = document.getElementById('bfTbody');
+  var empty = document.getElementById('bfEmpty');
+  var tabla = document.getElementById('bfTabla');
+  document.getElementById('bfCount').textContent = fil.length + ' registros';
+  if(!fil.length){
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    empty.textContent = _bfDatos.length ? 'Sin resultados para el filtro aplicado.' : 'Sin datos cargados.';
+    tabla.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  tabla.style.display = '';
+  tbody.innerHTML = fil.map(function(r, idx){
+    var bg   = idx%2===0 ? '' : 'background:#f9fafb';
+    var dias = r.diasAntiguedad !== null && r.diasAntiguedad !== undefined ? r.diasAntiguedad : '—';
+    var col  = '';
+    if(typeof dias==='number'){
+      if(dias >= 90)      col = 'color:#dc2626;font-weight:700';
+      else if(dias >= 30) col = 'color:#d97706;font-weight:600';
+    }
+    return '<tr style="'+bg+'">' +
+      '<td style="padding:6px 10px">'                            +(r.bodega||'')+'</td>'+
+      '<td style="padding:6px 10px">'                            +(r.tipoDoc||'')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right">'           +(r.folio||'')+'</td>'+
+      '<td style="padding:6px 10px;font-family:monospace">'      +(r.codigoTecnico||'')+'</td>'+
+      '<td style="padding:6px 10px">'                            +(r.descripcion||'')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right">'           +(r.cantidad||0)+'</td>'+
+      '<td style="padding:6px 10px;text-align:center">'          +(r.fechaRegistro||'')+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;'+col+'">'   +dias+'</td>'+
+      '<td style="padding:6px 10px;color:#6b7280;font-size:11px">'+(r.observacion||'')+'</td>'+
+    '</tr>';
+  }).join('');
 }
 
 </script>
