@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Ferretería Oviedo V36.9e
+﻿# AGENTS.md — Ferretería Oviedo V36.9f
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
 # Última actualización: 2026-05-24
 
@@ -18,8 +18,8 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 ## PROYECTO
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
-- Versión activa: V36.9
-- Deploy confirmado: 2026-05-23 11:00 — sector tab: NC excluidas, dropdown limpio, DESP, RETIRO CLIENTE, acordeón inline
+- Versión activa: V36.9f
+- Deploy confirmado: 2026-05-24 03:02 — descargar_bod.py SQL Server IEM+RCE; panel selector Fuente; PASO 1C bat
 
 ---
 
@@ -263,6 +263,8 @@ NO intentar arreglarlo.
 3. xlsxacsv.py             → Datos.csv
 4. csvajson.py             → Datos.json
    [PASO 1B] leerxlsm.py  → xlsm-enrich.json
+   [PASO 1C] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json
+             SQL Server directo (IDBODEGA 72/55), sin XLSM ni macros manuales
 5. main.py --sin-deploy
    PASO 1: catalogogeneradohoy? SI/NO
    PASO 2: descargarventaserp.py incremental
@@ -509,3 +511,35 @@ Pipeline timing log creado: logs/20260523_pipeline.log
 - 0 errores, datos actualizados a 2026-05-23 19:07
 
 ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
+
+## HISTORIAL V36.9f — 2026-05-24 (automatización bodegas IEM/RCE vía SQL Server)
+
+### Archivos tocados
+- BODEGAS/descargar_bod.py: NUEVO — descarga IEM y RCE directo desde SQL Server
+- panel-admin.html: selector Fuente (Ambas/IEM/RCE) + vadmRenderBodFem() con Promise.all
+- ACTUALIZAR_TODO.bat: PASO 1C agregado entre XLSM (1B) y Ventas (2)
+
+### descargar_bod.py
+- Lee credenciales desde D:\ferreteria-oviedo\credenciales_db.ini sección [DB]
+- Conecta SQL Server 200.6.118.110, base Foviedo, vía pyodbc
+- Ejecuta la misma query del VBA de BOD_RCE.xlsm, parametrizada por IDBODEGA
+- IEM (IDBODEGA=72): genera data/bod-iem-registros.json (19 registros)
+- RCE (IDBODEGA=55): genera data/bod-rce-registros.json (12 registros)
+- campo fuente='SQL Server directo' (reemplaza 'procesar_bod desde XLSM')
+- Sin dependencia de openpyxl, macros ni pasos manuales
+
+### Panel análisis bodegas — cambio selector Fuente
+- Nuevo selector: id="bfFuente" (Ambas / IEM / RCE), onchange llama vadmRenderBodFem()
+- vadmRenderBodFem() usa Promise.all: carga uno o ambos JSONs según fuente seleccionada
+- Al seleccionar Ambas: fusiona 31 registros (19 IEM + 12 RCE), ordena diasAntiguedad DESC
+- vadmFiltrarBodFem() sin cambios (opera sobre _bfDatos ya fusionados)
+
+### REGLA SQL Server bodegas — CRÍTICA
+- IDBODEGA IEM=72, RCE=55 — confirmados desde P_BODEGAS en DB viva
+- credenciales_db.ini sección [DB]: NUNCA mostrar contenido, nunca subir a git
+- Query = VBA extraído de BOD_RCE.xlsm, sin modificación de lógica
+- Si en el futuro se agregan bodegas → añadir entrada en lista BODEGAS de descargar_bod.py
+
+### Deploy
+- Deploy: 2026-05-24 03:02 — 8 archivos nuevos subidos
+- bod-rce-registros.json: primer deploy (archivo nuevo)

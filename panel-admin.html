@@ -2666,6 +2666,13 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
   <div class="card">
     <div class="card-title"><span>📊</span> Análisis de Bodegas — IEM / RCE</div>
     <div class="vadm-anal-bar" style="gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+      <label style="font-size:12px;font-weight:600;color:#374151">Fuente
+        <select id="bfFuente" onchange="vadmRenderBodFem()" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+          <option value="ambas">Ambas</option>
+          <option value="iem">IEM</option>
+          <option value="rce">RCE</option>
+        </select>
+      </label>
       <label style="font-size:12px;font-weight:600;color:#374151">Buscar
         <input type="text" id="bfBuscar" placeholder="Código o descripción" oninput="vadmFiltrarBodFem()"
           style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:200px">
@@ -15438,12 +15445,16 @@ function reqEmailCerrar(){
 var _bfDatos = [];
 
 function vadmRenderBodFem(){
-  fetch('/data/bod-iem-registros.json?_='+Date.now())
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      _bfDatos = (data.registros||[]).slice().sort(function(a,b){
-        return (b.diasAntiguedad||0)-(a.diasAntiguedad||0);
-      });
+  var fuente = (document.getElementById('bfFuente')||{value:'ambas'}).value || 'ambas';
+  var ts = '?_='+Date.now();
+  var promesas = [];
+  if(fuente === 'iem' || fuente === 'ambas') promesas.push(fetch('/data/bod-iem-registros.json'+ts).then(function(r){ return r.json(); }));
+  if(fuente === 'rce' || fuente === 'ambas') promesas.push(fetch('/data/bod-rce-registros.json'+ts).then(function(r){ return r.json(); }));
+  Promise.all(promesas)
+    .then(function(resultados){
+      var todos = [];
+      resultados.forEach(function(data){ todos = todos.concat(data.registros||[]); });
+      _bfDatos = todos.sort(function(a,b){ return (b.diasAntiguedad||0)-(a.diasAntiguedad||0); });
       var bods = [];
       _bfDatos.forEach(function(r){ if(r.bodega && bods.indexOf(r.bodega)<0) bods.push(r.bodega); });
       bods.sort();
@@ -15457,7 +15468,7 @@ function vadmRenderBodFem(){
     })
     .catch(function(){
       var e = document.getElementById('bfEmpty');
-      e.textContent = 'Error al cargar bod-iem-registros.json — ejecutar leer_xlsm.py primero.';
+      e.textContent = 'Error al cargar datos — ejecutar descargar_bod.py primero.';
       e.style.display = '';
       document.getElementById('bfTabla').style.display = 'none';
     });
