@@ -44,6 +44,40 @@ El ciclo que se repite: se arregla X, se rompe Y que estaba bien.
 
 ---
 
+## REGLAS ANTI-REGRESIÓN (PRIORIDAD MÁXIMA)
+
+Antes de modificar cualquier script (.py, .bat, .html, .json):
+a. Leer MEMORY.md completo.
+b. Leer AGENTS.md completo.
+c. Verificar si el cambio ya fue aplicado en versión anterior.
+d. Si ya existe, NO volver a aplicarlo.
+e. Si hay duda, detenerse y reportar antes de continuar.
+
+### ARCHIVOS PROHIBIDOS DE REGENERAR:
+
+- ventas-manzano.json → ELIMINADO, duplicado de ventas-manzano-2026.json
+- PREPARAR_Y_PUBLICAR.bat → ARCHIVADO en _ARCHIVADOS\
+- ACTUALIZAR_AUTO.bat → ARCHIVADO en _ARCHIVADOS\
+- credenciales_erp.ini → NUNCA tocar ni leer en voz alta
+- D:\ferreteria-oviedo-github\ → NUNCA modificar
+
+### ORDEN DE LECTURA OBLIGATORIO AL INICIO DE CADA SESIÓN:
+
+1. MEMORY.md
+2. AGENTS.md
+3. CLAUDE.md
+4. Recién después ejecutar cualquier tarea
+
+### FLUJO DE DESCARGA — REGLA FIJA:
+
+- ventas-manzano-2026.json es el archivo activo de ventas año completo
+- ventas-manzano-2026-05.json es el archivo activo de ventas mes actual
+- ventas-manzano.json NO DEBE EXISTIR ni regenerarse bajo ninguna circunstancia
+- descargar_erp.py descarga stock y precios — NO duplicar
+- descargar_ventas_erp.py descarga ventas — NO duplicar salidas
+
+---
+
 ## REGLA COMMIT OBLIGATORIO
 
 Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde PowerShell:
