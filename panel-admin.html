@@ -780,7 +780,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Análisis <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('analisis',this)">📊 Bodegas FEM / RCE</button>
+        <button class="nav-btn" onclick="showTab('analisis',this)">📊 Bodegas IEM / RCE</button>
       </div>
     </div>
     <div class="sidebar-group">
@@ -2664,7 +2664,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 <!-- ── ANÁLISIS BODEGAS ── -->
 <div class="tab-pane" id="tab-analisis">
   <div class="card">
-    <div class="card-title"><span>📊</span> Análisis de Bodegas — FEM / RCE</div>
+    <div class="card-title"><span>📊</span> Análisis de Bodegas — IEM / RCE</div>
     <div class="vadm-anal-bar" style="gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
       <label style="font-size:12px;font-weight:600;color:#374151">Buscar
         <input type="text" id="bfBuscar" placeholder="Código o descripción" oninput="vadmFiltrarBodFem()"
@@ -15434,11 +15434,11 @@ function reqEmailCerrar(){
   document.getElementById('reqEmailModal').style.display = 'none';
 }
 
-// ── ANÁLISIS BODEGAS FEM / RCE ────────────────────────────────────────────────
+// ── ANÁLISIS BODEGAS IEM / RCE ────────────────────────────────────────────────
 var _bfDatos = [];
 
 function vadmRenderBodFem(){
-  fetch('/data/bod-fem-registros.json?_='+Date.now())
+  fetch('/data/bod-iem-registros.json?_='+Date.now())
     .then(function(r){ return r.json(); })
     .then(function(data){
       _bfDatos = (data.registros||[]).slice().sort(function(a,b){
@@ -15457,7 +15457,7 @@ function vadmRenderBodFem(){
     })
     .catch(function(){
       var e = document.getElementById('bfEmpty');
-      e.textContent = 'Error al cargar bod-fem-registros.json — ejecutar leer_xlsm.py primero.';
+      e.textContent = 'Error al cargar bod-iem-registros.json — ejecutar leer_xlsm.py primero.';
       e.style.display = '';
       document.getElementById('bfTabla').style.display = 'none';
     });
