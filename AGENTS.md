@@ -1,6 +1,6 @@
-﻿# AGENTS.md — Ferretería Oviedo V36.9c
+﻿# AGENTS.md — Ferretería Oviedo V36.9e
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
-# Última actualización: 2026-05-23
+# Última actualización: 2026-05-24
 
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
@@ -388,6 +388,41 @@ VENTAS EL MANZANO, backups, .claude, .ini, .xlsm, .mp4
 - Solo leerxlsm.py tiene bodegaCorta real desde VENTAS.xlsm columna BODEGA
 
 ---
+
+## HISTORIAL V36.9e — 2026-05-24 (análisis bodegas IEM / RCE)
+
+### Archivos tocados
+- leer_xlsm.py: constante BOD_FEM_XLSM + función procesar_bod(path_xlsm, nombre_bod)
+- panel-admin.html: sidebar grupo Análisis + tab-analisis + vadmRenderBodFem() + vadmFiltrarBodFem()
+- data/bod-iem-registros.json: generado (19 registros reales IEM)
+- data/bod-fem-registros.json: ELIMINADO (nombre incorrecto)
+
+### Función procesar_bod() — leer_xlsm.py
+- Genérica para cualquier XLSM de bodega con hoja REGISTROS y columnas A:H
+- diasAntiguedad calculado en Python desde col G (datetime) — NO depende de col I (DATEDIF) ni J (NOW)
+- codigoTecnico forzado a str (mixed int/str en col D)
+- Salida: data/bod-{nombre_bod.lower()}-registros.json
+- Para ampliar a RCE: procesar_bod(r"D:\ferreteria-oviedo\BODEGAS\BOD_RCE.xlsm", 'RCE')
+- BOD_FEM_XLSM = ruta al XLSM físico (nombre interno del archivo, no nombre de negocio)
+
+### Panel análisis bodegas
+- Sidebar grupo: Análisis → Bodegas IEM / RCE (showTab('analisis'))
+- Tab: tab-analisis (independiente de tab-ventas)
+- Filtros: buscar por código/descripción, bodega dropdown, rango días mín/máx
+- Tabla 9 cols: Bodega · Tipo Doc · Folio · Código · Descripción · Cant · Fecha · Días · Obs
+- Orden: diasAntiguedad DESC (más antiguo primero)
+- Colores: rojo ≥90d · naranja ≥30d
+- Fetch: /data/bod-iem-registros.json
+- Stub en vadmReRenderTabActivo: no usa filtros globales
+
+### Regla de nombre
+- "FEM" = nombre del archivo XLSM físico (BOD_FEM.xlsm) — antecedente histórico SOLO
+- "IEM" = nombre de negocio correcto para los registros de Ingreso El Manzano
+- No usar "FEM" como nombre funcional, de JSON, de menú ni de label visible
+
+### Deploy y commits
+- Commits: a94fb5d (procesar_bod) → 224764f (panel) → c26d5d3 (fix IEM)
+- Deploy: 2026-05-24 02:30
 
 ## HISTORIAL V36.9b — 2026-05-23 (sector tab acordeón + NC)
 
