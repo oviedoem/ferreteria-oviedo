@@ -415,14 +415,22 @@ VENTAS EL MANZANO, backups, .claude, .ini, .xlsm, .mp4
 - Fetch: /data/bod-iem-registros.json
 - Stub en vadmReRenderTabActivo: no usa filtros globales
 
-### Regla de nombre
-- "FEM" = nombre del archivo XLSM físico (BOD_FEM.xlsm) — antecedente histórico SOLO
-- "IEM" = nombre de negocio correcto para los registros de Ingreso El Manzano
-- No usar "FEM" como nombre funcional, de JSON, de menú ni de label visible
+### Regla de nombre — CRÍTICA
+- El archivo físico se llamaba BOD_FEM.xlsm → renombrado a BOD_RCE.xlsm el 2026-05-24
+- PERO el contenido (col A) tiene bodega IEM, no RCE
+- Constante en leer_xlsm.py: BOD_IEM_XLSM = BOD_RCE.xlsm (nombre físico actual)
+- JSON de salida: bod-iem-registros.json (basado en contenido real, no en nombre del archivo)
+- REGLA FIJA: nombre del JSON = bodega real en col A, NO nombre del archivo XLSM
+- "FEM" no debe aparecer en menús, labels, JSONs ni comentarios visibles
+- Si en el futuro col A cambia a RCE → entonces y solo entonces usar bod-rce-registros.json
 
 ### Deploy y commits
-- Commits: a94fb5d (procesar_bod) → 224764f (panel) → c26d5d3 (fix IEM)
-- Deploy: 2026-05-24 02:30
+- a94fb5d — add procesar_bod bod_fem_xlsm (leer_xlsm.py)
+- 224764f — add analisis bodegas fem menu panel (panel-admin.html)
+- c26d5d3 — fix fem a iem nombre json y menu
+- 4b4a369 — cierre sesion v369e docs agents claude
+- d2870c2 — fix constante bod iem xlsm ruta rce (leer_xlsm.py local, no en GitHub — .py bloqueado)
+- Deploy: 2026-05-24 02:37
 
 ## HISTORIAL V36.9b — 2026-05-23 (sector tab acordeón + NC)
 
