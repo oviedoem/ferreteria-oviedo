@@ -512,6 +512,24 @@ Pipeline timing log creado: logs/20260523_pipeline.log
 
 ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 
+## HISTORIAL V36.9g — 2026-05-24 (fix diasAntiguedad último movimiento SQL)
+
+### Archivos tocados
+- BODEGAS/descargar_bod.py: SQL reemplazado — subquery ULT con MAX(FECHA_EMISION) y MAX(IDDOCUMENTO) para traer último movimiento real por producto/bodega/sucursal. Deduplicación en Python: solo registro con menor diasAntiguedad por codigoTecnico.
+
+### Problema resuelto
+- Antes: diasAntiguedad calculaba desde FECHA_EMISION del documento origen (ej. GRT 2024 → 759 días)
+- Ahora: diasAntiguedad calcula desde último movimiento real en SQL (ej. AMES0096 RCE → 2 días, alineado con tarjeta ERP)
+
+### Resultado
+- IEM: 19 registros (sin cambio en cantidad)
+- RCE: 10 registros (antes 12 con duplicados, ahora deduplicado por codigoTecnico)
+- AMES0096 RCE verificado: 22/05/2026 → 2 días ✅
+
+### Deploy
+- Commit: V36.9g fix diasAntiguedad ultimo mov SQL
+- Deploy: 2026-05-24 13:32 — ferreteria-oviedo.web.app
+
 ## HISTORIAL V36.9f — 2026-05-24 (automatización bodegas IEM/RCE vía SQL Server)
 
 ### Archivos tocados
