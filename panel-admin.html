@@ -11854,6 +11854,9 @@ function vadmMEMSetDesc(pct, btn){
 }
 
 // ── VOLUMEN vs PRECIO (comparar dos periodos) ─────────────────────────────────
+// Fuente: _vadmLineas (ERP). Clave vendedor: gmailUser||vendedorErp.
+// Filtros activos: bodega (_vadmBodSel) + vendedor (_vadmVendSel) + tipodoc (_vadmDocSel).
+// NO aplica _vadmPeriodoSel — P1/P2 manejan sus propios rangos de fecha independientemente.
 function vadmRenderImpacto(){
   var st = document.getElementById('vadmIMStatus');
   var bd = document.getElementById('vadmIMBody');
@@ -11878,15 +11881,27 @@ function vadmRenderImpacto(){
   }
   var fi1=new Date(d1+'T00:00:00').getTime(), ft1=new Date(h1+'T23:59:59').getTime();
   var fi2=new Date(d2+'T00:00:00').getTime(), ft2=new Date(h2+'T23:59:59').getTime();
-  // Respetar filtros globales de bodega y vendedor; excluir NCs (valorNeto < 0)
-  var datos = vadmDatosFiltrados().filter(function(r){ return (r.valorNeto||0)>=0; });
-  function _acum(fi, ft){
+  // Filtrar _vadmLineas con bodega/vendedor/tipodoc pero SIN _vadmPeriodoSel
+  // (el pill de período bloquearía registros de meses distintos al activo)
+  var _BOD_NORM={'SAL':'SEM'};
+  var datos=_vadmLineas.filter(function(r){
+    if(r.bodegaCorta==='EXH') return false;
+    if((r.valorNeto||0)<0)   return false;
+    if(_vadmBodSel.length>0 && _vadmBodSel.indexOf(_BOD_NORM[r.bodegaCorta]||r.bodegaCorta)<0) return false;
+    if(_vadmVendSel.length>0 && !_vadmVendSel.some(function(v){
+      return r.gmailUser===v||r.vendedor===v||r.vendedorErp===v;
+    })) return false;
+    if(_vadmDocSel&&_vadmDocSel.length>0 && _vadmDocSel.indexOf(vadmFPago(r.documento).label)<0) return false;
+    return true;
+  });
+  // Acumular por vendedor — clave: gmailUser (campo correcto post-_vadmAplicarDatos)
+  function _acum(fi,ft){
     var m={};
     datos.forEach(function(r){
       var ts=venAdmParseFecha(r.fecha);
       if(ts<fi||ts>ft) return;
-      var v=r.vendedor||'?';
-      if(!m[v]) m[v]={qty:0,neto:0};
+      var v=r.gmailUser||r.vendedor||r.vendedorErp||'?';
+      if(!m[v]) m[v]={qty:0,neto:0,nombre:r.nombre||''};
       m[v].qty+=(r.cantidad||0);
       m[v].neto+=(r.valorNeto||0);
     });
@@ -11897,10 +11912,12 @@ function vadmRenderImpacto(){
     .filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
   if(!vends.length){
     if(st) st.textContent='Sin datos en los períodos seleccionados.';
-    if(bd) bd.innerHTML='<div class="ven-adm-empty">Sin ventas en los rangos indicados.</div>';
+    if(bd) bd.innerHTML='<div class="ven-adm-empty">Sin ventas en los rangos indicados.<br><small style="color:#9ca3af">Si comparas meses distintos al período cargado, selecciona el año completo primero.</small></div>';
     return;
   }
-  function _nombre(vk){
+  // Resolver nombre legible: r.nombre ya viene resuelto desde VEN_CONFIG en _vadmAplicarDatos
+  function _nombre(vk,rNom){
+    if(rNom&&rNom!=='?') return rNom;
     var n=vk;
     Object.keys(VEN_CONFIG||{}).forEach(function(k){
       if((VEN_CONFIG[k].gmailUser===vk||k===vk)&&VEN_CONFIG[k].nombre) n=VEN_CONFIG[k].nombre;
@@ -11910,22 +11927,25 @@ function vadmRenderImpacto(){
   function arrow(x){ return x>0?'▲':'▼'; }
   function col(x)  { return x>0?'#059669':'#dc2626'; }
   var totQ1=0,totN1=0,totQ2=0,totN2=0;
+  var dQArr=[],dPArr=[];
   var rows=vends.map(function(v,i){
-    var a=m1[v]||{qty:0,neto:0}, b=m2[v]||{qty:0,neto:0};
+    var a=m1[v]||{qty:0,neto:0,nombre:''}, b=m2[v]||{qty:0,neto:0,nombre:''};
     totQ1+=a.qty; totN1+=a.neto; totQ2+=b.qty; totN2+=b.neto;
     var pp1=a.qty>0?(a.neto/a.qty):0;
     var pp2=b.qty>0?(b.neto/b.qty):0;
     var dQ=a.qty>0?((b.qty-a.qty)/a.qty*100):(b.qty>0?100:0);
     var dP=pp1>0?((pp2-pp1)/pp1*100):(pp2>0?100:0);
+    dQArr.push(dQ); dPArr.push(dP);
     var bg=i%2===0?'#fff':'#f9fafb';
+    var nom=_nombre(v,a.nombre||b.nombre||'');
     return '<tr style="background:'+bg+'">'+
-      '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(_nombre(v))+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+a.qty.toLocaleString('es-CL')+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+venAdmFmt(pp1)+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+b.qty.toLocaleString('es-CL')+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+venAdmFmt(pp2)+'</td>'+
-      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+col(dQ)+'">'+arrow(dQ)+Math.abs(dQ).toFixed(1)+'%</td>'+
-      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+col(dP)+'">'+arrow(dP)+Math.abs(dP).toFixed(1)+'%</td>'+
+      '<td style="padding:6px 10px;font-weight:600;white-space:nowrap">'+venAdmEsc(nom)+'</td>'+
+      '<td class="r" style="padding:6px 10px;white-space:nowrap">'+a.qty.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px;white-space:nowrap">'+venAdmFmt(pp1)+'</td>'+
+      '<td class="r" style="padding:6px 10px;white-space:nowrap">'+b.qty.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px;white-space:nowrap">'+venAdmFmt(pp2)+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;white-space:nowrap;color:'+col(dQ)+'">'+arrow(dQ)+Math.abs(dQ).toFixed(1)+'%</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;white-space:nowrap;color:'+col(dP)+'">'+arrow(dP)+Math.abs(dP).toFixed(1)+'%</td>'+
     '</tr>';
   }).join('');
   var tPP1=totQ1>0?(totN1/totQ1):0, tPP2=totQ2>0?(totN2/totQ2):0;
@@ -11933,27 +11953,54 @@ function vadmRenderImpacto(){
   var tdP=tPP1>0?((tPP2-tPP1)/tPP1*100):0;
   var totRow='<tfoot><tr style="background:#f3f4f6;font-weight:700;border-top:2px solid #d1d5db">'+
     '<td style="padding:8px 10px">TOTAL</td>'+
-    '<td class="r" style="padding:8px 6px">'+totQ1.toLocaleString('es-CL')+'</td>'+
-    '<td class="r" style="padding:8px 6px">'+venAdmFmt(tPP1)+'</td>'+
-    '<td class="r" style="padding:8px 6px">'+totQ2.toLocaleString('es-CL')+'</td>'+
-    '<td class="r" style="padding:8px 6px">'+venAdmFmt(tPP2)+'</td>'+
-    '<td class="r" style="padding:8px 6px;color:'+col(tdQ)+'">'+arrow(tdQ)+Math.abs(tdQ).toFixed(1)+'%</td>'+
-    '<td class="r" style="padding:8px 6px;color:'+col(tdP)+'">'+arrow(tdP)+Math.abs(tdP).toFixed(1)+'%</td>'+
+    '<td class="r" style="padding:8px 6px;white-space:nowrap">'+totQ1.toLocaleString('es-CL')+'</td>'+
+    '<td class="r" style="padding:8px 6px;white-space:nowrap">'+venAdmFmt(tPP1)+'</td>'+
+    '<td class="r" style="padding:8px 6px;white-space:nowrap">'+totQ2.toLocaleString('es-CL')+'</td>'+
+    '<td class="r" style="padding:8px 6px;white-space:nowrap">'+venAdmFmt(tPP2)+'</td>'+
+    '<td class="r" style="padding:8px 6px;white-space:nowrap;color:'+col(tdQ)+'">'+arrow(tdQ)+Math.abs(tdQ).toFixed(1)+'%</td>'+
+    '<td class="r" style="padding:8px 6px;white-space:nowrap;color:'+col(tdP)+'">'+arrow(tdP)+Math.abs(tdP).toFixed(1)+'%</td>'+
   '</tr></tfoot>';
   var head='<thead><tr style="background:#1e3a5f;color:#fff">'+
-    '<th style="padding:8px 10px;font-size:11px">Vendedor</th>'+
-    '<th class="r" style="padding:8px 10px;font-size:11px">P1 Unidades</th>'+
-    '<th class="r" style="padding:8px 10px;font-size:11px">P1 Precio prom.</th>'+
-    '<th class="r" style="padding:8px 10px;font-size:11px">P2 Unidades</th>'+
-    '<th class="r" style="padding:8px 10px;font-size:11px">P2 Precio prom.</th>'+
-    '<th class="r" style="padding:8px 10px;font-size:11px">Var. Unidades</th>'+
-    '<th class="r" style="padding:8px 10px;font-size:11px">Var. Precio prom.</th>'+
+    '<th style="padding:8px 10px;font-size:11px;white-space:nowrap">Vendedor</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px;white-space:nowrap">Período 1 — Unidades</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px;white-space:nowrap">Período 1 — Precio prom.</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px;white-space:nowrap">Período 2 — Unidades</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px;white-space:nowrap">Período 2 — Precio prom.</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px;white-space:nowrap">Variación Unidades</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px;white-space:nowrap">Variación Precio prom.</th>'+
   '</tr></thead>';
+  // ── Reseña dinámica en lenguaje simple ──
+  var UMBRAL=1; // % mínimo para considerar cambio real (descarta ruido de redondeo)
+  function esAlza(x){ return x>UMBRAL; }
+  function esBaja(x){ return x<-UMBRAL; }
+  var frases=[];
+  if(esBaja(tdQ)&&esAlza(tdP)){
+    frases.push('Estamos vendiendo menos cosas, pero cada cosa vale más plata. La caja puede verse igual o más grande, pero no es porque vendamos más — es porque cada cosa es más cara.');
+  } else if(esAlza(tdQ)&&esAlza(tdP)){
+    frases.push('Vendemos más cosas <em>y</em> cada cosa vale más plata. Esto es doble efecto: vendemos más cantidad y además a mejor precio.');
+  } else if(esAlza(tdQ)){
+    frases.push('Estamos vendiendo más cosas y el precio por unidad se mantiene parecido. El crecimiento viene de vender más, no de cobrar más.');
+  } else if(esBaja(tdQ)&&esBaja(tdP)){
+    frases.push('Vendemos menos cosas y cada cosa vale menos plata. Hay una caída en los dos lados.');
+  } else {
+    frases.push('Los cambios entre los dos períodos son pequeños — no hay movimiento claro ni en cantidad ni en precio.');
+  }
+  var menosQMasP=dQArr.filter(function(dq,i){return dq<-UMBRAL&&dPArr[i]>UMBRAL;}).length;
+  var masQMasP  =dQArr.filter(function(dq,i){return dq>UMBRAL &&dPArr[i]>UMBRAL;}).length;
+  var masQSinP  =dQArr.filter(function(dq,i){return dq>UMBRAL &&Math.abs(dPArr[i])<=UMBRAL;}).length;
+  function pl(n,s,p){ return n===1?'1 vendedor que '+s:'<strong>'+n+'</strong> vendedores que '+p; }
+  if(menosQMasP>0) frases.push('Hay '+pl(menosQMasP,'vende menos cosas en cantidad pero cobrando más por cada una','venden menos en cantidad pero cobrando más por cada una')+'.');
+  if(masQMasP>0)   frases.push('Hay '+pl(masQMasP,'logra vender más cosas y además a mejor precio — la combinación ideal','logran vender más cosas y además a mejor precio — la combinación ideal')+'.');
+  if(masQSinP>0)   frases.push('Hay '+pl(masQSinP,'vende más en cantidad, aunque el precio por unidad casi no cambia','venden más en cantidad, aunque el precio por unidad casi no cambia')+'.');
+  var resena='<div style="margin:12px 16px 8px;padding:14px 16px;background:#f0f9ff;border-left:4px solid #0ea5e9;border-radius:4px;font-size:13px;color:#0c4a6e;line-height:1.6">'+
+    frases.map(function(f){return '<p style="margin:0 0 6px 0">'+f+'</p>';}).join('')+
+  '</div>';
   if(st) st.textContent=vends.length+' vendedores · P1: '+Object.keys(m1).length+' con ventas · P2: '+Object.keys(m2).length+' con ventas';
   if(bd) bd.innerHTML=
     '<p style="font-size:12px;color:#6b7280;margin:8px 16px 4px">Si las unidades bajan pero el ingreso por unidad sube, el crecimiento es por precio, no por volumen.</p>'+
     '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+totRow+'</table></div>'+
-    '<p style="font-size:11px;color:#9ca3af;padding:6px 16px">⚠️ Precio promedio calculado desde precio de venta (valorNeto / cantidad). No incluye costo histórico.</p>';
+    resena+
+    '<p style="font-size:11px;color:#9ca3af;padding:6px 16px 10px">⚠️ Precio promedio calculado desde precio de venta (valorNeto / cantidad). No incluye costo histórico.</p>';
 }
 
 // ── VENDEDOR vs MARCA (ERP, rango fecha libre) ────────────────────────────────
