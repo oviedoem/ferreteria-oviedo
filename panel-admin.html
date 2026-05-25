@@ -1495,7 +1495,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <!-- ── Q vs $ IMPACTO PRECIO ── -->
         <div class="vadm-section" id="vsec-impacto">
           <div class="vadm-anal-bar">
-            <span class="vadm-filter-tag">📉 Impacto Precio: Q vs $</span>
+            <span class="vadm-filter-tag">📉 Volumen vs Precio</span>
             <button class="ven-adm-btn" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px" onclick="(function(){var h=new Date(),y=h.getFullYear(),m=h.getMonth();var p1d=new Date(y-1,m,1),p1h=new Date(y-1,m+1,0),p2d=new Date(y,m,1);document.getElementById('vadmIMdesde1').value=p1d.toISOString().slice(0,10);document.getElementById('vadmIMhasta1').value=p1h.toISOString().slice(0,10);document.getElementById('vadmIMdesde2').value=p2d.toISOString().slice(0,10);document.getElementById('vadmIMhasta2').value=h.toISOString().slice(0,10);vadmRenderImpacto();})()">Mes vs año ant</button>
             <button class="ven-adm-btn" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px" onclick="(function(){var h=new Date(),y=h.getFullYear(),m=h.getMonth();var p1d=new Date(y,m-1,1),p1h=new Date(y,m,0),p2d=new Date(y,m,1);document.getElementById('vadmIMdesde1').value=p1d.toISOString().slice(0,10);document.getElementById('vadmIMhasta1').value=p1h.toISOString().slice(0,10);document.getElementById('vadmIMdesde2').value=p2d.toISOString().slice(0,10);document.getElementById('vadmIMhasta2').value=h.toISOString().slice(0,10);vadmRenderImpacto();})()">Mes ant vs actual</button>
             <span style="font-size:11px;color:#6b7280;font-weight:600">P1:</span>
@@ -11853,7 +11853,7 @@ function vadmMEMSetDesc(pct, btn){
   });
 }
 
-// ── IMPACTO PRECIO: Q vs $ (comparar dos periodos) ───────────────────────────
+// ── VOLUMEN vs PRECIO (comparar dos periodos) ─────────────────────────────────
 function vadmRenderImpacto(){
   var st = document.getElementById('vadmIMStatus');
   var bd = document.getElementById('vadmIMBody');
@@ -11863,7 +11863,7 @@ function vadmRenderImpacto(){
   var h2 = (document.getElementById('vadmIMhasta2')||{}).value||'';
   if(!d1||!h1||!d2||!h2){
     if(st) st.textContent = 'Selecciona ambos rangos de fecha para comparar.';
-    if(bd) bd.innerHTML = '<div class="ven-adm-empty">Elige Periodo 1 y Periodo 2 para comparar Q vs $.<br><small style="color:#9ca3af">Usa los botones "Mes vs año ant" o "Mes ant vs actual" para pre-rellenar.</small></div>';
+    if(bd) bd.innerHTML = '<div class="ven-adm-empty">Elige Período 1 y Período 2 para comparar volumen vs precio promedio.<br><small style="color:#9ca3af">Usa los botones "Mes vs año ant" o "Mes ant vs actual" para pre-rellenar.</small></div>';
     return;
   }
   if(d1===d2 && h1===h2){
@@ -11871,90 +11871,89 @@ function vadmRenderImpacto(){
     if(bd) bd.innerHTML = '<div class="ven-adm-empty" style="color:#d97706">Los dos períodos son idénticos. Selecciona rangos distintos para ver diferencias.<br><small style="color:#9ca3af">Ejemplo: P1 = mayo 2025, P2 = mayo 2026.</small></div>';
     return;
   }
-  if(st) st.textContent = 'Cargando...';
-  if(bd) bd.innerHTML = '<div class="ven-adm-loading">Cargando...</div>';
-
-  var anio1 = d1.substring(0,4), anio2 = d2.substring(0,4);
-  function _filtrar(regs, desde, hasta){
-    return regs.filter(function(r){
-      if(r.esNC) return false;
-      if(!_xlsmVendOk(r)) return false;
-      var fd = _vadmFechaToISO(r.fecha);
-      return fd >= desde && fd <= hasta;
-    });
+  if(!_vadmLineas||!_vadmLineas.length){
+    if(st) st.textContent = 'Sin datos de ventas. Carga el panel primero.';
+    if(bd) bd.innerHTML = '<div class="ven-adm-empty">Datos de ventas no disponibles.</div>';
+    return;
   }
-  function _agrVend(regs){
+  var fi1=new Date(d1+'T00:00:00').getTime(), ft1=new Date(h1+'T23:59:59').getTime();
+  var fi2=new Date(d2+'T00:00:00').getTime(), ft2=new Date(h2+'T23:59:59').getTime();
+  // Respetar filtros globales de bodega y vendedor; excluir NCs (valorNeto < 0)
+  var datos = vadmDatosFiltrados().filter(function(r){ return (r.valorNeto||0)>=0; });
+  function _acum(fi, ft){
     var m={};
-    regs.forEach(function(r){
+    datos.forEach(function(r){
+      var ts=venAdmParseFecha(r.fecha);
+      if(ts<fi||ts>ft) return;
       var v=r.vendedor||'?';
-      if(!m[v]) m[v]={q:0,neto:0};
-      m[v].q++; m[v].neto+=(r.neto||0);
+      if(!m[v]) m[v]={qty:0,neto:0};
+      m[v].qty+=(r.cantidad||0);
+      m[v].neto+=(r.valorNeto||0);
     });
     return m;
   }
-  function _render(j1, j2){
-    var r1 = _filtrar((j1?j1.registros:[]), d1, h1);
-    var r2 = _filtrar((j2?j2.registros:[]), d2, h2);
-    var m1 = _agrVend(r1), m2 = _agrVend(r2);
-    var vends = Array.from(new Set(Object.keys(m1).concat(Object.keys(m2)))).sort();
-    if(!vends.length){
-      if(st) st.textContent = 'Sin datos en los periodos seleccionados.';
-      if(bd) bd.innerHTML = '<div class="ven-adm-empty">Sin ventas en los rangos indicados.</div>';
-      return;
-    }
-    var tot1={q:0,neto:0}, tot2={q:0,neto:0};
-    var rows = vends.map(function(v,i){
-      var a=m1[v]||{q:0,neto:0}, b=m2[v]||{q:0,neto:0};
-      tot1.q+=a.q; tot1.neto+=a.neto; tot2.q+=b.q; tot2.neto+=b.neto;
-      var dq  = a.q>0   ? ((b.q-a.q)/a.q*100)   : (b.q>0?100:0);
-      var d$  = a.neto>0? ((b.neto-a.neto)/a.neto*100): (b.neto>0?100:0);
-      function arrow(x){ return x>0?'▲':'▼'; }
-      function col(x)  { return x>0?'#059669':'#dc2626'; }
-      var bg=i%2===0?'#fff':'#f9fafb';
-      return '<tr style="background:'+bg+'">'+
-        '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc((function(_vk){ var n=_vk; Object.keys(VEN_CONFIG).forEach(function(k){ if(VEN_CONFIG[k].gmailUser===_vk||k===_vk) n=VEN_CONFIG[k].nombre; }); return n; })(v))+'</td>'+
-        '<td class="r" style="padding:6px 10px">'+a.q+'</td>'+
-        '<td class="r" style="padding:6px 10px">'+venAdmFmt(a.neto)+'</td>'+
-        '<td class="r" style="padding:6px 10px">'+b.q+'</td>'+
-        '<td class="r" style="padding:6px 10px">'+venAdmFmt(b.neto)+'</td>'+
-        '<td class="r" style="padding:6px 10px;font-weight:700;color:'+col(dq)+'">'+arrow(dq)+Math.abs(dq).toFixed(1)+'%</td>'+
-        '<td class="r" style="padding:6px 10px;font-weight:700;color:'+col(d$)+'">'+arrow(d$)+Math.abs(d$).toFixed(1)+'%</td>'+
-      '</tr>';
-    }).join('');
-    // fila total
-    var tdq  = tot1.q>0   ? ((tot2.q-tot1.q)/tot1.q*100)   : 0;
-    var td$  = tot1.neto>0? ((tot2.neto-tot1.neto)/tot1.neto*100): 0;
-    function arrow(x){ return x>0?'▲':'▼'; }
-    function col(x)  { return x>0?'#059669':'#dc2626'; }
-    var totRow='<tfoot><tr style="background:#f3f4f6;font-weight:700;border-top:2px solid #d1d5db">'+
-      '<td style="padding:8px 10px">TOTAL</td>'+
-      '<td class="r" style="padding:8px 6px">'+tot1.q+'</td>'+
-      '<td class="r" style="padding:8px 6px">'+venAdmFmt(tot1.neto)+'</td>'+
-      '<td class="r" style="padding:8px 6px">'+tot2.q+'</td>'+
-      '<td class="r" style="padding:8px 6px">'+venAdmFmt(tot2.neto)+'</td>'+
-      '<td class="r" style="padding:8px 6px;color:'+col(tdq)+'">'+arrow(tdq)+Math.abs(tdq).toFixed(1)+'%</td>'+
-      '<td class="r" style="padding:8px 6px;color:'+col(td$)+'">'+arrow(td$)+Math.abs(td$).toFixed(1)+'%</td>'+
-    '</tr></tfoot>';
-    var head='<thead><tr style="background:#1e3a5f;color:#fff">'+
-      '<th style="padding:8px 10px;font-size:11px">Vendedor</th>'+
-      '<th class="r" style="padding:8px 10px;font-size:11px">P1 Docs</th>'+
-      '<th class="r" style="padding:8px 10px;font-size:11px">P1 Neto</th>'+
-      '<th class="r" style="padding:8px 10px;font-size:11px">P2 Docs</th>'+
-      '<th class="r" style="padding:8px 10px;font-size:11px">P2 Neto</th>'+
-      '<th class="r" style="padding:8px 10px;font-size:11px">ΔQ</th>'+
-      '<th class="r" style="padding:8px 10px;font-size:11px">Δ$</th>'+
-    '</tr></thead>';
-    if(st) st.textContent = vends.length+' vendedores · P1: '+r1.length+' docs → P2: '+r2.length+' docs';
-    if(bd) bd.innerHTML='<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+totRow+'</table></div>';
+  var m1=_acum(fi1,ft1), m2=_acum(fi2,ft2);
+  var vends=Object.keys(m1).concat(Object.keys(m2))
+    .filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  if(!vends.length){
+    if(st) st.textContent='Sin datos en los períodos seleccionados.';
+    if(bd) bd.innerHTML='<div class="ven-adm-empty">Sin ventas en los rangos indicados.</div>';
+    return;
   }
-  if(anio1===anio2){
-    _vadmCargarXlsmAnio(anio1, function(j){ _render(j,j); });
-  } else {
-    var j1=null, j2=null, done=0;
-    function check(){ if(++done===2) _render(j1,j2); }
-    _vadmCargarXlsmAnio(anio1, function(j){ j1=j; check(); });
-    _vadmCargarXlsmAnio(anio2, function(j){ j2=j; check(); });
+  function _nombre(vk){
+    var n=vk;
+    Object.keys(VEN_CONFIG||{}).forEach(function(k){
+      if((VEN_CONFIG[k].gmailUser===vk||k===vk)&&VEN_CONFIG[k].nombre) n=VEN_CONFIG[k].nombre;
+    });
+    return n;
   }
+  function arrow(x){ return x>0?'▲':'▼'; }
+  function col(x)  { return x>0?'#059669':'#dc2626'; }
+  var totQ1=0,totN1=0,totQ2=0,totN2=0;
+  var rows=vends.map(function(v,i){
+    var a=m1[v]||{qty:0,neto:0}, b=m2[v]||{qty:0,neto:0};
+    totQ1+=a.qty; totN1+=a.neto; totQ2+=b.qty; totN2+=b.neto;
+    var pp1=a.qty>0?(a.neto/a.qty):0;
+    var pp2=b.qty>0?(b.neto/b.qty):0;
+    var dQ=a.qty>0?((b.qty-a.qty)/a.qty*100):(b.qty>0?100:0);
+    var dP=pp1>0?((pp2-pp1)/pp1*100):(pp2>0?100:0);
+    var bg=i%2===0?'#fff':'#f9fafb';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="padding:6px 10px;font-weight:600">'+venAdmEsc(_nombre(v))+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+a.qty.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+venAdmFmt(pp1)+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+b.qty.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+venAdmFmt(pp2)+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+col(dQ)+'">'+arrow(dQ)+Math.abs(dQ).toFixed(1)+'%</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+col(dP)+'">'+arrow(dP)+Math.abs(dP).toFixed(1)+'%</td>'+
+    '</tr>';
+  }).join('');
+  var tPP1=totQ1>0?(totN1/totQ1):0, tPP2=totQ2>0?(totN2/totQ2):0;
+  var tdQ=totQ1>0?((totQ2-totQ1)/totQ1*100):0;
+  var tdP=tPP1>0?((tPP2-tPP1)/tPP1*100):0;
+  var totRow='<tfoot><tr style="background:#f3f4f6;font-weight:700;border-top:2px solid #d1d5db">'+
+    '<td style="padding:8px 10px">TOTAL</td>'+
+    '<td class="r" style="padding:8px 6px">'+totQ1.toLocaleString('es-CL')+'</td>'+
+    '<td class="r" style="padding:8px 6px">'+venAdmFmt(tPP1)+'</td>'+
+    '<td class="r" style="padding:8px 6px">'+totQ2.toLocaleString('es-CL')+'</td>'+
+    '<td class="r" style="padding:8px 6px">'+venAdmFmt(tPP2)+'</td>'+
+    '<td class="r" style="padding:8px 6px;color:'+col(tdQ)+'">'+arrow(tdQ)+Math.abs(tdQ).toFixed(1)+'%</td>'+
+    '<td class="r" style="padding:8px 6px;color:'+col(tdP)+'">'+arrow(tdP)+Math.abs(tdP).toFixed(1)+'%</td>'+
+  '</tr></tfoot>';
+  var head='<thead><tr style="background:#1e3a5f;color:#fff">'+
+    '<th style="padding:8px 10px;font-size:11px">Vendedor</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">P1 Unidades</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">P1 Precio prom.</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">P2 Unidades</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">P2 Precio prom.</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">Var. Unidades</th>'+
+    '<th class="r" style="padding:8px 10px;font-size:11px">Var. Precio prom.</th>'+
+  '</tr></thead>';
+  if(st) st.textContent=vends.length+' vendedores · P1: '+Object.keys(m1).length+' con ventas · P2: '+Object.keys(m2).length+' con ventas';
+  if(bd) bd.innerHTML=
+    '<p style="font-size:12px;color:#6b7280;margin:8px 16px 4px">Si las unidades bajan pero el ingreso por unidad sube, el crecimiento es por precio, no por volumen.</p>'+
+    '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody>'+totRow+'</table></div>'+
+    '<p style="font-size:11px;color:#9ca3af;padding:6px 16px">⚠️ Precio promedio calculado desde precio de venta (valorNeto / cantidad). No incluye costo histórico.</p>';
 }
 
 // ── VENDEDOR vs MARCA (ERP, rango fecha libre) ────────────────────────────────
