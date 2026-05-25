@@ -780,7 +780,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Análisis <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('analisis',this)">📊 Bodegas IEM / RCE</button>
+        <button class="nav-btn" onclick="showTab('analisis',this)">📊 Bodegas IEM / RCE / CEM</button>
       </div>
     </div>
     <div class="sidebar-group">
@@ -2664,13 +2664,14 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 <!-- ── ANÁLISIS BODEGAS ── -->
 <div class="tab-pane" id="tab-analisis">
   <div class="card">
-    <div class="card-title"><span>📊</span> Análisis de Bodegas — IEM / RCE</div>
+    <div class="card-title"><span>📊</span> Análisis de Bodegas — IEM / RCE / CEM</div>
     <div class="vadm-anal-bar" style="gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
       <label style="font-size:12px;font-weight:600;color:#374151">Fuente
         <select id="bfFuente" onchange="vadmRenderBodFem()" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
-          <option value="ambas">Ambas</option>
+          <option value="ambas">Todas</option>
           <option value="iem">IEM</option>
           <option value="rce">RCE</option>
+          <option value="cem">CEM</option>
         </select>
       </label>
       <label style="font-size:12px;font-weight:600;color:#374151">Buscar
@@ -15496,6 +15497,7 @@ function vadmRenderBodFem(){
   var promesas = [];
   if(fuente === 'iem' || fuente === 'ambas') promesas.push(fetch('/data/bod-iem-registros.json'+ts).then(function(r){ return r.json(); }));
   if(fuente === 'rce' || fuente === 'ambas') promesas.push(fetch('/data/bod-rce-registros.json'+ts).then(function(r){ return r.json(); }));
+  if(fuente === 'cem' || fuente === 'ambas') promesas.push(fetch('/data/bod-cem-registros.json'+ts).then(function(r){ return r.json(); }));
   Promise.all(promesas)
     .then(function(resultados){
       var todos = [];

@@ -1,4 +1,4 @@
-# AGENTS.md — Ferretería Oviedo V36.9j
+﻿# AGENTS.md — Ferretería Oviedo V36.9k
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
 # Última actualización: 2026-05-25
 
@@ -19,7 +19,7 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
 - Versión activa: V36.9j
-- Deploy confirmado: 2026-05-25 — fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
+- Deploy confirmado: 2026-05-25 fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
 
 ---
 
@@ -269,8 +269,8 @@ NO intentar arreglarlo.
 3. xlsxacsv.py             → Datos.csv
 4. csvajson.py             → Datos.json
    [PASO 1B] leerxlsm.py  → xlsm-enrich.json
-   [PASO 1C] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json
-             SQL Server directo (IDBODEGA 72/55), sin XLSM ni macros manuales
+   [PASO 1C] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
+             SQL Server directo (IDBODEGA 72/55/24), sin XLSM ni macros manuales
 5. main.py --sin-deploy
    PASO 1: catalogogeneradohoy? SI/NO
    PASO 2: descargarventaserp.py incremental
@@ -397,44 +397,136 @@ VENTAS EL MANZANO, backups, .claude, .ini, .xlsm, .mp4
 
 ---
 
-## REGLA CRITICA — descargar_bod.py SQL subquery ULT
+## REGLA CRITICA — subquery ULT en descargar_bod.py
 
-El subquery ULT DEBE incluir WHERE IDBODEGA = ? antes del GROUP BY.
-Sin este filtro, MAX(IDDOCUMENTO) puede corresponder a un documento de otra bodega
-(IDDOCUMENTO es tipo de documento, no ID unico de transaccion).
-El JOIN con FECHA_EMISION = ULT.ULTIMA_FECHA es el metodo correcto.
-NO volver a usar MAX(IDDOCUMENTO) para identificar el ultimo movimiento.
-Verificado 2026-05-25: codigo 4422 IEM paso de 931 dias a 10 dias con este fix.
+El subquery ULT en `descargar_bod.py` DEBE incluir `WHERE IDBODEGA=?` antes del `GROUP BY`.
+`IDDOCUMENTO` es tipo de documento (ej. GRT=17), NO un ID único de movimiento.
+El JOIN debe usar `FECHA_EMISION=ULT.ULTIMA_FECHA`, NO `IDDOCUMENTO`.
+NO volver a usar `MAX(IDDOCUMENTO)` como criterio de último movimiento.
+Verificado 2026-05-25: código 4422 IEM pasó de 931 días a 10 días con el fix.
 
 ---
 
-## HISTORIAL V36.9j — 2026-05-25 (fix diasAntiguedad IEM subquery bodega)
+## HISTORIAL V36.9e — 2026-05-24 (análisis bodegas IEM / RCE)
 
 ### Archivos tocados
-- BODEGAS/descargar_bod.py: SQL corregido — subquery ULT ahora incluye WHERE IDBODEGA = ?
-  antes del GROUP BY, y el JOIN usa FECHA_EMISION = ULT.ULTIMA_FECHA en vez de IDDOCUMENTO.
-  cursor.execute recibe (idbodega, idbodega) — dos parametros para los dos ? del SQL.
-  RCE no tocada — logica RCE ya funcionaba correctamente, no modificar.
+- leer_xlsm.py: constante BOD_FEM_XLSM + función procesar_bod(path_xlsm, nombre_bod)
+- panel-admin.html: sidebar grupo Análisis + tab-analisis + vadmRenderBodFem() + vadmFiltrarBodFem()
+- data/bod-iem-registros.json: generado (19 registros reales IEM)
+- data/bod-fem-registros.json: ELIMINADO (nombre incorrecto)
 
-### Problema resuelto
-- Antes (V36.9g): MAX(IDDOCUMENTO) sin filtro de bodega en subquery ULT
-  → IDDOCUMENTO es tipo de documento (ej. GRT=17), no ID unico de transaccion
-  → el MAX podia corresponder a un documento de otra bodega
-  → codigo 4422 IEM mostraba 931 dias (fecha 06/11/2023) siendo que el ultimo mov era 15/05/2026
-- Ahora: MAX(FECHA_EMISION) filtrado por IDBODEGA = ? en el subquery
-  → JOIN por fecha garantiza traer el movimiento real de IEM
-  → deduplicacion Python por menor diasAntiguedad resuelve empates de misma fecha
+### Función procesar_bod() — leer_xlsm.py
+- Genérica para cualquier XLSM de bodega con hoja REGISTROS y columnas A:H
+- diasAntiguedad calculado en Python desde col G (datetime) — NO depende de col I (DATEDIF) ni J (NOW)
+- codigoTecnico forzado a str (mixed int/str en col D)
+- Salida: data/bod-{nombre_bod.lower()}-registros.json
+- Para ampliar a RCE: procesar_bod(r"D:\ferreteria-oviedo\BODEGAS\BOD_RCE.xlsm", 'RCE')
+- BOD_FEM_XLSM = ruta al XLSM físico (nombre interno del archivo, no nombre de negocio)
 
-### Verificacion
-- Codigo 4422 IEM: antes 931 dias → ahora 10 dias (15/05/2026) ✅
-- IEM: 19 registros (sin cambio en cantidad)
-- RCE: no tocada, sigue igual ✅
-- Producto mas antiguo IEM ahora: AMES0126 con 25 dias (antes habia productos con 400-900 dias falsos)
+### Panel análisis bodegas
+- Sidebar grupo: Análisis → Bodegas IEM / RCE (showTab('analisis'))
+- Tab: tab-analisis (independiente de tab-ventas)
+- Filtros: buscar por código/descripción, bodega dropdown, rango días mín/máx
+- Tabla 9 cols: Bodega · Tipo Doc · Folio · Código · Descripción · Cant · Fecha · Días · Obs
+- Orden: diasAntiguedad DESC (más antiguo primero)
+- Colores: rojo ≥90d · naranja ≥30d
+- Fetch: /data/bod-iem-registros.json
+- Stub en vadmReRenderTabActivo: no usa filtros globales
 
-### Deploy
-- Pendiente: ejecutar PUBLICAR.bat tras commit
+### Regla de nombre — CRÍTICA
+- El archivo físico se llamaba BOD_FEM.xlsm → renombrado a BOD_RCE.xlsm el 2026-05-24
+- PERO el contenido (col A) tiene bodega IEM, no RCE
+- Constante en leer_xlsm.py: BOD_IEM_XLSM = BOD_RCE.xlsm (nombre físico actual)
+- JSON de salida: bod-iem-registros.json (basado en contenido real, no en nombre del archivo)
+- REGLA FIJA: nombre del JSON = bodega real en col A, NO nombre del archivo XLSM
+- "FEM" no debe aparecer en menús, labels, JSONs ni comentarios visibles
+- Si en el futuro col A cambia a RCE → entonces y solo entonces usar bod-rce-registros.json
 
----
+### Deploy y commits
+- a94fb5d — add procesar_bod bod_fem_xlsm (leer_xlsm.py)
+- 224764f — add analisis bodegas fem menu panel (panel-admin.html)
+- c26d5d3 — fix fem a iem nombre json y menu
+- 4b4a369 — cierre sesion v369e docs agents claude
+- d2870c2 — fix constante bod iem xlsm ruta rce (leer_xlsm.py local, no en GitHub — .py bloqueado)
+- Deploy: 2026-05-24 02:37
+
+## HISTORIAL V36.9b — 2026-05-23 (sector tab acordeón + NC)
+
+vadmRenderSector — 6 cambios coordinados:
+- Columnas NC y NC% eliminadas de tabla y footer
+- Dropdown TIPO DOC: eliminada opción "Solo NC" (solo Todos/Factura/Boleta)
+- NC excluidas siempre del cálculo: if(_esNC(r)) return false — primer filtro
+- Columna Vis. renombrada a DESP
+- Nuevo sector RETIRO CLIENTE: registros sin r.sector agrupados con clave 'RETIRO CLIENTE'
+  aparece al final en azul/itálica, fondo #f0f4ff
+- Acordeón inline: clic en fila de sector despliega fila de detalle (se-detail-row)
+  con tabla docs (N° Doc / Fecha / Tipo / Cliente / RUT / Vendedor / Neto)
+  pre-renderizada al momento del Analizar, oculta con style="display:none"
+  solo un sector abierto a la vez, flecha ▶/▼, scroll suave
+
+vadmSEToggleDetalle(tr) — nueva función:
+- Toggle del se-detail-row siguiente al tr clickeado
+- Cierra todos los demás detalles y resetea flechas antes de abrir
+
+Tabla: 8 columnas (#, Sector, Neto, Participación, DESP, Vendedor top, Cliente top, RUT)
+Footer: colspan ajustado a 8 (eliminados totalNC y ncPct)
+vadmSEDetalle() — conservada como código muerto inofensivo (no tiene trigger)
+
+Deploy: 2026-05-23 11:00
+
+## HISTORIAL V36.9 — 2026-05-23
+
+vadmRenderSector — migrado de ventas-xlsm-sector.json a _vadmLineas:
+- Fix: filtro vendedor funcionaba solo para Rafaela (XLSM vendedor=ERP code vs gmailUser)
+- Ahora: _vadmLineas tiene r.vendedor=gmailUser → filtro funciona para todos
+- Default fechas: 2026-01-01 a hoy (antes: mes actual)
+- Auto-load: si rango > _vadmLineas cargado → fetch ventas-manzano-YYYY.json
+- Columnas nuevas: Cliente top (razonSocial con mayor neto) + RUT
+- Filtro hora: select AM/PM en barra de filtros
+- Grafico: Chart.js barra (docs por hora) + linea (neto) debajo de tabla
+- Sin _vadmSectorData — cache eliminado, usa _vadmLineas directamente
+
+leer_xlsm.py — xlsm-enrich.json fix:
+- Antes: sector=raw obsImp (no normalizado), faltaban hora y razonSocial
+- Ahora: sector=_extraer_sector()->_SECTOR_DISPLAY (normalizado), +hora, +razonSocial
+- 12092 documentos indexados
+
+main.py — enriquecer_desde_xlsm:
+- Agrega hora y razonSocial a registros de _vadmLineas
+- 34375/38297 registros actualizados en el pipeline
+
+Split JSONs actualizado: ventas-manzano-2026.json + mensuales 2026-01 a 2026-05
+con campos hora y razonSocial. Deploy: 2026-05-23.
+
+## HISTORIAL V36.9c — 2026-05-23 (limpieza pipeline)
+
+ARCHIVADOS (movidos a _ARCHIVADOS\, no eliminados):
+- VENTAS EL MANZANO LOCAL\PREPARAR_Y_PUBLICAR.bat → 20260523_PREPARAR_Y_PUBLICAR.bat
+  Motivo: llamaba exportar_consulta_ventas.py y preparar_datos.py (no existen)
+- VENTAS EL MANZANO LOCAL\ACTUALIZAR_AUTO.bat → 20260523_ACTUALIZAR_AUTO.bat
+  Motivo: llamaba preparar_datos.py --auto (no existe); era tarea 7PM obsoleta
+
+csv_a_json.py — 2 bugs corregidos (P3 + P4):
+- P3: pd.read_excel(Datos.xlsx) → pd.read_csv(Datos.csv, encoding=utf-8-sig)
+  xlsx_a_csv.py generaba Datos.csv que nunca se usaba. Ahora el pipeline es coherente.
+- P4: "TEM_TRANS": "tem_trans" agregado al mapa de columnas
+  tem_trans ausente de Datos.json a pesar de estar en la conversión numérica.
+  Regenerado Datos.json: 6011 productos con tem_trans incluido.
+
+panel-admin.html — _vadmCargarStockMap: tem_trans agregado al mapa de stock
+- Antes: tem_trans ausente del objeto _vadmStockMap → reqStockPrellenar() calculaba
+  transito como (p.pem_trans||0)+(p.tem_trans||0) pero p.tem_trans era undefined → 0
+- Ahora: tem_trans:Number(p.tem_trans||p.TEM_TRANS||0) entre campos tem y rce
+- Impacto: tránsito TEM ahora se suma correctamente en Solicitud Semanal de Stock
+- Riesgo: NULO — campo aditivo, no modifica firma ni lógica existente
+
+Pipeline timing log creado: logs/20260523_pipeline.log
+- 7 pasos ejecutados: descargar_erp(102s) + procesar-actualizacion(11s) +
+  xlsx_a_csv(4s) + csv_a_json(2s) + leer_xlsm(9s) + descargar_ventas_erp(73s) +
+  actualizar_config_precios(2s) = 203s total (~3m 23s, sin alerta 5min)
+- 0 errores, datos actualizados a 2026-05-23 19:07
+
+ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 
 ## HISTORIAL V36.9g — 2026-05-24 (fix diasAntiguedad último movimiento SQL)
 
@@ -478,6 +570,7 @@ Verificado 2026-05-25: codigo 4422 IEM paso de 931 dias a 10 dias con este fix.
 
 ### REGLA SQL Server bodegas — CRÍTICA
 - IDBODEGA IEM=72, RCE=55 — confirmados desde P_BODEGAS en DB viva
+- IDBODEGA CEM=24 — confirmado desde P_BODEGAS 2026-05-25. CEM es bodega comercial, no aparece en BOD_RCE.xlsm.
 - credenciales_db.ini sección [DB]: NUNCA mostrar contenido, nunca subir a git
 - Query = VBA extraído de BOD_RCE.xlsm, sin modificación de lógica
 - Si en el futuro se agregan bodegas → añadir entrada en lista BODEGAS de descargar_bod.py
@@ -486,29 +579,22 @@ Verificado 2026-05-25: codigo 4422 IEM paso de 931 dias a 10 dias con este fix.
 - Deploy: 2026-05-24 03:02 — 8 archivos nuevos subidos
 - bod-rce-registros.json: primer deploy (archivo nuevo)
 
-## HISTORIAL V36.9e — 2026-05-24 (análisis bodegas IEM / RCE)
+## HISTORIAL V36.9h — 2026-05-24 (tab Impacto: rediseño inicial Volumen vs Precio)
 
 ### Archivos tocados
-- leer_xlsm.py: constante BOD_FEM_XLSM + función procesar_bod(path_xlsm, nombre_bod)
-- panel-admin.html: sidebar grupo Análisis + tab-analisis + vadmRenderBodFem() + vadmFiltrarBodFem()
-- data/bod-iem-registros.json: generado (19 registros reales IEM)
-- data/bod-fem-registros.json: ELIMINADO (nombre incorrecto)
+- panel-admin.html: vadmRenderImpacto reescrita desde cero
 
-### Regla de nombre — CRÍTICA
-- El archivo físico se llamaba BOD_FEM.xlsm → renombrado a BOD_RCE.xlsm el 2026-05-24
-- PERO el contenido (col A) tiene bodega IEM, no RCE
-- Constante en leer_xlsm.py: BOD_IEM_XLSM = BOD_RCE.xlsm (nombre físico actual)
-- JSON de salida: bod-iem-registros.json (basado en contenido real, no en nombre del archivo)
-- REGLA FIJA: nombre del JSON = bodega real en col A, NO nombre del archivo XLSM
-- "FEM" no debe aparecer en menús, labels, JSONs ni comentarios visibles
+### Cambios aplicados
+- Fuente migrada de ventas-xlsm-YYYY.json → _vadmLineas (ERP completo)
+- Métrica Q: de contar líneas → suma(cantidad) (unidades reales)
+- Nueva métrica: precio promedio = valorNeto/cantidad por vendedor y período
+- Filtros: bodega y vendedor vía vadmDatosFiltrados() (primer intento — luego corregido en V36.9i)
+- Título tab: "Impacto Precio: Q vs $" → "Volumen vs Precio"
+- Encabezados: P1/P2 Unidades · P1/P2 Precio prom. · Var. Unidades · Var. Precio prom.
+- Commits: 0ff118b
 
-### Deploy y commits
-- a94fb5d — add procesar_bod bod_fem_xlsm
-- 224764f — add analisis bodegas fem menu panel
-- c26d5d3 — fix fem a iem nombre json y menu
-- 4b4a369 — cierre sesion v369e docs agents claude
-- d2870c2 — fix constante bod iem xlsm ruta rce
-- Deploy: 2026-05-24 02:37
+### Deploy
+- Deploy: 2026-05-24 22:37 (junto con V36.9i)
 
 ## HISTORIAL V36.9i — 2026-05-24 (tab Impacto: fix vendedor + periodoSel + encabezados + reseña)
 
@@ -517,36 +603,78 @@ Verificado 2026-05-25: codigo 4422 IEM paso de 931 dias a 10 dias con este fix.
 
 ### Bugs corregidos
 1. Clave agrupación: r.vendedor||'?' → r.gmailUser||r.vendedor||r.vendedorErp||'?'
+   Causa: _vadmAplicarDatos renombra JSON.vendedor → objeto.gmailUser. r.vendedor era undefined → todos colapsaban en '?'
 2. Filtro _vadmPeriodoSel: reemplazado vadmDatosFiltrados() por filtro manual sin _vadmPeriodoSel
+   Causa: el pill de período activo bloqueaba registros de meses distintos al cargado → P1 = 0 siempre
 3. Nombre display: _nombre(vk, rNom) ahora usa r.nombre del acumulador como primera opción
+
+### Mejoras
+- Encabezados completos: "Período 1 — Unidades" · "Período 2 — Precio prom." · "Variación Unidades" (con white-space:nowrap)
+- Reseña dinámica: bloque azul claro con frases en lenguaje simple (5 escenarios TOTAL + 3 patrones vendedores extremos)
+  Se actualiza en cada ejecución. Sin jerga: "cosas" = unidades, "plata" = monto
+
+### Verificación
+- Simulación Node: Ricardo con P1(enero)=8 uds $5.375pp / P2(mayo)=4 uds $7.000pp → ▼50% uds ▲30.2% precio ✓
+- preview_eval con _vadmPeriodoSel='2026-05': datos enero NO bloqueados ✓
+- 2 vendedores aparecen correctamente (antes: solo '?') ✓
 
 ### Deploy
 - Commit: d003042
 - Deploy: 2026-05-24 22:37 — ferreteria-oviedo.web.app
 
-## HISTORIAL V36.9b — 2026-05-23 (sector tab acordeón + NC)
+## HISTORIAL V36.9i — 2026-05-24 (fix registro y badges)
 
-vadmRenderSector — 6 cambios coordinados:
-- Columnas NC y NC% eliminadas de tabla y footer
-- Dropdown TIPO DOC: eliminada opción "Solo NC"
-- NC excluidas siempre del cálculo: if(_esNC(r)) return false
-- Columna Vis. renombrada a DESP
-- Nuevo sector RETIRO CLIENTE: registros sin r.sector agrupados
-- Acordeón inline: clic en fila despliega detalle (se-detail-row)
+### Archivos tocados
+- firestore.rules: separar create (self) de update/delete (admin) en /users/{userId}
+- index.html: doRegistroVend sin pass.trim + manejo permission-denied y operation-not-allowed
+- panel-cliente.html: doRegistroCli sin pass.trim + mismos mensajes de error
+- index.html, panel-cliente.html, panel-admin.html: badges V36.3 21-05-2026 → V36.9i 24-05-2026
 
-Deploy: 2026-05-23 11:00
+### Causa raiz del bug de registro
+- firestore.rules tenia `allow write: if esAdmin()` en /users/{userId}
+- El nuevo usuario (no admin) llama a db.collection('users').doc(uid).set() tras crear su cuenta Auth
+- Firestore denegaba con PERMISSION_DENIED → la cuenta Auth quedaba creada pero sin doc de perfil
+- El usuario no podia volver a registrarse (auth/email-already-in-use) ni ingresar (sin doc en users)
 
-## HISTORIAL V36.9 — 2026-05-23
+### Fix aplicado
+- allow create: if request.auth.uid == userId && data.uid == userId && role in ['cliente','vendedor']
+- allow update, delete: if esAdmin()
+- Validacion de role impide auto-escalada a admin via registro
+- Los mensajes de error en JS ahora distinguen permission-denied y operation-not-allowed
 
-vadmRenderSector migrado de ventas-xlsm-sector.json a _vadmLineas.
-leer_xlsm.py — xlsm-enrich.json fix: sector normalizado, +hora, +razonSocial.
-main.py — enriquecer_desde_xlsm: agrega hora y razonSocial.
-Deploy: 2026-05-23.
+## HISTORIAL V36.9j — 2026-05-25 (fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT)
 
-## HISTORIAL V36.9c — 2026-05-23 (limpieza pipeline)
+### Archivos tocados
+- BODEGAS/descargar_bod.py: SQL corregido — subquery ULT ahora incluye `WHERE IDBODEGA=?` antes del `GROUP BY`, JOIN usa `FECHA_EMISION=ULT.ULTIMA_FECHA` en vez de `IDDOCUMENTO`. `cursor.execute` recibe `(idbodega, idbodega)`: primer parámetro para el WHERE en ULT, segundo para el WHERE principal.
 
-ARCHIVADOS: PREPARAR_Y_PUBLICAR.bat + ACTUALIZAR_AUTO.bat
-csv_a_json.py: P3 (read_csv) + P4 (tem_trans al mapa)
-panel-admin.html: tem_trans en _vadmCargarStockMap
-ACTUALIZARTODO.bat confirmado como único punto de entrada.
-Deploy: 2026-05-23.
+### Problema resuelto
+- IDDOCUMENTO en la tabla de movimientos es tipo de documento (ej. GRT=17), no un ID único.
+- MAX(IDDOCUMENTO) devolvía el tipo de documento más alto, no el último movimiento real.
+- Sin WHERE IDBODEGA=? en el subquery, ULT mezclaba movimientos de otras bodegas para el mismo artículo.
+- Fix: WHERE IDBODEGA=? en subquery ULT + JOIN por FECHA_EMISION elimina la ambigüedad.
+
+### Resultado
+- Código 4422 IEM: diasAntiguedad pasó de 931 días a 10 días ✅
+- RCE: no tocada (fix aplica a la lógica SQL compartida, sin regresión en RCE)
+
+### Deploy
+- 2026-05-25 fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
+
+## HISTORIAL V36.9k — 2026-05-25 (add bodega CEM al análisis bodegas)
+
+### Archivos tocados
+- BODEGAS/descargar_bod.py: CEM (IDBODEGA=24) agregado a lista BODEGAS → genera data/bod-cem-registros.json. Usa exacta misma lógica SQL V36.9j (WHERE IDBODEGA=? en subquery ULT, JOIN por FECHA_EMISION, cursor.execute con dos parámetros, deduplicación Python por menor diasAntiguedad).
+- panel-admin.html: selector bfFuente actualizado (Ambas → Todas, + opción CEM). vadmRenderBodFem() agrega fetch bod-cem-registros.json cuando fuente==='cem'||fuente==='ambas'. Título card y botón sidebar actualizados a "IEM / RCE / CEM".
+- AGENTS.md: IDBODEGA CEM=24 documentado en REGLA SQL Server bodegas. PASO 1C actualizado.
+
+### NO TOCADO
+- Lógica IEM ni RCE: sin cambios
+- vadmFiltrarBodFem(): sin cambios
+- SQL del script: sin cambios (solo nueva entrada en lista BODEGAS)
+
+### IDBODEGA confirmados
+- IEM=72, RCE=55, CEM=24 — todos desde P_BODEGAS DB viva
+- CEM es bodega comercial (Calzada El Manzano). No aparece en BOD_RCE.xlsm (que era IEM).
+
+### Deploy
+- Pendiente primer deploy tras generación de bod-cem-registros.json
