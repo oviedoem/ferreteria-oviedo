@@ -26,7 +26,13 @@ service cloud.firestore {
     // Cada usuario: solo lee su propio documento
     match /users/{userId} {
       allow read: if esAdmin() || esElMismoUsuario(userId);
-      allow write: if esAdmin();
+      // FIX REGISTRO V36.9i: create self (nuevo usuario guarda su perfil),
+      // update/delete solo admin. Evita escalada de privilegios via role.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.uid == userId
+                    && request.resource.data.role in ['cliente', 'vendedor'];
+      allow update, delete: if esAdmin();
     }
 
     // ── COTIZACIONES ──────────────────────────────────────────

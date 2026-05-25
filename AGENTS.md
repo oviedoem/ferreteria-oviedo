@@ -610,3 +610,23 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 ### Deploy
 - Commit: d003042
 - Deploy: 2026-05-24 22:37 — ferreteria-oviedo.web.app
+
+## HISTORIAL V36.9i — 2026-05-24 (fix registro y badges)
+
+### Archivos tocados
+- firestore.rules: separar create (self) de update/delete (admin) en /users/{userId}
+- index.html: doRegistroVend sin pass.trim + manejo permission-denied y operation-not-allowed
+- panel-cliente.html: doRegistroCli sin pass.trim + mismos mensajes de error
+- index.html, panel-cliente.html, panel-admin.html: badges V36.3 21-05-2026 → V36.9i 24-05-2026
+
+### Causa raiz del bug de registro
+- firestore.rules tenia `allow write: if esAdmin()` en /users/{userId}
+- El nuevo usuario (no admin) llama a db.collection('users').doc(uid).set() tras crear su cuenta Auth
+- Firestore denegaba con PERMISSION_DENIED → la cuenta Auth quedaba creada pero sin doc de perfil
+- El usuario no podia volver a registrarse (auth/email-already-in-use) ni ingresar (sin doc en users)
+
+### Fix aplicado
+- allow create: if request.auth.uid == userId && data.uid == userId && role in ['cliente','vendedor']
+- allow update, delete: if esAdmin()
+- Validacion de role impide auto-escalada a admin via registro
+- Los mensajes de error en JS ahora distinguen permission-denied y operation-not-allowed
