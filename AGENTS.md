@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Ferretería Oviedo V36.9f
+﻿# AGENTS.md — Ferretería Oviedo V36.9i
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
 # Última actualización: 2026-05-24
 
@@ -18,8 +18,8 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 ## PROYECTO
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
-- Versión activa: V36.9f
-- Deploy confirmado: 2026-05-24 03:02 — descargar_bod.py SQL Server IEM+RCE; panel selector Fuente; PASO 1C bat
+- Versión activa: V36.9i
+- Deploy confirmado: 2026-05-24 22:37 — vadmRenderImpacto fix gmailUser + periodoSel + encabezados + reseña dinámica
 
 ---
 
@@ -184,6 +184,12 @@ vadmSSMarcaClick(el)      Toggle filtro marca — usa data-marca, NO string
 vadmRenderBajaRot         Render baja rotación, auto-reload si rango > datos
 vadmFiltrarBajaRot        Re-filtra vadmBRDatos sin recomputar ABC
 vadmRenderQuiebre         Render stock quiebre con ABC + Rot.30/60/90d
+vadmRenderImpacto         Volumen vs Precio — compara dos períodos P1/P2 por vendedor (V36.9i)
+                          Fuente: _vadmLineas. Clave vendedor: r.gmailUser||r.vendedorErp
+                          Filtros: _vadmBodSel + _vadmVendSel + _vadmDocSel
+                          NO aplica _vadmPeriodoSel (pill selector bloquearía meses distintos)
+                          Métricas: suma(cantidad) + valorNeto/cantidad por vendedor
+                          Genera reseña dinámica en lenguaje simple al pie de la tabla
 vadmRenderNC              NC por vendedor — usa _vadmLineas (ERP, TODOS los vendedores)
                           Detecta NC por r.documento (contiene "nota" o "cred")
                           Agrupa 2 pasos: (vendedor|numero) → neto acumulado → por vendedor
@@ -561,3 +567,46 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 ### Deploy
 - Deploy: 2026-05-24 03:02 — 8 archivos nuevos subidos
 - bod-rce-registros.json: primer deploy (archivo nuevo)
+
+## HISTORIAL V36.9h — 2026-05-24 (tab Impacto: rediseño inicial Volumen vs Precio)
+
+### Archivos tocados
+- panel-admin.html: vadmRenderImpacto reescrita desde cero
+
+### Cambios aplicados
+- Fuente migrada de ventas-xlsm-YYYY.json → _vadmLineas (ERP completo)
+- Métrica Q: de contar líneas → suma(cantidad) (unidades reales)
+- Nueva métrica: precio promedio = valorNeto/cantidad por vendedor y período
+- Filtros: bodega y vendedor vía vadmDatosFiltrados() (primer intento — luego corregido en V36.9i)
+- Título tab: "Impacto Precio: Q vs $" → "Volumen vs Precio"
+- Encabezados: P1/P2 Unidades · P1/P2 Precio prom. · Var. Unidades · Var. Precio prom.
+- Commits: 0ff118b
+
+### Deploy
+- Deploy: 2026-05-24 22:37 (junto con V36.9i)
+
+## HISTORIAL V36.9i — 2026-05-24 (tab Impacto: fix vendedor + periodoSel + encabezados + reseña)
+
+### Archivos tocados
+- panel-admin.html: vadmRenderImpacto — 3 bugs corregidos + 2 mejoras
+
+### Bugs corregidos
+1. Clave agrupación: r.vendedor||'?' → r.gmailUser||r.vendedor||r.vendedorErp||'?'
+   Causa: _vadmAplicarDatos renombra JSON.vendedor → objeto.gmailUser. r.vendedor era undefined → todos colapsaban en '?'
+2. Filtro _vadmPeriodoSel: reemplazado vadmDatosFiltrados() por filtro manual sin _vadmPeriodoSel
+   Causa: el pill de período activo bloqueaba registros de meses distintos al cargado → P1 = 0 siempre
+3. Nombre display: _nombre(vk, rNom) ahora usa r.nombre del acumulador como primera opción
+
+### Mejoras
+- Encabezados completos: "Período 1 — Unidades" · "Período 2 — Precio prom." · "Variación Unidades" (con white-space:nowrap)
+- Reseña dinámica: bloque azul claro con frases en lenguaje simple (5 escenarios TOTAL + 3 patrones vendedores extremos)
+  Se actualiza en cada ejecución. Sin jerga: "cosas" = unidades, "plata" = monto
+
+### Verificación
+- Simulación Node: Ricardo con P1(enero)=8 uds $5.375pp / P2(mayo)=4 uds $7.000pp → ▼50% uds ▲30.2% precio ✓
+- preview_eval con _vadmPeriodoSel='2026-05': datos enero NO bloqueados ✓
+- 2 vendedores aparecen correctamente (antes: solo '?') ✓
+
+### Deploy
+- Commit: d003042
+- Deploy: 2026-05-24 22:37 — ferreteria-oviedo.web.app
