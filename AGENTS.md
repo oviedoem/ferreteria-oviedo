@@ -1,6 +1,6 @@
 ﻿# AGENTS.md — Ferretería Oviedo V36.9k
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
-# Última actualización: 2026-05-25
+# Última actualización: 2026-05-26 (auditoría documental)
 
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
@@ -18,8 +18,9 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 ## PROYECTO
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
-- Versión activa: V36.9j
+- Versión activa: V36.9k
 - Deploy confirmado: 2026-05-25 fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
+- Deploy pendiente: bod-cem-registros.json (generado 2026-05-26, no publicado)
 
 ---
 
@@ -55,7 +56,10 @@ e. Si hay duda, detenerse y reportar antes de continuar.
 
 ### ARCHIVOS PROHIBIDOS DE REGENERAR:
 
-- ventas-manzano.json → ELIMINADO, duplicado de ventas-manzano-2026.json
+- ventas-manzano.json → NECESARIO: main.py lo genera como salida principal (JSON_SALIDA).
+  El panel lo usa como fallback en 4 puntos (líneas 4578, 6850, 6868, 7780).
+  NO eliminar ni bloquear su generación. La decisión V36.9d de "eliminarlo" fue incorrecta —
+  el código nunca dejó de generarlo y el panel depende de él.
 - PREPARAR_Y_PUBLICAR.bat → ARCHIVADO en _ARCHIVADOS\
 - ACTUALIZAR_AUTO.bat → ARCHIVADO en _ARCHIVADOS\
 - credenciales_erp.ini → NUNCA tocar ni leer en voz alta
@@ -70,9 +74,9 @@ e. Si hay duda, detenerse y reportar antes de continuar.
 
 ### FLUJO DE DESCARGA — REGLA FIJA:
 
-- ventas-manzano-2026.json es el archivo activo de ventas año completo
-- ventas-manzano-2026-05.json es el archivo activo de ventas mes actual
-- ventas-manzano.json NO DEBE EXISTIR ni regenerarse bajo ninguna circunstancia
+- ventas-manzano.json → salida principal de main.py (JSON_SALIDA). NECESARIO como fallback del panel.
+- ventas-manzano-2026.json → split anual generado por guardar_json() dentro de main.py
+- ventas-manzano-2026-05.json → split mensual generado por guardar_json()
 - descargar_erp.py descarga stock y precios — NO duplicar
 - descargar_ventas_erp.py descarga ventas — NO duplicar salidas
 
@@ -270,7 +274,8 @@ NO intentar arreglarlo.
 4. csvajson.py             → Datos.json
    [PASO 1B] leerxlsm.py  → xlsm-enrich.json
    [PASO 1C] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
-             SQL Server directo (IDBODEGA 72/55/24), sin XLSM ni macros manuales
+             SQL Server directo (IEM=72, RCE=55, CEM=24), sin XLSM ni macros manuales
+             NOTA: El echo del bat dice "IEM y RCE" pero la lógica ya incluye CEM desde V36.9k
 5. main.py --sin-deploy
    PASO 1: catalogogeneradohoy? SI/NO
    PASO 2: descargarventaserp.py incremental
@@ -296,8 +301,13 @@ BATs archivados en _ARCHIVADOS\ (NO ejecutar — llaman scripts inexistentes):
 
 - ventas-manzano-YYYY-MM.json  → mes actual, liviano ~200KB (default)
 - ventas-manzano-YYYY.json     → año completo, 2-18MB (al seleccionar año)
-- Datos.json                   → 3.5MB, cargado una vez, cacheado en sesión JS
-- catalogo-dinamico.json       → 404 fallback a Datos.json
+- ventas-manzano.json          → fallback último recurso (panel lo usa si el anual falla)
+- Datos.json                   → 3.5MB en CATALOGO PRODUCTOS/, cargado una vez, cacheado
+- catalogo-dinamico.json       → DOBLE ROL:
+    (1) Señal Python: procesar-actualizacion.py la escribe en data/ — leída por main.py
+    (2) Panel: busca en /CATALOGO%20PRODUCTOS/catalogo-dinamico.json → SIEMPRE 404 (no está ahí)
+        → fallback automático a CATALOGO PRODUCTOS/Datos.json (comportamiento correcto por diseño)
+    NO intentar mover catalogo-dinamico.json a CATALOGO PRODUCTOS/ — no es necesario
 - vadmStockMap cacheado en sesión — NO refetch por tab
 - Baja Rotación: auto-fetch año completo si rango > datos cargados
 
@@ -677,4 +687,5 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 - CEM es bodega comercial (Calzada El Manzano). No aparece en BOD_RCE.xlsm (que era IEM).
 
 ### Deploy
-- Pendiente primer deploy tras generación de bod-cem-registros.json
+- bod-cem-registros.json generado localmente el 2026-05-26 00:58 — PENDIENTE publicar a Firebase
+- Para publicar: ejecutar PUBLICAR.bat o firebase deploy --only hosting desde D:\ferreteria-oviedo\

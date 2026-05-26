@@ -2705,10 +2705,12 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <th style="padding:8px 10px;text-align:right">Cant.</th>
             <th style="padding:8px 10px;text-align:center">Fecha Registro</th>
             <th style="padding:8px 10px;text-align:right">Días Antigüedad</th>
+            <th style="padding:8px 10px;text-align:right">Valorizado</th>
             <th style="padding:8px 10px;text-align:left">Observación</th>
           </tr>
         </thead>
         <tbody id="bfTbody"></tbody>
+        <tfoot id="bfTfoot"></tfoot>
       </table>
     </div>
     <div id="bfEmpty" style="display:none;color:#9ca3af;font-size:13px;padding:16px 0;text-align:center">Sin datos cargados.</div>
@@ -15561,6 +15563,7 @@ function vadmFiltrarBodFem(){
       if(dias >= 90)      col = 'color:#dc2626;font-weight:700';
       else if(dias >= 30) col = 'color:#d97706;font-weight:600';
     }
+    var valorizado = (r.cantidad||0) * (r.costo||0);
     return '<tr style="'+bg+'">' +
       '<td style="padding:6px 10px">'                            +(r.bodega||'')+'</td>'+
       '<td style="padding:6px 10px">'                            +(r.tipoDoc||'')+'</td>'+
@@ -15570,9 +15573,16 @@ function vadmFiltrarBodFem(){
       '<td style="padding:6px 10px;text-align:right">'           +(r.cantidad||0)+'</td>'+
       '<td style="padding:6px 10px;text-align:center">'          +(r.fechaRegistro||'')+'</td>'+
       '<td style="padding:6px 10px;text-align:right;'+col+'">'   +dias+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;font-weight:600">'+(valorizado>0?venAdmFmt(valorizado):'—')+'</td>'+
       '<td style="padding:6px 10px;color:#6b7280;font-size:11px">'+(r.observacion||'')+'</td>'+
     '</tr>';
   }).join('');
+  var totalVal = fil.reduce(function(acc,r){ return acc + (r.cantidad||0)*(r.costo||0); }, 0);
+  document.getElementById('bfTfoot').innerHTML =
+    '<tr style="background:#1a1d3a;color:white;font-weight:700">'+
+    '<td colspan="8" style="padding:8px 10px;text-align:right;font-size:12px">TOTAL VALORIZADO</td>'+
+    '<td style="padding:8px 10px;text-align:right;font-size:13px">'+venAdmFmt(totalVal)+'</td>'+
+    '<td></td></tr>';
 }
 
 </script>
