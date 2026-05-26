@@ -1,6 +1,6 @@
-﻿# AGENTS.md — Ferretería Oviedo V36.9k
+﻿# AGENTS.md — Ferretería Oviedo V37
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
-# Última actualización: 2026-05-26 (auditoría documental)
+# Última actualización: 2026-05-26 (P-2 vvsstock, P-4 señales alerta)
 
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
@@ -18,10 +18,9 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 ## PROYECTO
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
-- Versión activa: V36.9k
-- Deploy confirmado: 2026-05-25 fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
-- Deploy V36.9k: 2026-05-26 12:25 — bod-cem-registros.json publicado ✅
-- Deploy cierre sesión: 2026-05-26 13:05 — firebase-config.js comentario V36.9k
+- Versión activa: V37
+- Deploy V36.9k: 2026-05-26 13:05 — firebase-config.js comentario V36.9k ✅
+- V37 en curso: 2026-05-26 — código muerto eliminado + señales alerta funciones críticas
 
 ---
 
@@ -125,6 +124,26 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde Po
 - Ejecutar siempre como último paso.
 - Si BLOQUEADO: revisar archivo sensible en repo antes de reintentar.
 - Si falla por red: reportar el error pero NO omitir el intento.
+
+---
+
+## CHANGELOG
+
+### V37 — 2026-05-26
+
+**panel-admin.html — P-2: eliminar restos Venta vs Stock (removido V35.0)**
+- `vadmRenderVvsStock()` eliminada — vsec-vvsstock no existe, no estaba en vadmReRenderTabActivo
+- `_vadmHtmlEmailVvsStock()` eliminada — no referenciada en _vadmDespacharHtmlEmail
+- `vvsstock` eliminado de mapas `_vadmHtmlEmailNoDisponible` y `tabLabels`
+
+**panel-cliente.html + panel-admin.html — P-4: señales de alerta funciones críticas**
+- `⚠️` agregado antes de: `doLoginGoogleCli`, `doLoginAuth`, `doRegistroCli`, `adminReenviarAcceso`
+- Comentario incluye: invariantes clave, última modificación, referencia a CLAUDE.md
+
+**Criterio código muerto revisado (aprendizaje de sesión)**
+- NO eliminar funciones por ausencia de llamada directa
+- Solo eliminar si la feature fue explícitamente removida del panel (changelog)
+- Funciones Firestore helpers se mantienen aunque el panel llame directo — soportan el flujo
 
 ---
 

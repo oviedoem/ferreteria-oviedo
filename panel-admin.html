@@ -674,6 +674,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <span id="quotaBadgeText">FS —</span>
       </button>
       <span class="badge-online" id="onlineBadge">● 0 en línea</span>
+      <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" title="Notificaciones">
+        🔔<span class="notif-bell-count" id="notifCount"></span>
+      </button>
       <button class="btn-logout" onclick="doLogout()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;margin-bottom:1px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir
       </button>
@@ -4308,6 +4311,9 @@ function renderUsuariosFS(){
   '</table></div>';
 }
 
+// ⚠️ FUNCIÓN CRÍTICA — NO modificar sin prueba E2E completa (ver CLAUDE.md)
+// Invariantes: solo aplica a usuarios con email | NO cambia estado ni rol | usa sendPasswordResetEmail REST API
+// Última modificación: V36.9k
 function adminReenviarAcceso(email){
   if(!window.auth){ toast('Sin conexión','err'); return; }
   if(!confirm('Enviar correo de acceso a ' + email + '?')) return;
@@ -5694,7 +5700,7 @@ function agregarNotif(tipo, titulo, subtitulo) {
   guardarNotifs(arr);
   actualizarContadorNotif();
   mostrarNotifToast(notif);
-  if (_notifPanelOpen) renderNotifTab();
+  if (_notifPanelOpen) { renderNotifCampana(); renderNotifTab(); }
   return notif;
 }
 
@@ -5854,53 +5860,7 @@ function tiempoRelativo(ts) {
   return new Date(ts).toLocaleDateString('es-CL');
 }
 
-// ── Detección de nuevos ingresos via onSnapshot ─────────────
-function iniciarListenerNotificaciones() {
-  if (!window.db) return;
-  // Cargar estado inicial SIN disparar alertas
-  window.db.collection('sesiones_activas').get().then(function(snap) {
-    snap.forEach(function(d) {
-      var data = d.data();
-      var ts   = data.ts && data.ts.seconds ? data.ts.seconds * 1000 : Date.now();
-      _sesionesKnown[d.id] = ts;
-    });
-    // Ahora activar el listener en tiempo real
-    window.db.collection('sesiones_activas').onSnapshot(function(snap) {
-      snap.docChanges().forEach(function(change) {
-        var data = change.doc.data();
-        var uid  = change.doc.id;
-        var ts   = data.ts && data.ts.seconds ? data.ts.seconds * 1000 : Date.now();
-        var nombre = data.nombre || data.uid || '?';
-        var app    = data.app   || 'App';
-
-        if (change.type === 'added' || change.type === 'modified') {
-          // Solo notificar si es un ingreso nuevo (ts más reciente que lo conocido)
-          var tsAnterior = _sesionesKnown[uid] || 0;
-          var esNuevo    = (ts - tsAnterior) > 5000; // diferencia > 5s = nuevo ingreso real
-          _sesionesKnown[uid] = ts;
-
-          if (!esNuevo) return;
-
-          var tipo = app.toLowerCase().includes('vendedor') ? 'vendedor'
-                   : app.toLowerCase().includes('cooperador') ? 'cooperador'
-                   : 'cliente';
-          if (tipo === 'vendedor'   && !_notifCfg.vendedor) return;
-          if (tipo === 'cliente'    && !_notifCfg.cliente)  return;
-          if (tipo === 'cooperador' && !_notifCfg.vendedor) return;
-
-          var icono = tipo === 'vendedor' ? '💼' : tipo === 'cooperador' ? '🔒' : '👤';
-          agregarNotif(tipo,
-            icono + ' ' + nombre + ' ingresó',
-            app + ' · ' + (data.dispositivo || data.device || 'PC')
-          );
-          playNotifSound(tipo);
-        }
-      });
-    }, function() {});
-
-    // Listener de cotizaciones: gestionado desde initApp() (listener unificado)
-  }).catch(function() {});
-}
+// iniciarListenerNotificaciones — versión activa en BLOQUE 5 (línea ~6571, dedup via sesionesLog)
 
 // Inicializar en el load
 document.addEventListener('DOMContentLoaded', function() {
@@ -9545,71 +9505,6 @@ function vadmFiltrarMerma(){
     '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody></table></div>';
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ── VENTA VS STOCK ────────────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-function vadmRenderVvsStock(){
-  var datos=vadmDatosFiltrados();
-  var st=document.getElementById('vadmVSStatus'), bd=document.getElementById('vadmVSBody');
-  if(!datos.length){ bd.innerHTML='<div class="ven-adm-empty">Sin datos.</div>'; return; }
-
-  // Agrupar por código: sumar ventas + tomar stock
-  var map={};
-  datos.forEach(function(r){
-    var cod=r.codigo||''; if(!cod)return;
-    if(!map[cod])map[cod]={cod:cod,desc:r.descripcion||cod,marca:r.marca||'',fam:r.familia||'',stock:0,neto:0,margen:0,lineas:0};
-    map[cod].neto+=r.valorNeto||0; map[cod].margen+=r.margen||0; map[cod].lineas++;
-    if(r.stock!==undefined&&r.stock!==null) map[cod].stock=Math.max(map[cod].stock,Number(r.stock)||0);
-  });
-
-  var arr=Object.values(map).sort(function(a,b){return b.neto-a.neto;});
-  var totalN=arr.reduce(function(s,v){return s+v.neto;},0);
-  var conStock=arr.filter(function(v){return v.stock>0;}).length;
-  var sinStock=arr.filter(function(v){return v.stock<=0;}).length;
-  st.textContent=arr.length+' productos · '+conStock+' con stock · '+sinStock+' sin stock';
-
-  var kpiHtml='<div class="vadm-kpi-row">'+
-    '<div class="vadm-kpi"><div class="vadm-kpi-val">'+arr.length+'</div><div class="vadm-kpi-lbl">Productos</div></div>'+
-    '<div class="vadm-kpi"><div class="vadm-kpi-val">'+conStock+'</div><div class="vadm-kpi-lbl">Con Stock</div></div>'+
-    '<div class="vadm-kpi"><div class="vadm-kpi-val">'+sinStock+'</div><div class="vadm-kpi-lbl">Sin Stock</div></div>'+
-    '<div class="vadm-kpi"><div class="vadm-kpi-val">'+venAdmFmt(totalN)+'</div><div class="vadm-kpi-lbl">Total Venta</div></div>'+
-    '</div>';
-
-  var head='<thead><tr style="background:#1e1b4b;color:#fff">'+
-    '<th style="padding:8px 6px;font-size:11px;width:24px">#</th>'+
-    '<th style="padding:8px 6px;font-size:10px;font-family:monospace">Código</th>'+
-    '<th style="padding:8px 10px;font-size:11px">Descripción</th>'+
-    '<th style="padding:8px 6px;font-size:10px">Marca</th>'+
-    '<th style="padding:8px 6px;font-size:10px">Familia</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:11px">Venta Neta</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:11px">Utilidad</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:11px">Margen%</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:11px">Stock Actual</th>'+
-    '<th class="r" style="padding:8px 6px;font-size:11px">Part%</th>'+
-    '</tr></thead>';
-
-  var rows=arr.map(function(v,i){
-    var mg=v.neto>0?(v.margen/v.neto)*100:0, pct=totalN>0?(v.neto/totalN)*100:0;
-    var mc=mg>=20?'#059669':mg>=10?'#d97706':'#dc2626';
-    var sSt=v.stock>0?'<span style="color:#059669;font-weight:700">'+v.stock.toLocaleString('es-CL')+'</span>':'<span style="color:#dc2626;font-weight:700">0</span>';
-    var bg=i%2===0?'#fff':'#f9fafb';
-    return '<tr style="background:'+bg+'">'+
-      '<td style="padding:6px 6px;color:#9ca3af;font-size:10px">'+(i+1)+'</td>'+
-      '<td style="padding:6px 6px;font-family:monospace;font-size:10px;color:#6b7280">'+venAdmEsc(v.cod)+'</td>'+
-      '<td style="padding:6px 10px;font-size:11px;max-width:200px">'+venAdmEsc(v.desc)+'</td>'+
-      '<td style="padding:6px 6px;font-size:10px;color:#7c3aed">'+venAdmEsc(v.marca)+'</td>'+
-      '<td style="padding:6px 6px;font-size:10px;color:#2563eb">'+venAdmEsc(v.fam)+'</td>'+
-      '<td class="r" style="padding:6px 8px;font-weight:700">'+venAdmFmt(v.neto)+'</td>'+
-      '<td class="r" style="padding:6px 8px;color:#059669">'+venAdmFmt(v.margen)+'</td>'+
-      '<td class="r" style="padding:6px 8px;font-weight:700;color:'+mc+'">'+venAdmFmtPct(mg)+'</td>'+
-      '<td class="r" style="padding:6px 8px">'+sSt+'</td>'+
-      '<td class="r" style="padding:6px 8px;color:#9ca3af;font-size:10px">'+venAdmFmtPct(pct)+'</td>'+
-    '</tr>';
-  }).join('');
-
-  bd.innerHTML=kpiHtml+'<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody></table></div>';
-}
-
 // ── BAJA ROTACIÓN / SIN VENTA ─────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 var _vadmBRDatos = []; // productos computados — se reusan al filtrar sin recomputar
@@ -13114,7 +13009,7 @@ function _vadmDespacharHtmlEmail(datos, perStr, tab){
 // Mensaje para tabs de inventario/árbol que no generan email de ventas
 function _vadmHtmlEmailNoDisponible(tab){
   var nombres={quiebre:'Stock & Quiebre',sobrestock:'Sobre-stock',transito:'Tránsito PEM',
-    merma:'Merma / Remate',vvsstock:'Venta vs Stock',arbol:'Árbol de Descomposición',
+    merma:'Merma / Remate',arbol:'Árbol de Descomposición',
     arboltabla:'Tabla KPIs',arbolheat:'Mapa de Calor'};
   var n=nombres[tab]||tab;
   return '<div style="max-width:640px;margin:0 auto;font-family:Arial,sans-serif;padding:48px 24px;text-align:center">'+
@@ -13548,40 +13443,6 @@ function _vadmHtmlEmailBajaRot(){
   ])+_emailTbl('📉 Detalle por producto','#dc2626',
     [['Código',false],['Descripción',false],['Marca',false],['PEM',true],['SEM',true],['TOTAL',true],['CD DISP',true],['Qty Vendida',true],['TIPO',false]],
     rows)+'</div>';
-}
-
-// ── Inventario: Venta vs Stock ────────────────────────────────────────────────
-function _vadmHtmlEmailVvsStock(datos, perStr){
-  if(!datos.length||!_vadmStockMap){
-    return '<div style="padding:30px;text-align:center;color:#9ca3af;font-family:Arial,sans-serif">'+
-      '<div style="font-size:36px;margin-bottom:12px">📊</div>'+
-      '<div style="font-size:14px">Abre el tab <strong>Venta vs Stock</strong> primero para cargar los datos, luego vuelve a enviar.</div></div>';
-  }
-  var mapM={};
-  datos.forEach(function(r){
-    var m=r.marca||'(sin marca)';
-    if(!mapM[m])mapM[m]={marca:m,neto:0,qty:0,stock:0};
-    mapM[m].neto+=r.valorNeto||0; mapM[m].qty+=(r.cantidad||1);
-  });
-  Object.keys(_vadmStockMap).forEach(function(c){
-    var s=_vadmStockMap[c], m=s.marca||'(sin marca)';
-    if(!mapM[m])mapM[m]={marca:m,neto:0,qty:0,stock:0};
-    mapM[m].stock+=(s.stock||0);
-  });
-  var arr=Object.values(mapM).filter(function(v){return v.neto||v.stock;})
-    .sort(function(a,b){return b.neto-a.neto;}).slice(0,20);
-  var rows=arr.map(function(v,i){
-    return '<tr style="background:'+(i%2===0?'#fff':'#f9fafb')+'">'+
-      '<td style="padding:7px 10px;font-size:12px;font-weight:700;color:#7c3aed">'+_emailEsc(v.marca)+'</td>'+
-      '<td style="padding:7px 10px;font-size:12px;text-align:right;font-weight:700">'+_emailFmt(v.neto)+'</td>'+
-      '<td style="padding:7px 10px;font-size:12px;text-align:right">'+v.qty+'</td>'+
-      '<td style="padding:7px 10px;font-size:12px;text-align:right;color:'+(v.stock>0?'#059669':'#dc2626')+';font-weight:700">'+v.stock+'</td></tr>';
-  }).join('');
-  var totalN=datos.reduce(function(s,r){return s+(r.valorNeto||0);},0);
-  return _emailHdr('#059669','📊','Venta vs Stock',perStr,[
-    ['Total Neto período',_emailFmt(totalN),'#059669'],['Marcas analizadas',arr.length,'#1e1b4b']
-  ])+_emailTbl('📊 Venta vs Stock por Marca','#059669',
-    [['Marca',false],['Neto período',true],['Qty',true],['Stock actual',true]],rows)+'</div>';
 }
 
 // ── Árbol / Tabla KPIs / Mapa Calor ──────────────────────────────────────────
@@ -14173,7 +14034,7 @@ function vadmAbrirEmailModal(){
     marcavend:'🏅 Marca×Vendedor',pagoanalisis:'💳 Pago×Categoría',pagorankings:'💳 Pago×Vendedor',
     pagotemporal:'💳 Pago×Mes',entrefechas:'📆 Entre Fechas',facturacion:'🧾 Facturación',
     quiebre:'🔴 Stock & Quiebre',sobrestock:'📦 Sobre-stock',transito:'🚚 Tránsito',
-    merma:'🔖 Merma',bajrot:'📉 Baja Rotación',vvsstock:'📊 Venta vs Stock',arbol:'🌳 Árbol',arboltabla:'📋 Tabla KPIs',arbolheat:'🗓️ Mapa Calor'};
+    merma:'🔖 Merma',bajrot:'📉 Baja Rotación',arbol:'🌳 Árbol',arboltabla:'📋 Tabla KPIs',arbolheat:'🗓️ Mapa Calor'};
   var lbl=document.getElementById('vadmEmailTabLabel');
   if(lbl) lbl.textContent='Reporte: '+(tabLabels[tabId]||tabId)+' · '+datos.length+' líneas';
 

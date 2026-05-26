@@ -1157,6 +1157,10 @@ function doForgotPassCli(){
     });
 }
 
+// ⚠️ FUNCIÓN CRÍTICA — NO modificar sin prueba E2E completa (ver CLAUDE.md)
+// Invariantes: !snap.exists → crear /users/{uid} con estado pendiente, NUNCA signOut sin doc
+//              estado=pendiente → code:'pendiente' | estado=bloqueado → code:'bloqueado'
+// Última modificación: V36.9k (Fix-A)
 // ── LOGIN CON GOOGLE ──────────────────────────────────────────────────────────
 function doLoginGoogleCli(){
   if(!window.auth){ var err=document.getElementById('loginError'); if(err) err.textContent='Sin conexión a Firebase'; return; }
@@ -1233,6 +1237,10 @@ function doLoginGoogleCli(){
   }); // aplicarPersistenciaCli
 }
 
+// ⚠️ FUNCIÓN CRÍTICA — NO modificar sin prueba E2E completa (ver CLAUDE.md)
+// Invariantes: usuario pendiente → code:'pendiente' | bloqueado → signOut + code:'bloqueado'
+//              registro deshabilitado → code:'noregistrado'
+// Última modificación: V36.9k (Fix-B)
 // ── LOGIN CON FIREBASE AUTH (Bloque C) ───────────────────────────────────────
 function doLoginAuth(){
   _cargarUrls();
@@ -1310,6 +1318,10 @@ function doLoginAuth(){
 // [x] manejo errores auth/* + permission-denied + operation-not-allowed
 // [x] auto-login post-registro ok (aprobAuto)
 // [x] window._mostrarPrecio default false - sin cambio
+// ⚠️ FUNCIÓN CRÍTICA — NO modificar sin prueba E2E completa (ver CLAUDE.md)
+// Invariantes: verificar cfgRegistro antes de crear | aprobAuto=false → estado=pendiente + notificar admin
+//              NUNCA crear usuario sin escribir /users/{uid} en Firestore
+// Última modificación: V36.9k (Fix-C)
 // ── REGISTRO NUEVO USUARIO (Bloque C) ────────────────────────────────────────
 function doRegistroCli(){
   var nombre = document.getElementById('regNombre').value.trim();
