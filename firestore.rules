@@ -91,7 +91,8 @@ service cloud.firestore {
     // ── NOTIFICACIONES ────────────────────────────────────────
     match /notificaciones/{docId} {
       allow read: if estaAutenticado();
-      allow write: if esAdmin() || esVendedor();
+      allow create: if estaAutenticado();
+      allow update, delete: if esAdmin() || esVendedor();
     }
 
     // ── TAREAS CLAUDE (buzon) ─────────────────────────────────

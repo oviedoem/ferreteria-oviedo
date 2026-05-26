@@ -1170,11 +1170,42 @@ function doLoginGoogleCli(){
         var email = result.user.email;
         return window.db.collection('users').doc(uid).get()
           .then(function(snap){
-            var dat = snap.exists ? snap.data() : {};
-            // Admin siempre puede acceder; registroAprobado solo aplica a clientes/vendedores
-            if(!snap.exists || (dat.registroAprobado === false && dat.role !== 'admin')){
-              window.auth.signOut();
-              throw { code: 'noregistrado' };
+            // FIX-A V36.9k: usuario nuevo con Google — crear cuenta en Firestore
+            if(!snap.exists){
+              var cfg = _configRegistroCache || {};
+              if(!cfg.registroClienteHabilitado){ window.auth.signOut(); throw { code: 'noregistrado' }; }
+              var aprobAutoG = !(_configRegistroCache && _configRegistroCache.requiereAprobacionAdmin);
+              var userDataG = {
+                uid: uid, email: email,
+                nombreCompleto: result.user.displayName || email.split('@')[0],
+                role: 'cliente',
+                estado: aprobAutoG ? 'activo' : 'pendiente',
+                registroAprobado: aprobAutoG,
+                creadoPor: 'google',
+                fechaRegistro: new Date().toISOString(),
+                licExpiry: new Date(Date.now() + 365*864e5).toISOString()
+              };
+              return window.db.collection('users').doc(uid).set(userDataG)
+                .then(function(){
+                  if(btn){ btn.disabled=false; btn.innerHTML='<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;height:18px" alt=""> Continuar con Google'; }
+                  if(!aprobAutoG){
+                    window.auth.signOut();
+                    var errG = document.getElementById('loginError');
+                    if(errG){ errG.style.color='var(--azul)'; errG.textContent='Cuenta creada. Espera la aprobación del administrador.'; }
+                    return;
+                  }
+                  var foundG = { uid: uid, u: email.split('@')[0], nombre: userDataG.nombreCompleto,
+                    email: email, role: 'cliente', exp: new Date(userDataG.licExpiry).getTime(),
+                    estado: 'activo', rut: '' };
+                  localStorage.setItem(OV_CLI_SESSION_KEY, JSON.stringify({ uid: uid, email: email }));
+                  registrarAccesoCli(uid, foundG.nombre, foundG.role);
+                  _cargarUrls(); mostrarAppCli(foundG);
+                });
+            }
+            // FIX-B V36.9k: usuario existente pendiente — mensaje correcto (no 'noregistrado')
+            var dat = snap.data();
+            if(dat.registroAprobado === false && dat.role !== 'admin'){
+              window.auth.signOut(); throw { code: 'pendiente' };
             }
             if(dat.estado === 'bloqueado'){ window.auth.signOut(); throw { code: 'bloqueado' }; }
             var found = {
@@ -1193,7 +1224,8 @@ function doLoginGoogleCli(){
     .catch(function(e){
       if(btn){ btn.disabled=false; btn.innerHTML='<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;height:18px" alt=""> Continuar con Google'; }
       var err = document.getElementById('loginError');
-      var msg = e.code === 'noregistrado' ? 'Esta cuenta de Google no está registrada en el sistema.'
+      var msg = e.code === 'noregistrado' ? 'El registro con Google no está habilitado actualmente.'
+              : e.code === 'pendiente'    ? 'Tu cuenta está pendiente de aprobación del administrador.'
               : e.code === 'bloqueado'    ? 'Usuario bloqueado. Contacta a Ferretería Oviedo.'
               : e.code === 'auth/popup-closed-by-user' ? '' : 'Error al iniciar sesión con Google.';
       if(err && msg){ err.style.color='#c62828'; err.textContent = msg; }
@@ -1337,6 +1369,13 @@ function doRegistroCli(){
                   toggleRegistroForm(false);
                   err.style.color = 'var(--azul)';
                   err.textContent = 'Cuenta creada. Espera la aprobación del administrador.';
+                  // FIX-C V36.9k: notificar al admin del nuevo registro pendiente
+                  window.db.collection('notificaciones').add({
+                    tipo: 'nuevo_usuario',
+                    texto: 'Nuevo usuario registrado: ' + (userData.nombreCompleto || userData.email),
+                    leido: false,
+                    ts: Date.now()
+                  }).catch(function(){});
                   // Cerrar sesión Auth hasta que se apruebe
                   window.auth.signOut();
                 }
