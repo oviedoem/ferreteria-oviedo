@@ -762,6 +762,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Catálogo <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
         <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
+        <button class="nav-btn" onclick="showTab('stockconsulta',this)">🔍 Consulta de Stock</button>
         <button class="nav-btn" onclick="showTab('url',this);adminUI_iniciarSeccionDispositivos()">⚙️ Configuración ERP</button>
       </div>
     </div>
@@ -2717,6 +2718,93 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       </table>
     </div>
     <div id="bfEmpty" style="display:none;color:#9ca3af;font-size:13px;padding:16px 0;text-align:center">Sin datos cargados.</div>
+  </div>
+</div>
+
+<!-- ── CONSULTA DE STOCK ── -->
+<div class="tab-pane" id="tab-stockconsulta">
+  <div class="card">
+    <div class="card-title"><span>🔍</span> Consulta de Stock — El Manzano</div>
+    <div class="vadm-anal-bar" style="gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <label style="font-size:12px;font-weight:600;color:#374151">Buscar
+        <input type="text" id="csQuery" placeholder="Código o descripción..." oninput="vadmBuscarStock()"
+          style="margin-left:6px;font-size:13px;padding:7px 12px;border:1px solid #d1d5db;border-radius:6px;width:300px">
+      </label>
+      <span id="csCount" style="font-size:12px;color:#6b7280"></span>
+    </div>
+
+    <!-- Resultados de búsqueda -->
+    <div style="overflow-x:auto;margin-bottom:16px">
+      <table id="csTablaResult" style="width:100%;border-collapse:collapse;font-size:12px;display:none">
+        <thead>
+          <tr style="background:#1a1d3a;color:white">
+            <th style="padding:7px 12px;text-align:left">Código</th>
+            <th style="padding:7px 12px;text-align:left">Descripción</th>
+            <th style="padding:7px 12px;text-align:left">Marca</th>
+            <th style="padding:7px 12px;text-align:right">PEM</th>
+            <th style="padding:7px 12px;text-align:right">SEM</th>
+            <th style="padding:7px 12px;text-align:right">CEM</th>
+            <th style="padding:7px 12px;text-align:right">MEM</th>
+            <th style="padding:7px 12px;text-align:right">Total Comercial</th>
+          </tr>
+        </thead>
+        <tbody id="csTbody"></tbody>
+      </table>
+      <div id="csEmpty" style="color:#9ca3af;font-size:13px;padding:16px 0;text-align:center">
+        Escribe un código o descripción para buscar.
+      </div>
+    </div>
+
+    <!-- Ficha detalle producto -->
+    <div id="csFicha" style="display:none">
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <!-- Info producto -->
+        <div style="background:#f9fafb;border-radius:8px;padding:14px 16px;border:1px solid #e5e7eb">
+          <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Producto</div>
+          <div style="font-family:monospace;font-size:14px;font-weight:700;color:#1a1d3a" id="csFCod"></div>
+          <div style="font-size:13px;font-weight:600;color:#374151;margin:4px 0 12px;line-height:1.4" id="csFDesc"></div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:12px">
+            <span style="color:#9ca3af">Hiperfamilia</span><span id="csFHiper" style="color:#374151"></span>
+            <span style="color:#9ca3af">Familia</span><span id="csFFam" style="color:#374151"></span>
+            <span style="color:#9ca3af">Sub-Familia</span><span id="csFSub" style="color:#374151"></span>
+            <span style="color:#9ca3af">Marca</span><span id="csFMarca" style="font-weight:700;color:#1a1d3a"></span>
+          </div>
+        </div>
+        <!-- Precios -->
+        <div style="background:#f9fafb;border-radius:8px;padding:14px 16px;border:1px solid #e5e7eb">
+          <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Precios</div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 20px;font-size:13px">
+            <span style="color:#9ca3af;font-size:12px">Costo Promedio</span>
+            <span id="csFCosto" style="font-weight:700;color:#1a1d3a"></span>
+            <span style="color:#9ca3af;font-size:12px">Precio c/IVA</span>
+            <span id="csFPrecio" style="font-weight:700;color:#059669"></span>
+            <span style="color:#9ca3af;font-size:12px">Markup</span>
+            <span id="csFMarkup" style="font-weight:700"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla stock por bodega -->
+      <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Stock por bodega</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#1a1d3a;color:white">
+              <th style="padding:8px 14px;text-align:left">Bodega</th>
+              <th style="padding:8px 14px;text-align:left">Tipo</th>
+              <th style="padding:8px 14px;text-align:right">Disp.</th>
+              <th style="padding:8px 14px;text-align:right">Tránsito</th>
+              <th style="padding:8px 14px;text-align:right">Físico</th>
+              <th style="padding:8px 14px;text-align:right">Valor Stock</th>
+              <th style="padding:8px 14px;text-align:center">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="csBodTbody"></tbody>
+          <tfoot id="csBodTfoot"></tfoot>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -10996,8 +11084,9 @@ function vadmReRenderTabActivo(){
   else if(id==='marcavend2')   vadmRenderMarcaVend2();
   else if(id==='preciodiff')   vadmRenderPrecioDiff();
   else if(id==='mem')          vadmRenderMEM();
-  else if(id==='adquisiciones'){} // stub — no usa filtros globales
-  else if(id==='analisis'){}     // stub — no usa filtros globales
+  else if(id==='adquisiciones'){}   // stub — no usa filtros globales
+  else if(id==='analisis'){}        // stub — no usa filtros globales
+  else if(id==='stockconsulta'){}   // stub — búsqueda directa, no usa filtros globales
 }
 
 // ── Helper: comprueba si un registro XLSM pasa el filtro global _vadmVendSel ──
@@ -15455,6 +15544,142 @@ function vadmFiltrarBodFem(){
     '<td colspan="8" style="padding:8px 10px;text-align:right;font-size:12px">TOTAL VALORIZADO</td>'+
     '<td style="padding:8px 10px;text-align:right;font-size:13px">'+venAdmFmt(totalVal)+'</td>'+
     '<td></td></tr>';
+}
+
+// ── CONSULTA DE STOCK ─────────────────────────────────────────────────────────
+var _csResultados = [];
+
+var _csBodegas = [
+  { key:'pem', trans:'pem_trans', label:'PEM · Patio El Manzano',     tipo:'Comercial' },
+  { key:'sem', trans:null,        label:'SEM · Sala El Manzano',      tipo:'Comercial' },
+  { key:'cem', trans:null,        label:'CEM · Calzada El Manzano',   tipo:'Comercial' },
+  { key:'mem', trans:null,        label:'MEM · Mermas El Manzano',    tipo:'Auxiliar'  },
+  { key:'iem', trans:'iem_trans', label:'IEM · Ingreso El Manzano',   tipo:'Auxiliar'  },
+  { key:'tem', trans:'tem_trans', label:'TEM · Tránsito El Manzano',  tipo:'Auxiliar'  },
+  { key:'rce', trans:null,        label:'RCE · Recepción El Manzano', tipo:'Auxiliar'  },
+  { key:'cd',  trans:'cd_trans',  label:'CD  · Centro Distribución',  tipo:'Auxiliar'  }
+];
+
+function vadmBuscarStock(){
+  var q      = (document.getElementById('csQuery').value||'').trim().toLowerCase();
+  var count  = document.getElementById('csCount');
+  var empty  = document.getElementById('csEmpty');
+  var tabla  = document.getElementById('csTablaResult');
+  var ficha  = document.getElementById('csFicha');
+
+  if(q.length < 2){
+    tabla.style.display  = 'none';
+    empty.style.display  = '';
+    empty.textContent    = 'Escribe al menos 2 caracteres para buscar.';
+    count.textContent    = '';
+    ficha.style.display  = 'none';
+    _csResultados        = [];
+    return;
+  }
+
+  _vadmCargarStockMap(function(){
+    _csResultados = [];
+    Object.keys(_vadmStockMap).forEach(function(cod){
+      var p = _vadmStockMap[cod];
+      if(cod.toLowerCase().indexOf(q) >= 0 || (p.desc||'').toLowerCase().indexOf(q) >= 0){
+        _csResultados.push({ cod: cod, p: p });
+      }
+    });
+    _csResultados.sort(function(a, b){ return (b.p.stock||0) - (a.p.stock||0); });
+
+    count.textContent = _csResultados.length + ' producto(s)';
+    if(!_csResultados.length){
+      tabla.style.display = 'none';
+      empty.style.display = '';
+      empty.textContent   = 'Sin resultados para "' + q + '".';
+      ficha.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    tabla.style.display = '';
+
+    var tbody = document.getElementById('csTbody');
+    tbody.innerHTML = _csResultados.slice(0, 50).map(function(item, idx){
+      var p  = item.p;
+      var bg = idx % 2 === 0 ? '' : 'background:#f9fafb';
+      var totalCol = p.stock > 0 ? 'color:#059669;font-weight:700' : 'color:#dc2626;font-weight:700';
+      return '<tr style="'+bg+';cursor:pointer" data-cod="'+item.cod+'" onclick="vadmRenderStockConsulta(this.getAttribute(\'data-cod\'))">' +
+        '<td style="padding:6px 12px;font-family:monospace">'+item.cod+'</td>'+
+        '<td style="padding:6px 12px">'+p.desc+'</td>'+
+        '<td style="padding:6px 12px;color:#374151">'+p.marca+'</td>'+
+        '<td style="padding:6px 12px;text-align:right">'+p.pem+'</td>'+
+        '<td style="padding:6px 12px;text-align:right">'+p.sem+'</td>'+
+        '<td style="padding:6px 12px;text-align:right">'+p.cem+'</td>'+
+        '<td style="padding:6px 12px;text-align:right">'+p.mem+'</td>'+
+        '<td style="padding:6px 12px;text-align:right;'+totalCol+'">'+p.stock+'</td>'+
+      '</tr>';
+    }).join('');
+
+    if(_csResultados.length === 1) vadmRenderStockConsulta(_csResultados[0].cod);
+    else ficha.style.display = 'none';
+  });
+}
+
+function vadmRenderStockConsulta(cod){
+  if(!_vadmStockMap) return;
+  var p = _vadmStockMap[cod];
+  if(!p) return;
+
+  var ficha = document.getElementById('csFicha');
+  ficha.style.display = '';
+
+  document.getElementById('csFCod').textContent   = cod;
+  document.getElementById('csFDesc').textContent  = p.desc  || '—';
+  document.getElementById('csFHiper').textContent = p.hiperfam || '—';
+  document.getElementById('csFFam').textContent   = p.fam   || '—';
+  document.getElementById('csFSub').textContent   = p.subfam || '—';
+  document.getElementById('csFMarca').textContent = p.marca || '—';
+  document.getElementById('csFCosto').textContent  = p.costo  > 0 ? venAdmFmt(p.costo)  : '—';
+  document.getElementById('csFPrecio').textContent = p.precio > 0 ? venAdmFmt(p.precio) : '—';
+
+  var markupVal = (p.costo > 0 && p.precio > 0) ? p.precio / p.costo : 0;
+  var markupEl  = document.getElementById('csFMarkup');
+  markupEl.textContent = markupVal > 0 ? markupVal.toFixed(2) + 'x' : '—';
+  markupEl.style.color = markupVal > 5 ? '#dc2626' : markupVal > 3 ? '#d97706' : '#374151';
+
+  var totalDisp = 0, totalTrans = 0;
+  var rows = _csBodegas.map(function(b, idx){
+    var disp   = p[b.key]  || 0;
+    var trans  = b.trans ? (p[b.trans] || 0) : 0;
+    var fisico = disp + trans;
+    totalDisp  += disp;
+    totalTrans += trans;
+    var bg         = idx % 2 === 0 ? '' : 'background:#f9fafb';
+    var dot        = disp > 0 ? '<span style="color:#059669">●</span>' : (fisico > 0 ? '<span style="color:#d97706">●</span>' : '<span style="color:#d1d5db">●</span>');
+    var dispStyle  = disp  > 0 ? 'font-weight:700;color:#1a1d3a' : 'color:#9ca3af';
+    var transStyle = trans > 0 ? 'font-weight:600;color:#1d4ed8' : 'color:#9ca3af';
+    var tipoColor  = b.tipo === 'Comercial' ? '#059669' : '#6b7280';
+    var valorStock = disp * (p.costo || 0);
+    return '<tr style="'+bg+'">' +
+      '<td style="padding:7px 14px;font-weight:600">'+b.label+'</td>'+
+      '<td style="padding:7px 14px;font-size:11px;font-weight:600;color:'+tipoColor+'">'+b.tipo+'</td>'+
+      '<td style="padding:7px 14px;text-align:right;'+dispStyle+'">'+disp+'</td>'+
+      '<td style="padding:7px 14px;text-align:right;'+transStyle+'">'+trans+'</td>'+
+      '<td style="padding:7px 14px;text-align:right">'+fisico+'</td>'+
+      '<td style="padding:7px 14px;text-align:right">'+(valorStock > 0 ? venAdmFmt(valorStock) : '—')+'</td>'+
+      '<td style="padding:7px 14px;text-align:center;font-size:16px">'+dot+'</td>'+
+    '</tr>';
+  });
+
+  document.getElementById('csBodTbody').innerHTML = rows.join('');
+
+  var totalFisico = totalDisp + totalTrans;
+  var totalValor  = totalDisp * (p.costo || 0);
+  document.getElementById('csBodTfoot').innerHTML =
+    '<tr style="background:#1a1d3a;color:white;font-weight:700">' +
+    '<td colspan="2" style="padding:8px 14px">TOTAL</td>'+
+    '<td style="padding:8px 14px;text-align:right">'+totalDisp+'</td>'+
+    '<td style="padding:8px 14px;text-align:right">'+totalTrans+'</td>'+
+    '<td style="padding:8px 14px;text-align:right">'+totalFisico+'</td>'+
+    '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalValor)+'</td>'+
+    '<td></td></tr>';
+
+  ficha.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 </script>

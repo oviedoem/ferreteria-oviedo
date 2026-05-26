@@ -6,7 +6,7 @@
 
 ```
 Proyecto activo:   D:\ferreteria-oviedo\
-GitHub (solo sync):D:\ferreteria-oviedo-github\
+GitHub (solo sync):D:\git-sync\  (D:\ferreteria-oviedo-github NO EXISTE — no buscar ni crear)
 Archivados:        D:\ferreteria-oviedo\_ARCHIVADOS\  (scripts obsoletos con prefijo YYYYMMDD_)
 Memory Claude:     C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\
 MEMORY.md index:   C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\MEMORY.md
@@ -19,7 +19,7 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
 - Versión activa: V37
-- Deploy V36.9k: 2026-05-26 13:05 — firebase-config.js comentario V36.9k ✅
+- Deploy V36.9k: 2026-05-26 13:47 — Fix login Google + botón ✉️ reenviar acceso + reglas Firestore notificaciones + recuperación 5 usuarios huérfanos ✅
 - Deploy V37: 2026-05-26 16:58 — campana notificaciones + señales alerta + vvsstock eliminado ✅
 
 ---
