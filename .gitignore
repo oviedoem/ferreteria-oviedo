@@ -4,6 +4,8 @@
 credenciales*
 SEGURIDAD_CREDENCIALES*
 users_export.json
+serviceAccountKey.json
+serviceAccountKey*.json
 
 # Scripts internos
 *.py

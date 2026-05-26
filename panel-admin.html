@@ -4288,6 +4288,9 @@ function renderUsuariosFS(){
       var btnBloquear = u.role!=='admin'
         ? '<button class="btn btn-sm '+(u.estado==='bloqueado'?'btn-success':'btn-warn')+'" data-coop-block="Bloquear/activar usuario" onclick="adminToggleBloqueoFS(\''+u._docId+'\',\''+(u.estado==='bloqueado'?'activo':'bloqueado')+'\')">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>'
         : '';
+      var btnReenviar = (u.email && u.role !== 'admin')
+        ? '<button class="btn btn-sm" style="margin-left:4px;font-size:11px" title="Enviar correo de acceso" onclick="adminReenviarAcceso(\''+u.email.replace(/\'/g,"&#39;")+'\')">✉️</button>'
+        : '';
       // Selector de rol (solo admin puede cambiar)
       var rolesOpc = ['cliente','vendedor','cooperador','admin'].map(function(r){
         return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+r+'</option>';
@@ -4299,10 +4302,18 @@ function renderUsuariosFS(){
         '<td style="font-size:11px">'+(u.rut||'—')+'</td>'+
         '<td>'+btnRol+'</td>'+
         '<td>'+estBadge+'</td>'+
-        '<td style="white-space:nowrap">'+btnAprobar+btnBloquear+'</td>'+
+        '<td style="white-space:nowrap">'+btnAprobar+btnBloquear+btnReenviar+'</td>'+
       '</tr>';
     }).join('')+
   '</table></div>';
+}
+
+function adminReenviarAcceso(email){
+  if(!window.auth){ toast('Sin conexión','err'); return; }
+  if(!confirm('Enviar correo de acceso a ' + email + '?')) return;
+  window.auth.sendPasswordResetEmail(email)
+    .then(function(){ toast('Correo enviado a ' + email + ' ✓','ok'); })
+    .catch(function(e){ toast('Error: ' + (e.code === 'auth/user-not-found' ? 'No existe cuenta Auth para este correo.' : e.message),'err'); });
 }
 
 function adminAprobarFS(docId){
