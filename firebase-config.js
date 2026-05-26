@@ -1,5 +1,5 @@
 // ============================================================
-// firebase-config.js — Ferretería Oviedo V28
+// firebase-config.js — Ferretería Oviedo V36.9k
 // Bloques A, F, G implementados
 // ============================================================
 
@@ -469,4 +469,4 @@ function apiPost(body, cb) {
   }
 }
 
-// VERSIÓN: 2026-05-07 | BLOQUES: A, B, F, G | COMPATIBILIDAD: usuarios legacy OK
+// VERSIÓN: 2026-05-26 V36.9k | BLOQUES: A, B, F, G | COMPATIBILIDAD: usuarios legacy OK
