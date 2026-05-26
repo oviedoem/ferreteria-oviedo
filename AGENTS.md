@@ -20,7 +20,7 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
 - Versión activa: V36.9k
 - Deploy confirmado: 2026-05-25 fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
-- Deploy pendiente: bod-cem-registros.json (generado 2026-05-26, no publicado)
+- Deploy V36.9k: 2026-05-26 12:25 — bod-cem-registros.json publicado ✅
 
 ---
 
