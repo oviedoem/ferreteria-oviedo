@@ -22,6 +22,8 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 - Deploy V36.9k: 2026-05-26 13:47 — Fix login Google + botón ✉️ reenviar acceso + reglas Firestore notificaciones + recuperación 5 usuarios huérfanos ✅
 - Deploy V37: 2026-05-26 16:58 — campana notificaciones + señales alerta + vvsstock eliminado ✅
 - Deploy V37.1: 2026-05-26 17:53 — Consulta de Stock (tab + búsqueda + ficha ERP-style 8 bodegas) ✅
+- Deploy V37.2: 2026-05-26 18:29 — fix ventas días incompletos + tarea auto 18:00 + ventas reparadas 22-26 mayo ✅
+- Deploy cierre sesión: 2026-05-26 18:29 — todo publicado, sin pendientes
 
 ---
 
@@ -129,6 +131,38 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde Po
 ---
 
 ## CHANGELOG
+
+### V37.2 — 2026-05-26
+
+**descargar_ventas_erp.py — fix días incompletos (mid-day run)**
+
+Problema: correr el pipeline a mitad del día marcaba hoy como "al día". Segunda corrida ignoraba las ventas de la tarde.
+
+Fix en `_calcular_delta()`:
+- Antes: `if max_f >= f_fin` → skip siempre
+- Ahora: `if max_f >= f_fin and f_fin < hoy` → solo skip si el día ya terminó
+- Si `max_f >= hoy` → `cur = hoy` (re-descarga desde hoy, dedup `(Numero,Codigo)` evita duplicados)
+- Log: `"Hoy (DD/MM/YYYY) ya descargado — re-descarga por ventas nuevas del dia"`
+
+**ACTUALIZAR_TODO_AUTO.bat — nuevo (no interactivo)**
+
+- Sin `pause` ni `choice` — apto para Tarea Programada
+- Precios: ocultos por defecto (seguro)
+- Log: `logs\auto_YYYYMMDD_HH00.log`
+- Mismos pasos que ACTUALIZAR_TODO: ERP → XLSM → bodegas → ventas → precios → deploy
+
+**Tarea Programada Windows: FerreteriOviedo-Auto18**
+
+- Ejecuta `ACTUALIZAR_TODO_AUTO.bat` todos los días a las 18:00
+- `StartWhenAvailable=true` — si el equipo estaba apagado, corre al encenderse
+- Primera ejecución: 27-05-2026 18:00
+
+**Reparación ventas 22-26 mayo**
+
+- xlsx incompletos (22-05 10:07, 23-05 12:39) eliminados
+- Re-descarga completa 22-05 → 26-05: 1.451 registros nuevos, 5 dups eliminados
+- 39.638 registros totales, 34.375 enriquecidos con XLSM
+- Deploy: 2026-05-26 18:29
 
 ### V37.1 — 2026-05-26
 
