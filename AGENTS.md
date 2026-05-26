@@ -21,6 +21,7 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 - Versión activa: V36.9k
 - Deploy confirmado: 2026-05-25 fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
 - Deploy V36.9k: 2026-05-26 12:25 — bod-cem-registros.json publicado ✅
+- Deploy cierre sesión: 2026-05-26 13:05 — firebase-config.js comentario V36.9k
 
 ---
 
@@ -79,6 +80,35 @@ e. Si hay duda, detenerse y reportar antes de continuar.
 - ventas-manzano-2026-05.json → split mensual generado por guardar_json()
 - descargar_erp.py descarga stock y precios — NO duplicar
 - descargar_ventas_erp.py descarga ventas — NO duplicar salidas
+
+---
+
+## REGLA DE CIERRE DE SESIÓN — DEPLOY PENDIENTE
+
+Antes de terminar cualquier sesión donde se hayan modificado archivos, Claude DEBE:
+
+1. Registrar timestamp del último deploy conocido (ver sección PROYECTO → "Deploy cierre sesión")
+2. Comparar mtime de archivos desplegables vs ese timestamp:
+   - HTMLs: panel-admin.html, panel-cliente.html, index.html
+   - JS: firebase-config.js, sw.js
+   - JSONs: data/*.json
+3. Si algún archivo es más nuevo → ejecutar `firebase deploy --only hosting` desde D:\ferreteria-oviedo\
+4. Actualizar línea "Deploy cierre sesión" en AGENTS.md con la nueva fecha/hora
+5. Ejecutar ACTUALIZAR_GITHUB.bat con descripción del cierre
+
+Patrón de riesgo: modificación de archivo → commit github → sesión continúa → deploy se olvida.
+Patrón correcto: modificar → commit github → verificar mtime → deploy si hay cambios → actualizar AGENTS.md.
+
+### Cómo verificar en PowerShell:
+```powershell
+$ultimoDeploy = [datetime]"YYYY-MM-DD HH:MM:00"
+Get-ChildItem 'D:\ferreteria-oviedo\' -Filter '*.html' -File |
+    Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
+Get-ChildItem 'D:\ferreteria-oviedo\' -Filter '*.js' -File |
+    Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
+Get-ChildItem 'D:\ferreteria-oviedo\data\' -Filter '*.json' -File |
+    Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
+```
 
 ---
 
