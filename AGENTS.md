@@ -20,7 +20,7 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 - Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
 - Versión activa: V37
 - Deploy V36.9k: 2026-05-26 13:05 — firebase-config.js comentario V36.9k ✅
-- V37 en curso: 2026-05-26 — código muerto eliminado + señales alerta funciones críticas
+- Deploy V37: 2026-05-26 16:58 — campana notificaciones + señales alerta + vvsstock eliminado ✅
 
 ---
 
