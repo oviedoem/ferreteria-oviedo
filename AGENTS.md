@@ -21,6 +21,7 @@ CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 - Versión activa: V37
 - Deploy V36.9k: 2026-05-26 13:47 — Fix login Google + botón ✉️ reenviar acceso + reglas Firestore notificaciones + recuperación 5 usuarios huérfanos ✅
 - Deploy V37: 2026-05-26 16:58 — campana notificaciones + señales alerta + vvsstock eliminado ✅
+- Deploy V37.1: 2026-05-26 17:53 — Consulta de Stock (tab + búsqueda + ficha ERP-style 8 bodegas) ✅
 
 ---
 
@@ -128,6 +129,20 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde Po
 ---
 
 ## CHANGELOG
+
+### V37.1 — 2026-05-26
+
+**panel-admin.html — Consulta de Stock (nuevo módulo)**
+
+- Sidebar Catálogo: botón "🔍 Consulta de Stock" → `showTab('stockconsulta')`
+- `tab-stockconsulta`: buscador (código o descripción, mín 2 chars), tabla resultados (50 max, orden stock DESC), ficha detalle al hacer clic
+- Ficha detalle: info producto (Cod/Desc/HiperFam/Fam/Sub/Marca) + precios (Costo/Precio c/IVA/Markup con colores) + tabla 8 bodegas (PEM/SEM/CEM/MEM/IEM/TEM/RCE/CD) con Disp/Tránsito/Físico/Valor Stock/Estado (●verde/●naranja/●gris)
+- `vadmBuscarStock()`: filtra `_vadmStockMap` en memoria, sin fetch extra
+- `vadmRenderStockConsulta(cod)`: render ficha, usa `data-cod` en onclick (no JSON.stringify)
+- `vadmReRenderTabActivo`: stub vacío agregado para `stockconsulta`
+- Fuente de datos: `_vadmStockMap` (ya cacheado en sesión, sin costo Firestore)
+- CEM en selector `bfFuente` ya estaba desde V36.9k — confirmado ✅
+- Deploy: 2026-05-26 17:53 — commit 30fce20
 
 ### V37 — 2026-05-26
 
