@@ -31,7 +31,8 @@ MD activos raiz:
 - Deploy V37: 2026-05-26 16:58 — campana notificaciones + señales alerta + vvsstock eliminado ✅
 - Deploy V37.1: 2026-05-26 17:53 — Consulta de Stock (tab + búsqueda + ficha ERP-style 8 bodegas) ✅
 - Deploy V37.2: 2026-05-26 18:29 — fix ventas días incompletos + tarea auto 18:00 + ventas reparadas 22-26 mayo ✅
-- Deploy cierre sesión: 2026-05-26 18:29 — todo publicado, sin pendientes
+- Deploy V37.3: 2026-05-27 09:51 — Informe Stock Bodegas (nuevo módulo TSV + filtros + CSV + Excel) ✅
+- Deploy cierre sesión: 2026-05-27 09:51 — todo publicado, sin pendientes
 
 ---
 

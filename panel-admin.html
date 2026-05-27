@@ -1576,17 +1576,10 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <div class="vadm-section" id="vsec-informe-stock">
           <div class="vadm-anal-bar" style="flex-wrap:wrap;gap:10px;align-items:center">
             <span class="vadm-filter-tag" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">📊 Informe Stock Bodegas — PEM / SEM / CEM</span>
-            <span style="font-size:12px;color:#9ca3af">Pegue el TSV del informe ERP y haga clic en Cargar</span>
-          </div>
-          <div style="padding:12px 16px">
-            <div style="margin-bottom:6px;font-size:12px;font-weight:600;color:#374151">Datos del informe (TSV — copie desde Excel o ERP):</div>
-            <textarea id="isbTsvInput" rows="4"
-              style="width:100%;font-size:11px;font-family:monospace;padding:8px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;background:#f9fafb;color:#111827"
-              placeholder="Pegue aquí el contenido TSV...&#10;Formato largo: Cod · Descripcion · Hip · Fam · Sub · Bod (PEM/SEM/CEM) · St_Disp · St_Fis&#10;Formato ancho: Cod · Descripcion · Hip · Fam · Sub · PEM_Disp · PEM_Fis · SEM_Disp · SEM_Fis · CEM_Disp · CEM_Fis"></textarea>
-            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-              <button class="ven-adm-btn" onclick="isbCargar()">📥 Cargar</button>
-              <button class="ven-adm-btn" onclick="isbLimpiar()">🗑️ Limpiar</button>
-            </div>
+            <button class="ven-adm-btn" onclick="isbGenerar()">🔄 Generar</button>
+            <button class="ven-adm-btn" onclick="isbExportCSV()">📄 CSV</button>
+            <button class="ven-adm-btn" onclick="isbExportExcel()">📊 Excel</button>
+            <span id="isbContador" style="font-size:11px;color:#9ca3af"></span>
           </div>
           <div class="vadm-anal-bar" id="isbFiltroBar" style="display:none;gap:10px;flex-wrap:wrap;align-items:center">
             <select id="isbFiltroHip" onchange="isbFiltrar()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
@@ -1605,7 +1598,6 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             </label>
             <button class="ven-adm-btn" onclick="isbExportCSV()">📄 CSV</button>
             <button class="ven-adm-btn" onclick="isbExportExcel()">📊 Excel</button>
-            <span id="isbContador" style="font-size:11px;color:#9ca3af"></span>
           </div>
           <div id="isbStatus" style="font-size:12px;color:#9ca3af;padding:6px 16px"></div>
           <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px">
@@ -6894,8 +6886,9 @@ function _vadmCargarStockMap(cb){
       if(!_pem&&!_sem&&!_cem&&!_mem) _pem=Number(p.stock||0);
       _vadmStockMap[cod]={
         pem:_pem, pem_trans:Number(p.pem_trans||p.PEM_TRANS||p.transito||0),
-        sem:_sem,
-        cem:_cem,
+        pem_bod:Number(p.pem_bod||p.PEM_BOD||0),
+        sem:_sem, sem_bod:Number(p.sem_bod||p.SEM_BOD||0),
+        cem:_cem, cem_bod:Number(p.cem_bod||p.CEM_BOD||0),
         iem:Number(p.iem||p.IEM_DISP||0),
         iem_trans:Number(p.iem_trans||p.IEM_TRANS||0),
         tem:Number(p.tem||p.TEM_DISP||0),
@@ -16261,9 +16254,6 @@ Te respondemos a la brevedad.</div>
 var _isbDatos     = [];
 var _isbFiltrados = [];
 
-/* ── utilidades ── */
-function _n(v){ var x=parseFloat(String(v||0).replace(/[^\d.\-]/g,'')); return isNaN(x)?0:x; }
-
 function _difStyle(d){
   if(d===0)        return 'background:#f0fdf4;color:#166534';
   if(d>0 && d<=5)  return 'background:#fef9c3;color:#854d0e';
@@ -16278,67 +16268,27 @@ function _status(msg,tipo){
   el.style.color=tipo==='err'?'#b91c1c':tipo==='ok'?'#166534':'#9ca3af';
 }
 
-/* ── detección de columnas (flexible: TSV o CSV, largo o ancho) ── */
-function _detectCols(header){
-  var cols={};
-  header.forEach(function(raw,i){
-    var c=String(raw||'').trim().toLowerCase()
-          .replace(/[áà]/g,'a').replace(/[éè]/g,'e')
-          .replace(/[íì]/g,'i').replace(/[óò]/g,'o')
-          .replace(/[úù]/g,'u').replace(/\s+/g,' ');
-    if(/^cod(igo)?( tecnico)?$/.test(c))          cols.cod=i;
-    else if(/^desc(ripcion)?$/.test(c)||c.startsWith('descripci')) cols.desc=i;
-    else if(/^hip(er|erfam|erfamilia)?$/.test(c)) cols.hip=i;
-    else if(/^fam(ilia)?$/.test(c))               cols.fam=i;
-    else if(/^sub(fam|familia)?$/.test(c))        cols.sub=i;
-    else if(/^(bod|bodega)$/.test(c))             cols.bod=i;
-    else if(/^(st_?disp|disp(onible)?)$/.test(c) && cols.disp===undefined) cols.disp=i;
-    else if(/^(st_?fis(ico)?|fis(ico)?)$/.test(c) && cols.fis===undefined) cols.fis=i;
-    /* formato ancho */
-    else if(/pem.*(disp|st_?disp)/.test(c)||/disp.*pem/.test(c)) cols.pem_disp=i;
-    else if(/pem.*(fis|st_?fis)/.test(c)||/fis.*pem/.test(c))    cols.pem_fis=i;
-    else if(/sem.*(disp|st_?disp)/.test(c)||/disp.*sem/.test(c)) cols.sem_disp=i;
-    else if(/sem.*(fis|st_?fis)/.test(c)||/fis.*sem/.test(c))    cols.sem_fis=i;
-    else if(/cem.*(disp|st_?disp)/.test(c)||/disp.*cem/.test(c)) cols.cem_disp=i;
-    else if(/cem.*(fis|st_?fis)/.test(c)||/fis.*cem/.test(c))    cols.cem_fis=i;
+/* ── construir datos desde _vadmStockMap ── */
+function _construirDatos(){
+  if(!window._vadmStockMap){ _status('Catálogo no cargado — reintente en unos segundos','err'); return false; }
+  _isbDatos=[];
+  Object.keys(window._vadmStockMap).forEach(function(cod){
+    var p=window._vadmStockMap[cod];
+    if(!p.pem&&!p.sem&&!p.cem&&!p.pem_bod&&!p.sem_bod&&!p.cem_bod) return;
+    _isbDatos.push({
+      cod:cod, desc:p.desc||'', hip:p.hiperfam||'',
+      fam:p.fam||'', sub:p.subfam||'', marca:p.marca||'',
+      pem_disp:p.pem||0,   pem_fis:p.pem_bod||0,
+      sem_disp:p.sem||0,   sem_fis:p.sem_bod||0,
+      cem_disp:p.cem||0,   cem_fis:p.cem_bod||0
+    });
   });
-  return cols;
-}
-
-/* ── parseo formato largo (una fila por producto por bodega → pivot) ── */
-function _parseLong(rows,cols){
-  var map={};
-  rows.forEach(function(r){
-    var bod=String(r[cols.bod]||'').trim().toUpperCase();
-    if(['PEM','SEM','CEM'].indexOf(bod)<0) return;
-    var cod=String(r[cols.cod]||'').trim(); if(!cod) return;
-    if(!map[cod]) map[cod]={
-      cod:cod, desc:String(r[cols.desc]||'').trim(),
-      hip:String(r[cols.hip]||'').trim(), fam:String(r[cols.fam]||'').trim(),
-      sub:String(r[cols.sub]||'').trim(),
-      pem_disp:0,pem_fis:0, sem_disp:0,sem_fis:0, cem_disp:0,cem_fis:0
-    };
-    var d=_n(r[cols.disp]), f=_n(r[cols.fis]), o=map[cod];
-    if(bod==='PEM'){o.pem_disp=d;o.pem_fis=f;}
-    else if(bod==='SEM'){o.sem_disp=d;o.sem_fis=f;}
-    else {o.cem_disp=d;o.cem_fis=f;}
+  _isbDatos.sort(function(a,b){
+    var h=a.hip.localeCompare(b.hip); if(h) return h;
+    var f=a.fam.localeCompare(b.fam); if(f) return f;
+    return a.cod.localeCompare(b.cod);
   });
-  return Object.keys(map).map(function(k){return map[k];});
-}
-
-/* ── parseo formato ancho (una fila por producto, bodegas en columnas) ── */
-function _parseWide(rows,cols){
-  return rows.map(function(r){
-    var cod=String(r[cols.cod]||'').trim(); if(!cod) return null;
-    return {
-      cod:cod, desc:String(r[cols.desc]||'').trim(),
-      hip:String(r[cols.hip]||'').trim(), fam:String(r[cols.fam]||'').trim(),
-      sub:String(r[cols.sub]||'').trim(),
-      pem_disp:_n(r[cols.pem_disp]), pem_fis:_n(r[cols.pem_fis]),
-      sem_disp:_n(r[cols.sem_disp]), sem_fis:_n(r[cols.sem_fis]),
-      cem_disp:_n(r[cols.cem_disp]), cem_fis:_n(r[cols.cem_fis])
-    };
-  }).filter(Boolean);
+  return true;
 }
 
 /* ── poblar dropdowns de filtro ── */
@@ -16452,38 +16402,15 @@ function _buildRows(){
 }
 
 /* ── API pública ── */
-window.isbCargar = function(){
-  var txt=(document.getElementById('isbTsvInput').value||'').trim();
-  if(!txt){ _status('Pegue datos TSV primero','err'); return; }
-  var lines=txt.split(/\r?\n/).filter(function(l){return l.trim();});
-  if(lines.length<2){ _status('Se necesitan al menos 2 líneas (encabezado + datos)','err'); return; }
-  var sep=lines[0].indexOf('\t')>-1?'\t':',';
-  var header=lines[0].split(sep);
-  var rows=lines.slice(1).map(function(l){return l.split(sep);});
-  var cols=_detectCols(header);
-
-  if(cols.cod===undefined){ _status('No se encontró columna Cod/Codigo en el encabezado','err'); return; }
-  var isLong=(cols.bod!==undefined && cols.disp!==undefined && cols.fis!==undefined);
-  var isWide=(cols.pem_disp!==undefined && cols.pem_fis!==undefined);
-  if(!isLong && !isWide){ _status('No se detectaron columnas de bodega. Verifique que el encabezado incluya PEM/SEM/CEM con Disp y Fís, o columna Bodega con St_Disp y St_Fis','err'); return; }
-
-  _isbDatos=isLong?_parseLong(rows,cols):_parseWide(rows,cols);
-  if(!_isbDatos.length){ _status('No se encontraron registros válidos','err'); return; }
-
-  _poblarFiltros();
-  _status(_isbDatos.length+' productos cargados','ok');
-  window.isbFiltrar();
-};
-
-window.isbLimpiar = function(){
-  _isbDatos=[];_isbFiltrados=[];
-  document.getElementById('isbTsvInput').value='';
-  document.getElementById('isbTabla').style.display='none';
-  document.getElementById('isbFiltroBar').style.display='none';
-  document.getElementById('isbTbody').innerHTML='';
-  document.getElementById('isbTfoot').innerHTML='';
-  document.getElementById('isbContador').textContent='';
-  _status('','');
+window.isbGenerar = function(){
+  _status('Cargando catálogo…','');
+  window._vadmCargarStockMap(function(){
+    if(!_construirDatos()) return;
+    if(!_isbDatos.length){ _status('Sin datos de stock disponibles','err'); return; }
+    _poblarFiltros();
+    _status('','');
+    window.isbFiltrar();
+  });
 };
 
 window.isbFiltrar = function(){
