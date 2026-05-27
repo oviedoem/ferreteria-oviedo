@@ -795,3 +795,66 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 ### Deploy
 - bod-cem-registros.json generado localmente el 2026-05-26 00:58 — PENDIENTE publicar a Firebase
 - Para publicar: ejecutar PUBLICAR.bat o firebase deploy --only hosting desde D:\ferreteria-oviedo\
+
+---
+
+## REGLA DE LIMPIEZA — CARPETA RAÍZ
+
+**Solo deben existir en `D:\ferreteria-oviedo\` los siguientes archivos:**
+
+| Categoría | Archivos |
+|---|---|
+| HTML | panel-admin.html, panel-cliente.html, index.html |
+| Firebase | firebase-config.js, firebase.json, firestore.rules, firestore.indexes.json, storage.rules, .firebaseignore, .firebaserc |
+| PWA | manifest.json, manifest-cliente.json, manifest-admin.json, sw.js, update-sw-version.js |
+| Assets | FONDO3.jpg, PERSONA.jpg, logo_oviedo_white.jpg, logo_oviedo.jpg |
+| Credenciales | credenciales_db.ini (NUNCA a git) |
+| BATs activos | ACTUALIZAR_TODO.bat, ACTUALIZAR_TODO_AUTO.bat, PUBLICAR.bat, ACTUALIZAR_GITHUB.bat |
+| Scripts activos | diagnostico_huerfanos.py |
+| MDs activos | AGENTS.md, MEMORY.md, ESTADO_PROYECTO.md |
+| Carpetas | data/ · VENTAS EL MANZANO/ · BODEGAS/ · CATALOGO PRODUCTOS/ · backups/ · .claude/ · _HISTORICO/ · logs/ |
+
+**REGLA:** Todo archivo que NO esté en esta lista debe moverse a `_HISTORICO/` antes de cerrar la sesión en que fue creado.
+Aplica a: scripts diagnóstico, exports Excel/JSON ad-hoc, outputs debug .txt, HTMLs ERP guardados, bats de fix one-time, accesos directos .lnk, logs de sesiones anteriores.
+
+---
+
+## SQL SERVER — SCHEMA TABLAS VENTAS (referencia para diagnóstico directo)
+
+Conexión: `credenciales_db.ini` sección [DB] · servidor 200.6.118.110 · base Foviedo · pyodbc
+
+| Tabla | Columnas clave |
+|---|---|
+| M_DOCUMENTOS_ENCABEZADO | IDDOCUMENTO, IDSUCURSAL, NUMERO, FECHA_EMISION, IDVENDEDOR, ESTADO |
+| M_DOCUMENTOS_DETALLE | IDDOCUMENTO, IDSUCURSAL, IDBODEGA, VALOR_NETO |
+| P_BODEGAS | IDBODEGA, SIMBOLO_BODEGA ('PEM','SEM','CEM'...) |
+| P_DOCUMENTOS | IDDOCUMENTO, DOCUMENTO (texto: 'Venta  Factura  Electronica','BOLETA ELECTRONICA') |
+| R_STOCK_PRODUCTOS | IDARTICULO, IDBODEGA, IDSUCURSAL, CODIGO_TECNICO, ST_FISICO |
+
+JOIN ventas:
+```sql
+M_DOCUMENTOS_DETALLE d
+JOIN M_DOCUMENTOS_ENCABEZADO e ON d.IDDOCUMENTO=e.IDDOCUMENTO AND d.IDSUCURSAL=e.IDSUCURSAL
+JOIN P_BODEGAS b ON d.IDBODEGA=b.IDBODEGA
+JOIN P_DOCUMENTOS p ON e.IDDOCUMENTO=p.IDDOCUMENTO
+WHERE e.ESTADO <> 'N'   -- excluye anulados
+  AND p.DOCUMENTO IN ('Venta  Factura  Electronica','BOLETA ELECTRONICA')
+```
+
+**TRAMPA CRÍTICA:** `IDDOCUMENTO` en tablas de movimiento = tipo de documento (GRT=17, GRC=15…), NO un ID único de fila.
+Para obtener el último movimiento real por bodega, usar `MAX(FECHA_EMISION)` con `WHERE IDBODEGA=?` en subquery — ver lógica en `BODEGAS/descargar_bod.py`.
+
+Scripts de diagnóstico archivados en `_HISTORICO/` (para reutilizar si se necesitan):
+- `explorar_db.py`: query ventas PEM/SEM/CEM con JOIN completo
+- `ver_columnas.py`: introspección columnas C_SUCURSALES y stock por IDBODEGA
+
+---
+
+## TROUBLESHOOTING ENTORNO LOCAL
+
+### Justime DLL — Error 0x80004005 (COM DllRegisterServer)
+Si el cliente ERP Justime muestra popups de error al abrir:
+1. Ir a `_HISTORICO\FIX_JUSTIME_DLL.bat`
+2. Clic derecho → **Ejecutar como administrador**
+3. El bat crea junction `C:\Program Files\Justime` y registra DLLs COM con regsvr32 de 32-bit
+4. Algunos errores individuales son normales (DLLs no-COM) — el resultado importante es que Justime abra sin popups
