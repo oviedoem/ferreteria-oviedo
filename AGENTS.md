@@ -1,6 +1,6 @@
 ﻿# AGENTS.md — Ferretería Oviedo V37
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
-# Última actualización: 2026-05-26 (P-2 vvsstock, P-4 señales alerta)
+# Última actualización: 2026-05-27 (V37.4 fix RCE)
 
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
@@ -32,7 +32,10 @@ MD activos raiz:
 - Deploy V37.1: 2026-05-26 17:53 — Consulta de Stock (tab + búsqueda + ficha ERP-style 8 bodegas) ✅
 - Deploy V37.2: 2026-05-26 18:29 — fix ventas días incompletos + tarea auto 18:00 + ventas reparadas 22-26 mayo ✅
 - Deploy V37.3: 2026-05-27 09:51 — Informe Stock Bodegas (nuevo módulo TSV + filtros + CSV + Excel) ✅
-- Deploy cierre sesión: 2026-05-27 09:51 — todo publicado, sin pendientes
+- Deploy V37.4: 2026-05-27 11:05 — fix disp CEM: ST_DISPONIBLE → ST_FISICO−ST_PEDIDO en descargar_bod.py ✅
+- Deploy V37.5a: 2026-05-27 15:12 — fix diasAntiguedad RCE: GRC ausente del filtro DOC IN + dedup por codigoTecnico min(dias) ✅
+- Deploy V37.5b: 2026-05-27 15:28 — auditoria DOC IN: GII+GTS agregados a whitelist + comentario clasificacion ✅
+- Deploy cierre sesión: 2026-05-27 15:28 — todo publicado, sin pendientes
 
 ---
 
@@ -140,6 +143,63 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde Po
 ---
 
 ## CHANGELOG
+
+### V37.5 — 2026-05-27
+
+**BODEGAS/descargar_bod.py — fix diasAntiguedad RCE: GRC ausente + dedup min(dias)**
+
+Causa raíz: `GRC` (Guía Recepción de Compra) no estaba en el filtro `DOC IN` del CTE ENTRADAS.
+Para cod 15476 RCE, el único doc que pasaba el filtro era `GRT/67950/2024-03-08` (810 días).
+El doc real más reciente `GRC/1056331/2026-05-25` (2 días) era invisible para la query.
+
+**Cambios aplicados:**
+- CTE ENTRADAS: `'GRC'` agregado al inicio de la lista `DOC IN`
+  - Antes: `('GRT','GME','GIB','Gdc','GBR','GRP','GRI','GRN','GIN','GDC','GDV')`
+  - Ahora:  `('GRC','GRT','GME','GIB','Gdc','GBR','GRP','GRI','GRN','GIN','GDC','GDV')`
+- `_deduplicar_y_acumular()`: PASO 3 agregado después de la acumulación
+  - La acumulación puede incluir docs viejos Y nuevos para el mismo producto
+  - PASO 3 conserva solo el de menor `diasAntiguedad` (más reciente) por `codigoTecnico`
+  - No-op si el producto ya tiene un solo doc (IEM/CEM no afectados)
+
+**Verificación post-fix:**
+- RCE cod 15476: `GRC/1056331/25-05-2026/Dias=2` ✅ (era 810)
+- RCE AMES0096: Dias=5 ✅ (sin regresión)
+- IEM: 33 registros ✅ (sin cambio)
+- CEM: 35 registros ✅ (sin cambio)
+- Deploy: 2026-05-27 15:12
+
+**Auditoría DOC IN — 2026-05-27 15:28**
+
+Query contra `M_DOCUMENTOS_DETALLE` (2025-01-01+, IDBODEGA IN 55/72/24, CANTIDAD>0)
+cruzada con `M_DOCUMENTOS` (TIPOSTOCK, ESDESPACHO, ESDEVOLUCION).
+
+Tipos candidatos encontrados fuera de la whitelist (32 tipos en total):
+
+| Tipo | TIPOSTOCK | Decisión | Razón |
+|------|-----------|----------|-------|
+| GII | St_Contable | **AGREGAR** | Bodega Guia Ingreso Inventario — ajuste alza confirmado |
+| GTS | St_Contable | **AGREGAR** | Guia Traslados Entre Sucursales — entrada confirmada IDSUCURSAL=04 |
+| FCN | St_Contable | NO APLICA | Compra Factura — 0 registros en IDSUCURSAL=04 (sucursal=01 solo) |
+| GEI | St_Contable | EXCLUIR | Bodega Guia Egreso Inventario — SALIDA |
+| GST | No_Stock | EXCLUIR | Solicitud de Traslado — no afecta stock |
+| NVM,CVN,BVE,VMN,FVE | St_Pedido/St_Contable | EXCLUIR | Ventas — SALIDA |
+| NCE,NVC,OCN,GPF,GPE,GCE,GEE | varios | EXCLUIR | Créditos/devoluciones a proveedor o SALIDA |
+
+Whitelist final: `'GRC','GRT','GME','GIB','Gdc','GBR','GRP','GRI','GRN','GIN','GDC','GDV','GII','GTS'`
+
+Comentario de clasificación agregado al SQL arriba de la cláusula DOC IN.
+
+Impacto en conteos: **0 productos cambian diasAntiguedad** (GII/GTS no son el doc más reciente para ningún producto con stock actual — futura cobertura).
+
+Conteos antes/después: IEM=33/33 · RCE=25/25 · CEM=35/35 (sin cambio)
+Deploy: 2026-05-27 15:28
+
+**Verificación PASO 3 dedup (2026-05-27):**
+- Simulado PASO1+2 sin PASO3 para RCE: 25 registros = mismos 25 que con PASO3
+- Conclusión: PASO 3 es no-op para RCE en el estado actual (cada producto acumula exactamente 1 doc)
+- PASO 3 está diseñado para el caso donde `fisico > cantidad_del_doc_mas_reciente` y se agregan docs más antiguos — no ocurre hoy en RCE pero puede ocurrir mañana con productos de alto stock
+- Nota: la caída de RCE de 311→476 líneas SQL fue por GRC incorporado; la caída de productos 24→25 fue por un producto nuevo (GRC/1056331 ahora visible)
+- El "RCE=25/35" en el resumen de chat anterior fue un typo: 35 es CEM, RCE siempre fue 25/25
 
 ### V37.2 — 2026-05-26
 

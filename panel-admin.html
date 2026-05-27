@@ -6896,7 +6896,7 @@ function _vadmCargarStockMap(cb){
         rce:Number(p.rce||p.RCE_DISP||0),
         cd:Number(p.cd||p.CD_DISP||0),
         cd_trans:Number(p.cd_trans||p.CD_TRANS||0),
-        mem:_mem,
+        mem:_mem, mem_bod:Number(p.mem_bod||p.MEM_BOD||0),
         stock:_pem+_sem+_cem+_mem,             // total comercial (PEM+SEM+CEM+MEM)
         transito:Number(p.pem_trans||p.PEM_TRANS||0),
         marca:(p.marca||p.MARCA||''),
@@ -16280,7 +16280,8 @@ function _construirDatos(){
       fam:p.fam||'', sub:p.subfam||'', marca:p.marca||'',
       pem_disp:p.pem||0,   pem_fis:p.pem_bod||0,
       sem_disp:p.sem||0,   sem_fis:p.sem_bod||0,
-      cem_disp:p.cem||0,   cem_fis:p.cem_bod||0
+      cem_disp:p.cem||0,   cem_fis:p.cem_bod||0,
+      mem_disp:p.mem||0,   mem_fis:p.mem_bod||0
     });
   });
   _isbDatos.sort(function(a,b){
