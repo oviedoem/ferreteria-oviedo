@@ -6,11 +6,19 @@
 
 ```
 Proyecto activo:   D:\ferreteria-oviedo\
-GitHub (solo sync):D:\git-sync\  (D:\ferreteria-oviedo-github NO EXISTE — no buscar ni crear)
+Git sync (solo):   D:\git-sync\  (NO es el proyecto — solo copia para git. D:\ferreteria-oviedo-github NO EXISTE)
 Archivados:        D:\ferreteria-oviedo\_ARCHIVADOS\  (scripts obsoletos con prefijo YYYYMMDD_)
+Historico MD:      D:\ferreteria-oviedo\_HISTORICO\   (MDs anteriores archivados)
+Bodegas XLSM:      D:\ferreteria-oviedo\BODEGAS\
 Memory Claude:     C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\
 MEMORY.md index:   C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\MEMORY.md
 CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
+
+MD activos raiz:
+  AGENTS.md:          D:\ferreteria-oviedo\AGENTS.md         (instrucciones agente + historial)
+  MEMORY.md:          D:\ferreteria-oviedo\MEMORY.md         (referencia consolidada)
+  ESTADO_PROYECTO.md: D:\ferreteria-oviedo\ESTADO_PROYECTO.md (snapshot estado actual)
+  _HISTORICO/:        D:\ferreteria-oviedo\_HISTORICO\       (MDs anteriores — no depender de ellos)
 ```
 
 ---
