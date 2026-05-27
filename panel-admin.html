@@ -9087,6 +9087,7 @@ function vadmRenderQuiebre(){
     '<th style="padding:8px 6px;font-size:10px">Familia</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#14532d;color:#bbf7d0">PEM</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#0f4c75;color:#bae6fd">SEM</th>'+
+    '<th class="r" style="padding:8px 6px;font-size:10px;background:#065f46;color:#a7f3d0">CEM</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#1e1b4b;color:#c7d2fe">IEM</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#1e1b4b;color:#c7d2fe">TEM</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#1e1b4b;color:#c7d2fe">RCE</th>'+
@@ -9143,6 +9144,7 @@ function vadmRenderQuiebre(){
       '<td style="padding:6px 6px;font-size:10px;color:#2563eb">'+venAdmEsc(v.fam)+'</td>'+
       stCell(sm.pem||0,true)+
       stCell(sm.sem||0,true)+
+      stCell(sm.cem||0,true)+
       stCell(sm.iem||0,false)+
       stCell(sm.tem||0,false)+
       stCell(sm.rce||0,false)+
@@ -9264,7 +9266,7 @@ function vadmRenderSobreStock(){
     if(cobMeses<=mesesMin) return;
     var markupX=sm.costo>0?Math.round((sm.precio/sm.costo)*10)/10:null;
     prods.push({cod:cod,desc:sm.desc,marca:sm.marca,subfam:sm.subfam,
-      pem:sm.pem||0,sem:sm.sem||0,stock:stockVR,
+      pem:sm.pem||0,sem:sm.sem||0,cem:sm.cem||0,stock:stockVR,
       qty:qty,cobMeses:cobMeses,
       costo:sm.costo,precio:sm.precio,markupX:markupX,valorStock:stockVR*(sm.costo||0)});
   });
@@ -9318,6 +9320,7 @@ function vadmRenderSobreStock(){
     '<th style="padding:8px 6px;font-size:10px">Subfamilia</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#14532d;color:#bbf7d0">PEM</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px;background:#0f4c75;color:#bae6fd">SEM</th>'+
+    '<th class="r" style="padding:8px 6px;font-size:10px;background:#065f46;color:#a7f3d0">CEM</th>'+
     '<th class="r" style="padding:8px 6px;font-size:11px">Costo</th>'+
     '<th class="r" style="padding:8px 6px;font-size:11px">Precio</th>'+
     '<th class="r" style="padding:8px 6px;font-size:10px" title="Markup = Precio ÷ Costo  (ej: 3× significa que el precio es 3 veces el costo)">Markup ⓘ</th>'+
@@ -9330,6 +9333,7 @@ function vadmRenderSobreStock(){
     var mkCol=v.markupX>5?'#dc2626':v.markupX>3?'#f97316':'#374151';
     var stPEM=v.pem>0?'<td class="r" style="padding:5px 8px;font-weight:700;color:#14532d">'+v.pem.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:5px 8px;color:#9ca3af">—</td>';
     var stSEM=v.sem>0?'<td class="r" style="padding:5px 8px;font-weight:700;color:#0369a1">'+v.sem.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:5px 8px;color:#9ca3af">—</td>';
+    var stCEM=v.cem>0?'<td class="r" style="padding:5px 8px;font-weight:700;color:#065f46">'+v.cem.toLocaleString('es-CL')+'</td>':'<td class="r" style="padding:5px 8px;color:#9ca3af">—</td>';
     var cobTxt=v.cobMeses>=999?'Sin venta':Math.round(v.cobMeses)+'m';
     var cobCol=v.cobMeses>=999?'#dc2626':v.cobMeses>=24?'#b45309':v.cobMeses>=12?'#d97706':'#374151';
     return '<tr style="background:#fef2f2">'+
@@ -9337,7 +9341,7 @@ function vadmRenderSobreStock(){
       '<td style="padding:5px 10px;font-size:11px;max-width:200px">'+venAdmEsc(v.desc)+'</td>'+
       '<td style="padding:5px 6px;font-size:10px;color:#7c3aed">'+venAdmEsc(v.marca)+'</td>'+
       '<td style="padding:5px 6px;font-size:10px;color:#6b7280">'+venAdmEsc(v.subfam)+'</td>'+
-      stPEM+stSEM+
+      stPEM+stSEM+stCEM+
       '<td class="r" style="padding:5px 8px;font-size:10px;color:#6b7280">'+venAdmFmt(v.costo)+'</td>'+
       '<td class="r" style="padding:5px 8px;font-size:10px">'+venAdmFmt(v.precio)+'</td>'+
       '<td class="r" style="padding:5px 8px;font-weight:700;color:'+mkCol+'">'+mkTxt+'</td>'+
@@ -15458,9 +15462,10 @@ function vadmRenderBodFem(){
   var fuente = (document.getElementById('bfFuente')||{value:'ambas'}).value || 'ambas';
   var ts = '?_='+Date.now();
   var promesas = [];
-  if(fuente === 'iem' || fuente === 'ambas') promesas.push(fetch('/data/bod-iem-registros.json'+ts).then(function(r){ return r.json(); }));
-  if(fuente === 'rce' || fuente === 'ambas') promesas.push(fetch('/data/bod-rce-registros.json'+ts).then(function(r){ return r.json(); }));
-  if(fuente === 'cem' || fuente === 'ambas') promesas.push(fetch('/data/bod-cem-registros.json'+ts).then(function(r){ return r.json(); }));
+  function _fetchBod(url){ return fetch(url).then(function(r){ if(!r.ok) return {registros:[]}; return r.json(); }).catch(function(){ return {registros:[]}; }); }
+  if(fuente === 'iem' || fuente === 'ambas') promesas.push(_fetchBod('/data/bod-iem-registros.json'+ts));
+  if(fuente === 'rce' || fuente === 'ambas') promesas.push(_fetchBod('/data/bod-rce-registros.json'+ts));
+  if(fuente === 'cem' || fuente === 'ambas') promesas.push(_fetchBod('/data/bod-cem-registros.json'+ts));
   Promise.all(promesas)
     .then(function(resultados){
       var todos = [];
