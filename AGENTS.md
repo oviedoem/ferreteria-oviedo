@@ -36,7 +36,8 @@ MD activos raiz:
 - Deploy V37.5a: 2026-05-27 15:12 — fix diasAntiguedad RCE: GRC ausente del filtro DOC IN + dedup por codigoTecnico min(dias) ✅
 - Deploy V37.5b: 2026-05-27 15:28 — auditoria DOC IN: GII+GTS agregados a whitelist + comentario clasificacion ✅
 - Deploy V37.6: 2026-05-27 16:39 — fix Informe Stock Fís todo cero: pem_bod/sem_bod/cem_bod/mem_bod en pipeline + panel ✅
-- Deploy cierre sesión: 2026-05-27 16:39 — todo publicado, sin pendientes
+- Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1D descargar_pedidos.py ✅
+- Deploy cierre sesión: 2026-05-27 17:09 — todo publicado, sin pendientes
 
 ---
 
