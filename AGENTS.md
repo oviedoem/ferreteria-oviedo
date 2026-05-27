@@ -145,6 +145,41 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde Po
 
 ## CHANGELOG
 
+### V37.7 — 2026-05-27
+
+**Informe Stock Bodegas — MEM + Pedido real + drill-down + DifStk/DifLib**
+
+Causa: módulo Informe Stock mostraba solo PEM/SEM/CEM sin visibilidad de pedidos
+comprometidos ni stock MEM. Sin forma de ver qué documentos abiertos reducen
+el disponible.
+
+**Backend:**
+- `BODEGAS/descargar_pedidos.py` (NUEVO): descarga `ST_PEDIDO` de `R_STOCK_PRODUCTOS`
+  para PEM/SEM/CEM/MEM con lookup dinámico de IDBODEGAs desde `P_BODEGAS`.
+  Genera `pedidos-comprometidos.json` (totales) y `pedidos-detalle.json` (documentos).
+  Si el JOIN con `M_DOCUMENTOS_ENCABEZADO` falla → fallback sin vendedor/estado.
+- `ACTUALIZAR_TODO.bat`: PASO 1D agregado (después de 1C), llama `descargar_pedidos.py`.
+- `.gitignore` no requiere cambio (los JSONs van a data/ que ya es público en Hosting).
+
+**Frontend (panel-admin.html):**
+- Tabla: de 17 cols (PEM/SEM/CEM con Disp/Fís/Dif) → 27 cols (PEM/SEM/CEM/MEM/TOTAL × Disp/Fís/Ped/DifStk/DifLib)
+- Header: HiperFam/Fam/SubFam eliminados de la tabla (siguen como filtros); solo Código + Descripción
+- MEM: ahora visible en la tabla con sus 5 sub-columnas
+- DifStk = Fís − Disp (compromisos en el ERP)
+- DifLib = Fís − Disp − Ped (margen real después de pedidos)
+- DifLib < 0: rojo crítico (más pedidos que stock físico)
+- Celdas Ped > 0: clicables → modal con lista de documentos comprometidos
+- Celdas DifLib ≠ 0: clicables → mensaje explicativo
+- Filtro "Solo con pedidos" agregado
+- Filtro "Solo negativos" ahora mira DifLib < 0 (antes miraba DifStk)
+- Modal ESC + click-overlay para cerrar
+
+**Variables JS nuevas:** `_isbPedidosComprometidos`, `_isbPedidosDetalle`
+**Funciones JS nuevas:** `isbAbrirDetalle`, `isbCerrarDetalle`
+
+**NO TOCADO:** `_vadmCargarStockMap`, módulos Quiebre, Sobrestock, BajaRot,
+Análisis Bodegas (V37.5), Consulta Stock (V37.1).
+
 ### V37.6 — 2026-05-27
 
 **Informe Stock Bodegas — fix bug "Fís todo en cero"**
@@ -400,6 +435,32 @@ No revertir. No reducir.
 
 ---
 
+## TIPOS DE DOC COMPROMISO (Pedido)
+
+Documentos del ERP que **reservan** stock pero NO han generado salida física todavía.
+Aparecen en `data/pedidos-comprometidos.json` y `data/pedidos-detalle.json`.
+
+**Fuente principal (totales):** `R_STOCK_PRODUCTOS.ST_PEDIDO` — campo oficial del ERP.
+**Fuente de detalle:** `M_DOCUMENTOS_DETALLE` filtrado por `MD.DOC IN (...)`.
+
+INCLUIDOS (reservan stock, sin salida):
+- NVM — Nota de Venta Mesón
+- VMN — Venta Mesón (variante)
+- VME — Venta Mesón Electrónica
+- CVN — Comprobante Venta
+- OVC — Orden de Venta Cliente
+
+EXCLUIDOS (ya salieron del stock o no aplican):
+- FCN, FVE — Facturas (ya generaron GRT de salida)
+- BVE — Boleta Electrónica (idem)
+- NCV, NCE — Notas de crédito (reversión, no compromiso)
+- GEI, GST — Egresos/solicitudes sin stock comprometido
+
+REGLA: si aparece un nuevo TIPO_DOC que reserva stock sin despacho, agregarlo
+a `DOC_TIPOS_PEDIDO` en `BODEGAS/descargar_pedidos.py` y documentarlo aquí.
+
+---
+
 ## BODEGAS — clasificación oficial
 
 Comerciales (visibles en cálculos de stock): PEM SEM CEM MEM
@@ -461,6 +522,9 @@ NO intentar arreglarlo.
    [PASO 1C] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
              SQL Server directo (IEM=72, RCE=55, CEM=24), sin XLSM ni macros manuales
              NOTA: El echo del bat dice "IEM y RCE" pero la lógica ya incluye CEM desde V36.9k
+   [PASO 1D] descargar_pedidos.py → pedidos-comprometidos.json + pedidos-detalle.json
+             ST_PEDIDO de R_STOCK_PRODUCTOS para PEM/SEM/CEM/MEM (IDBODEGA lookup dinámico)
+             Detalle: M_DOCUMENTOS_DETALLE filtrado por tipos NVM/VMN/VME/CVN/OVC
 5. main.py --sin-deploy
    PASO 1: catalogogeneradohoy? SI/NO
    PASO 2: descargarventaserp.py incremental

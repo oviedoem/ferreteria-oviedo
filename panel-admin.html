@@ -1575,7 +1575,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <!-- ── INFORME STOCK BODEGAS ── -->
         <div class="vadm-section" id="vsec-informe-stock">
           <div class="vadm-anal-bar" style="flex-wrap:wrap;gap:10px;align-items:center">
-            <span class="vadm-filter-tag" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">📊 Informe Stock Bodegas — PEM / SEM / CEM</span>
+            <span class="vadm-filter-tag" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">📊 Informe Stock Bodegas — PEM / SEM / CEM / MEM</span>
             <button class="ven-adm-btn" onclick="isbGenerar()">🔄 Generar</button>
             <button class="ven-adm-btn" onclick="isbExportCSV()">📄 CSV</button>
             <button class="ven-adm-btn" onclick="isbExportExcel()">📊 Excel</button>
@@ -1596,6 +1596,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
               <input type="checkbox" id="isbFiltroNeg" onchange="isbFiltrar()" style="width:14px;height:14px"> Solo negativos
             </label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+              <input type="checkbox" id="isbFiltroPed" onchange="isbFiltrar()" style="width:14px;height:14px"> Solo con pedidos
+            </label>
             <button class="ven-adm-btn" onclick="isbExportCSV()">📄 CSV</button>
             <button class="ven-adm-btn" onclick="isbExportExcel()">📊 Excel</button>
           </div>
@@ -1604,29 +1607,40 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <table id="isbTabla" style="display:none;width:100%;border-collapse:collapse;font-size:12px">
               <thead>
                 <tr style="background:#f1f5f9;text-align:center">
-                  <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:90px;white-space:nowrap">HiperFam.</th>
-                  <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px;white-space:nowrap">Familia</th>
-                  <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px;white-space:nowrap">SubFam.</th>
-                  <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:70px;white-space:nowrap">Código</th>
+                  <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px;white-space:nowrap">Código</th>
                   <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:200px">Descripción</th>
-                  <th colspan="3" style="padding:6px;border:1px solid #e2e8f0;background:#dbeafe;color:#1e40af">PEM</th>
-                  <th colspan="3" style="padding:6px;border:1px solid #e2e8f0;background:#dcfce7;color:#166534">SEM</th>
-                  <th colspan="3" style="padding:6px;border:1px solid #e2e8f0;background:#fef3c7;color:#92400e">CEM</th>
-                  <th colspan="3" style="padding:6px;border:1px solid #e2e8f0;background:#f3e8ff;color:#6b21a8">TOTAL</th>
+                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#dbeafe;color:#1e40af">PEM</th>
+                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#dcfce7;color:#166534">SEM</th>
+                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#fef3c7;color:#92400e">CEM</th>
+                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#fce7f3;color:#9d174d">MEM</th>
+                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#e9d5ff;color:#6b21a8">TOTAL</th>
                 </tr>
                 <tr style="text-align:center;font-size:11px">
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">Fís</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">Dif</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">Ped</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">DifStk</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">DifLib</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">Fís</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">Dif</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">Ped</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">DifStk</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">DifLib</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">Fís</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">Dif</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">Ped</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">DifStk</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">DifLib</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">Disp</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">Fís</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">Ped</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">DifStk</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">DifLib</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">Fís</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">Dif</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">Ped</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">DifStk</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">DifLib</th>
                 </tr>
               </thead>
               <tbody id="isbTbody"></tbody>
@@ -16251,37 +16265,46 @@ Te respondemos a la brevedad.</div>
 (function(){
 'use strict';
 
-var _isbDatos     = [];
-var _isbFiltrados = [];
+var _isbDatos               = [];
+var _isbFiltrados           = [];
+var _isbPedidosComprometidos = {};  // {cod: {pem:N, sem:N, cem:N, mem:N}}
+var _isbPedidosDetalle       = {};  // {cod: {pem:[...docs], sem:[...], ...}}
 
-function _difStyle(d){
-  if(d===0)        return 'background:#f0fdf4;color:#166534';
-  if(d>0 && d<=5)  return 'background:#fef9c3;color:#854d0e';
-  return               'background:#fef2f2;color:#b91c1c';
+/* ── helpers de estilo ── */
+function _clsDifStk(v){
+  if(v<0)   return 'background:#fef2f2;color:#b91c1c';   // error: disp > fisico
+  if(v===0) return 'background:#f0fdf4;color:#166534';   // sin compromisos
+  return          'background:#fff7ed;color:#9a3412';    // comprometido (normal)
 }
-
+function _clsDifLib(v){
+  if(v<0)   return 'background:#fef2f2;color:#b91c1c';   // critico: sobre-comprometido
+  if(v===0) return 'background:#f9fafb;color:#6b7280';   // todo comprometido
+  return          'background:#fef9c3;color:#854d0e';    // stock libre sin asignar
+}
 function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
 function _status(msg,tipo){
   var el=document.getElementById('isbStatus'); if(!el) return;
   el.textContent=msg;
   el.style.color=tipo==='err'?'#b91c1c':tipo==='ok'?'#166534':'#9ca3af';
 }
 
-/* ── construir datos desde _vadmStockMap ── */
+/* ── construir datos desde _vadmStockMap + _isbPedidosComprometidos ── */
 function _construirDatos(){
   if(!window._vadmStockMap){ _status('Catálogo no cargado — reintente en unos segundos','err'); return false; }
   _isbDatos=[];
   Object.keys(window._vadmStockMap).forEach(function(cod){
     var p=window._vadmStockMap[cod];
-    if(!p.pem&&!p.sem&&!p.cem&&!p.pem_bod&&!p.sem_bod&&!p.cem_bod) return;
+    var tieneStock=p.pem||p.sem||p.cem||p.mem||p.pem_bod||p.sem_bod||p.cem_bod||p.mem_bod;
+    if(!tieneStock) return;
+    var ped=_isbPedidosComprometidos[cod]||{};
     _isbDatos.push({
       cod:cod, desc:p.desc||'', hip:p.hiperfam||'',
       fam:p.fam||'', sub:p.subfam||'', marca:p.marca||'',
-      pem_disp:p.pem||0,   pem_fis:p.pem_bod||0,
-      sem_disp:p.sem||0,   sem_fis:p.sem_bod||0,
-      cem_disp:p.cem||0,   cem_fis:p.cem_bod||0,
-      mem_disp:p.mem||0,   mem_fis:p.mem_bod||0
+      costo:p.costo||0,
+      pem_disp:p.pem||0,   pem_fis:p.pem_bod||0, pem_ped:ped.pem||0,
+      sem_disp:p.sem||0,   sem_fis:p.sem_bod||0, sem_ped:ped.sem||0,
+      cem_disp:p.cem||0,   cem_fis:p.cem_bod||0, cem_ped:ped.cem||0,
+      mem_disp:p.mem||0,   mem_fis:p.mem_bod||0, mem_ped:ped.mem||0
     });
   });
   _isbDatos.sort(function(a,b){
@@ -16309,6 +16332,23 @@ function _poblarFiltros(){
   document.getElementById('isbFiltroBar').style.display='';
 }
 
+/* ── helper: 5 celdas de una bodega ── */
+function _celdasBod(disp, fis, ped, cod, bod, ctd){
+  var difStk=fis-disp;
+  var difLib=fis-disp-ped;
+  var pedCell=ped>0
+    ? '<td style="'+ctd+';cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="pedido">'+ped+'</td>'
+    : '<td style="'+ctd+'">0</td>';
+  var libCell=difLib!==0
+    ? '<td style="'+ctd+';'+_clsDifLib(difLib)+';cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="dif">'+difLib+'</td>'
+    : '<td style="'+ctd+';'+_clsDifLib(difLib)+'">0</td>';
+  return '<td style="'+ctd+'">'+(disp||0)+'</td>'
+        +'<td style="'+ctd+'">'+(fis||0)+'</td>'
+        +pedCell
+        +'<td style="'+ctd+';'+_clsDifStk(difStk)+'">'+difStk+'</td>'
+        +libCell;
+}
+
 /* ── render tabla ── */
 function _renderTabla(){
   var tbody=document.getElementById('isbTbody');
@@ -16318,99 +16358,110 @@ function _renderTabla(){
   var ctdl='padding:4px 7px;border:1px solid #e2e8f0';
 
   if(!_isbFiltrados.length){
-    tbody.innerHTML='<tr><td colspan="17" style="text-align:center;padding:20px;color:#9ca3af">Sin resultados para los filtros aplicados</td></tr>';
+    tbody.innerHTML='<tr><td colspan="27" style="text-align:center;padding:20px;color:#9ca3af">Sin resultados para los filtros aplicados</td></tr>';
     tfoot.innerHTML=''; tabla.style.display='';
     document.getElementById('isbContador').textContent='0 productos';
     return;
   }
 
-  var tp={pem_d:0,pem_f:0, sem_d:0,sem_f:0, cem_d:0,cem_f:0};
+  var tp={pd:0,pf:0,pp:0, sd:0,sf:0,sp:0, cd:0,cf:0,cp:0, md:0,mf:0,mp:0};
   var html='';
 
   _isbFiltrados.forEach(function(r){
-    var pd=r.pem_fis-r.pem_disp, sd=r.sem_fis-r.sem_disp, cd=r.cem_fis-r.cem_disp;
-    var tD=r.pem_disp+r.sem_disp+r.cem_disp;
-    var tF=r.pem_fis+r.sem_fis+r.cem_fis;
-    var tDif=pd+sd+cd;
-    tp.pem_d+=r.pem_disp; tp.pem_f+=r.pem_fis;
-    tp.sem_d+=r.sem_disp; tp.sem_f+=r.sem_fis;
-    tp.cem_d+=r.cem_disp; tp.cem_f+=r.cem_fis;
-
+    tp.pd+=r.pem_disp; tp.pf+=r.pem_fis; tp.pp+=r.pem_ped;
+    tp.sd+=r.sem_disp; tp.sf+=r.sem_fis; tp.sp+=r.sem_ped;
+    tp.cd+=r.cem_disp; tp.cf+=r.cem_fis; tp.cp+=r.cem_ped;
+    tp.md+=r.mem_disp; tp.mf+=r.mem_fis; tp.mp+=r.mem_ped;
     html+='<tr style="border-bottom:1px solid #f1f5f9">'
-      +'<td style="'+ctdl+'">'+_esc(r.hip)+'</td>'
-      +'<td style="'+ctdl+'">'+_esc(r.fam)+'</td>'
-      +'<td style="'+ctdl+'">'+_esc(r.sub)+'</td>'
       +'<td style="'+ctdl+';font-weight:600">'+_esc(r.cod)+'</td>'
       +'<td style="'+ctdl+'">'+_esc(r.desc)+'</td>'
-      +'<td style="'+ctd+'">'+r.pem_disp+'</td>'
-      +'<td style="'+ctd+'">'+r.pem_fis+'</td>'
-      +'<td style="'+ctd+';'+_difStyle(pd)+'">'+pd+'</td>'
-      +'<td style="'+ctd+'">'+r.sem_disp+'</td>'
-      +'<td style="'+ctd+'">'+r.sem_fis+'</td>'
-      +'<td style="'+ctd+';'+_difStyle(sd)+'">'+sd+'</td>'
-      +'<td style="'+ctd+'">'+r.cem_disp+'</td>'
-      +'<td style="'+ctd+'">'+r.cem_fis+'</td>'
-      +'<td style="'+ctd+';'+_difStyle(cd)+'">'+cd+'</td>'
-      +'<td style="'+ctd+';font-weight:600">'+tD+'</td>'
-      +'<td style="'+ctd+';font-weight:600">'+tF+'</td>'
-      +'<td style="'+ctd+';font-weight:600;'+_difStyle(tDif)+'">'+tDif+'</td>'
+      +_celdasBod(r.pem_disp,r.pem_fis,r.pem_ped,r.cod,'pem',ctd)
+      +_celdasBod(r.sem_disp,r.sem_fis,r.sem_ped,r.cod,'sem',ctd)
+      +_celdasBod(r.cem_disp,r.cem_fis,r.cem_ped,r.cod,'cem',ctd)
+      +_celdasBod(r.mem_disp,r.mem_fis,r.mem_ped,r.cod,'mem',ctd)
+      +_celdasBod(
+          r.pem_disp+r.sem_disp+r.cem_disp+r.mem_disp,
+          r.pem_fis+r.sem_fis+r.cem_fis+r.mem_fis,
+          r.pem_ped+r.sem_ped+r.cem_ped+r.mem_ped,
+          r.cod,'total',ctd)
       +'</tr>';
   });
 
   tbody.innerHTML=html;
   tabla.style.display='';
 
+  // delegación: clicks en celdas con data-isb-cod
+  tbody.onclick=function(e){
+    var cell=e.target.closest('[data-isb-cod]');
+    if(cell) window.isbAbrirDetalle(cell.dataset.isbCod,cell.dataset.isbBod,cell.dataset.isbTipo);
+  };
+
   var cft='padding:5px 7px;border:1px solid #e2e8f0;text-align:right;font-weight:700;background:#f1f5f9';
-  var pdT=tp.pem_f-tp.pem_d, sdT=tp.sem_f-tp.sem_d, cdT=tp.cem_f-tp.cem_d;
-  var totD=tp.pem_d+tp.sem_d+tp.cem_d, totF=tp.pem_f+tp.sem_f+tp.cem_f, totDif=totF-totD;
+  function _tpRow(d,f,p){
+    var ds=f-d, dl=f-d-p;
+    return '<td style="'+cft+'">'+(d||0)+'</td>'
+          +'<td style="'+cft+'">'+(f||0)+'</td>'
+          +'<td style="'+cft+'">'+(p||0)+'</td>'
+          +'<td style="'+cft+';'+_clsDifStk(ds)+'">'+ds+'</td>'
+          +'<td style="'+cft+';'+_clsDifLib(dl)+'">'+dl+'</td>';
+  }
+  var tD=tp.pd+tp.sd+tp.cd+tp.md, tF=tp.pf+tp.sf+tp.cf+tp.mf, tP=tp.pp+tp.sp+tp.cp+tp.mp;
   tfoot.innerHTML='<tr>'
-    +'<td colspan="5" style="padding:5px 10px;font-weight:700;border:1px solid #e2e8f0;text-align:center;background:#f1f5f9">TOTAL ('+_isbFiltrados.length+' productos)</td>'
-    +'<td style="'+cft+'">'+tp.pem_d+'</td>'
-    +'<td style="'+cft+'">'+tp.pem_f+'</td>'
-    +'<td style="'+cft+';'+_difStyle(pdT)+'">'+pdT+'</td>'
-    +'<td style="'+cft+'">'+tp.sem_d+'</td>'
-    +'<td style="'+cft+'">'+tp.sem_f+'</td>'
-    +'<td style="'+cft+';'+_difStyle(sdT)+'">'+sdT+'</td>'
-    +'<td style="'+cft+'">'+tp.cem_d+'</td>'
-    +'<td style="'+cft+'">'+tp.cem_f+'</td>'
-    +'<td style="'+cft+';'+_difStyle(cdT)+'">'+cdT+'</td>'
-    +'<td style="'+cft+'">'+totD+'</td>'
-    +'<td style="'+cft+'">'+totF+'</td>'
-    +'<td style="'+cft+';'+_difStyle(totDif)+'">'+totDif+'</td>'
+    +'<td colspan="2" style="padding:5px 10px;font-weight:700;border:1px solid #e2e8f0;text-align:center;background:#f1f5f9">TOTAL ('+_isbFiltrados.length+' productos)</td>'
+    +_tpRow(tp.pd,tp.pf,tp.pp)
+    +_tpRow(tp.sd,tp.sf,tp.sp)
+    +_tpRow(tp.cd,tp.cf,tp.cp)
+    +_tpRow(tp.md,tp.mf,tp.mp)
+    +_tpRow(tD,tF,tP)
     +'</tr>';
 
   document.getElementById('isbContador').textContent=_isbFiltrados.length+' de '+_isbDatos.length+' productos';
 }
 
-/* ── build rows para export (encabezado + datos filtrados) ── */
+/* ── build rows para export ── */
 function _buildRows(){
-  var rows=[['HiperFamilia','Familia','SubFamilia','Código','Descripción',
-    'PEM Disp','PEM Fís','PEM Dif',
-    'SEM Disp','SEM Fís','SEM Dif',
-    'CEM Disp','CEM Fís','CEM Dif',
-    'TOTAL Disp','TOTAL Fís','TOTAL Dif']];
+  var rows=[['Código','Descripción',
+    'PEM Disp','PEM Fís','PEM Ped','PEM DifStk','PEM DifLib',
+    'SEM Disp','SEM Fís','SEM Ped','SEM DifStk','SEM DifLib',
+    'CEM Disp','CEM Fís','CEM Ped','CEM DifStk','CEM DifLib',
+    'MEM Disp','MEM Fís','MEM Ped','MEM DifStk','MEM DifLib',
+    'TOT Disp','TOT Fís','TOT Ped','TOT DifStk','TOT DifLib']];
   _isbFiltrados.forEach(function(r){
-    var pd=r.pem_fis-r.pem_disp, sd=r.sem_fis-r.sem_disp, cd=r.cem_fis-r.cem_disp;
-    rows.push([r.hip,r.fam,r.sub,r.cod,r.desc,
-      r.pem_disp,r.pem_fis,pd,
-      r.sem_disp,r.sem_fis,sd,
-      r.cem_disp,r.cem_fis,cd,
-      r.pem_disp+r.sem_disp+r.cem_disp,
-      r.pem_fis+r.sem_fis+r.cem_fis,
-      pd+sd+cd]);
+    var tD=r.pem_disp+r.sem_disp+r.cem_disp+r.mem_disp;
+    var tF=r.pem_fis+r.sem_fis+r.cem_fis+r.mem_fis;
+    var tP=r.pem_ped+r.sem_ped+r.cem_ped+r.mem_ped;
+    rows.push([r.cod,r.desc,
+      r.pem_disp,r.pem_fis,r.pem_ped,r.pem_fis-r.pem_disp,r.pem_fis-r.pem_disp-r.pem_ped,
+      r.sem_disp,r.sem_fis,r.sem_ped,r.sem_fis-r.sem_disp,r.sem_fis-r.sem_disp-r.sem_ped,
+      r.cem_disp,r.cem_fis,r.cem_ped,r.cem_fis-r.cem_disp,r.cem_fis-r.cem_disp-r.cem_ped,
+      r.mem_disp,r.mem_fis,r.mem_ped,r.mem_fis-r.mem_disp,r.mem_fis-r.mem_disp-r.mem_ped,
+      tD,tF,tP,tF-tD,tF-tD-tP]);
   });
   return rows;
 }
 
 /* ── API pública ── */
 window.isbGenerar = function(){
-  _status('Cargando catálogo…','');
-  window._vadmCargarStockMap(function(){
+  _status('Cargando catálogo y pedidos…','');
+  var stockDone=false, pedidosDone=false;
+  function tryRender(){
+    if(!stockDone||!pedidosDone) return;
     if(!_construirDatos()) return;
     if(!_isbDatos.length){ _status('Sin datos de stock disponibles','err'); return; }
     _poblarFiltros();
     _status('','');
     window.isbFiltrar();
+  }
+  window._vadmCargarStockMap(function(){ stockDone=true; tryRender(); });
+  var ts='?_='+Date.now();
+  Promise.all([
+    fetch('/data/pedidos-comprometidos.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
+    fetch('/data/pedidos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; })
+  ]).then(function(res){
+    _isbPedidosComprometidos=res[0]||{};
+    _isbPedidosDetalle=res[1]||{};
+    pedidosDone=true;
+    tryRender();
   });
 };
 
@@ -16420,14 +16471,18 @@ window.isbFiltrar = function(){
   var bus=(document.getElementById('isbFiltroBuscar').value||'').toLowerCase();
   var conDif=document.getElementById('isbFiltroConDif').checked;
   var soloNeg=document.getElementById('isbFiltroNeg').checked;
+  var soloPed=document.getElementById('isbFiltroPed').checked;
 
   _isbFiltrados=_isbDatos.filter(function(r){
     if(hip && (r.hip||'').toLowerCase()!==hip) return false;
     if(fam && (r.fam||'').toLowerCase()!==fam) return false;
     if(bus && (r.cod||'').toLowerCase().indexOf(bus)<0 && (r.desc||'').toLowerCase().indexOf(bus)<0) return false;
-    var pd=r.pem_fis-r.pem_disp, sd=r.sem_fis-r.sem_disp, cd=r.cem_fis-r.cem_disp;
-    if(soloNeg  && pd>=0 && sd>=0 && cd>=0) return false;
-    if(conDif   && pd===0 && sd===0 && cd===0) return false;
+    var pdS=r.pem_fis-r.pem_disp, sdS=r.sem_fis-r.sem_disp;
+    var cdS=r.cem_fis-r.cem_disp, mdS=r.mem_fis-r.mem_disp;
+    var pdL=pdS-r.pem_ped, sdL=sdS-r.sem_ped, cdL=cdS-r.cem_ped, mdL=mdS-r.mem_ped;
+    if(soloNeg && pdL>=0 && sdL>=0 && cdL>=0 && mdL>=0) return false;
+    if(conDif  && pdS===0 && sdS===0 && cdS===0 && mdS===0) return false;
+    if(soloPed && !r.pem_ped && !r.sem_ped && !r.cem_ped && !r.mem_ped) return false;
     return true;
   });
   _renderTabla();
@@ -16450,13 +16505,122 @@ window.isbExportExcel = function(){
   if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
   var rows=_buildRows();
   var ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:14},{wch:14},{wch:14},{wch:13},{wch:30},
-    {wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:7},
-    {wch:9},{wch:9},{wch:9}];
+  ws['!cols']=[{wch:13},{wch:30},
+    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
+    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
+    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
+    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
+    {wch:8},{wch:8},{wch:8},{wch:9},{wch:9}];
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Informe Stock');
   XLSX.writeFile(wb,'InformeStock_'+new Date().toISOString().slice(0,10)+'.xlsx');
   if(window.toast) toast('📊 Excel exportado','ok');
+};
+
+/* ── modal drill-down ── */
+function _crearModalIsb(){
+  if(document.getElementById('isbDetalleModal')) return;
+  var m=document.createElement('div');
+  m.id='isbDetalleModal';
+  m.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;overflow-y:auto;padding:32px 16px';
+  m.onclick=function(e){ if(e.target===m) window.isbCerrarDetalle(); };
+  m.innerHTML='<div style="max-width:720px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    +'<div style="background:#1e40af;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">'
+    +'<span id="isbDetalleTitulo" style="color:#fff;font-weight:700;font-size:15px"></span>'
+    +'<button onclick="isbCerrarDetalle()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;line-height:28px">✕</button>'
+    +'</div>'
+    +'<div id="isbDetalleBody" style="padding:20px;overflow-x:auto;font-size:13px"></div>'
+    +'</div>';
+  document.body.appendChild(m);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') window.isbCerrarDetalle(); });
+}
+
+window.isbAbrirDetalle = function(cod, bod, tipo){
+  _crearModalIsb();
+  var m=document.getElementById('isbDetalleModal');
+  var tit=document.getElementById('isbDetalleTitulo');
+  var body=document.getElementById('isbDetalleBody');
+  var BL={'pem':'PEM','sem':'SEM','cem':'CEM','mem':'MEM','total':'TOTAL'};
+  var bl=BL[bod]||bod.toUpperCase();
+
+  if(tipo==='dif'){
+    tit.textContent='Diferencia libre — '+cod+' / '+bl;
+    body.innerHTML='<p style="color:#374151;margin:0 0 10px"><b>DifLib = Físico − Disponible − Pedido</b></p>'
+      +'<p style="color:#6b7280;margin:0">Un valor negativo indica que los pedidos comprometidos superan el stock físico disponible. Revise en <b>Análisis Bodegas</b> el detalle de movimientos físicos para esta bodega.</p>';
+    m.style.display='block'; return;
+  }
+
+  // tipo = 'pedido'
+  var docs=[];
+  if(bod==='total'){
+    // resumen por bodega
+    tit.textContent='Pedidos comprometidos — '+cod;
+    var r=null;
+    for(var i=0;i<_isbDatos.length;i++){ if(_isbDatos[i].cod===cod){ r=_isbDatos[i]; break; } }
+    if(!r){ body.innerHTML='<p style="color:#9ca3af">Producto no encontrado.</p>'; m.style.display='block'; return; }
+    var sumH='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f1f5f9">'
+      +'<th style="padding:6px 10px;border:1px solid #e2e8f0;text-align:left">Bodega</th>'
+      +'<th style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right">Ped</th>'
+      +'</tr></thead><tbody>';
+    ['pem','sem','cem','mem'].forEach(function(b){
+      var v=r[b+'_ped']||0; if(!v) return;
+      sumH+='<tr><td style="padding:5px 10px;border:1px solid #e2e8f0">'+BL[b]+'</td>'
+        +'<td style="padding:5px 10px;border:1px solid #e2e8f0;text-align:right;font-weight:600">'+v+'</td></tr>';
+    });
+    body.innerHTML=sumH+'</tbody></table>';
+    m.style.display='block'; return;
+  }
+
+  docs=(_isbPedidosDetalle[cod]||{})[bod]||[];
+  tit.textContent='Pedidos — '+cod+' / '+bl+(docs.length?' ('+docs.length+' docs)':'');
+
+  if(!docs.length){
+    var pedVal=((_isbPedidosComprometidos[cod]||{})[bod])||0;
+    body.innerHTML='<p style="color:#6b7280;margin:0">'
+      +(pedVal>0
+        ?'ST_PEDIDO = '+pedVal+'. Detalle de documentos no disponible — ejecute ACTUALIZAR_TODO.bat para generarlo.'
+        :'Sin pedidos comprometidos para esta bodega.')
+      +'</p>';
+    m.style.display='block'; return;
+  }
+
+  var totalCant=0, totalVal=0;
+  var th='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead>'
+    +'<tr style="background:#f1f5f9"><th style="padding:6px 8px;border:1px solid #e2e8f0">Tipo</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Folio</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Fecha</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Vendedor</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">Cant.</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Estado</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">Valorizado</th>'
+    +'</tr></thead><tbody>';
+  docs.forEach(function(d){
+    var cant=d.cant||d.cantidad||0;
+    var val=cant*(d.costoUnit||d.costo||0);
+    totalCant+=cant; totalVal+=val;
+    th+='<tr>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600">'+_esc(d.tipoDoc||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+_esc(d.folio||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;white-space:nowrap">'+_esc(d.fecha||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+_esc(d.vendedor||'—')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:right;font-weight:600">'+cant+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+_esc(d.estado||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:right">'
+        +(val>0?'$'+Math.round(val).toLocaleString('es-CL'):'—')+'</td>'
+      +'</tr>';
+  });
+  th+='</tbody><tfoot><tr style="background:#f1f5f9;font-weight:700">'
+    +'<td colspan="4" style="padding:5px 8px;border:1px solid #e2e8f0">TOTAL</td>'
+    +'<td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right">'+totalCant+'</td>'
+    +'<td style="padding:5px 8px;border:1px solid #e2e8f0"></td>'
+    +'<td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right">$'+Math.round(totalVal).toLocaleString('es-CL')+'</td>'
+    +'</tr></tfoot></table>';
+  body.innerHTML=th;
+  m.style.display='block';
+};
+
+window.isbCerrarDetalle = function(){
+  var m=document.getElementById('isbDetalleModal'); if(m) m.style.display='none';
 };
 
 })();
