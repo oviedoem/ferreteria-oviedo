@@ -35,7 +35,8 @@ MD activos raiz:
 - Deploy V37.4: 2026-05-27 11:05 — fix disp CEM: ST_DISPONIBLE → ST_FISICO−ST_PEDIDO en descargar_bod.py ✅
 - Deploy V37.5a: 2026-05-27 15:12 — fix diasAntiguedad RCE: GRC ausente del filtro DOC IN + dedup por codigoTecnico min(dias) ✅
 - Deploy V37.5b: 2026-05-27 15:28 — auditoria DOC IN: GII+GTS agregados a whitelist + comentario clasificacion ✅
-- Deploy cierre sesión: 2026-05-27 15:28 — todo publicado, sin pendientes
+- Deploy V37.6: 2026-05-27 16:39 — fix Informe Stock Fís todo cero: pem_bod/sem_bod/cem_bod/mem_bod en pipeline + panel ✅
+- Deploy cierre sesión: 2026-05-27 16:39 — todo publicado, sin pendientes
 
 ---
 
@@ -143,6 +144,23 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde Po
 ---
 
 ## CHANGELOG
+
+### V37.6 — 2026-05-27
+
+**Informe Stock Bodegas — fix bug "Fís todo en cero"**
+
+Causa raíz: `normalizar_existencias()` generaba PEM_BOD/SEM_BOD/CEM_BOD desde V37.3 pero faltaban en `cols_actualizar` y `COLS_NUM` de `procesar-actualizacion.py`, así que el merge no los transfería. Además faltaba `MEM_BOD` en toda la cadena.
+
+Archivos tocados:
+- `CATALOGO PRODUCTOS/scripts/descargar_erp.py`: MEM añadido al loop St_Bod + MEM_BOD en all_cols
+- `CATALOGO PRODUCTOS/scripts/procesar-actualizacion.py`: MEM_BOD en COLS_ORDEN, MAPA_HOJA2, COLS_OPCIONALES, COLS_NUMERICAS, cols_actualizar, COLS_NUM, cols_h2 (6 lugares)
+- `CATALOGO PRODUCTOS/scripts/xlsx_a_csv.py`: MEM_BOD en numeric cols
+- `CATALOGO PRODUCTOS/scripts/csv_a_json.py`: MEM_BOD -> mem_bod en mapa
+- `panel-admin.html`: mem_bod añadido a _vadmCargarStockMap(); mem_fis:p.mem_bod añadido a _construirDatos()
+- `CATALOGO PRODUCTOS/Datos.json`: regenerado (pem_bod:741 / sem_bod:2764 / cem_bod:34 / mem_bod:127)
+
+Verificación: Datos.json tiene pem_bod>0 en 741 productos (ej. cod 10187: pem_disp=104 pem_fis=115 Dif=11) ✅
+Deploy: 2026-05-27 16:39
 
 ### V37.5 — 2026-05-27
 
