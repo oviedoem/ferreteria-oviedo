@@ -30,6 +30,7 @@ const state = {
     '2026': { groupBy: 'familia', filterField: null, filterValue: null },
   },
   compCategoria: 'perfamilia',
+  compDrill: { field: null, value: null },
 };
 
 // ── MAPEO DE COLUMNAS ──────────────────────────────────────────
@@ -677,6 +678,7 @@ function clearAllData() {
     '2026': { groupBy: 'familia', filterField: null, filterValue: null },
   };
   state.compCategoria = 'perfamilia';
+  state.compDrill = { field: null, value: null };
 
   ['2025','2026'].forEach(y => {
     const el = document.getElementById(`status-${y}`);
@@ -696,15 +698,18 @@ function clearAllData() {
 function getFilteredData(year) {
   const src = year === '2025' ? state.data2025 : state.data2026;
   const f   = state.filters[year];
+  const dd  = state.drilldown[year] || {};
   const q   = (state.searchText[year] || '').toLowerCase().trim();
   return src.filter(r => {
-    if (f.bodega     && r.bodega     !== f.bodega)      return false;
-    if (f.marca      && r.marca      !== f.marca)       return false;
-    if (f.familia    && r.familia    !== f.familia)      return false;
-    if (f.perfamilia && r.perfamilia !== f.perfamilia)  return false;
-    if (f.zona       && r.zona       !== f.zona)        return false;
-    if (f.area       && r.area       !== f.area)        return false;
-    if (f.patente    && r.patente    !== f.patente)     return false;
+    // Embudo jerárquico (hiperfamilia → familia → marca)
+    if (dd.hiperfamilia && r.perfamilia !== dd.hiperfamilia) return false;
+    if (dd.familia      && r.familia    !== dd.familia)      return false;
+    if (dd.marca        && r.marca      !== dd.marca)        return false;
+    // Filtros del drawer (solo ubicación)
+    if (f.bodega  && r.bodega  !== f.bodega)  return false;
+    if (f.zona    && r.zona    !== f.zona)    return false;
+    if (f.area    && r.area    !== f.area)    return false;
+    if (f.patente && r.patente !== f.patente) return false;
     if (q) {
       const hayProd = (r.producto || '').toLowerCase().includes(q);
       const hayCod  = (r.codigo   || '').toLowerCase().includes(q);
@@ -730,6 +735,15 @@ function clearFilters(mode) {
     state.drilldown[mode] = { hiperfamilia:'', familia:'', marca:'' };
     state.ddState[mode]   = { groupBy: 'familia', filterField: null, filterValue: null };
   }
+  if (mode === 'comparative') {
+    state.compDrill = { field: null, value: null };
+    const bc = document.getElementById('comp-drill-breadcrumb');
+    if (bc) bc.innerHTML = '';
+    const dp = document.getElementById('comp-drill-products');
+    if (dp) dp.innerHTML = '';
+  }
+  closeFilterPanel(mode);
+  updateFilterBadge(mode);
   refreshView();
 }
 
@@ -971,10 +985,10 @@ function renderFilters(mode) {
   const f    = state.filters[mode];
   const q    = state.searchText[mode] || '';
 
-  // Grupos de segmentación — orden: las más discriminantes primero
+  // Modos year: solo filtros de ubicación (embudo maneja la jerarquía)
   const groups = mode === 'comparative'
-    ? [['perfamilia','Hiperfamilia'],['marca','Marca'],['familia','Familia'],['zona','Zona']]
-    : [['bodega','Bodega EM'],['perfamilia','Hiperfamilia'],['marca','Marca'],['familia','Familia'],['zona','Zona'],['area','Área']];
+    ? [['perfamilia','Hiperfamilia'],['marca','Marca'],['familia','Familia'],['zona','Zona'],['area','Área']]
+    : [['zona','Zona'],['area','Área'],['patente','Patente'],['bodega','Bodega EM']];
 
   const anyActive = groups.some(([field]) => f[field]) || q;
 
@@ -1010,6 +1024,7 @@ function renderFilters(mode) {
   }).join('');
 
   document.getElementById(`filters-${mode}`).innerHTML = `${searchRow}${groupsHtml}`;
+  updateFilterBadge(mode);
 
   // Espejo en vista v2 (sin input de búsqueda para evitar IDs duplicados)
   const v2el = document.getElementById(`filters-${mode}v2`);
@@ -2743,9 +2758,48 @@ document.addEventListener('DOMContentLoaded',()=>{
    ACORDEONES (mejoras view)
    ═══════════════════════════════════════════════════════════════ */
 function toggleAcc(btn) {
-  btn.classList.toggle('open');
-  const body = btn.nextElementSibling;
-  if (body) body.classList.toggle('open');
+  const content = btn.nextElementSibling;
+  if (!content) return;
+  const opening = !content.classList.contains('open');
+  btn.classList.toggle('open', opening);
+  content.classList.toggle('open', opening);
+  const arrowEl = btn.querySelector('.mej-acc-arrow');
+  if (arrowEl) {
+    arrowEl.textContent = opening ? '▴' : '▾';
+  } else {
+    btn.innerHTML = btn.innerHTML.replace(opening ? '▾' : '▴', opening ? '▴' : '▾');
+  }
+}
+
+function initAccordions() {
+  document.querySelectorAll('.acc-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { toggleAcc(this); });
+  });
+}
+document.addEventListener('DOMContentLoaded', initAccordions);
+
+/* ═══════════════════════════════════════════════════════════════
+   FILTER DRAWER
+   ═══════════════════════════════════════════════════════════════ */
+function openFilterPanel(mode) {
+  document.getElementById(`filter-drawer-${mode}`)?.classList.add('open');
+  document.getElementById(`filter-overlay-${mode}`)?.classList.add('open');
+}
+function closeFilterPanel(mode) {
+  document.getElementById(`filter-drawer-${mode}`)?.classList.remove('open');
+  document.getElementById(`filter-overlay-${mode}`)?.classList.remove('open');
+}
+function updateFilterBadge(mode) {
+  const f     = state.filters[mode] || {};
+  const q     = state.searchText[mode] || '';
+  const dd    = state.drilldown[mode] || {};
+  const drillCount = (mode === '2025' || mode === '2026')
+    ? [dd.hiperfamilia, dd.familia, dd.marca].filter(Boolean).length
+    : 0;
+  const filterCount = Object.values(f).filter(Boolean).length + (q ? 1 : 0);
+  const total = filterCount + drillCount;
+  const badge = document.getElementById(`filter-badge-${mode}`);
+  if (badge) badge.textContent = total > 0 ? total : '';
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -3130,11 +3184,26 @@ function renderCompCategoria(d25, d26) {
 
 function setCompCategoria(val) {
   state.compCategoria = val;
-  const { d25, d26 } = getFilteredDataComp();
-  renderCompCategoria(d25, d26);
+  renderModeComp();
+}
+
+function clearCompDrill() {
+  state.compDrill = { field: null, value: null };
+  const bc = document.getElementById('comp-drill-breadcrumb');
+  if (bc) bc.innerHTML = '';
+  const dp = document.getElementById('comp-drill-products');
+  if (dp) dp.innerHTML = '';
 }
 
 function drillCompProduct(field, value) {
+  state.compDrill = { field, value };
+  const gLbl = { perfamilia:'Hiperfamilia', familia:'Familia', marca:'Marca' }[field] || field;
+  const bc = document.getElementById('comp-drill-breadcrumb');
+  if (bc) bc.innerHTML = `
+    <button class="comp-drill-back" onclick="clearCompDrill()">← Volver</button>
+    <span class="comp-drill-sep">›</span>
+    <span>${gLbl}:</span>
+    <span class="comp-drill-current">${value}</span>`;
   const { d25, d26 } = getFilteredDataComp();
   const r25 = d25.filter(r => (r[field]||'') === value).sort((a,b) => b.abs_dif_peso - a.abs_dif_peso);
   const r26 = d26.filter(r => (r[field]||'') === value).sort((a,b) => b.abs_dif_peso - a.abs_dif_peso);

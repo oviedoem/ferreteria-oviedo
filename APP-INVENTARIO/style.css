@@ -1019,13 +1019,27 @@ body {
   font-size: 11px; color: var(--muted); flex-shrink: 0;
   transition: transform .2s;
 }
-.mej-acc-header.open .mej-acc-arrow { transform: rotate(180deg); }
-
 .mej-acc-body {
-  display: none; padding: 16px;
-  background: #fafafa; border-top: 1px solid var(--border);
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease;
+  background: #fafafa;
 }
-.mej-acc-body.open { display: block; }
+.mej-acc-body.open { max-height: 2000px; padding: 16px; border-top: 1px solid var(--border); }
+
+.acc-content {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.acc-content.open { max-height: 2000px; }
+
+.acc-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer; text-align: left;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  transition: background .15s; margin-bottom: 4px;
+}
+.acc-btn:hover { background: #f8fafc; }
 
 /* Variantes color borde izquierdo */
 .mej-acc-green .mej-acc-header { border-left: 4px solid var(--green); }
@@ -1369,4 +1383,89 @@ select.embudo-select:disabled { opacity: .45; cursor: default; }
 @media (max-width: 480px) {
   .global-kpi-grid { grid-template-columns: 1fr; }
   .count-kpi-row   { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FILTER DRAWER — panel lateral colapsable
+   ════════════════════════════════════════════════════════════════ */
+.filter-drawer {
+  position: fixed; top: 0; right: 0;
+  width: 300px; height: 100vh;
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  box-shadow: -6px 0 24px rgba(0,0,0,.15);
+  transform: translateX(100%);
+  transition: transform 0.28s ease;
+  z-index: 1000;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.filter-drawer.open { transform: translateX(0); }
+.filter-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.filter-drawer-title { font-weight: 700; font-size: 13px; color: var(--text); }
+.filter-drawer-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 15px; color: var(--muted); padding: 4px 8px; border-radius: 6px;
+}
+.filter-drawer-close:hover { color: var(--text); background: var(--bg); }
+.filter-drawer .filters-bar {
+  flex: 1; overflow-y: auto;
+  border: none; border-radius: 0; margin: 0; box-shadow: none;
+}
+.filter-drawer-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.25); z-index: 999;
+}
+.filter-drawer-overlay.open { display: block; }
+.filter-badge {
+  display: inline-block; margin-left: 5px;
+  background: var(--orange); color: #fff;
+  font-size: 10px; font-weight: 700; border-radius: 99px;
+  padding: 1px 6px; line-height: 15px; vertical-align: middle;
+}
+.filter-badge:empty { display: none; }
+.btn.filter-drawer-btn {
+  background: var(--blue-dark); color: #fff; border: none;
+}
+.btn.filter-drawer-btn:hover { background: #0d2c80; }
+
+/* ════════════════════════════════════════════════════════════════
+   MAIN PANELS GRID — embudo 30% + drilldown 70%
+   ════════════════════════════════════════════════════════════════ */
+.main-panels {
+  display: grid;
+  grid-template-columns: 30% 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-top: 18px;
+}
+.embudo-panel { position: sticky; top: 56px; }
+.drilldown-panel { min-width: 0; }
+
+/* ════════════════════════════════════════════════════════════════
+   COMPARATIVA — breadcrumb de drill
+   ════════════════════════════════════════════════════════════════ */
+.comp-drill-breadcrumb {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 7px 14px; margin-bottom: 12px;
+  background: #f0f4ff; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 12px;
+}
+.comp-drill-back {
+  background: none; border: none; cursor: pointer;
+  color: var(--blue-dark); font-weight: 700; font-size: 12px;
+  padding: 2px 8px; border-radius: 5px;
+}
+.comp-drill-back:hover { text-decoration: underline; background: #e0e8ff; }
+.comp-drill-sep { color: var(--muted); }
+.comp-drill-current { font-weight: 600; }
+
+@media (max-width: 768px) {
+  .main-panels { grid-template-columns: 1fr; }
+  .embudo-panel { position: static; }
+  .filter-drawer { width: 100%; }
 }
