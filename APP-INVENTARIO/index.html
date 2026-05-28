@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel de Diferencias de Inventario · El Manzano</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
@@ -20,16 +20,24 @@
     </div>
   </div>
   <nav class="mode-tabs">
-    <button class="tab-btn active" data-mode="2025">📊 Análisis 2025</button>
+    <button class="tab-btn active" data-mode="planos">🗺️ Planos</button>
+    <button class="tab-btn" data-mode="checklist">📋 CheckList</button>
+    <button class="tab-btn tab-recount" data-mode="reconteo">🔁 Centro Reconteo</button>
+    <button class="tab-btn" data-mode="2025">📊 Análisis 2025</button>
     <button class="tab-btn" data-mode="2026">📈 Análisis 2026</button>
     <button class="tab-btn" data-mode="comparative">⚖️ Comparativo</button>
-    <button class="tab-btn" data-mode="checklist">📋 CheckList</button>
-    <button class="tab-btn" data-mode="planos">🗺️ Planos</button>
-    <button class="tab-btn" data-mode="mejoras">🎯 Mejoras 2026</button>
     <button class="tab-btn" data-mode="2025v2">🔬 Análisis Avanzado</button>
-    <button class="tab-btn tab-recount" data-mode="reconteo">🔁 Centro Reconteo</button>
+    <button class="tab-btn" data-mode="final">📋 Análisis Final</button>
+    <button class="tab-btn" data-mode="mejoras">🎯 Mejoras 2026</button>
   </nav>
 </header>
+
+<!-- Banner restauración sesión -->
+<div id="session-restore-banner" style="display:none;background:#1e40af;color:#fff;padding:10px 20px;display:none;align-items:center;gap:12px;font-size:13px;border-bottom:1px solid #1d4ed8">
+  <span id="session-restore-msg">Sesión restaurada</span>
+  <button onclick="clearSavedSession()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px">Empezar de cero</button>
+  <button onclick="document.getElementById('session-restore-banner').style.display='none'" style="background:transparent;border:none;color:rgba(255,255,255,0.7);cursor:pointer;margin-left:auto;font-size:16px">✕</button>
+</div>
 
 <div class="app-body">
 
@@ -881,6 +889,66 @@
     </div><!-- /view-2025v2 -->
 
   
+    <!-- ── MODO ANÁLISIS FINAL ──────────────────────────────────────── -->
+    <div id="view-final" class="view hidden">
+      <div class="view-header">
+        <h2>📋 Análisis Final · Informe para el dueño</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportFinalExcel()">⬇ Excel (4 hojas)</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('final')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('final')">✉ Email</button>
+        </div>
+      </div>
+
+      <!-- Cuadro resumen RESULTADOS -->
+      <section id="final-resultados" style="margin-bottom:18px"></section>
+
+      <!-- Top sobrantes y faltantes -->
+      <div class="charts-grid" id="final-tops-grid"></div>
+
+      <!-- Gráficos Chart.js -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h4>Top Dispersión $ por Marca</h4>
+          <div class="chart-wrap"><canvas id="chart-final-marca"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Top Dispersión $ por Familia</h4>
+          <div class="chart-wrap"><canvas id="chart-final-familia"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Diferencia Unidades por Hiperfamilia</h4>
+          <div class="chart-wrap"><canvas id="chart-final-hiper"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Faltantes vs Sobrantes por Familia (top 10 $)</h4>
+          <div class="chart-wrap"><canvas id="chart-final-barras"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Tabla DATOS_FALTANTES -->
+      <div class="table-block" style="margin-top:16px">
+        <div class="table-header">
+          <h3>Datos Faltantes · Diferencia negativa ordenada por impacto $</h3>
+          <button class="btn btn-xs" onclick="exportTableToExcel('final-faltantes-tbl','Faltantes_Final')">⬇ xlsx</button>
+        </div>
+        <div class="table-scroll"><table id="final-faltantes-tbl" class="data-table"></table></div>
+      </div>
+
+      <!-- Tabla dinámica por Hiperfamilia -->
+      <div class="table-block" style="margin-top:16px">
+        <div class="table-header">
+          <h3>Resumen por Hiperfamilia · dinamica_HIPER</h3>
+          <button class="btn btn-xs" onclick="exportTableToExcel('final-hiper-tbl','DinamicaHiper_Final')">⬇ xlsx</button>
+        </div>
+        <div class="table-scroll"><table id="final-hiper-tbl" class="data-table"></table></div>
+      </div>
+
+      <p class="section-hint" id="final-empty" style="text-align:center;padding:40px;display:none">
+        Carga archivos de inventario 2025 y/o 2026 para generar el análisis final.
+      </p>
+    </div><!-- /view-final -->
+
     <!-- ── MODO RECONTEO ─────────────────────────────────────────────── -->
     <div id="view-reconteo" class="view hidden">
       <div class="view-header">

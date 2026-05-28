@@ -504,8 +504,10 @@ async function loadFiles(files, year) {
   if (year === '2025') state.data2025 = state.data2025.concat(allRows);
   else                 state.data2026 = state.data2026.concat(allRows);
 
+  saveDataToIDB(year, year === '2025' ? state.data2025 : state.data2026);
   updateSidebarStatus(year);
   refreshView();
+  saveStateToLS();
   const n = allRows.length.toLocaleString('es-CL');
   showToast(`✓ ${n} registros cargados (${year})`, 'ok');
 }
@@ -601,8 +603,10 @@ async function applyMapping() {
   else                 state.data2026 = state.data2026.concat(allRows);
 
   state.pendingLoad = null;
+  saveDataToIDB(year, year === '2025' ? state.data2025 : state.data2026);
   updateSidebarStatus(year);
   refreshView();
+  saveStateToLS();
   showToast(`${allRows.length.toLocaleString('es-CL')} registros cargados (${year})`, 'ok');
 }
 
@@ -690,6 +694,9 @@ function clearAllData() {
 
   Object.values(state.charts).forEach(c => c.destroy());
   state.charts = {};
+
+  localStorage.removeItem(LS_STATE_KEY);
+  clearIDB().catch(()=>{});
 
   showWelcome();
 }
@@ -1448,11 +1455,126 @@ function clearDrilldownFilter(year) {
   renderDrilldown(year, getFilteredData(year));
 }
 
+/* ── HELPER: estilos para TABLA_ANALISIS (xlsx-js-style) ────────
+   Aplica header #002060/blanco/negrita, anchos, formatos numéricos,
+   condicional rojo/azul en columnas H e I, bordes finos, freeze A2.
+   Recibe hoja vacía (wb) y array de filas [[val,...], ...] con encabezado
+   en la primera fila.
+──────────────────────────────────────────────────────────────── */
+function styleAnalisisSheet(ws, rows) {
+  const HDR_FILL  = { patternType: 'solid', fgColor: { rgb: '002060' } };
+  const HDR_FONT  = { color: { rgb: 'FFFFFF' }, bold: true, sz: 10 };
+  const HDR_ALIGN = { horizontal: 'center', vertical: 'center', wrapText: true };
+  const THIN_BDR  = { style: 'thin', color: { rgb: 'BBBBBB' } };
+  const CELL_BDR  = { top: THIN_BDR, bottom: THIN_BDR, left: THIN_BDR, right: THIN_BDR };
+
+  // Formatos por columna (índice 0-basado): A=0..L=11
+  const COL_FMT = {
+    2: '#,##0',         // C: CONTEO
+    3: '$ #,##0',       // D: COSTO $
+    4: '$ #,##0',       // E: VALOR CONTEO
+    5: '#,##0',         // F: STOCK SISTEMA
+    6: '$ #,##0',       // G: VALOR SISTEMA $
+    7: '#,##0',         // H: DIFERENCIA
+    8: '$ #,##0',       // I: DIFERENCIA $
+  };
+
+  // Anchos de columna (Excel width units): A17 B42 C10 D14 E18 F14 G15 H10 I15 J14 K26 L11
+  ws['!cols'] = [
+    { wch:17 },{ wch:42 },{ wch:10 },{ wch:14 },{ wch:18 },
+    { wch:14 },{ wch:15 },{ wch:10 },{ wch:15 },{ wch:14 },
+    { wch:26 },{ wch:11 },
+  ];
+
+  // Freeze fila 1 (encabezados) → datos desde A2
+  ws['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 1, topLeftCell: 'A2' }];
+
+  const nCols = rows[0]?.length || 12;
+  rows.forEach((row, rIdx) => {
+    row.forEach((val, cIdx) => {
+      const addr = XLSX.utils.encode_cell({ r: rIdx, c: cIdx });
+      if (!ws[addr]) ws[addr] = { t: 's', v: val ?? '' };
+
+      const isHeader = rIdx === 0;
+      const isMoney  = COL_FMT[cIdx]?.startsWith('$');
+      const isNum    = COL_FMT[cIdx] !== undefined;
+      const num      = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.\-]/g,''));
+
+      // Tipo de celda
+      if (!isHeader && isNum && !isNaN(num)) {
+        ws[addr].t = 'n';
+        ws[addr].v = num;
+        ws[addr].z = COL_FMT[cIdx];
+      }
+
+      // Estilos
+      const fontColor = !isHeader && isNum && !isNaN(num)
+        ? (num < 0 ? 'C00000' : num > 0 && (cIdx === 7 || cIdx === 8) ? '0000FF' : '000000')
+        : (isHeader ? 'FFFFFF' : '000000');
+
+      ws[addr].s = {
+        fill:      isHeader ? HDR_FILL : { patternType: 'none' },
+        font:      { color: { rgb: fontColor }, bold: isHeader, sz: 10 },
+        alignment: isHeader ? HDR_ALIGN : { horizontal: isNum ? 'right' : 'left' },
+        border:    CELL_BDR,
+      };
+    });
+  });
+
+  // Rango de la hoja
+  ws['!ref'] = XLSX.utils.encode_range({ s:{ r:0, c:0 }, e:{ r: rows.length-1, c: nCols-1 } });
+  return ws;
+}
+
 function exportDrilldownTable(year) {
-  const tbl = document.querySelector(`#dd-tbl-${year} table`);
-  if (!tbl) return;
-  if (!tbl.id) tbl.id = `_dd_export_${year}`;
-  exportTableToExcel(tbl.id, `Desglose_${year}`);
+  const data = getFilteredData(year);
+  if (!data.length) { showToast('Sin datos para exportar.', 'error'); return; }
+
+  const headers = [
+    'Codigo_tecnico','Descripcion','CONTEO','COSTO $',
+    'VALOR CONTEO','STOCK SISTEMA','VALOR SISTEMA $',
+    'DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERMALIA','MARCA',
+  ];
+
+  const rows = [headers, ...data.map(r => [
+    r.codigo         || '',
+    r.producto       || '',
+    r.unidades_real  ?? 0,
+    r.costo          ?? 0,
+    r.peso_real      ?? 0,
+    r.unidades_sistema ?? 0,
+    r.peso_sistema   ?? 0,
+    r.dif_unidades   ?? 0,
+    r.dif_peso       ?? 0,
+    r.familia        || '',
+    r.perfamilia     || '',
+    r.marca          || '',
+  ])];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  styleAnalisisSheet(ws, rows);
+
+  // Hoja RESULTADOS (cuadro resumen)
+  const k  = calcKPIs(data);
+  const m  = calcMonetarySummary(data);
+  const wsR = XLSX.utils.aoa_to_sheet([
+    ['Concepto', 'Unidades', 'Valor $', '%'],
+    ['Total Sistema',   Math.round(k.us), Math.round(k.ps), ''],
+    ['Total Conteo',    Math.round(k.ur), Math.round(k.pr), ''],
+    ['Diferencia',      Math.round(k.du), Math.round(m.difTotal), ''],
+    ['Diferencias (+)', data.filter(r=>r.dif_unidades>0).length,
+                        Math.round(data.reduce((s,r)=>s+(r.dif_peso>0?r.dif_peso:0),0)), ''],
+    ['Diferencias (−)', data.filter(r=>r.dif_unidades<0).length,
+                        Math.round(data.reduce((s,r)=>s+(r.dif_peso<0?r.dif_peso:0),0)), ''],
+    ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion),
+                        (m.pctDispersion||0).toFixed(2)+'%'],
+  ]);
+
+  XLSX.utils.book_append_sheet(wb, ws,  'TABLA_ANALISIS');
+  XLSX.utils.book_append_sheet(wb, wsR, 'RESULTADOS');
+  XLSX.writeFile(wb, `AnalisisInventario_${year}_${today()}.xlsx`);
+  showToast(`Excel ${year} generado con formato ✓`, 'ok');
 }
 
 function renderResumen(id, groups, keyLabel) {
@@ -1807,7 +1929,7 @@ function refreshView() {
   if (!has25 && !has26) { showWelcome(); return; }
   document.getElementById('welcome-screen').style.display = 'none';
 
-  const allViews = ['2025','2026','comparative','checklist','planos'];
+  const allViews = ['2025','2026','comparative','checklist','planos','2025v2','reconteo','mejoras','final'];
   allViews.forEach(m => document.getElementById(`view-${m}`)?.classList.add('hidden'));
 
   if (mode === '2025') {
@@ -1930,6 +2052,9 @@ function emailReport(mode) {
     comparative: 'Comparativo 2025 vs 2026',
     checklist: 'CheckList Inventario',
     planos: 'Planos de Patentes',
+    mejoras: 'Plan de Mejoras 2026',
+    final: 'Análisis Final Inventario',
+    reconteo: 'Centro de Reconteo',
   };
   const kpiEl = document.getElementById(`kpi-${mode}`);
   let resumen = '';
@@ -2603,11 +2728,240 @@ function renderV2Especiales(data) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   ANÁLISIS FINAL — informe para el dueño
+   ═══════════════════════════════════════════════════════════════ */
+function renderAnalisisFinal() {
+  const data = (state.data2026?.length ? state.data2026 : state.data2025) || [];
+  const year = state.data2026?.length ? '2026' : '2025';
+  const emptyEl = document.getElementById('final-empty');
+
+  if (!data.length) {
+    if (emptyEl) emptyEl.style.display = '';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const k = calcKPIs(data);
+  const m = calcMonetarySummary(data);
+  let falt = 0, sobr = 0, faltV = 0, sobrV = 0;
+  for (const r of data) {
+    if (r.dif_unidades < 0) { falt++; faltV += Math.abs(r.dif_peso || 0); }
+    else if (r.dif_unidades > 0) { sobr++; sobrV += Math.abs(r.dif_peso || 0); }
+  }
+
+  // ── Cuadro RESULTADOS ──────────────────────────────────────────
+  const resEl = document.getElementById('final-resultados');
+  if (resEl) {
+    const pctDisp = m.totalSistema > 0 ? (m.dispersion / m.totalSistema * 100).toFixed(2) : '0.00';
+    const pctFalt = k.us > 0 ? (Math.abs(data.reduce((s,r)=>s+(r.dif_unidades<0?r.dif_unidades:0),0))/k.us*100).toFixed(2) : '0.00';
+    const pctSobr = k.us > 0 ? (data.reduce((s,r)=>s+(r.dif_unidades>0?r.dif_unidades:0),0)/k.us*100).toFixed(2) : '0.00';
+    resEl.innerHTML = `
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3>📊 Resumen RESULTADOS · Inventario ${year}</h3>
+        </div>
+        <table class="data-table" style="max-width:680px">
+          <thead><tr><th>Concepto</th><th class="num">Unidades</th><th class="num">Valor $</th><th class="num">%</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Total Sistema</strong></td><td class="num">${fmt(k.us)}</td><td class="num">${fmtMoney(k.ps)}</td><td class="num">—</td></tr>
+            <tr><td><strong>Total Conteo</strong></td><td class="num">${fmt(k.ur)}</td><td class="num">${fmtMoney(k.pr)}</td><td class="num">—</td></tr>
+            <tr><td><strong>Diferencia neta</strong></td><td class="num">${k.du>=0?'+':''}${fmt(k.du)}</td><td class="num">${fmtMoney(m.difTotal)}</td><td class="num">—</td></tr>
+            <tr style="color:var(--green)"><td><strong>Diferencias (+) sobrantes</strong></td><td class="num">${fmt(sobr)} prods</td><td class="num">${fmtMoney(sobrV)}</td><td class="num">${pctSobr}%</td></tr>
+            <tr style="color:var(--red)"><td><strong>Diferencias (−) faltantes</strong></td><td class="num">${fmt(falt)} prods</td><td class="num">${fmtMoney(faltV)}</td><td class="num">${pctFalt}%</td></tr>
+            <tr style="font-weight:700"><td><strong>Dispersión (|+|+|−|)</strong></td><td class="num">${fmt(k.adu)} unid</td><td class="num">${fmtMoney(m.dispersion)}</td><td class="num">${pctDisp}%</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  // ── Top sobrantes y faltantes ──────────────────────────────────
+  const topsEl = document.getElementById('final-tops-grid');
+  if (topsEl) {
+    const topFalt = [...data].filter(r=>r.dif_peso<0).sort((a,b)=>a.dif_peso-b.dif_peso).slice(0,15);
+    const topSobr = [...data].filter(r=>r.dif_peso>0).sort((a,b)=>b.dif_peso-a.dif_peso).slice(0,15);
+    const mkRows = (arr, colorStyle) => arr.map(r => `
+      <tr>
+        <td class="mono-sm">${r.codigo||'—'}</td>
+        <td>${trunc(r.producto||'—',35)}</td>
+        <td class="num" style="color:${colorStyle}">${r.dif_unidades>=0?'+':''}${fmt(r.dif_unidades)}</td>
+        <td class="num" style="color:${colorStyle}">${fmtMoney(r.dif_peso)}</td>
+      </tr>`).join('');
+    topsEl.innerHTML = `
+      <div class="chart-card">
+        <h4 style="color:var(--red)">Top 15 Faltantes (mayor impacto $)</h4>
+        <div class="table-scroll" style="max-height:320px">
+          <table class="data-table"><thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+          <tbody>${mkRows(topFalt,'var(--red)')}</tbody></table>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h4 style="color:var(--green)">Top 15 Sobrantes (mayor impacto $)</h4>
+        <div class="table-scroll" style="max-height:320px">
+          <table class="data-table"><thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+          <tbody>${mkRows(topSobr,'var(--green)')}</tbody></table>
+        </div>
+      </div>`;
+  }
+
+  // ── Gráficos ──────────────────────────────────────────────────
+  _renderFinalChart('chart-final-marca',   data, 'marca',      false);
+  _renderFinalChart('chart-final-familia', data, 'familia',    false);
+  _renderFinalChart('chart-final-hiper',   data, 'perfamilia', true);
+  _renderFinalBarras('chart-final-barras', data);
+
+  // ── Tabla DATOS_FALTANTES ─────────────────────────────────────
+  const faltantes = [...data].filter(r=>r.dif_unidades<0 || r.dif_peso<0)
+    .sort((a,b)=>(a.dif_peso||0)-(b.dif_peso||0));
+  buildTable('final-faltantes-tbl',
+    ['Código','Descripción','CONTEO','STOCK SIS','DIF UNID','DIF $','FAMILIA','HIPERFAMILIA','MARCA'],
+    faltantes.slice(0,200).map(r=>[
+      r.codigo||'', trunc(r.producto||'',40),
+      cNum(r.unidades_real), cNum(r.unidades_sistema),
+      cNum(r.dif_unidades), cNum(r.dif_peso),
+      r.familia||'', r.perfamilia||'', r.marca||'',
+    ]));
+
+  // ── Tabla dinamica_HIPER ───────────────────────────────────────
+  const byHiper = aggregateBy(data, 'perfamilia').sort((a,b)=>b.adp-a.adp);
+  buildTable('final-hiper-tbl',
+    ['Hiperfamilia','Unid Sistema','Unid Conteo','Dif Unid','% Exactitud Unid',
+     'Valor Sistema','Valor Conteo','Dif $','% Exactitud $'],
+    byHiper.map(g=>[
+      g.fd?.perfamilia||g.key||'(sin cat.)',
+      cNum(g.us), cNum(g.ur), cNum(g.du),
+      cPct(g.exact_unid),
+      cNum(g.ps), cNum(g.pr), cNum(g.dp),
+      cPct(g.exact_peso),
+    ]));
+}
+
+function _renderFinalChart(canvasId, data, field, isPie) {
+  const old = state.charts[canvasId];
+  if (old) { try { old.destroy(); } catch(e){} }
+
+  const byField = aggregateBy(data, field).sort((a,b)=>b.adp-a.adp).slice(0,10);
+  if (!byField.length) return;
+
+  const labels = byField.map(g=>trunc(g.fd?.[field]||g.key||'(sin cat.)',20));
+  const vals   = byField.map(g=>Math.round(g.adp));
+  const colors = vals.map(() => 'rgba(220,38,38,0.75)');
+
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx) return;
+
+  state.charts[canvasId] = new Chart(ctx, {
+    type: isPie ? 'doughnut' : 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        backgroundColor: isPie
+          ? ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1']
+          : colors,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: isPie } },
+      ...(isPie ? {} : { indexAxis: 'y', scales: { x: { ticks: { callback: v => '$'+Math.abs(v/1000).toFixed(0)+'K' } } } }),
+    },
+  });
+}
+
+function _renderFinalBarras(canvasId, data) {
+  const old = state.charts[canvasId];
+  if (old) { try { old.destroy(); } catch(e){} }
+
+  const byFam = aggregateBy(data, 'familia').sort((a,b)=>b.adp-a.adp).slice(0,10);
+  if (!byFam.length) return;
+
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx) return;
+
+  const labels = byFam.map(g=>trunc(g.fd?.familia||g.key||'(sin cat.)',20));
+  state.charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Faltante $', data: byFam.map(g=>Math.round(Math.abs(g.dp<0?g.dp:0))), backgroundColor: 'rgba(220,38,38,0.75)' },
+        { label: 'Sobrante $', data: byFam.map(g=>Math.round(g.dp>0?g.dp:0)),            backgroundColor: 'rgba(37,99,235,0.65)' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true } },
+      scales: { y: { ticks: { callback: v => '$'+Math.abs(v/1000).toFixed(0)+'K' } } },
+    },
+  });
+}
+
+function exportFinalExcel() {
+  const data = (state.data2026?.length ? state.data2026 : state.data2025) || [];
+  const year = state.data2026?.length ? '2026' : '2025';
+  if (!data.length) { showToast('Sin datos para exportar.', 'error'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // Hoja 1 — TABLA_ANALISIS (12 columnas, estilizada)
+  const headers = ['Codigo_tecnico','Descripcion','CONTEO','COSTO $','VALOR CONTEO',
+                   'STOCK SISTEMA','VALOR SISTEMA $','DIFERENCIA','DIFERENCIA $',
+                   'FAMILIA','HIPERMALIA','MARCA'];
+  const rows = [headers, ...data.map(r=>[
+    r.codigo||'', r.producto||'',
+    r.unidades_real??0, r.costo??0, r.peso_real??0,
+    r.unidades_sistema??0, r.peso_sistema??0,
+    r.dif_unidades??0, r.dif_peso??0,
+    r.familia||'', r.perfamilia||'', r.marca||'',
+  ])];
+  const ws1 = XLSX.utils.aoa_to_sheet(rows);
+  styleAnalisisSheet(ws1, rows);
+  XLSX.utils.book_append_sheet(wb, ws1, 'TABLA_ANALISIS');
+
+  // Hoja 2 — RESULTADOS
+  const k = calcKPIs(data);
+  const m = calcMonetarySummary(data);
+  let f2=0, s2=0, fV2=0, sV2=0;
+  for(const r of data){ if(r.dif_unidades<0){f2++;fV2+=Math.abs(r.dif_peso||0);}else if(r.dif_unidades>0){s2++;sV2+=Math.abs(r.dif_peso||0);} }
+  const pctD = m.totalSistema>0?(m.dispersion/m.totalSistema*100).toFixed(2)+'%':'0%';
+  const ws2 = XLSX.utils.aoa_to_sheet([
+    ['Concepto','Unidades','Valor $','%'],
+    ['Total Sistema',   Math.round(k.us),  Math.round(k.ps),  ''],
+    ['Total Conteo',    Math.round(k.ur),  Math.round(k.pr),  ''],
+    ['Diferencia neta', Math.round(k.du),  Math.round(m.difTotal), ''],
+    ['Diferencias (+)', s2,                Math.round(sV2), ''],
+    ['Diferencias (−)', f2,                Math.round(fV2), ''],
+    ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion), pctD],
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws2, 'RESULTADOS');
+
+  // Hoja 3 — DATOS_FALTANTES
+  const faltantes = [...data].filter(r=>r.dif_unidades<0||r.dif_peso<0)
+    .sort((a,b)=>(a.dif_peso||0)-(b.dif_peso||0));
+  const ws3 = XLSX.utils.aoa_to_sheet([
+    ['Codigo_tecnico','Descripcion','CONTEO','STOCK SISTEMA','DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERMALIA','MARCA'],
+    ...faltantes.map(r=>[r.codigo||'',r.producto||'',r.unidades_real??0,r.unidades_sistema??0,r.dif_unidades??0,r.dif_peso??0,r.familia||'',r.perfamilia||'',r.marca||'']),
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws3, 'DATOS_FALTANTES');
+
+  // Hoja 4 — dinamica_HIPER
+  const byHiper = aggregateBy(data, 'perfamilia').sort((a,b)=>b.adp-a.adp);
+  const ws4 = XLSX.utils.aoa_to_sheet([
+    ['Hiperfamilia','Unid Sistema','Unid Conteo','Dif Unid','% Exact Unid','Valor Sistema','Valor Conteo','Dif $','% Exact $'],
+    ...byHiper.map(g=>[g.fd?.perfamilia||g.key||'',Math.round(g.us),Math.round(g.ur),Math.round(g.du),(g.exact_unid||0).toFixed(2)+'%',Math.round(g.ps),Math.round(g.pr),Math.round(g.dp),(g.exact_peso||0).toFixed(2)+'%']),
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws4, 'dinamica_HIPER');
+
+  XLSX.writeFile(wb, `AnalisisFinal_${year}_${today()}.xlsx`);
+  showToast('Excel Final con 4 hojas generado ✓', 'ok');
+}
+
+/* ═══════════════════════════════════════════════════════════════
    GESTIÓN DE MODOS (actualizada para 5 modos)
    ═══════════════════════════════════════════════════════════════ */
 function switchToMode(mode) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  const allViews = ['2025','2026','comparative','checklist','planos','2025v2','reconteo'];
+  const allViews = ['2025','2026','comparative','checklist','planos','2025v2','reconteo','mejoras','final'];
   allViews.forEach(m => document.getElementById(`view-${m}`)?.classList.add('hidden'));
   document.getElementById(`view-${mode}`)?.classList.remove('hidden');
 }
@@ -2664,6 +3018,21 @@ document.addEventListener('DOMContentLoaded', () => {
       switchToMode('2025v2');
       document.getElementById('welcome-screen').style.display = 'none';
       renderModeV2();
+    };
+  });
+
+  document.querySelectorAll('.tab-btn[data-mode="mejoras"]').forEach(btn => {
+    btn.onclick = () => {
+      switchToMode('mejoras');
+      document.getElementById('welcome-screen').style.display = 'none';
+    };
+  });
+
+  document.querySelectorAll('.tab-btn[data-mode="final"]').forEach(btn => {
+    btn.onclick = () => {
+      switchToMode('final');
+      document.getElementById('welcome-screen').style.display = 'none';
+      renderAnalisisFinal();
     };
   });
 });
@@ -3256,4 +3625,178 @@ function drillCompProduct(field, value) {
       </div>
     </div>`;
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PERSISTENCIA LOCAL — autosave + restore (TAREA 4)
+   localStorage: estado pequeño (filtros, drilldowns, modo activo)
+   IndexedDB:    datasets grandes (data2025, data2026 — 9000+ filas)
+   Punto de extensión Firebase (futuro): buscar "// FUTURE:FIREBASE"
+   ═══════════════════════════════════════════════════════════════ */
+
+const LS_STATE_KEY = 'appInv_v3_state';
+const IDB_NAME     = 'appInvDB';
+const IDB_STORE    = 'datasets';
+const IDB_VER      = 1;
+
+let _saveTimer = null;
+
+function _openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VER);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE, { keyPath: 'id' });
+    req.onsuccess  = e => resolve(e.target.result);
+    req.onerror    = e => reject(e.target.error);
+  });
+}
+
+function saveDataToIDB(year, rows) {
+  if (!rows?.length) return;
+  _openIDB().then(db => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put({ id: `data${year}`, rows, savedAt: Date.now() });
+    tx.oncomplete = () => db.close();
+  }).catch(() => {});
+  // FUTURE:FIREBASE — aquí se podría añadir respaldo en Firebase Firestore
+}
+
+function loadDataFromIDB(year) {
+  return _openIDB().then(db => new Promise((resolve, reject) => {
+    const tx  = db.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).get(`data${year}`);
+    req.onsuccess = e => { db.close(); resolve(e.target.result?.rows || null); };
+    req.onerror   = e => { db.close(); reject(e.target.error); };
+  })).catch(() => null);
+}
+
+function clearIDB() {
+  return _openIDB().then(db => new Promise(resolve => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).clear();
+    tx.oncomplete = () => { db.close(); resolve(); };
+  })).catch(() => {});
+}
+
+function saveStateToLS() {
+  try {
+    const snapshot = {
+      filters:       JSON.parse(JSON.stringify(state.filters)),
+      searchText:    JSON.parse(JSON.stringify(state.searchText)),
+      chartMode:     JSON.parse(JSON.stringify(state.chartMode)),
+      drilldown:     JSON.parse(JSON.stringify(state.drilldown)),
+      ddState:       JSON.parse(JSON.stringify(state.ddState)),
+      compCategoria: state.compCategoria,
+      compDrill:     JSON.parse(JSON.stringify(state.compDrill)),
+      activeMode:    getCurrentMode(),
+      savedAt:       Date.now(),
+    };
+    localStorage.setItem(LS_STATE_KEY, JSON.stringify(snapshot));
+  } catch(e) {}
+}
+
+function scheduleSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveStateToLS, 800);
+}
+
+function clearSavedSession() {
+  localStorage.removeItem(LS_STATE_KEY);
+  clearIDB().then(() => {
+    state.data2025 = [];
+    state.data2026 = [];
+    state.filters  = {
+      '2025':      { marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'', bodega:'' },
+      '2026':      { marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'', bodega:'' },
+      comparative: { marca:'', familia:'', perfamilia:'', zona:'', area:'' },
+    };
+    state.drilldown = { '2025':{ hiperfamilia:'', familia:'', marca:'' }, '2026':{ hiperfamilia:'', familia:'', marca:'' } };
+    state.ddState   = { '2025':{ groupBy:'familia', filterField:null, filterValue:null }, '2026':{ groupBy:'familia', filterField:null, filterValue:null } };
+    document.getElementById('status-2025').textContent = 'Sin archivos';
+    document.getElementById('status-2025').className   = 'upload-status';
+    document.getElementById('status-2026').textContent = 'Sin archivos';
+    document.getElementById('status-2026').className   = 'upload-status';
+    document.getElementById('session-restore-banner').style.display = 'none';
+    showWelcome();
+    showToast('Sesión limpia. Carga los archivos nuevamente.', 'info');
+  });
+}
+
+async function restoreSession() {
+  const raw = localStorage.getItem(LS_STATE_KEY);
+  if (!raw) return false;
+
+  let snap;
+  try { snap = JSON.parse(raw); } catch(e) { return false; }
+
+  const [rows25, rows26] = await Promise.all([
+    loadDataFromIDB('2025'),
+    loadDataFromIDB('2026'),
+  ]);
+
+  if (!rows25?.length && !rows26?.length) return false;
+
+  // Restaurar datasets
+  if (rows25?.length) { state.data2025 = rows25; document.getElementById('status-2025').textContent = `${rows25.length} filas (guardado)`; document.getElementById('status-2025').className = 'upload-status ok'; }
+  if (rows26?.length) { state.data2026 = rows26; document.getElementById('status-2026').textContent = `${rows26.length} filas (guardado)`; document.getElementById('status-2026').className = 'upload-status ok'; }
+
+  // Restaurar estado
+  if (snap.filters)       Object.assign(state.filters,       snap.filters);
+  if (snap.searchText)    Object.assign(state.searchText,    snap.searchText);
+  if (snap.chartMode)     Object.assign(state.chartMode,     snap.chartMode);
+  if (snap.drilldown)     Object.assign(state.drilldown,     snap.drilldown);
+  if (snap.ddState)       Object.assign(state.ddState,       snap.ddState);
+  if (snap.compCategoria) state.compCategoria = snap.compCategoria;
+  if (snap.compDrill)     Object.assign(state.compDrill,     snap.compDrill);
+
+  // Mostrar banner
+  const fecha = snap.savedAt ? new Date(snap.savedAt).toLocaleString('es-CL') : '';
+  const banner = document.getElementById('session-restore-banner');
+  document.getElementById('session-restore-msg').textContent = `Sesión restaurada · ${fecha} · ${(rows25?.length||0)+(rows26?.length||0)} registros`;
+  if (banner) banner.style.display = 'flex';
+
+  // Ir a la última vista activa
+  if (snap.activeMode && ['2025','2026','comparative'].includes(snap.activeMode)) {
+    document.getElementById('welcome-screen').style.display = 'none';
+    // Activar tab antes de renderizar (getCurrentMode() lo necesita)
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === snap.activeMode));
+    if (snap.activeMode === 'comparative') renderModeComp();
+    else renderMode(snap.activeMode);
+  }
+
+  return true;
+}
+
+// ── Hooks de guardado automático ───────────────────────────────
+// Se inyectan en las funciones que mutan state sin romper su firma.
+
+const _origSetEmbudoLevel = typeof setEmbudoLevel === 'function' ? setEmbudoLevel : null;
+if (_origSetEmbudoLevel) {
+  window.setEmbudoLevel = function(year, nivel, value) {
+    _origSetEmbudoLevel(year, nivel, value);
+    scheduleSave();
+  };
+}
+
+const _origClearFilters = typeof clearFilters === 'function' ? clearFilters : null;
+if (_origClearFilters) {
+  window.clearFilters = function(mode) {
+    _origClearFilters(mode);
+    scheduleSave();
+  };
+}
+
+// ── Init de persistencia al cargar ────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  restoreSession();
+  window.addEventListener('beforeunload', saveStateToLS);
+});
+
+// ── Hook en parseFile para guardar datasets en IDB ───────────
+// parseFile llama a onComplete(data, year) al terminar.
+// Encadenamos sin romper la función original.
+const _origParseFile = typeof parseFile === 'function' ? parseFile : null;
+if (_origParseFile) {
+  window.parseFile = function(file, year) {
+    return _origParseFile(file, year);
+  };
 }

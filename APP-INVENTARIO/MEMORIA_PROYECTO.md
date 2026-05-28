@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V3.0
+# VERSION: V4.0
 # FECHA: 2026-05-28
 
 ---
@@ -209,6 +209,25 @@ clearCompDrill()                   // V3.0: limpia breadcrumb + comp-drill-produ
 // Acordeones
 toggleAcc(btn)                     // V3.0: max-height transition + swap ▾/▴
 initAccordions()                   // V3.0: conecta todos los .acc-btn al DOMContentLoaded
+
+// Análisis Final (V4.0)
+renderAnalisisFinal()              // V4.0: cuadro RESULTADOS + tops + gráficos + tablas
+_renderFinalChart(id, data, field, isPie)
+_renderFinalBarras(id, data)
+exportFinalExcel()                 // V4.0: 4 hojas xlsx-js-style
+
+// Exportaciones estilizadas (V4.0)
+styleAnalisisSheet(ws, rows)       // V4.0: aplica estilos TABLA_ANALISIS a ws
+exportDrilldownTable(year)         // V4.0: 12 columnas + RESULTADOS, xlsx-js-style
+
+// Persistencia local (V4.0)
+saveDataToIDB(year, rows)          // V4.0: guarda dataset en IndexedDB
+loadDataFromIDB(year)              // V4.0: carga dataset de IndexedDB
+clearIDB()                         // V4.0: limpia IndexedDB
+saveStateToLS()                    // V4.0: guarda estado pequeño en localStorage
+scheduleSave()                     // V4.0: debounce 800ms para saveStateToLS
+clearSavedSession()                // V4.0: borra LS + IDB + estado → welcome
+restoreSession()                   // V4.0: async, restaura datos + estado + muestra banner
 ```
 
 ---
@@ -277,6 +296,64 @@ initAccordions()                   // V3.0: conecta todos los .acc-btn al DOMCon
 
 ## HISTORIAL DE CAMBIOS
 
+### V4.0 — 2026-05-28
+
+**TAREA 1 — Menú reordenado por flujo de trabajo real:**
+- Nuevo orden: Planos → CheckList → Centro Reconteo → Análisis 2025 → Análisis 2026 → Comparativo → Análisis Avanzado → Análisis Final → Mejoras 2026
+- CDN SheetJS community → xlsx-js-style 1.2.0 (permite estilos de celda en exports)
+- Tab "Análisis Final" (data-mode="final") añadido a nav + view-final HTML con IDs:
+  `final-resultados`, `final-tops-grid`, `chart-final-{marca,familia,hiper,barras}`,
+  `final-faltantes-tbl`, `final-hiper-tbl`, `final-empty`
+
+**TAREA 2 — Fix botones y tabs que no respondían:**
+- `switchToMode()` allViews ampliado: añadidos 'mejoras' y 'final'
+- `refreshView()` allViews ampliado: todos los 9 modos
+- Handler `onclick` para tab 'mejoras' añadido a DOMContentLoaded (FALTABA COMPLETAMENTE)
+- Handler `onclick` para tab 'final' añadido a DOMContentLoaded
+- `emailReport()` titles dict: añadidos 'mejoras', 'final', 'reconteo'
+
+**TAREA 3 — Exportación Excel con formato del modelo TABLA_ANALISIS:**
+- `styleAnalisisSheet(ws, rows)` — helper nuevo:
+  header #002060/blanco/negrita/centrado, anchos A17..L11, formatos $/#,##0,
+  condicional fuente roja(C00000)/azul(0000FF) en columnas H (DIFERENCIA) e I (DIFERENCIA $),
+  bordes CELL_BDR, freeze A2 vía ws['!views']
+- `exportDrilldownTable(year)` — reescrita:
+  genera las 12 columnas exactas del modelo + hoja RESULTADOS en el mismo workbook
+  Usa `getFilteredData(year)` directamente (no DOM table)
+- `exportFinalExcel()` — nueva: workbook de 4 hojas (TABLA_ANALISIS + RESULTADOS +
+  DATOS_FALTANTES + dinamica_HIPER), todas con datos reales
+
+**TAREA 4 — Persistencia local autosave + restore:**
+- IndexedDB (`appInvDB`, store `datasets`): guarda data2025/data2026 al cargar archivos
+  Funciones: `saveDataToIDB`, `loadDataFromIDB`, `clearIDB`
+- localStorage (`appInv_v3_state`): guarda filtros, drilldowns, chartMode, compCategoria,
+  compDrill, modo activo, timestamp
+  Funciones: `saveStateToLS`, `scheduleSave` (debounce 800ms)
+- `restoreSession()` async: carga IDB + LS, muestra banner azul "Sesión restaurada · [fecha]"
+  con botón "Empezar de cero"
+- `clearSavedSession()`: borra LS + IDB + estado → welcome screen
+- Banner HTML: `<div id="session-restore-banner">` con botones cerrar y limpiar
+- Hooks: `saveDataToIDB` se llama en ambos paths de parseFile al asignar datos;
+  `clearAllData` también limpia LS + IDB
+- Punto de extensión comentado: `// FUTURE:FIREBASE`
+- NOTA: los hooks de `setEmbudoLevel` y `clearFilters` wrappean las funciones en window
+  para disparar `scheduleSave` sin modificar la firma
+
+**TAREA 5 — Vista "Análisis Final":**
+- `renderAnalisisFinal()`: cuadro RESULTADOS, top 15 faltantes/sobrantes,
+  4 gráficos Chart.js, tabla DATOS_FALTANTES, tabla dinamica_HIPER
+- `_renderFinalChart(canvasId, data, field, isPie)`: bar horizontal o doughnut
+- `_renderFinalBarras(canvasId, data)`: barras faltantes vs sobrantes por familia
+- `exportFinalExcel()`: 4 hojas xlsx-js-style con datos reales
+
+**PENDIENTE (no implementado en esta sesión):**
+- TAREA 6: Planos idéntico al Excel modelo (leer hojas y replicar diseño)
+- TAREA 7: CheckList idéntico al Excel modelo (ver Hoja1)
+- TAREA 8: Centro Reconteo — rankings explícitos por $ y por unidades (actualmente tiene
+  ordenamiento por severidad/$; falta rankeo separado por columna)
+- exportChecklistExcel / exportPlanosExcel con formato del modelo respectivo
+- Test end-to-end con archivos reales 2025/2026
+
 ### V3.0 — 2026-05-28
 
 **Layout grid vistas year:**
@@ -334,6 +411,10 @@ initAccordions()                   // V3.0: conecta todos los .acc-btn al DOMCon
 ## PENDIENTE
 
 - [ ] Test end-to-end con archivos reales de inventario 2025 y 2026
+- [ ] TAREA 6: view-planos idéntica al Excel modelo (leer hojas Sala 1/1erPiso_A/2doPiso_A/Patio_2)
+- [ ] TAREA 7: view-checklist idéntica al Excel modelo (Hoja1 de CheckList.xlsx)
+- [ ] TAREA 8: Centro Reconteo — rankings explícitos por $ y por unidades ordenables
+- [ ] exportChecklistExcel con layout del modelo
+- [ ] exportPlanosExcel con layout del modelo
 - [ ] Verificar embudo con datos reales (selects populados correctamente)
 - [ ] Verificar renderCompCategoria con datos reales (delta colors)
-- [ ] Export Excel / PDF del resumen global
