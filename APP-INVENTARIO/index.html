@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventario · El Manzano</title>
+  <title>Panel de Diferencias de Inventario · El Manzano</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -15,8 +15,8 @@
   <div class="brand">
     <span class="brand-icon">🔧</span>
     <div>
-      <div class="brand-title">El Manzano · Inventario</div>
-      <div class="brand-sub">Ferretería Oviedo</div>
+      <div class="brand-title">Panel de Diferencias de Inventario · El Manzano</div>
+      <div class="brand-sub">Carga inventarios 2025/2026 · Analiza diferencias en unidades y pesos · Navega hasta nivel de producto</div>
     </div>
   </div>
   <nav class="mode-tabs">
@@ -27,6 +27,7 @@
     <button class="tab-btn" data-mode="planos">🗺️ Planos</button>
     <button class="tab-btn" data-mode="mejoras">🎯 Mejoras 2026</button>
     <button class="tab-btn" data-mode="2025v2">🔬 Análisis Avanzado</button>
+    <button class="tab-btn tab-recount" data-mode="reconteo">🔁 Centro Reconteo</button>
   </nav>
 </header>
 
@@ -92,12 +93,15 @@
       <div class="view-header">
         <h2>Análisis Inventario 2025</h2>
         <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportResumenGlobalExcel('2025')">⬇ KPIs</button>
           <button class="btn btn-sm" onclick="exportDrilldownTable('2025')">⬇ Excel</button>
           <button class="btn btn-sm" onclick="generateReport('2025')">📄 Reporte</button>
           <button class="btn btn-sm btn-ghost" onclick="printMode('2025')">🖨 Imprimir</button>
           <button class="btn btn-sm btn-email" onclick="emailReport('2025')">✉ Email</button>
         </div>
       </div>
+      <section id="resumen-global-2025" style="margin-bottom:18px"></section>
+      <section id="embudo-2025" style="margin-bottom:18px"></section>
       <div class="filters-bar" id="filters-2025"></div>
       <div class="kpi-grid" id="kpi-2025"></div>
       <div class="kpi-count" id="kpi-count-2025"></div>
@@ -157,12 +161,15 @@
       <div class="view-header">
         <h2>Análisis Inventario 2026</h2>
         <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportResumenGlobalExcel('2026')">⬇ KPIs</button>
           <button class="btn btn-sm" onclick="exportDrilldownTable('2026')">⬇ Excel</button>
           <button class="btn btn-sm" onclick="generateReport('2026')">📄 Reporte</button>
           <button class="btn btn-sm btn-ghost" onclick="printMode('2026')">🖨 Imprimir</button>
           <button class="btn btn-sm btn-email" onclick="emailReport('2026')">✉ Email</button>
         </div>
       </div>
+      <section id="resumen-global-2026" style="margin-bottom:18px"></section>
+      <section id="embudo-2026" style="margin-bottom:18px"></section>
       <div class="filters-bar" id="filters-2026"></div>
       <div class="kpi-grid" id="kpi-2026"></div>
       <div class="kpi-count" id="kpi-count-2026"></div>
@@ -222,12 +229,15 @@
       <div class="view-header">
         <h2>Comparativo 2025 vs 2026</h2>
         <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportResumenGlobalExcel('comparative')">⬇ KPIs</button>
           <button class="btn btn-sm" onclick="exportTableToExcel('table-comparative','Comparativo_2025_2026')">⬇ Excel</button>
           <button class="btn btn-sm" onclick="generateReport('comparative')">📄 Reporte</button>
           <button class="btn btn-sm btn-ghost" onclick="printMode('comparative')">🖨 Imprimir</button>
           <button class="btn btn-sm btn-email" onclick="emailReport('comparative')">✉ Email</button>
         </div>
       </div>
+      <section id="comp-kpis" style="margin-bottom:18px"></section>
+      <section id="comp-categoria" style="margin-bottom:18px"></section>
       <div class="filters-bar" id="filters-comparative"></div>
       <div class="kpi-grid" id="kpi-comparative"></div>
       <div class="insights-card" id="insights-comparative"></div>
@@ -824,7 +834,48 @@
 
     </div><!-- /view-2025v2 -->
 
-  </main>
+  
+    <!-- ── MODO RECONTEO ─────────────────────────────────────────────── -->
+    <div id="view-reconteo" class="view hidden">
+      <div class="view-header">
+        <h2>🔁 Centro de Reconteo Operacional</h2>
+      </div>
+      <div class="recount-summary" id="recount-summary"></div>
+      <div class="recount-toolbar">
+        <input id="recount-search" class="recount-input" placeholder="Buscar producto, marca, familia...">
+        <select id="recount-type">
+          <option value="all">Todas las diferencias</option>
+          <option value="faltantes">Solo faltantes</option>
+          <option value="sobrantes">Solo sobrantes</option>
+        </select>
+        <select id="recount-severity">
+          <option value="all">Todas las severidades</option>
+          <option value="critica">🔴 Crítica</option>
+          <option value="alta">🟠 Alta</option>
+          <option value="media">🟡 Media</option>
+          <option value="baja">🟢 Baja</option>
+        </select>
+      </div>
+      <div class="tbl-wrap recount-wrap">
+        <table class="tbl" id="recount-table">
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Producto</th>
+              <th>Marca</th>
+              <th>Familia</th>
+              <th>Subfamilia</th>
+              <th>Dif Unid</th>
+              <th>Dif $</th>
+              <th>Severidad</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+</main>
 </div><!-- /app-body -->
 
 <!-- ── MODAL MAPEO DE COLUMNAS ───────────────────────────────────── -->
