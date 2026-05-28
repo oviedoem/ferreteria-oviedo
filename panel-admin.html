@@ -1582,6 +1582,20 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <span id="isbContador" style="font-size:11px;color:#9ca3af"></span>
           </div>
           <div class="vadm-anal-bar" id="isbFiltroBar" style="display:none;gap:10px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:#374151">Bodegas</span>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+              <input type="checkbox" id="isbBodPEM" checked onchange="isbFiltrar()" style="width:14px;height:14px"> PEM
+            </label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+              <input type="checkbox" id="isbBodSEM" checked onchange="isbFiltrar()" style="width:14px;height:14px"> SEM
+            </label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+              <input type="checkbox" id="isbBodCEM" checked onchange="isbFiltrar()" style="width:14px;height:14px"> CEM
+            </label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+              <input type="checkbox" id="isbBodMEM" checked onchange="isbFiltrar()" style="width:14px;height:14px"> MEM
+            </label>
+            <span style="border-left:1px solid #d1d5db;height:18px"></span>
             <select id="isbFiltroHip" onchange="isbFiltrar()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
               <option value="">Todas las HiperFamilias</option>
             </select>
@@ -1609,38 +1623,33 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
                 <tr style="background:#f1f5f9;text-align:center">
                   <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px;white-space:nowrap">Código</th>
                   <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:200px">Descripción</th>
-                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#dbeafe;color:#1e40af">PEM</th>
-                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#dcfce7;color:#166534">SEM</th>
-                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#fef3c7;color:#92400e">CEM</th>
-                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#fce7f3;color:#9d174d">MEM</th>
-                  <th colspan="5" style="padding:6px;border:1px solid #e2e8f0;background:#e9d5ff;color:#6b21a8">TOTAL</th>
+                  <th colspan="4" style="padding:6px;border:1px solid #e2e8f0;background:#dbeafe;color:#1e40af">PEM</th>
+                  <th colspan="4" style="padding:6px;border:1px solid #e2e8f0;background:#dcfce7;color:#166534">SEM</th>
+                  <th colspan="4" style="padding:6px;border:1px solid #e2e8f0;background:#fef3c7;color:#92400e">CEM</th>
+                  <th colspan="4" style="padding:6px;border:1px solid #e2e8f0;background:#fce7f3;color:#9d174d">MEM</th>
+                  <th colspan="4" style="padding:6px;border:1px solid #e2e8f0;background:#e9d5ff;color:#6b21a8">TOTAL</th>
                 </tr>
                 <tr style="text-align:center;font-size:11px">
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">Fís</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">Ped</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">DifStk</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff">DifLib</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#eff6ff" title="Fís − Disp (despachos pendientes)">Dif</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">Fís</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">Ped</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">DifStk</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4">DifLib</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#f0fdf4" title="Fís − Disp (despachos pendientes)">Dif</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">Fís</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">Ped</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">DifStk</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8">DifLib</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fefce8" title="Fís − Disp (despachos pendientes)">Dif</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">Fís</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">Ped</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">DifStk</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8">DifLib</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#fdf2f8" title="Fís − Disp (despachos pendientes)">Dif</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">Disp</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">Fís</th>
                   <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">Ped</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">DifStk</th>
-                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff">DifLib</th>
+                  <th style="padding:4px 6px;border:1px solid #e2e8f0;background:#faf5ff" title="Fís − Disp (despachos pendientes)">Dif</th>
                 </tr>
               </thead>
               <tbody id="isbTbody"></tbody>
@@ -2748,34 +2757,35 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 <div class="tab-pane" id="tab-analisis">
   <div class="card">
     <div class="card-title"><span>📊</span> Análisis de Bodegas — IEM / RCE / CEM</div>
-    <div class="vadm-anal-bar" style="gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-      <label style="font-size:12px;font-weight:600;color:#374151">Fuente
-        <select id="bfFuente" onchange="vadmRenderBodFem()" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
-          <option value="ambas">Todas</option>
-          <option value="iem">IEM</option>
-          <option value="rce">RCE</option>
-          <option value="cem">CEM</option>
-        </select>
+    <div class="vadm-anal-bar" style="gap:12px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <span style="font-size:12px;font-weight:700;color:#374151">Bodega</span>
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="bfChkIEM" checked onchange="vadmRenderBodFem()" style="width:14px;height:14px"> IEM
       </label>
-      <label style="font-size:12px;font-weight:600;color:#374151">Buscar
-        <input type="text" id="bfBuscar" placeholder="Código o descripción" oninput="vadmFiltrarBodFem()"
-          style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:200px">
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="bfChkRCE" checked onchange="vadmRenderBodFem()" style="width:14px;height:14px"> RCE
       </label>
-      <label style="font-size:12px;font-weight:600;color:#374151">Bodega
-        <select id="bfBodega" onchange="vadmFiltrarBodFem()" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
-          <option value="">Todas</option>
-        </select>
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="bfChkCEM" checked onchange="vadmRenderBodFem()" style="width:14px;height:14px"> CEM
       </label>
+      <span style="border-left:1px solid #d1d5db;height:18px"></span>
+      <select id="bfTipoDoc" onchange="vadmFiltrarBodFem()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+        <option value="">Todos los tipos</option>
+      </select>
+      <input type="text" id="bfBuscar" placeholder="Código o descripción" oninput="vadmFiltrarBodFem()"
+        style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:180px">
       <label style="font-size:12px;font-weight:600;color:#374151">Días ≥
         <input type="number" id="bfDiasMin" min="0" value="" placeholder="0" oninput="vadmFiltrarBodFem()"
-          style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:70px">
+          style="margin-left:4px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:60px">
       </label>
       <label style="font-size:12px;font-weight:600;color:#374151">Días ≤
         <input type="number" id="bfDiasMax" min="0" value="" placeholder="∞" oninput="vadmFiltrarBodFem()"
-          style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:70px">
+          style="margin-left:4px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:60px">
       </label>
-      <span id="bfCount" style="font-size:12px;color:#6b7280;margin-left:6px"></span>
+      <button class="ven-adm-btn" onclick="bfExportExcel()">📊 Excel</button>
+      <span id="bfCount" style="font-size:12px;color:#6b7280;margin-left:auto"></span>
     </div>
+    <div id="bfKpis" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
     <div style="overflow-x:auto">
       <table id="bfTabla" style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
@@ -2786,11 +2796,13 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <th style="padding:8px 10px;text-align:left">Código</th>
             <th style="padding:8px 10px;text-align:left">Descripción</th>
             <th style="padding:8px 10px;text-align:right">Disp.</th>
-            <th style="padding:8px 10px;text-align:right">Físico</th>
-            <th style="padding:8px 10px;text-align:center">Fecha Registro</th>
-            <th style="padding:8px 10px;text-align:right">Días Antigüedad</th>
+            <th style="padding:8px 10px;text-align:right">Fís.</th>
+            <th style="padding:8px 10px;text-align:right">Dif.</th>
+            <th style="padding:8px 10px;text-align:right">Costo unit.</th>
+            <th style="padding:8px 10px;text-align:center">Fecha Reg.</th>
+            <th style="padding:8px 10px;text-align:right">Días</th>
             <th style="padding:8px 10px;text-align:right">Valorizado</th>
-            <th style="padding:8px 10px;text-align:left">Observación</th>
+            <th style="padding:8px 10px;text-align:left">Obs.</th>
           </tr>
         </thead>
         <tbody id="bfTbody"></tbody>
@@ -15540,99 +15552,155 @@ function reqEmailCerrar(){
 // ── ANÁLISIS BODEGAS IEM / RCE ────────────────────────────────────────────────
 var _bfDatos = [];
 
+function _bfEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function vadmRenderBodFem(){
-  var fuente = (document.getElementById('bfFuente')||{value:'ambas'}).value || 'ambas';
-  var ts = '?_='+Date.now();
-  var promesas = [];
-  function _fetchBod(url){ return fetch(url).then(function(r){ if(!r.ok) return {registros:[]}; return r.json(); }).catch(function(){ return {registros:[]}; }); }
-  if(fuente === 'iem' || fuente === 'ambas') promesas.push(_fetchBod('/data/bod-iem-registros.json'+ts));
-  if(fuente === 'rce' || fuente === 'ambas') promesas.push(_fetchBod('/data/bod-rce-registros.json'+ts));
-  if(fuente === 'cem' || fuente === 'ambas') promesas.push(_fetchBod('/data/bod-cem-registros.json'+ts));
+  var chkIEM=document.getElementById('bfChkIEM');
+  var chkRCE=document.getElementById('bfChkRCE');
+  var chkCEM=document.getElementById('bfChkCEM');
+  var promesas=[];
+  var ts='?_='+Date.now();
+  function _f(url){ return fetch(url+ts).then(function(r){ return r.ok?r.json():{registros:[]}; }).catch(function(){ return {registros:[]}; }); }
+  if(chkIEM&&chkIEM.checked) promesas.push(_f('/data/bod-iem-registros.json'));
+  if(chkRCE&&chkRCE.checked) promesas.push(_f('/data/bod-rce-registros.json'));
+  if(chkCEM&&chkCEM.checked) promesas.push(_f('/data/bod-cem-registros.json'));
+  if(!promesas.length){ _bfDatos=[]; vadmFiltrarBodFem(); return; }
   Promise.all(promesas)
-    .then(function(resultados){
-      var todos = [];
-      resultados.forEach(function(data){ todos = todos.concat(data.registros||[]); });
-      _bfDatos = todos.sort(function(a,b){ return (b.diasAntiguedad||0)-(a.diasAntiguedad||0); });
-      var bods = [];
-      _bfDatos.forEach(function(r){ if(r.bodega && bods.indexOf(r.bodega)<0) bods.push(r.bodega); });
-      bods.sort();
-      var sel = document.getElementById('bfBodega');
-      sel.innerHTML = '<option value="">Todas</option>';
-      bods.forEach(function(b){ sel.innerHTML += '<option value="'+b+'">'+b+'</option>'; });
-      document.getElementById('bfBuscar').value = '';
-      document.getElementById('bfDiasMin').value = '';
-      document.getElementById('bfDiasMax').value = '';
+    .then(function(res){
+      var todos=[];
+      res.forEach(function(d){ todos=todos.concat(d.registros||[]); });
+      _bfDatos=todos.sort(function(a,b){ return (b.diasAntiguedad||0)-(a.diasAntiguedad||0); });
+      var tipos=[];
+      _bfDatos.forEach(function(r){ if(r.tipoDoc&&tipos.indexOf(r.tipoDoc)<0) tipos.push(r.tipoDoc); });
+      tipos.sort();
+      var st=document.getElementById('bfTipoDoc');
+      if(st){ st.innerHTML='<option value="">Todos los tipos</option>'; tipos.forEach(function(t){ st.innerHTML+='<option value="'+t+'">'+t+'</option>'; }); }
+      document.getElementById('bfBuscar').value='';
+      document.getElementById('bfDiasMin').value='';
+      document.getElementById('bfDiasMax').value='';
       vadmFiltrarBodFem();
     })
     .catch(function(){
-      var e = document.getElementById('bfEmpty');
-      e.textContent = 'Error al cargar datos — ejecutar descargar_bod.py primero.';
-      e.style.display = '';
-      document.getElementById('bfTabla').style.display = 'none';
+      var e=document.getElementById('bfEmpty');
+      e.textContent='Error al cargar — ejecutar descargar_bod.py primero.';
+      e.style.display=''; document.getElementById('bfTabla').style.display='none';
     });
 }
 
 function vadmFiltrarBodFem(){
-  var buscar  = (document.getElementById('bfBuscar').value||'').trim().toLowerCase();
-  var bodega  = document.getElementById('bfBodega').value;
-  var diasMin = parseInt(document.getElementById('bfDiasMin').value);
-  var diasMax = parseInt(document.getElementById('bfDiasMax').value);
-  if(isNaN(diasMin)) diasMin = 0;
-  if(isNaN(diasMax)) diasMax = Infinity;
-  var fil = _bfDatos.filter(function(r){
-    if(bodega && r.bodega !== bodega) return false;
-    var d = r.diasAntiguedad !== null && r.diasAntiguedad !== undefined ? r.diasAntiguedad : Infinity;
-    if(d < diasMin || d > diasMax) return false;
-    if(buscar){
-      var hay = (r.codigoTecnico||'').toLowerCase().indexOf(buscar)>=0 ||
-                (r.descripcion||'').toLowerCase().indexOf(buscar)>=0;
-      if(!hay) return false;
-    }
+  var buscar =(document.getElementById('bfBuscar').value||'').trim().toLowerCase();
+  var tipoDoc=(document.getElementById('bfTipoDoc').value)||'';
+  var diasMin=parseInt(document.getElementById('bfDiasMin').value); if(isNaN(diasMin)) diasMin=0;
+  var diasMax=parseInt(document.getElementById('bfDiasMax').value); if(isNaN(diasMax)) diasMax=Infinity;
+  var fil=_bfDatos.filter(function(r){
+    if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
+    var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
+    if(d<diasMin||d>diasMax) return false;
+    if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
     return true;
   });
-  var tbody = document.getElementById('bfTbody');
-  var empty = document.getElementById('bfEmpty');
-  var tabla = document.getElementById('bfTabla');
-  document.getElementById('bfCount').textContent = fil.length + ' registros';
+  var tbody=document.getElementById('bfTbody');
+  var empty=document.getElementById('bfEmpty');
+  var tabla=document.getElementById('bfTabla');
+  var kpis=document.getElementById('bfKpis');
+  document.getElementById('bfCount').textContent=fil.length+' registros';
   if(!fil.length){
-    tbody.innerHTML = '';
-    empty.style.display = '';
-    empty.textContent = _bfDatos.length ? 'Sin resultados para el filtro aplicado.' : 'Sin datos cargados.';
-    tabla.style.display = 'none';
-    return;
+    tbody.innerHTML='';
+    if(kpis){ kpis.innerHTML=''; kpis.style.display='none'; }
+    empty.style.display=''; empty.textContent=_bfDatos.length?'Sin resultados para el filtro.':'Sin datos cargados.';
+    tabla.style.display='none'; return;
   }
-  empty.style.display = 'none';
-  tabla.style.display = '';
-  tbody.innerHTML = fil.map(function(r, idx){
-    var bg   = idx%2===0 ? '' : 'background:#f9fafb';
-    var dias = r.diasAntiguedad !== null && r.diasAntiguedad !== undefined ? r.diasAntiguedad : '—';
-    var col  = '';
-    if(typeof dias==='number'){
-      if(dias >= 90)      col = 'color:#dc2626;font-weight:700';
-      else if(dias >= 30) col = 'color:#d97706;font-weight:600';
-    }
-    var valorizado = (r.cantidad!=null ? r.cantidad : (r.disp||0)) * (r.costo||0);
-    return '<tr style="'+bg+'">' +
-      '<td style="padding:6px 10px">'                            +(r.bodega||'')+'</td>'+
-      '<td style="padding:6px 10px">'                            +(r.tipoDoc||'')+'</td>'+
-      '<td style="padding:6px 10px;text-align:right">'           +(r.folio||'')+'</td>'+
-      '<td style="padding:6px 10px;font-family:monospace">'      +(r.codigoTecnico||'')+'</td>'+
-      '<td style="padding:6px 10px">'                            +(r.descripcion||'')+'</td>'+
-      '<td style="padding:6px 10px;text-align:right">'           +(r.disp||0)+'</td>'+
-      '<td style="padding:6px 10px;text-align:right">'           +(r.fisico||0)+'</td>'+
-      '<td style="padding:6px 10px;text-align:center">'          +(r.fechaRegistro||'')+'</td>'+
-      '<td style="padding:6px 10px;text-align:right;'+col+'">'   +dias+'</td>'+
-      '<td style="padding:6px 10px;text-align:right;font-weight:600">'+(valorizado>0?venAdmFmt(valorizado):'—')+'</td>'+
-      '<td style="padding:6px 10px;color:#6b7280;font-size:11px">'+(r.observacion||'')+'</td>'+
-    '</tr>';
+  empty.style.display='none'; tabla.style.display='';
+  // KPIs por bodega
+  if(kpis){
+    var bk={};
+    fil.forEach(function(r){
+      var b=r.bodega||'?';
+      if(!bk[b]) bk[b]={n:0,val:0,old:0};
+      bk[b].n++;
+      bk[b].val+=(r.fisico!=null?r.fisico:(r.disp||0))*(r.costo||0);
+      bk[b].old=Math.max(bk[b].old,r.diasAntiguedad||0);
+    });
+    var BC={'IEM':'background:#eff6ff;color:#1e40af','RCE':'background:#dcfce7;color:#166534','CEM':'background:#fef3c7;color:#92400e'};
+    var tV=fil.reduce(function(a,r){ return a+(r.fisico!=null?r.fisico:(r.disp||0))*(r.costo||0); },0);
+    var kh=Object.keys(bk).sort().map(function(b){
+      var c=BC[b]||'background:#f3f4f6;color:#374151';
+      return '<div style="'+c+';border-radius:8px;padding:8px 14px;border:1px solid rgba(0,0,0,.1)">'
+        +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">'+b+'</div>'
+        +'<div style="font-size:20px;font-weight:800;margin:2px 0">'+bk[b].n+'</div>'
+        +'<div style="font-size:11px;font-weight:600">'+venAdmFmt(bk[b].val)+'</div>'
+        +'<div style="font-size:10px;opacity:.75">Máx. '+bk[b].old+' días</div>'
+        +'</div>';
+    }).join('');
+    kh+='<div style="background:#f1f5f9;border-radius:8px;padding:8px 14px;border:1px solid rgba(0,0,0,.1);margin-left:auto">'
+      +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">TOTAL</div>'
+      +'<div style="font-size:20px;font-weight:800;margin:2px 0">'+fil.length+'</div>'
+      +'<div style="font-size:11px;font-weight:600">'+venAdmFmt(tV)+'</div>'
+      +'</div>';
+    kpis.innerHTML=kh; kpis.style.display='flex';
+  }
+  var totalVal=0;
+  tbody.innerHTML=fil.map(function(r,i){
+    var bg=i%2===0?'':'background:#f9fafb';
+    var dias=r.diasAntiguedad!=null?r.diasAntiguedad:'—';
+    var dcol='';
+    if(typeof dias==='number'){ if(dias>=90) dcol='color:#dc2626;font-weight:700'; else if(dias>=30) dcol='color:#d97706;font-weight:600'; }
+    var qty=r.fisico!=null?r.fisico:(r.disp||0);
+    var val=qty*(r.costo||0); totalVal+=val;
+    var dif=(r.fisico||0)-(r.disp||0);
+    var difSt=dif>0?'color:#d97706;font-weight:600':dif<0?'color:#dc2626;font-weight:700':'color:#9ca3af';
+    return '<tr style="'+bg+'">'
+      +'<td style="padding:6px 10px;font-weight:600">'+_bfEsc(r.bodega||'')+'</td>'
+      +'<td style="padding:6px 10px;font-weight:600">'+_bfEsc(r.tipoDoc||'')+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;font-family:monospace">'+_bfEsc(r.folio||'')+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:11px">'+_bfEsc(r.codigoTecnico||'')+'</td>'
+      +'<td style="padding:6px 10px;max-width:220px">'+_bfEsc(r.descripcion||'')+'</td>'
+      +'<td style="padding:6px 10px;text-align:right">'+(r.disp||0)+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;font-weight:600">'+(r.fisico||0)+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;'+difSt+'">'+(dif===0?'—':dif)+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;color:#6b7280;font-size:11px">'+((r.costo||0)>0?venAdmFmt(r.costo):'—')+'</td>'
+      +'<td style="padding:6px 10px;text-align:center;white-space:nowrap">'+_bfEsc(r.fechaRegistro||'')+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;'+dcol+'">'+dias+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;font-weight:600">'+(val>0?venAdmFmt(val):'—')+'</td>'
+      +'<td style="padding:6px 10px;color:#6b7280;font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_bfEsc(r.observacion||'')+'">'+_bfEsc(r.observacion||'')+'</td>'
+      +'</tr>';
   }).join('');
-  var totalVal = fil.reduce(function(acc,r){ return acc + (r.cantidad!=null ? r.cantidad : (r.disp||0))*(r.costo||0); }, 0);
-  document.getElementById('bfTfoot').innerHTML =
-    '<tr style="background:#1a1d3a;color:white;font-weight:700">'+
-    '<td colspan="9" style="padding:8px 10px;text-align:right;font-size:12px">TOTAL VALORIZADO</td>'+
-    '<td style="padding:8px 10px;text-align:right;font-size:13px">'+venAdmFmt(totalVal)+'</td>'+
-    '<td></td></tr>';
+  document.getElementById('bfTfoot').innerHTML='<tr style="background:#1a1d3a;color:white;font-weight:700">'
+    +'<td colspan="11" style="padding:8px 10px;text-align:right;font-size:12px">TOTAL VALORIZADO ('+fil.length+' registros)</td>'
+    +'<td style="padding:8px 10px;text-align:right;font-size:13px">'+venAdmFmt(totalVal)+'</td>'
+    +'<td></td></tr>';
 }
+
+window.bfExportExcel = function(){
+  if(!_bfDatos.length){ if(window.toast) toast('Sin datos para exportar','err'); return; }
+  if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
+  var buscar =(document.getElementById('bfBuscar').value||'').trim().toLowerCase();
+  var tipoDoc=(document.getElementById('bfTipoDoc').value)||'';
+  var diasMin=parseInt(document.getElementById('bfDiasMin').value); if(isNaN(diasMin)) diasMin=0;
+  var diasMax=parseInt(document.getElementById('bfDiasMax').value); if(isNaN(diasMax)) diasMax=Infinity;
+  var fil=_bfDatos.filter(function(r){
+    if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
+    var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
+    if(d<diasMin||d>diasMax) return false;
+    if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
+    return true;
+  });
+  if(!fil.length){ if(window.toast) toast('Sin datos para exportar','err'); return; }
+  var rows=[['Bodega','Tipo Doc','Folio','Código','Descripción','Disp.','Físico','Dif.','Costo unit.','Fecha Reg.','Días','Valorizado','Observación']];
+  fil.forEach(function(r){
+    var qty=r.fisico!=null?r.fisico:(r.disp||0);
+    rows.push([r.bodega||'',r.tipoDoc||'',r.folio||'',r.codigoTecnico||'',r.descripcion||'',
+      r.disp||0,r.fisico||0,(r.fisico||0)-(r.disp||0),r.costo||0,
+      r.fechaRegistro||'',r.diasAntiguedad!=null?r.diasAntiguedad:'',
+      qty*(r.costo||0),r.observacion||'']);
+  });
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:6},{wch:8},{wch:8},{wch:13},{wch:42},{wch:7},{wch:7},{wch:6},{wch:11},{wch:12},{wch:6},{wch:12},{wch:40}];
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Análisis Bodegas');
+  XLSX.writeFile(wb,'AnalisisBodegas_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  if(window.toast) toast('📊 Excel exportado','ok');
+};
 
 // ── CONSULTA DE STOCK ─────────────────────────────────────────────────────────
 var _csResultados = [];
@@ -16269,6 +16337,7 @@ var _isbDatos               = [];
 var _isbFiltrados           = [];
 var _isbPedidosComprometidos = {};  // {cod: {pem:N, sem:N, cem:N, mem:N}}
 var _isbPedidosDetalle       = {};  // {cod: {pem:[...docs], sem:[...], ...}}
+var _isbDespachosDetalle     = {};  // {cod: {pem:[...docs], sem:[...], ...}} — BVE/FVE pendientes
 
 /* ── helpers de estilo ── */
 function _clsDifStk(v){
@@ -16276,11 +16345,7 @@ function _clsDifStk(v){
   if(v===0) return 'background:#f0fdf4;color:#166534';   // sin compromisos
   return          'background:#fff7ed;color:#9a3412';    // comprometido (normal)
 }
-function _clsDifLib(v){
-  if(v<0)   return 'background:#fef2f2;color:#b91c1c';   // critico: sobre-comprometido
-  if(v===0) return 'background:#f9fafb;color:#6b7280';   // todo comprometido
-  return          'background:#fef9c3;color:#854d0e';    // stock libre sin asignar
-}
+// _clsDifLib eliminado V37.8 — DifLib (Fís−Disp−Ped) removido del módulo Informe Stock
 function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _status(msg,tipo){
   var el=document.getElementById('isbStatus'); if(!el) return;
@@ -16332,21 +16397,19 @@ function _poblarFiltros(){
   document.getElementById('isbFiltroBar').style.display='';
 }
 
-/* ── helper: 5 celdas de una bodega ── */
+/* ── helper: 4 celdas por bodega (V37.8) — Disp / Fís / Ped / Dif ── */
 function _celdasBod(disp, fis, ped, cod, bod, ctd){
-  var difStk=fis-disp;
-  var difLib=fis-disp-ped;
+  var dif=fis-disp;  // Dif = Fís − Disp (despachos BVE/FVE pendientes)
   var pedCell=ped>0
     ? '<td style="'+ctd+';cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="pedido">'+ped+'</td>'
     : '<td style="'+ctd+'">0</td>';
-  var libCell=difLib!==0
-    ? '<td style="'+ctd+';'+_clsDifLib(difLib)+';cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="dif">'+difLib+'</td>'
-    : '<td style="'+ctd+';'+_clsDifLib(difLib)+'">0</td>';
+  var difCell=dif!==0
+    ? '<td style="'+ctd+';'+_clsDifStk(dif)+';cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="dif">'+dif+'</td>'
+    : '<td style="'+ctd+';'+_clsDifStk(dif)+'">0</td>';
   return '<td style="'+ctd+'">'+(disp||0)+'</td>'
         +'<td style="'+ctd+'">'+(fis||0)+'</td>'
         +pedCell
-        +'<td style="'+ctd+';'+_clsDifStk(difStk)+'">'+difStk+'</td>'
-        +libCell;
+        +difCell;
 }
 
 /* ── render tabla ── */
@@ -16358,7 +16421,7 @@ function _renderTabla(){
   var ctdl='padding:4px 7px;border:1px solid #e2e8f0';
 
   if(!_isbFiltrados.length){
-    tbody.innerHTML='<tr><td colspan="27" style="text-align:center;padding:20px;color:#9ca3af">Sin resultados para los filtros aplicados</td></tr>';
+    tbody.innerHTML='<tr><td colspan="22" style="text-align:center;padding:20px;color:#9ca3af">Sin resultados para los filtros aplicados</td></tr>';
     tfoot.innerHTML=''; tabla.style.display='';
     document.getElementById('isbContador').textContent='0 productos';
     return;
@@ -16397,13 +16460,13 @@ function _renderTabla(){
   };
 
   var cft='padding:5px 7px;border:1px solid #e2e8f0;text-align:right;font-weight:700;background:#f1f5f9';
+  // V37.8: 4 celdas en tfoot (DifLib eliminado)
   function _tpRow(d,f,p){
-    var ds=f-d, dl=f-d-p;
+    var dif=f-d;
     return '<td style="'+cft+'">'+(d||0)+'</td>'
           +'<td style="'+cft+'">'+(f||0)+'</td>'
           +'<td style="'+cft+'">'+(p||0)+'</td>'
-          +'<td style="'+cft+';'+_clsDifStk(ds)+'">'+ds+'</td>'
-          +'<td style="'+cft+';'+_clsDifLib(dl)+'">'+dl+'</td>';
+          +'<td style="'+cft+';'+_clsDifStk(dif)+'">'+dif+'</td>';
   }
   var tD=tp.pd+tp.sd+tp.cd+tp.md, tF=tp.pf+tp.sf+tp.cf+tp.mf, tP=tp.pp+tp.sp+tp.cp+tp.mp;
   tfoot.innerHTML='<tr>'
@@ -16420,29 +16483,30 @@ function _renderTabla(){
 
 /* ── build rows para export ── */
 function _buildRows(){
+  // V37.8: 22 columnas (DifLib eliminado — Dif = Fís−Disp por bodega)
   var rows=[['Código','Descripción',
-    'PEM Disp','PEM Fís','PEM Ped','PEM DifStk','PEM DifLib',
-    'SEM Disp','SEM Fís','SEM Ped','SEM DifStk','SEM DifLib',
-    'CEM Disp','CEM Fís','CEM Ped','CEM DifStk','CEM DifLib',
-    'MEM Disp','MEM Fís','MEM Ped','MEM DifStk','MEM DifLib',
-    'TOT Disp','TOT Fís','TOT Ped','TOT DifStk','TOT DifLib']];
+    'PEM Disp','PEM Fís','PEM Ped','PEM Dif',
+    'SEM Disp','SEM Fís','SEM Ped','SEM Dif',
+    'CEM Disp','CEM Fís','CEM Ped','CEM Dif',
+    'MEM Disp','MEM Fís','MEM Ped','MEM Dif',
+    'TOT Disp','TOT Fís','TOT Ped','TOT Dif']];
   _isbFiltrados.forEach(function(r){
     var tD=r.pem_disp+r.sem_disp+r.cem_disp+r.mem_disp;
     var tF=r.pem_fis+r.sem_fis+r.cem_fis+r.mem_fis;
     var tP=r.pem_ped+r.sem_ped+r.cem_ped+r.mem_ped;
     rows.push([r.cod,r.desc,
-      r.pem_disp,r.pem_fis,r.pem_ped,r.pem_fis-r.pem_disp,r.pem_fis-r.pem_disp-r.pem_ped,
-      r.sem_disp,r.sem_fis,r.sem_ped,r.sem_fis-r.sem_disp,r.sem_fis-r.sem_disp-r.sem_ped,
-      r.cem_disp,r.cem_fis,r.cem_ped,r.cem_fis-r.cem_disp,r.cem_fis-r.cem_disp-r.cem_ped,
-      r.mem_disp,r.mem_fis,r.mem_ped,r.mem_fis-r.mem_disp,r.mem_fis-r.mem_disp-r.mem_ped,
-      tD,tF,tP,tF-tD,tF-tD-tP]);
+      r.pem_disp,r.pem_fis,r.pem_ped,r.pem_fis-r.pem_disp,
+      r.sem_disp,r.sem_fis,r.sem_ped,r.sem_fis-r.sem_disp,
+      r.cem_disp,r.cem_fis,r.cem_ped,r.cem_fis-r.cem_disp,
+      r.mem_disp,r.mem_fis,r.mem_ped,r.mem_fis-r.mem_disp,
+      tD,tF,tP,tF-tD]);
   });
   return rows;
 }
 
 /* ── API pública ── */
 window.isbGenerar = function(){
-  _status('Cargando catálogo y pedidos…','');
+  _status('Cargando catálogo, pedidos y despachos…','');
   var stockDone=false, pedidosDone=false;
   function tryRender(){
     if(!stockDone||!pedidosDone) return;
@@ -16454,12 +16518,15 @@ window.isbGenerar = function(){
   }
   window._vadmCargarStockMap(function(){ stockDone=true; tryRender(); });
   var ts='?_='+Date.now();
+  // V37.8: carga pedidos (NVM/VMN/VMP) + despachos (BVE/FVE) en paralelo
   Promise.all([
     fetch('/data/pedidos-comprometidos.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
-    fetch('/data/pedidos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; })
+    fetch('/data/pedidos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
+    fetch('/data/despachos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; })
   ]).then(function(res){
     _isbPedidosComprometidos=res[0]||{};
     _isbPedidosDetalle=res[1]||{};
+    _isbDespachosDetalle=res[2]||{};
     pedidosDone=true;
     tryRender();
   });
@@ -16472,17 +16539,39 @@ window.isbFiltrar = function(){
   var conDif=document.getElementById('isbFiltroConDif').checked;
   var soloNeg=document.getElementById('isbFiltroNeg').checked;
   var soloPed=document.getElementById('isbFiltroPed').checked;
+  var bP=document.getElementById('isbBodPEM').checked;
+  var bS=document.getElementById('isbBodSEM').checked;
+  var bC=document.getElementById('isbBodCEM').checked;
+  var bM=document.getElementById('isbBodMEM').checked;
+  // Si ninguna marcada → comportar como todas marcadas
+  var any=bP||bS||bC||bM;
+  if(!any){ bP=bS=bC=bM=true; }
 
   _isbFiltrados=_isbDatos.filter(function(r){
     if(hip && (r.hip||'').toLowerCase()!==hip) return false;
     if(fam && (r.fam||'').toLowerCase()!==fam) return false;
     if(bus && (r.cod||'').toLowerCase().indexOf(bus)<0 && (r.desc||'').toLowerCase().indexOf(bus)<0) return false;
+    // filtro bodega: mostrar solo productos con actividad en bodegas seleccionadas
+    var hasSt=(bP&&(r.pem_disp||r.pem_fis||r.pem_ped))
+             ||(bS&&(r.sem_disp||r.sem_fis||r.sem_ped))
+             ||(bC&&(r.cem_disp||r.cem_fis||r.cem_ped))
+             ||(bM&&(r.mem_disp||r.mem_fis||r.mem_ped));
+    if(!hasSt) return false;
+    // V37.8: Dif = Fís − Disp. "Solo negativos" = productos donde Disp > Fís (error stock).
     var pdS=r.pem_fis-r.pem_disp, sdS=r.sem_fis-r.sem_disp;
     var cdS=r.cem_fis-r.cem_disp, mdS=r.mem_fis-r.mem_disp;
-    var pdL=pdS-r.pem_ped, sdL=sdS-r.sem_ped, cdL=cdS-r.cem_ped, mdL=mdS-r.mem_ped;
-    if(soloNeg && pdL>=0 && sdL>=0 && cdL>=0 && mdL>=0) return false;
-    if(conDif  && pdS===0 && sdS===0 && cdS===0 && mdS===0) return false;
-    if(soloPed && !r.pem_ped && !r.sem_ped && !r.cem_ped && !r.mem_ped) return false;
+    if(soloNeg){
+      var anyNeg=(bP&&pdS<0)||(bS&&sdS<0)||(bC&&cdS<0)||(bM&&mdS<0);
+      if(!anyNeg) return false;
+    }
+    if(conDif){
+      var anyDif=(bP&&pdS!==0)||(bS&&sdS!==0)||(bC&&cdS!==0)||(bM&&mdS!==0);
+      if(!anyDif) return false;
+    }
+    if(soloPed){
+      var anyPed=(bP&&r.pem_ped)||(bS&&r.sem_ped)||(bC&&r.cem_ped)||(bM&&r.mem_ped);
+      if(!anyPed) return false;
+    }
     return true;
   });
   _renderTabla();
@@ -16505,12 +16594,13 @@ window.isbExportExcel = function(){
   if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
   var rows=_buildRows();
   var ws=XLSX.utils.aoa_to_sheet(rows);
+  // V37.8: 22 columnas (2 fijas + 5 bodegas × 4 cols)
   ws['!cols']=[{wch:13},{wch:30},
-    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
-    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
-    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
-    {wch:7},{wch:7},{wch:7},{wch:8},{wch:8},
-    {wch:8},{wch:8},{wch:8},{wch:9},{wch:9}];
+    {wch:7},{wch:7},{wch:7},{wch:8},
+    {wch:7},{wch:7},{wch:7},{wch:8},
+    {wch:7},{wch:7},{wch:7},{wch:8},
+    {wch:7},{wch:7},{wch:7},{wch:8},
+    {wch:8},{wch:8},{wch:8},{wch:9}];
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Informe Stock');
   XLSX.writeFile(wb,'InformeStock_'+new Date().toISOString().slice(0,10)+'.xlsx');
@@ -16543,17 +16633,71 @@ window.isbAbrirDetalle = function(cod, bod, tipo){
   var BL={'pem':'PEM','sem':'SEM','cem':'CEM','mem':'MEM','total':'TOTAL'};
   var bl=BL[bod]||bod.toUpperCase();
 
+  // ── MODAL DIF: despachos BVE/FVE pendientes ───────────────────────────────
   if(tipo==='dif'){
-    tit.textContent='Diferencia libre — '+cod+' / '+bl;
-    body.innerHTML='<p style="color:#374151;margin:0 0 10px"><b>DifLib = Físico − Disponible − Pedido</b></p>'
-      +'<p style="color:#6b7280;margin:0">Un valor negativo indica que los pedidos comprometidos superan el stock físico disponible. Revise en <b>Análisis Bodegas</b> el detalle de movimientos físicos para esta bodega.</p>';
+    var despDocs=(bod==='total')
+      ? ['pem','sem','cem','mem'].reduce(function(acc,b){
+          return acc.concat(
+            ((_isbDespachosDetalle[cod]||{})[b]||[]).map(function(d){ return Object.assign({},d,{_bod:b}); })
+          );
+        },[])
+      : (_isbDespachosDetalle[cod]||{})[bod]||[];
+
+    var tituloDesp=(bod==='total')
+      ? 'Despachos pendientes — '+cod+' (todas las bodegas)'
+      : 'Despachos pendientes — '+cod+' / '+bl;
+
+    tit.textContent=tituloDesp+(despDocs.length?' ('+despDocs.length+' docs)':'');
+
+    if(!despDocs.length){
+      body.innerHTML='<p style="color:#6b7280;margin:0">No hay despachos pendientes (BVE/FVE) en los últimos 12 meses.</p>'
+        +'<p style="color:#9ca3af;margin:8px 0 0;font-size:12px">Si Dif ≠ 0 viene de documentos anteriores — ejecute ACTUALIZAR_TODO.bat para refrescar.</p>';
+      m.style.display='block'; return;
+    }
+
+    var tdStyle='padding:4px 8px;border:1px solid #e2e8f0';
+    var thStyle='padding:6px 8px;border:1px solid #e2e8f0;background:#f1f5f9;font-size:11px';
+    var dTbl='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead>'
+      +'<tr><th style="'+thStyle+';text-align:left">Tipo</th>'
+      +'<th style="'+thStyle+';text-align:left">N° Doc</th>'
+      +'<th style="'+thStyle+';text-align:left">F.Emisión</th>'
+      +'<th style="'+thStyle+';text-align:left">F.Entrega</th>'
+      +'<th style="'+thStyle+';text-align:left">Cliente</th>'
+      +'<th style="'+thStyle+';text-align:right">Cant</th>'
+      +(bod==='total'?'<th style="'+thStyle+';text-align:left">Bod</th>':'')
+      +'</tr></thead><tbody>';
+
+    var totalD=0;
+    despDocs.forEach(function(d,idx){
+      var cant=d.cant||0;
+      totalD+=cant;
+      var atrasoHtml='';
+      if(d.atraso>0){
+        atrasoHtml=' <span style="background:#fef2f2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700">+'+d.atraso+'d</span>';
+      }
+      var bgRow=idx%2===0?'':'background:#f9fafb';
+      dTbl+='<tr style="'+bgRow+'">'
+        +'<td style="'+tdStyle+';font-weight:600;color:#1e40af">'+_esc(d.tipoDoc||'')+'</td>'
+        +'<td style="'+tdStyle+'">'+_esc(d.numero||'')+'</td>'
+        +'<td style="'+tdStyle+';white-space:nowrap">'+_esc(d.fechaEmision||'')+'</td>'
+        +'<td style="'+tdStyle+';white-space:nowrap">'+(d.fechaEntrega||'—')+atrasoHtml+'</td>'
+        +'<td style="'+tdStyle+';max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_esc(d.cliente||'')+'">'+_esc(d.cliente||'—')+'</td>'
+        +'<td style="'+tdStyle+';text-align:right;font-weight:700">'+cant+'</td>'
+        +(bod==='total'?'<td style="'+tdStyle+';color:#6b7280">'+_esc((d._bod||'').toUpperCase())+'</td>':'')
+        +'</tr>';
+    });
+    dTbl+='</tbody><tfoot><tr style="background:#dbeafe;font-weight:700">'
+      +'<td colspan="'+(bod==='total'?'5':'5')+'" style="'+tdStyle+';text-align:right;padding:5px 8px">TOTAL</td>'
+      +'<td style="'+tdStyle+';text-align:right;padding:5px 8px">'+totalD+'</td>'
+      +(bod==='total'?'<td style="'+tdStyle+'"></td>':'')
+      +'</tr></tfoot></table>';
+    body.innerHTML=dTbl;
     m.style.display='block'; return;
   }
 
-  // tipo = 'pedido'
+  // ── MODAL PED: pedidos NVM/VMN/VMP comprometidos ──────────────────────────
   var docs=[];
   if(bod==='total'){
-    // resumen por bodega
     tit.textContent='Pedidos comprometidos — '+cod;
     var r=null;
     for(var i=0;i<_isbDatos.length;i++){ if(_isbDatos[i].cod===cod){ r=_isbDatos[i]; break; } }
@@ -16572,48 +16716,50 @@ window.isbAbrirDetalle = function(cod, bod, tipo){
   }
 
   docs=(_isbPedidosDetalle[cod]||{})[bod]||[];
-  tit.textContent='Pedidos — '+cod+' / '+bl+(docs.length?' ('+docs.length+' docs)':'');
+  tit.textContent='Pedidos (NV) — '+cod+' / '+bl+(docs.length?' ('+docs.length+' docs)':'');
 
   if(!docs.length){
     var pedVal=((_isbPedidosComprometidos[cod]||{})[bod])||0;
     body.innerHTML='<p style="color:#6b7280;margin:0">'
       +(pedVal>0
-        ?'ST_PEDIDO = '+pedVal+'. Detalle de documentos no disponible — ejecute ACTUALIZAR_TODO.bat para generarlo.'
+        ?'ST_PEDIDO = '+pedVal+'. Detalle no disponible — ejecute ACTUALIZAR_TODO.bat para generarlo.'
         :'Sin pedidos comprometidos para esta bodega.')
       +'</p>';
     m.style.display='block'; return;
   }
 
-  var totalCant=0, totalVal=0;
+  // V37.8: columnas ERP — Documento / Número / F.Emisión / F.Entrega / Atraso / Cliente / Vendedor / Cant
+  var totalCant=0;
   var th='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead>'
-    +'<tr style="background:#f1f5f9"><th style="padding:6px 8px;border:1px solid #e2e8f0">Tipo</th>'
-    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Folio</th>'
-    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Fecha</th>'
+    +'<tr style="background:#f1f5f9"><th style="padding:6px 8px;border:1px solid #e2e8f0">Documento</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Número</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0;white-space:nowrap">F. Emisión</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0;white-space:nowrap">F. Entrega</th>'
+    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Cliente</th>'
     +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Vendedor</th>'
     +'<th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">Cant.</th>'
-    +'<th style="padding:6px 8px;border:1px solid #e2e8f0">Estado</th>'
-    +'<th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">Valorizado</th>'
     +'</tr></thead><tbody>';
-  docs.forEach(function(d){
-    var cant=d.cant||d.cantidad||0;
-    var val=cant*(d.costoUnit||d.costo||0);
-    totalCant+=cant; totalVal+=val;
-    th+='<tr>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600">'+_esc(d.tipoDoc||'')+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+_esc(d.folio||'')+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;white-space:nowrap">'+_esc(d.fecha||'')+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+_esc(d.vendedor||'—')+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:right;font-weight:600">'+cant+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+_esc(d.estado||'')+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:right">'
-        +(val>0?'$'+Math.round(val).toLocaleString('es-CL'):'—')+'</td>'
+  docs.forEach(function(d,idx){
+    var cant=d.cant||0;
+    totalCant+=cant;
+    var atrasoHtml='';
+    if(d.atraso>0){
+      atrasoHtml=' <span style="background:#fef2f2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700">+'+d.atraso+'d</span>';
+    }
+    var bgRow=idx%2===0?'':'background:#f9fafb';
+    th+='<tr style="'+bgRow+'">'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-size:11px;color:#1e40af;white-space:nowrap">'+_esc(d.tipoDocLabel||d.tipoDoc||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600">'+_esc(d.numero||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;white-space:nowrap">'+_esc(d.fechaEmision||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;white-space:nowrap">'+(d.fechaEntrega||'—')+atrasoHtml+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_esc(d.cliente||'')+'">'+_esc(d.cliente||'—')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;color:#6b7280">'+_esc(d.vendedor||'—')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:right;font-weight:700">'+cant+'</td>'
       +'</tr>';
   });
   th+='</tbody><tfoot><tr style="background:#f1f5f9;font-weight:700">'
-    +'<td colspan="4" style="padding:5px 8px;border:1px solid #e2e8f0">TOTAL</td>'
+    +'<td colspan="6" style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right">TOTAL</td>'
     +'<td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right">'+totalCant+'</td>'
-    +'<td style="padding:5px 8px;border:1px solid #e2e8f0"></td>'
-    +'<td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right">$'+Math.round(totalVal).toLocaleString('es-CL')+'</td>'
     +'</tr></tfoot></table>';
   body.innerHTML=th;
   m.style.display='block';

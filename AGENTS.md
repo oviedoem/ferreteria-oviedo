@@ -37,7 +37,7 @@ MD activos raiz:
 - Deploy V37.5b: 2026-05-27 15:28 — auditoria DOC IN: GII+GTS agregados a whitelist + comentario clasificacion ✅
 - Deploy V37.6: 2026-05-27 16:39 — fix Informe Stock Fís todo cero: pem_bod/sem_bod/cem_bod/mem_bod en pipeline + panel ✅
 - Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1D descargar_pedidos.py ✅
-- Deploy cierre sesión: 2026-05-27 17:09 — todo publicado, sin pendientes
+- Deploy V37.8: 2026-05-27 23:10 — Fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif (22 cols) + modal Dif/Ped rediseñados ✅
 
 ---
 
@@ -154,24 +154,38 @@ Causa: módulo Informe Stock mostraba solo PEM/SEM/CEM sin visibilidad de pedido
 comprometidos ni stock MEM. Sin forma de ver qué documentos abiertos reducen
 el disponible.
 
-**Backend:**
-- `BODEGAS/descargar_pedidos.py` (NUEVO): descarga `ST_PEDIDO` de `R_STOCK_PRODUCTOS`
-  para PEM/SEM/CEM/MEM con lookup dinámico de IDBODEGAs desde `P_BODEGAS`.
+**Backend (V37.7):**
+- `BODEGAS/descargar_pedidos.py` (NUEVO): descarga `ST_PEDIDO` de `R_STOCK_PRODUCTOS`.
   Genera `pedidos-comprometidos.json` (totales) y `pedidos-detalle.json` (documentos).
-  Si el JOIN con `M_DOCUMENTOS_ENCABEZADO` falla → fallback sin vendedor/estado.
-- `ACTUALIZAR_TODO.bat`: PASO 1D agregado (después de 1C), llama `descargar_pedidos.py`.
-- `.gitignore` no requiere cambio (los JSONs van a data/ que ya es público en Hosting).
 
-**Frontend (panel-admin.html):**
-- Tabla: de 17 cols (PEM/SEM/CEM con Disp/Fís/Dif) → 27 cols (PEM/SEM/CEM/MEM/TOTAL × Disp/Fís/Ped/DifStk/DifLib)
-- Header: HiperFam/Fam/SubFam eliminados de la tabla (siguen como filtros); solo Código + Descripción
-- MEM: ahora visible en la tabla con sus 5 sub-columnas
-- DifStk = Fís − Disp (compromisos en el ERP)
-- DifLib = Fís − Disp − Ped (margen real después de pedidos)
-- DifLib < 0: rojo crítico (más pedidos que stock físico)
-- Celdas Ped > 0: clicables → modal con lista de documentos comprometidos
-- Celdas DifLib ≠ 0: clicables → mensaje explicativo
-- Filtro "Solo con pedidos" agregado
+**Backend (V37.8 — fix + nuevo):**
+- `BODEGAS/descargar_pedidos.py` reescrito: elimina JOIN `P_VENDEDORES` (tabla inexistente).
+  Usa `CANTIDAD_PENDIENTE` (no CANTIDAD), CTE para deduplicar líneas múltiples del mismo SKU.
+  DOC_TIPOS_PEDIDO corregido: NVM / VMN / VMP (solo NVs reales — VME/CVN/OVC eliminados).
+  Vendedor = `M_DOCUMENTOS_ENCABEZADO.IDVENDEDOR` (string, ej: 'alexis'). Sin fallback.
+  Cliente = `M_ENTIDADES.RAZON_SOCIAL` vía `ent.IDENTIDAD = CAST(enc.IDENTIDAD AS NVARCHAR(20))`.
+  FECHA_ENTREGA: año ≤ 1900 → vacío. `atraso` = días desde F.Entrega hasta hoy (si vencida).
+  Salida JSON nueva: tipoDoc / tipoDocLabel / numero / fechaEmision / fechaEntrega / atraso /
+                     tipoOrden / cliente / rut / vendedor / cant / idDocReal / urlERP.
+- `BODEGAS/descargar_despachos.py` (NUEVO): descarga BVE/FVE con `CANTIDAD_PENDIENTE > 0`.
+  Genera `data/despachos-comprometidos.json` y `data/despachos-detalle.json`.
+  Estructura idéntica a pedidos-detalle para reutilizar el modal del panel.
+  MESES_HISTORICO = 12 meses para despachos.
+- `ACTUALIZAR_TODO.bat`: PASO 1E agregado (después de 1D), llama `descargar_despachos.py`.
+
+**Frontend (V37.7 — base):**
+- Tabla: de 17 cols → 27 cols (PEM/SEM/CEM/MEM/TOTAL × Disp/Fís/Ped/DifStk/DifLib)
+- DifStk = Fís − Disp. DifLib = Fís − Disp − Ped.
+
+**Frontend (V37.8 — cambios):**
+- DifLib ELIMINADO: 27 → 22 columnas (4 cols/bodega × 5 bodegas + 2 fijas)
+- DifStk renombrado a Dif (fórmula: Fís − Disp, igual que antes)
+- Dif = 0: verde, clic inactivo. Dif ≠ 0: naranja, clicable → modal despachos BVE/FVE.
+- Modal Dif: muestra despachos-detalle.json — folio, tipo, F.Emisión, F.Entrega, badge atraso, cliente, cant.
+- Modal Ped (rediseñado): usa nueva estructura pedidos-detalle — Documento/Número/F.Emisión/F.Entrega/cliente/vendedor/cant.
+- `isbGenerar` carga 3 JSONs: pedidos-comprometidos + pedidos-detalle + despachos-detalle.
+- Filtro "Solo negativos": antes usaba DifLib < 0, ahora usa Dif < 0 (Disp > Fís = error stock).
+- Export CSV/Excel: 22 cols (DifLib eliminado de cabeceras y datos).
 - Filtro "Solo negativos" ahora mira DifLib < 0 (antes miraba DifStk)
 - Modal ESC + click-overlay para cerrar
 
@@ -436,29 +450,71 @@ No revertir. No reducir.
 
 ---
 
-## TIPOS DE DOC COMPROMISO (Pedido)
+## FLUJO STOCK ERP — TABLA DE TIPOS DE DOCUMENTO (V37.8)
 
-Documentos del ERP que **reservan** stock pero NO han generado salida física todavía.
+Validado desde ID_DOC_OVIEDO_EM.xlsx (2026-05-27). IDDOCUMENTOs confirmados.
+
+| Efecto en stock        | Doc  | IDDOCUMENTO | Descripción                              |
+|------------------------|------|-------------|------------------------------------------|
+| ↑ Pedido (reserva)     | NVM  | 205         | Nota de Venta Mesón                      |
+| ↑ Pedido (reserva)     | VMP  | 210         | Venta Mesón Público                      |
+| ↑ Pedido (reserva)     | VMN  | 336         | Venta Mesón Nueva                        |
+| ↓ Pedido, Fís−Disp↑    | BVE  | 316 / 605   | Boleta Venta Electrónica (despacho pend) |
+| ↓ Pedido, Fís−Disp↑    | FVE  | 301         | Factura Venta Electrónica (despacho pend)|
+| ↓ Físico (despacho)    | GME  | 308         | Guía de Despacho Mesón                   |
+| ↓ Físico (despacho)    | GCE  | 305         | Guía de Despacho Cliente                 |
+| Reversión              | GRC  | 15          | Guía Retorno Compra                      |
+| Ingresos varios        | GII  | 33          | Guía Ingreso Interno                     |
+| Ingreso en bodega      | GEI  | 34          | Guía Egreso/Ingreso                      |
+| Traslado               | GIB  | 709         | Guía Ingreso Bodega                      |
+| Traslado               | GTS  | 711         | Guía Traslado Salida                     |
+| Traslado               | GST  | 702         | Guía Salida Traslado                     |
+| Traslado               | Gdc  | 79          | Guía de Cargo                            |
+| Nota crédito           | NCE  | 304         | Nota Crédito Electrónica                 |
+
+**REGLA CLAVE:**
+- Ped = ST_PEDIDO de R_STOCK_PRODUCTOS (fuente oficial, sin ambigüedad)
+- Dif = Fís − Disp = BVE/FVE emitidos, aún sin despacho físico (GME/GCE pendiente)
+- CANTIDAD_PENDIENTE > 0 en BVE/FVE = despachos no ejecutados
+
+## TIPOS DE DOC COMPROMISO (Pedido) — V37.8 CORREGIDO
+
+Documentos del ERP que **reservan** stock (aumentan ST_PEDIDO) sin generar salida física.
 Aparecen en `data/pedidos-comprometidos.json` y `data/pedidos-detalle.json`.
 
 **Fuente principal (totales):** `R_STOCK_PRODUCTOS.ST_PEDIDO` — campo oficial del ERP.
-**Fuente de detalle:** `M_DOCUMENTOS_DETALLE` filtrado por `MD.DOC IN (...)`.
+**Fuente de detalle:** `M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0`, filtrado por DOC IN.
 
-INCLUIDOS (reservan stock, sin salida):
-- NVM — Nota de Venta Mesón
-- VMN — Venta Mesón (variante)
-- VME — Venta Mesón Electrónica
-- CVN — Comprobante Venta
-- OVC — Orden de Venta Cliente
+INCLUIDOS (aumentan ST_PEDIDO en R_STOCK_PRODUCTOS):
+- NVM — Nota de Venta Mesón (IDDOCUMENTO=205)
+- VMN — Venta Mesón Nueva (IDDOCUMENTO=336)
+- VMP — Venta Mesón Público (IDDOCUMENTO=210)
 
-EXCLUIDOS (ya salieron del stock o no aplican):
-- FCN, FVE — Facturas (ya generaron GRT de salida)
-- BVE — Boleta Electrónica (idem)
-- NCV, NCE — Notas de crédito (reversión, no compromiso)
-- GEI, GST — Egresos/solicitudes sin stock comprometido
+ELIMINADOS DE LA LISTA (V37.8 — eran incorrectos):
+- VME — no existe en ID_DOC_OVIEDO_EM.xlsx como tipo que reserva Pedido
+- CVN — no confirmado
+- OVC — no confirmado
+
+EXCLUIDOS (reducen Pedido o generan salida física):
+- BVE/FVE — reducen Pedido (cliente pagó) pero no Físico todavía → van a despachos
+- GME/GCE — generan salida física (reducen Físico)
+- NCV, NCE — notas de crédito (reversión)
 
 REGLA: si aparece un nuevo TIPO_DOC que reserva stock sin despacho, agregarlo
 a `DOC_TIPOS_PEDIDO` en `BODEGAS/descargar_pedidos.py` y documentarlo aquí.
+
+## TIPOS DE DOC DESPACHO (Dif) — NUEVO V37.8
+
+Documentos del ERP que **están cobrados pero pendientes de despacho físico**.
+Aparecen en `data/despachos-comprometidos.json` y `data/despachos-detalle.json`.
+Generados por `BODEGAS/descargar_despachos.py`.
+
+**Fuente:** `M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0` para BVE/FVE.
+**Validación:** SUM(CANTIDAD_PENDIENTE de BVE/FVE) ≈ ST_FISICO − ST_DISPONIBLE por producto/bodega.
+
+INCLUIDOS:
+- BVE — Boleta Venta Electrónica (IDDOCUMENTO=316/605)
+- FVE — Factura Venta Electrónica (IDDOCUMENTO=301)
 
 ---
 
@@ -524,8 +580,12 @@ NO intentar arreglarlo.
              SQL Server directo (IEM=72, RCE=55, CEM=24), sin XLSM ni macros manuales
              NOTA: El echo del bat dice "IEM y RCE" pero la lógica ya incluye CEM desde V36.9k
    [PASO 1D] descargar_pedidos.py → pedidos-comprometidos.json + pedidos-detalle.json
-             ST_PEDIDO de R_STOCK_PRODUCTOS para PEM/SEM/CEM/MEM (IDBODEGA lookup dinámico)
-             Detalle: M_DOCUMENTOS_DETALLE filtrado por tipos NVM/VMN/VME/CVN/OVC
+             Totales: R_STOCK_PRODUCTOS.ST_PEDIDO (fuente oficial — IDBODEGA lookup dinámico)
+             Detalle: M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0, tipos NVM/VMN/VMP (V37.8)
+             Campos: tipoDoc, tipoDocLabel, numero, fechaEmision, fechaEntrega, atraso, cliente, rut, vendedor, cant
+   [PASO 1E] descargar_despachos.py → despachos-comprometidos.json + despachos-detalle.json  (NUEVO V37.8)
+             Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp, despachos pendientes)
+             Estructura JSON idéntica a pedidos-detalle (reutiliza modal panel)
 5. main.py --sin-deploy
    PASO 1: catalogogeneradohoy? SI/NO
    PASO 2: descargarventaserp.py incremental
