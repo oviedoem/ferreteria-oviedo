@@ -309,6 +309,34 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V4.7 — 2026-05-28 (cloud session)
+
+**CAMBIO 1 — styleSimpleSheet: helper genérico de estilos Excel**
+- Nueva función `styleSimpleSheet(ws, rows)` para aplicar formato profesional a cualquier hoja
+- Header fila 1: fondo #002060, texto blanco negrita, centrado
+- Bordes finos #BBBBBB en todas las celdas
+- Detección automática de columnas numéricas y monetarias ($, VALOR, COSTO...)
+- Condicional rojo (negativo) / azul (positivo) en columnas DIFERENCIA/DIF
+- Anchos automáticos por contenido (máx 45), freeze fila 1
+
+**CAMBIO 2 — Fix Excel desalineado sin formato (3 funciones)**
+- `exportDrilldownTable`: hoja RESULTADOS ahora con `styleSimpleSheet`
+- `exportFinalExcel`: hojas RESULTADOS, DATOS_FALTANTES, HIPERFAMILIA con estilos
+  (antes todas sin formato — causa del "desalineado" reportado)
+- `exportRecountExcel`: hojas Reconteo y Ranking_$ con estilos completos
+- "Dispersión" / "Diferencias (−)" con caracteres especiales reemplazados por ASCII
+  para compatibilidad con xlsx
+
+**CAMBIO 3 — GitHub Pages workflow**
+- `.github/workflows/deploy-inventario.yml`: despliega solo APP-INVENTARIO/ a GitHub Pages
+- Se activa en push a main cuando hay cambios en APP-INVENTARIO/
+- URL resultante (activar en Settings → Pages → Source: GitHub Actions):
+  https://oviedoem.github.io/ferreteria-oviedo/
+- PR mergeado a main: commit d8181dc
+
+**NO tocado:** styleAnalisisSheet, exportTableToExcel, toda la lógica render/parseo/filtrado,
+panel-admin.html, panel-cliente.html, panel-vendedor.html
+
 ### V4.6 — 2026-05-28
 
 **CAMBIO 0 — Regla anti-retroceso escrita en AGENTS.md**
