@@ -2615,16 +2615,12 @@ function emailReport(mode) {
       `Análisis Final Inventario — Ferretería Oviedo · El Manzano\n` +
       `Fecha: ${new Date().toLocaleString('es-CL')}\n\n` +
       resumen +
-      `\n— Reporte PDF —\n` +
-      `Usa el botón "🖨 Imprimir" en la app → Guardar como PDF\n` +
-      `Adjunta el PDF a este correo para incluir los gráficos y el cuadro final.\n` +
+      `\n— Adjuntar PDF —\n` +
+      `Para adjuntar gráficos y cuadro final: usa el botón 🖨 Imprimir / PDF → Guardar como PDF, y adjunta el PDF aquí.\n` +
       `(Los navegadores no permiten adjuntar archivos vía mailto:)`
     );
 
-    // Abrir la impresión primero para que el usuario genere el PDF
-    printMode('final');
-    // Pequeño delay para que el diálogo de impresión no bloquee el mailto
-    setTimeout(() => { window.location.href = `mailto:?subject=${subject}&body=${body}`; }, 800);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
     return;
   }
 
@@ -2907,6 +2903,7 @@ const PLANO_NUM_COLORS = [
 ];
 
 let planosData  = {}; // { sheetName: rows2d }
+let planosDataMerges = {}; // { sheetName: XLSX merges[] }
 let planosPatentes = []; // [{patente, zona, area}]
 
 async function loadPlanos(file) {
@@ -2923,8 +2920,11 @@ async function loadPlanos(file) {
     });
 
     planosData = {};
+    planosDataMerges = {};
     wb.SheetNames.forEach(name => {
-      planosData[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' });
+      const ws = wb.Sheets[name];
+      planosData[name] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      planosDataMerges[name] = ws['!merges'] || [];
     });
 
     // Extraer patentes de las 4 hojas visibles (escanea la cuadrícula)
@@ -3056,7 +3056,7 @@ function renderPlanos(allSheetNames) {
         `${contadaPat}/${totalPat} contadas · ${pct}%</span>`
       : `<span style="opacity:.65;font-size:11px">${totalPat} patentes</span>`;
 
-    const inner = renderPlanoGrid(rows, z, contados);
+    const inner = renderPlanoGrid(rows, z, contados, planosDataMerges[name] || []);
 
     return `<div class="plano-sheet${i>0?' hidden':''}" id="plano-sheet-${safeName(name)}">
       <div class="plano-sheet-header" style="background:${z.color}">
@@ -3104,13 +3104,29 @@ function _planoLabelStyle(raw) {
   return '';
 }
 
-function renderPlanoGrid(rows, zone, contados) {
+function renderPlanoGrid(rows, zone, contados, merges) {
   if (!rows.length) return '<p style="padding:20px;color:var(--muted)">Sin datos en esta hoja.</p>';
 
   let lastRow = 0;
-  rows.forEach((r, i) => { if (r.some(c => c !== '' && c !== null && c !== undefined)) lastRow = i; });
+  rows.forEach((r, i) => { if ((r || []).some(c => c !== '' && c !== null && c !== undefined)) lastRow = i; });
   const trimmed = rows.slice(0, lastRow + 1);
-  const maxCols = Math.max(...trimmed.map(r => r.length), 1);
+  const maxCols = Math.max(...trimmed.map(r => (r || []).length), 1);
+
+  // Build merge map: key "r,c" → {rowspan, colspan}; skip set for covered cells
+  const spanMap = {};
+  const skipSet = new Set();
+  (merges || []).forEach(m => {
+    const rs = m.e.r - m.s.r + 1;
+    const cs = m.e.c - m.s.c + 1;
+    if (rs > 1 || cs > 1) {
+      spanMap[`${m.s.r},${m.s.c}`] = { rowspan: rs, colspan: cs };
+      for (let r = m.s.r; r <= m.e.r; r++) {
+        for (let c = m.s.c; c <= m.e.c; c++) {
+          if (r !== m.s.r || c !== m.s.c) skipSet.add(`${r},${c}`);
+        }
+      }
+    }
+  });
 
   const isPatenteNum = (v) => {
     if (v === '' || v === null || v === undefined) return false;
@@ -3121,7 +3137,6 @@ function renderPlanoGrid(rows, zone, contados) {
 
   const patenteStyle = (raw) => {
     if (!contados) {
-      // Sin datos de inventario: amarillo Excel (fiel al modelo)
       return { bg: '#FEFF9C', color: '#5a4000', title: 'Patente ' + raw };
     }
     const s   = raw.toUpperCase();
@@ -3133,23 +3148,28 @@ function renderPlanoGrid(rows, zone, contados) {
   };
 
   let html = `<table class="plano-raw-table">`;
-  trimmed.forEach(row => {
+  trimmed.forEach((row, ri) => {
     html += '<tr>';
     for (let ci = 0; ci < maxCols; ci++) {
-      const v   = row[ci];
+      if (skipSet.has(`${ri},${ci}`)) continue; // celda cubierta por un merge
+      const sp    = spanMap[`${ri},${ci}`] || {};
+      const rsAttr = sp.rowspan && sp.rowspan > 1 ? ` rowspan="${sp.rowspan}"` : '';
+      const csAttr = sp.colspan && sp.colspan > 1 ? ` colspan="${sp.colspan}"` : '';
+      const v   = (row || [])[ci];
       const raw = (v !== null && v !== undefined) ? String(v).trim() : '';
       if (raw === '') {
-        html += '<td></td>';
+        html += `<td${rsAttr}${csAttr}></td>`;
       } else if (isPatenteNum(raw)) {
         const { bg, color, title } = patenteStyle(raw);
-        html += `<td class="cell-num" style="background:${bg};color:${color}" title="${title}">${raw}</td>`;
+        html += `<td class="cell-num"${rsAttr}${csAttr} style="background:${bg};color:${color}" title="${title}">${raw}</td>`;
       } else {
-        // Detectar etiqueta especial de zona
         const specialStyle = _planoLabelStyle(raw);
         const isLong = raw.length > 3;
         const cls = isLong ? 'cell-label' : '';
-        const style = specialStyle ? ` style="${specialStyle}"` : '';
-        html += `<td class="${cls}"${style} title="${raw}">${raw}</td>`;
+        const styleAttr = specialStyle
+          ? ` style="${specialStyle}${(rsAttr || csAttr) ? ';vertical-align:middle' : ''}"`
+          : ((rsAttr || csAttr) ? ' style="vertical-align:middle"' : '');
+        html += `<td class="${cls}"${rsAttr}${csAttr}${styleAttr} title="${raw}">${raw}</td>`;
       }
     }
     html += '</tr>';

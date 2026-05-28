@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V4.3
+# VERSION: V4.4
 # FECHA: 2026-05-28
 
 ---
@@ -308,6 +308,27 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V4.4 — 2026-05-28
+
+**CAMBIO 1 — Planos: soporte de celdas combinadas (merges)**
+
+- `loadPlanos()`: agrega `planosDataMerges = {}` paralelo a `planosData`; por cada hoja lee `ws['!merges'] || []`
+- `renderPlanoGrid(rows, zone, contados, merges)`: nuevo parámetro `merges`; construye `spanMap` (`rowspan`/`colspan` por clave `"r,c"`) y `skipSet` (celdas cubiertas que se omiten); genera `<td rowspan= colspan=>` donde el Excel tenía merge
+- `renderPlanos()`: pasa `planosDataMerges[name]` a `renderPlanoGrid`
+- `style.css`: `table-layout: auto` (antes `fixed`), fondo blanco en celdas, bordes `#cbd5e1`, `td[rowspan]/td[colspan]` en negrita
+- Patentes siguen en amarillo (#FEFF9C) sin datos, verde/rojo con datos — capa cobertura intacta
+- `getPlanoContados`, `_planoLabelStyle`, `extractPatentesFromGridSheets`, `showPlanoSheet` no tocados
+
+**CAMBIO 2 — Email Final: quitar auto-print bloqueante**
+
+- `emailReport(mode)` rama `'final'`: eliminados `printMode('final')` y `setTimeout(..., 800)` que causaban conflicto con diálogo de impresión modal
+- Ahora abre `window.location.href = mailto:...` directamente, sin depender del diálogo de impresión
+- Nota del cuerpo del correo actualizada: "usa el botón 🖨 Imprimir / PDF → Guardar como PDF, y adjunta el PDF aquí"
+- `index.html`: botón `🖨 Imprimir` en view-final renombrado a `🖨 Imprimir / PDF` para mayor claridad
+- El PDF y el email son ahora acciones independientes; el botón Imprimir/PDF sigue generando el PDF
+
+**NO tocado:** `calcKPIs`, `calcMonetarySummary`, otras ramas de `emailReport`, `printMode`, `renderAnalisisFinal`, ninguna función de parseo o filtrado
 
 ### V4.3 — 2026-05-28
 
