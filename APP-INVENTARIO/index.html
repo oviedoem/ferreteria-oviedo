@@ -953,8 +953,42 @@
     <div id="view-reconteo" class="view hidden">
       <div class="view-header">
         <h2>🔁 Centro de Reconteo Operacional</h2>
+        <div class="view-actions">
+          <button class="btn btn-sm" onclick="exportRecountExcel()">⬇ Excel</button>
+          <button class="btn btn-sm btn-ghost" onclick="printMode('reconteo')">🖨 Imprimir</button>
+          <button class="btn btn-sm btn-email" onclick="emailReport('reconteo')">✉ Email</button>
+        </div>
       </div>
       <div class="recount-summary" id="recount-summary"></div>
+
+      <!-- ── Rankings ── -->
+      <div class="recount-rankings" id="recount-rankings" style="display:none">
+        <div class="ranking-card">
+          <div class="ranking-card-header">
+            <h3>🏆 Top 20 · Mayor Impacto $</h3>
+            <span class="ranking-badge" id="rank-money-count"></span>
+          </div>
+          <div class="ranking-table-wrap">
+            <table id="rank-money-table" class="ranking-table">
+              <thead><tr><th>#</th><th>Producto</th><th>Marca</th><th>Dif Unid</th><th>Impacto $</th><th>Sev.</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ranking-card">
+          <div class="ranking-card-header">
+            <h3>📦 Top 20 · Mayor Diferencia Unidades</h3>
+            <span class="ranking-badge" id="rank-units-count"></span>
+          </div>
+          <div class="ranking-table-wrap">
+            <table id="rank-units-table" class="ranking-table">
+              <thead><tr><th>#</th><th>Producto</th><th>Marca</th><th>Dif Unid</th><th>Impacto $</th><th>Sev.</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="recount-toolbar">
         <input id="recount-search" class="recount-input" placeholder="Buscar producto, marca, familia...">
         <select id="recount-type">

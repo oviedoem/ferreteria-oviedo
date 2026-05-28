@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V4.0
+# VERSION: V4.1
 # FECHA: 2026-05-28
 
 ---
@@ -228,6 +228,19 @@ saveStateToLS()                    // V4.0: guarda estado pequeño en localStora
 scheduleSave()                     // V4.0: debounce 800ms para saveStateToLS
 clearSavedSession()                // V4.0: borra LS + IDB + estado → welcome
 restoreSession()                   // V4.0: async, restaura datos + estado + muestra banner
+
+// Planos (V4.1)
+getPlanoContados()                 // V4.1: devuelve Set con patentes presentes en datos cargados
+renderPlanos(allSheetNames)        // V4.1: +leyenda verde/rojo +badge cobertura por hoja
+renderPlanoGrid(rows, zone, contados) // V4.1: colora patentes verde si contada, rojo si no
+
+// CheckList (V4.1)
+renderGantt(raw)                   // V4.1: fix slice(2), fila día 0 marcada, filtro 'dias' vacío
+
+// Centro Reconteo (V4.1)
+renderRecount()                    // V4.1: +KPI Confirmados, llama renderRecountRankings
+renderRecountRankings(rows)        // V4.1: top 20 por $, top 20 por unidades — tablas con colores
+exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ```
 
 ---
@@ -347,12 +360,44 @@ restoreSession()                   // V4.0: async, restaura datos + estado + mue
 - `exportFinalExcel()`: 4 hojas xlsx-js-style con datos reales
 
 **PENDIENTE (no implementado en esta sesión):**
-- TAREA 6: Planos idéntico al Excel modelo (leer hojas y replicar diseño)
-- TAREA 7: CheckList idéntico al Excel modelo (ver Hoja1)
-- TAREA 8: Centro Reconteo — rankings explícitos por $ y por unidades (actualmente tiene
-  ordenamiento por severidad/$; falta rankeo separado por columna)
-- exportChecklistExcel / exportPlanosExcel con formato del modelo respectivo
+- exportChecklistExcel / exportPlanosExcel con formato idéntico al modelo Excel
 - Test end-to-end con archivos reales 2025/2026
+
+### V4.1 — 2026-05-28
+
+**TAREA 6 — Planos: cross-reference con inventario cargado:**
+- `getPlanoContados()`: extrae Set de patentes desde `state.data2026` (o `state.data2025`);
+  incluye string completo + solo dígitos para match flexible ("397 MIX" → también "397")
+- `renderPlanoGrid(rows, zone, contados)`: nuevo parámetro `contados`;
+  celdas de patente → verde (#bbf7d0) si contada, rojo (#fee2e2) si no encontrada, zona-color si sin datos
+- `renderPlanos(allSheetNames)`: 
+  - Leyenda añade chips "Contada (verde)" / "Sin contar (rojo)" cuando hay datos cargados
+  - Header de cada hoja muestra badge cobertura: "X/Y contadas · Z%"
+  - Semáforo ≥80% = verde, ≥50% = naranja, <50% = rojo
+
+**TAREA 7 — CheckList: fix Gantt y legibilidad mejorada:**
+- `renderGantt(raw)`:
+  - Fix índice: `slice(3)` → `slice(2)` — días empiezan en col C (-30, -29...) no col D
+  - Filtro: ignora cols con label vacío o "dias" (solo label de grupo, no datos)
+  - Fila extra "DÍA 0" sobre headers cuando existe día 0 en la planilla
+  - `dayClass(v)`: función local — col-today si 0, col-pos si >0, col-neg si <0, col-weekend si SAB/DOM
+  - Responsable muestra "—" si vacío (antes mostraba "")
+  - `taskCount` en el header de la columna "Tarea"
+
+**TAREA 8 — Centro Reconteo: rankings explícitos + export:**
+- `renderRecountRankings(rows)` — NUEVA:
+  - Ranking 1: top 20 ordenados por |Impacto $| descendente
+  - Ranking 2: top 20 ordenados por |Diferencia Unidades| descendente
+  - Cada fila: # · Producto · Marca · Dif unid · Impacto $ · punto de estado (verde=Confirmado, azul=Recontado, gris=Pendiente)
+  - Sección `#recount-rankings` visible cuando hay datos, oculta si no hay
+- `renderRecount()` actualizado:
+  - KPI nuevo: "Confirmados" (verde)
+  - Llama `renderRecountRankings(rows)` con todos los rows (no filtrados)
+  - `state-pill` de tabla toma color del estado (verde/azul/gris)
+- `exportRecountExcel()` — NUEVA: 2 hojas (Reconteo completo + Ranking_$)
+- `index.html`: view-actions en view-reconteo: ⬇ Excel + 🖨 Imprimir + ✉ Email
+- `style.css`: clases `.recount-rankings`, `.ranking-card`, `.ranking-card-header`,
+  `.ranking-badge`, `.ranking-table`, `.ranking-table-wrap`, `.plano-coverage-badge`
 
 ### V3.0 — 2026-05-28
 

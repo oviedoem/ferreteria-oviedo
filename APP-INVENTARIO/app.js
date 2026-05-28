@@ -2112,28 +2112,55 @@ function renderGantt(raw) {
   if (headerRowIdx < 0) headerRowIdx = 0;
   const dayRowIdx = headerRowIdx + 1; // fila con números de días
 
-  const headerRow = raw[headerRowIdx] || [];
-  const dayRow    = raw[dayRowIdx]    || [];
+  const dayRow = raw[dayRowIdx] || [];
 
-  // Columnas fijas: task (col 0), responsable (col 1), dias (col 2)
-  // Columnas Gantt: col 3 en adelante
-  const ganttCols = dayRow.slice(3).map((d, i) => ({ idx: i + 3, label: d }));
+  // Columnas fijas: task (col 0), responsable (col 1)
+  // Columnas Gantt: desde col 2 en adelante (días -30,-29,...,0,1,...)
+  const GANTT_START = 2;
+  const ganttCols = dayRow.slice(GANTT_START).map((d, i) => ({ idx: i + GANTT_START, label: d }))
+    .filter(col => {
+      const v = String(col.label).trim();
+      return v !== '' && v !== 'dias';
+    });
 
-  const table  = document.getElementById('gantt-table');
-  const ganttSection = document.getElementById('gantt-section');
+  const table       = document.getElementById('gantt-table');
+  const ganttSection= document.getElementById('gantt-section');
+
+  // Clasificar día: negativo=pre, 0=hoy(inventario), positivo=post, SAB/DOM=fin semana
+  const dayClass = v => {
+    const s = String(v).trim();
+    if (/sab|dom/i.test(s)) return 'col-weekend';
+    const n = Number(s);
+    if (!isNaN(n) && n === 0)  return 'col-today';
+    if (!isNaN(n) && n > 0)    return 'col-pos';
+    return 'col-neg';
+  };
+
+  // Contar tareas no vacías
+  let taskCount = 0;
+  for (let i = dayRowIdx + 1; i < raw.length; i++) {
+    if (String(raw[i]?.[0] || '').trim()) taskCount++;
+  }
 
   // HEAD
-  let thead = '<thead><tr>';
-  thead += `<th class="col-task">Tarea</th>`;
+  let thead = '<thead>';
+  // Fila con día 0 marcado especialmente
+  const todayIdx = ganttCols.findIndex(c => String(c.label).trim() === '0');
+  if (todayIdx >= 0) {
+    thead += `<tr><td colspan="2" style="background:#0f172a"></td>`;
+    ganttCols.forEach((col, i) => {
+      thead += i === todayIdx
+        ? `<th class="col-today" colspan="1" style="font-size:9px">DÍA 0</th>`
+        : `<td style="background:#0f172a"></td>`;
+    });
+    thead += '</tr>';
+  }
+  thead += '<tr>';
+  thead += `<th class="col-task">Tarea (${taskCount})</th>`;
   thead += `<th class="col-resp">Responsable</th>`;
   ganttCols.forEach(col => {
-    const v   = String(col.label).trim();
-    const num = parseFloat(v);
-    let cls = 'col-neg';
-    if (/sab|dom/i.test(v))    cls = 'col-weekend';
-    else if (!isNaN(num) && num > 0) cls = 'col-pos';
-    else if (v === '1' || v === '0') cls = 'col-today';
-    thead += `<th class="${cls}">${v || ''}</th>`;
+    const v = String(col.label).trim();
+    thead += `<th class="${dayClass(v)}" title="Día ${v}">${v}</th>`;
   });
   thead += '</tr></thead>';
 
@@ -2147,15 +2174,15 @@ function renderGantt(raw) {
 
     tbody += `<tr>`;
     tbody += `<td class="td-task" title="${task}">${task}</td>`;
-    tbody += `<td class="td-resp">${resp}</td>`;
+    tbody += `<td class="td-resp">${resp || '—'}</td>`;
     ganttCols.forEach(col => {
       const val  = row[col.idx];
       const dayV = String(dayRow[col.idx] || '').trim();
-      const hasVal = val !== '' && val !== null && val !== undefined;
+      const hasVal = val !== '' && val !== null && val !== undefined && String(val).trim() !== '';
       const isWknd = /sab|dom/i.test(dayV);
-      if (isWknd) tbody += `<td class="td-weekend"></td>`;
-      else if (hasVal) tbody += `<td class="td-active" title="${val}"></td>`;
-      else tbody += `<td></td>`;
+      if (isWknd)   tbody += `<td class="td-weekend"></td>`;
+      else if (hasVal) tbody += `<td class="td-active" title="Día ${dayV}: ${val}"></td>`;
+      else          tbody += `<td></td>`;
     });
     tbody += `</tr>`;
   }
@@ -2373,10 +2400,25 @@ function extractPatentesFromGridSheets(allData) {
   return result.sort((a, b) => parseInt(a.patente) - parseInt(b.patente));
 }
 
+// Devuelve Set con todas las patentes presentes en los datos cargados
+// (normalizado: string completo + solo dígitos iniciales para match flexible)
+function getPlanoContados() {
+  const data = (state.data2026?.length ? state.data2026 : null) || (state.data2025?.length ? state.data2025 : null);
+  if (!data?.length) return null;
+  const s = new Set();
+  data.forEach(r => {
+    const p = String(r.patente || '').trim();
+    if (!p) return;
+    s.add(p.toUpperCase());
+    const m = p.match(/^(\d+)/);
+    if (m) s.add(m[1]);
+  });
+  return s;
+}
+
 // Render principal — solo las 4 hojas visibles
 function renderPlanos(allSheetNames) {
-  // Filtrar solo las hojas conocidas/visibles, en orden
-  const ordered   = ['Sala 1','1erPiso_A','2doPiso_A','Patio_2'];
+  const ordered    = ['Sala 1','1erPiso_A','2doPiso_A','Patio_2'];
   const sheetNames = ordered.filter(n => allSheetNames.includes(n));
 
   const content = document.getElementById('planos-content');
@@ -2385,13 +2427,22 @@ function renderPlanos(allSheetNames) {
   const emptyEl = document.getElementById('planos-empty');
   if (emptyEl) emptyEl.style.display = 'none';
 
-  // Leyenda simple
-  legendEl.innerHTML = sheetNames.map(name => {
+  const contados = getPlanoContados();
+
+  // Leyenda con indicadores de cobertura
+  let legendHtml = sheetNames.map(name => {
     const z = PLANO_ZONES[name];
     return `<span class="legend-chip" style="background:${hexToRgba(z.color,.1)};color:${z.color}">
       <span class="dot" style="background:${z.color}"></span>${z.label}
     </span>`;
   }).join('');
+  if (contados) {
+    legendHtml += `<span class="legend-chip" style="background:#bbf7d0;color:#14532d"><span class="dot" style="background:#16a34a"></span>Contada</span>`;
+    legendHtml += `<span class="legend-chip" style="background:#fee2e2;color:#991b1b"><span class="dot" style="background:#dc2626"></span>Sin contar</span>`;
+  } else {
+    legendHtml += `<span class="legend-chip" style="background:#f1f5f9;color:#64748b">Carga datos de inventario para ver cobertura</span>`;
+  }
+  legendEl.innerHTML = legendHtml;
 
   // Tabs
   tabsEl.innerHTML = sheetNames.map((name, i) => {
@@ -2403,18 +2454,43 @@ function renderPlanos(allSheetNames) {
             </button>`;
   }).join('');
 
+  const isPatenteCell = v => {
+    if (v === '' || v === null || v === undefined) return false;
+    const s = String(v).trim();
+    const m = s.match(/^(\d{2,4})(\s+\S+)?$/);
+    return m && parseInt(m[1], 10) > 1;
+  };
+
   // Una sección por hoja — layout FIEL al Excel
   content.innerHTML = sheetNames.map((name, i) => {
-    const z     = PLANO_ZONES[name];
-    const rows  = planosData[name] || [];
-    const count = countPatentesInSheet(rows);
-    const inner = renderPlanoGrid(rows, z);
+    const z    = PLANO_ZONES[name];
+    const rows = planosData[name] || [];
+
+    // Calcular cobertura en esta hoja
+    let totalPat = 0, contadaPat = 0;
+    rows.forEach(row => (row || []).forEach(cell => {
+      if (!isPatenteCell(cell)) return;
+      totalPat++;
+      if (!contados) return;
+      const s   = String(cell).trim();
+      const num = s.match(/^(\d+)/)?.[1] || '';
+      if (contados.has(s.toUpperCase()) || (num && contados.has(num))) contadaPat++;
+    }));
+
+    const pct = totalPat > 0 ? Math.round(contadaPat / totalPat * 100) : 0;
+    const coverageHtml = contados && totalPat > 0
+      ? `<span class="plano-coverage-badge">` +
+        `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${pct>=80?'#4ade80':pct>=50?'#fb923c':'#f87171'}"></span>` +
+        `${contadaPat}/${totalPat} contadas · ${pct}%</span>`
+      : `<span style="opacity:.65;font-size:11px">${totalPat} patentes</span>`;
+
+    const inner = renderPlanoGrid(rows, z, contados);
 
     return `<div class="plano-sheet${i>0?' hidden':''}" id="plano-sheet-${safeName(name)}">
       <div class="plano-sheet-header" style="background:${z.color}">
         <div>
           <div class="plano-sheet-title">${z.label}</div>
-          <div class="plano-sheet-sub">~${count} patentes detectadas</div>
+          <div style="margin-top:4px">${coverageHtml}</div>
         </div>
         <button class="btn btn-xs"
           style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3)"
@@ -2441,27 +2517,31 @@ function showPlanoSheet(name) {
 }
 
 // ── RENDER GRID FIEL AL EXCEL ─────────────────────────────────
-// Convierte la matriz 2D directamente a tabla HTML, preservando
-// posiciones exactas. Solo agrega color de fondo a celdas con
-// número de patente — no mueve ni restructura nada.
-function renderPlanoGrid(rows, zone) {
+// contados = Set de strings de patentes presentes en inventario (o null)
+// Celdas de patente se colorean verde/rojo según si están en contados
+function renderPlanoGrid(rows, zone, contados) {
   if (!rows.length) return '<p style="padding:20px;color:var(--muted)">Sin datos en esta hoja.</p>';
 
-  // Recortar filas vacías al final
   let lastRow = 0;
   rows.forEach((r, i) => { if (r.some(c => c !== '' && c !== null && c !== undefined)) lastRow = i; });
   const trimmed = rows.slice(0, lastRow + 1);
-
-  // Ancho máximo de columnas
   const maxCols = Math.max(...trimmed.map(r => r.length), 1);
 
-  // Detectar si una celda es número de patente:
-  // entero > 1 que puede venir solo o con sufijo texto (ej: "397 MIX", "73")
   const isPatenteNum = (v) => {
     if (v === '' || v === null || v === undefined) return false;
     const s = String(v).trim();
-    const m = s.match(/^(\d{2,4})(\s+\S+)?$/); // 2-4 dígitos, opcionalmente texto
+    const m = s.match(/^(\d{2,4})(\s+\S+)?$/);
     return m && parseInt(m[1], 10) > 1;
+  };
+
+  const patenteStyle = (raw) => {
+    if (!contados) return { bg: zone.numBg, color: zone.numColor, title: 'Patente ' + raw };
+    const s   = raw.toUpperCase();
+    const num = raw.match(/^(\d+)/)?.[1] || '';
+    const ok  = contados.has(s) || (num && contados.has(num));
+    return ok
+      ? { bg: '#bbf7d0', color: '#14532d', title: 'Contada ✓ — Patente ' + raw }
+      : { bg: '#fee2e2', color: '#991b1b', title: 'Sin contar — Patente ' + raw };
   };
 
   let html = `<table class="plano-raw-table">`;
@@ -2470,16 +2550,12 @@ function renderPlanoGrid(rows, zone) {
     for (let ci = 0; ci < maxCols; ci++) {
       const v   = row[ci];
       const raw = (v !== null && v !== undefined) ? String(v).trim() : '';
-
       if (raw === '') {
         html += '<td></td>';
       } else if (isPatenteNum(raw)) {
-        // Número de patente → color de zona + negrita
-        html += `<td class="cell-num"
-                    style="background:${zone.numBg};color:${zone.numColor}"
-                    title="Patente ${raw}">${raw}</td>`;
+        const { bg, color, title } = patenteStyle(raw);
+        html += `<td class="cell-num" style="background:${bg};color:${color}" title="${title}">${raw}</td>`;
       } else {
-        // Texto (etiqueta de zona, nombre, dibujo) → tal cual, sin alterar
         const isLong = raw.length > 3;
         html += `<td class="${isLong ? 'cell-label' : ''}" title="${raw}">${raw}</td>`;
       }
@@ -3071,33 +3147,115 @@ function renderRecount(){
     if(sev !== 'all' && String(r.severity).trim().toLowerCase() !== String(sev).trim().toLowerCase()) return false;
     return true;
   });
-  const summary=document.getElementById('recount-summary');
+
   const faltantes=filtered.filter(r=>r.dif<0).length;
   const sobrantes=filtered.filter(r=>r.dif>0).length;
   const criticos=filtered.filter(r=>r.severity==='critica').length;
+  const confirmados=filtered.filter(r=>localStorage.getItem('recount-status-'+r.rowId)==='Confirmado').length;
   const impacto=filtered.reduce((a,b)=>a+Math.abs(b.money||0),0);
-  summary.innerHTML=`
-    <div class="recount-card"><span>Diferencias detectadas</span><strong>${filtered.length}</strong></div>
+
+  document.getElementById('recount-summary').innerHTML=`
+    <div class="recount-card"><span>Diferencias</span><strong>${filtered.length}</strong></div>
     <div class="recount-card"><span>Faltantes</span><strong>${faltantes}</strong></div>
     <div class="recount-card"><span>Sobrantes</span><strong>${sobrantes}</strong></div>
-    <div class="recount-card"><span>Críticos</span><strong>${criticos}</strong></div>
+    <div class="recount-card"><span>Críticos</span><strong style="color:#fca5a5">${criticos}</strong></div>
+    <div class="recount-card"><span>Confirmados</span><strong style="color:#86efac">${confirmados}</strong></div>
     <div class="recount-card"><span>Impacto Total</span><strong>$${Math.round(impacto).toLocaleString('es-CL')}</strong></div>`;
+
+  // Rankings (todos los rows, no filtrados — visión completa)
+  renderRecountRankings(rows);
 
   const tbody=document.querySelector('#recount-table tbody');
   tbody.innerHTML=filtered.slice(0,500).map(r=>{
     const key='recount-status-'+r.rowId;
     const status=localStorage.getItem(key)||'Pendiente';
+    const statusColor={Confirmado:'#16a34a',Recontado:'#2563eb',Pendiente:''}[status]||'';
     return `<tr>
-      <td><span class="state-pill" onclick="toggleRecountStatus(${r.rowId})">${status}</span></td>
-      <td>${r.producto||'—'}</td>
+      <td><span class="state-pill" style="${statusColor?'background:'+statusColor+';color:#fff':''}" onclick="toggleRecountStatus(${r.rowId})">${status}</span></td>
+      <td title="${r.producto||''}">${(r.producto||'—').substring(0,45)}</td>
       <td>${r.marca||'—'}</td>
       <td>${r.familia||'—'}</td>
       <td>${r.subfamilia||'—'}</td>
-      <td style="color:${r.dif<0?'#dc2626':'#16a34a'}">${r.dif}</td>
-      <td style="color:${r.money<0?'#dc2626':'#16a34a'}">$${Math.round(r.money).toLocaleString('es-CL')}</td>
+      <td style="font-weight:700;color:${r.dif<0?'#dc2626':'#16a34a'}">${r.dif>0?'+':''}${r.dif}</td>
+      <td style="font-weight:700;color:${r.money<0?'#dc2626':'#16a34a'}">$${Math.round(Math.abs(r.money)).toLocaleString('es-CL')}</td>
       <td><span class="badge-severity sev-${r.severity}">${r.severityLabel}</span></td>
     </tr>`;
   }).join('');
+}
+
+function renderRecountRankings(rows) {
+  const rankEl = document.getElementById('recount-rankings');
+  if (!rankEl || !rows.length) { if (rankEl) rankEl.style.display = 'none'; return; }
+  rankEl.style.display = '';
+
+  const fmtMoney = v => '$' + Math.round(Math.abs(v)).toLocaleString('es-CL');
+  const trunc    = (s, n) => s && s.length > n ? s.substring(0, n) + '…' : (s || '—');
+
+  const buildRows = (sorted, maxAbsVal, keyFn, valFn) =>
+    sorted.slice(0, 20).map((r, i) => {
+      const key    = 'recount-status-' + r.rowId;
+      const status = localStorage.getItem(key) || 'Pendiente';
+      const v      = valFn(r);
+      const pct    = maxAbsVal > 0 ? Math.min(100, Math.round(Math.abs(v) / maxAbsVal * 100)) : 0;
+      const color  = r.dif < 0 ? '#ef4444' : '#3b82f6';
+      const statusColor = {Confirmado:'#16a34a',Recontado:'#2563eb'}[status] || '#94a3b8';
+      return `<tr>
+        <td class="rank-num">${i+1}</td>
+        <td class="rank-prod" title="${r.producto||''}">${trunc(r.producto, 40)}</td>
+        <td style="color:var(--muted);font-size:11px">${r.marca||'—'}</td>
+        <td style="font-weight:700;color:${r.dif<0?'#dc2626':'#2563eb'};white-space:nowrap">${r.dif>0?'+':''}${r.dif} ud</td>
+        <td class="rank-val" style="color:${color};white-space:nowrap">${fmtMoney(v)}</td>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusColor}" title="${status}"></span></td>
+      </tr>`;
+    }).join('');
+
+  // Ranking 1 — por |$|
+  const byMoney  = [...rows].sort((a,b) => Math.abs(b.money) - Math.abs(a.money));
+  const maxMoney = byMoney[0] ? Math.abs(byMoney[0].money) : 1;
+  const tMoney   = document.querySelector('#rank-money-table tbody');
+  const cMoney   = document.getElementById('rank-money-count');
+  if (tMoney)  tMoney.innerHTML  = buildRows(byMoney, maxMoney, r=>r.rowId, r=>r.money);
+  if (cMoney)  cMoney.textContent = byMoney.length + ' difs';
+
+  // Ranking 2 — por |unidades|
+  const byUnits  = [...rows].sort((a,b) => Math.abs(b.dif) - Math.abs(a.dif));
+  const maxUnits = byUnits[0] ? Math.abs(byUnits[0].dif) : 1;
+  const tUnits   = document.querySelector('#rank-units-table tbody');
+  const cUnits   = document.getElementById('rank-units-count');
+  if (tUnits)  tUnits.innerHTML  = buildRows(byUnits, maxUnits, r=>r.rowId, r=>r.money);
+  if (cUnits)  cUnits.textContent = byUnits.length + ' difs';
+}
+
+function exportRecountExcel() {
+  const rows = getRecountRows();
+  if (!rows.length) { showToast('Sin datos de reconteo', 'error'); return; }
+  const wb = XLSX.utils.book_new();
+  const headers = ['#','Estado','Producto','Marca','Familia','Subfamilia','Dif Unid','Impacto $','Severidad'];
+  const data = rows.map((r, i) => [
+    i + 1,
+    localStorage.getItem('recount-status-' + r.rowId) || 'Pendiente',
+    r.producto || '',
+    r.marca    || '',
+    r.familia  || '',
+    r.subfamilia || '',
+    r.dif,
+    Math.round(r.money),
+    r.severityLabel,
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  ws['!cols'] = [{wch:4},{wch:12},{wch:45},{wch:18},{wch:18},{wch:18},{wch:10},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Reconteo');
+
+  // Hoja ranking $
+  const byMoney = [...rows].sort((a,b)=>Math.abs(b.money)-Math.abs(a.money)).slice(0,50);
+  const ws2 = XLSX.utils.aoa_to_sheet([
+    ['#','Producto','Marca','Dif Unid','Impacto $','Severidad'],
+    ...byMoney.map((r,i)=>[i+1, r.producto||'', r.marca||'', r.dif, Math.round(r.money), r.severityLabel]),
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws2, 'Ranking_$');
+
+  XLSX.writeFile(wb, `Reconteo_${today()}.xlsx`);
+  showToast('Excel de reconteo generado ✓', 'ok');
 }
 
 function toggleRecountStatus(id){
