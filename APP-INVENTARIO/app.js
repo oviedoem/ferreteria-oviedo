@@ -214,6 +214,10 @@ function applyRowMapping(rawRow, mapping) {
   for (const f of ['producto','patente','zona','area','marca','familia','perfamilia','subfamilia','codigo','bodega']) {
     row[f] = cleanText(row[f]);
   }
+  // Fallback "Sin clasificar" para campos de categoría que quedan vacíos
+  for (const f of ['marca','familia','perfamilia']) {
+    if (!row[f]) row[f] = 'Sin clasificar';
+  }
   return row;
 }
 
@@ -303,6 +307,7 @@ function buildFamiliaIndex(wb) {
         marca:        cleanText(rowValueByAliases(r, ['Marca','MARCA'])),
         hiperfamilia: cleanText(rowValueByAliases(r, ['Hiperfamilia','HIPERFAMILIA','HIPERMALIA'])),
         familia:      cleanText(rowValueByAliases(r, ['Familia','FAMILIA'])),
+        subfamilia:   cleanText(rowValueByAliases(r, ['SubFamilia','SUBFAMILIA','Subfamilia','SUB_FAMILIA'])),
       };
     }
     return index;
@@ -431,7 +436,7 @@ async function readFileData(file) {
               _marca:      cleanText(rowValueByAliases(r, ['MARCA','Marca'])) || cleanText(fam.marca) || cleanText(mis.marca) || cleanText(cat.marca),
               _hiper:      cleanText(rowValueByAliases(r, ['HIPERMALIA','HIPERFAMILIA','HiperFamilia'])) || cleanText(fam.hiperfamilia) || cleanText(mis.perfamilia) || cleanText(cat.perfamilia),
               _familia:    cleanText(rowValueByAliases(r, ['FAMILIA','Familia'])) || cleanText(fam.familia) || cleanText(mis.familia) || cleanText(cat.familia),
-              _subfamilia: cleanText(rowValueByAliases(r, ['SubFamilia','SUBFAMILIA','Subfamilia','SUB_FAMILIA'])) || cleanText(mis.subfamilia) || cleanText(cat.subfamilia),
+              _subfamilia: cleanText(rowValueByAliases(r, ['SubFamilia','SUBFAMILIA','Subfamilia','SUB_FAMILIA'])) || cleanText(fam.subfamilia) || cleanText(mis.subfamilia) || cleanText(cat.subfamilia),
               _bodega:     bodegaIndex[cod] || '',
               _costo:      parseNum(rowValueByAliases(r, ['COSTO $','Costo Promedio','COSTO','COSTO_'])) || parseNum(mis.costo) || parseNum(cat.costo) || 0,
             };
@@ -1392,12 +1397,12 @@ function buildDDGroupTable(year, groups, groupBy, groupLabel) {
     <thead><tr>
       <th>${groupLabel}</th>
       <th class="num">Productos</th>
-      <th class="num">En Sistema (unid)</th>
-      <th class="num">Contado (unid)</th>
-      <th class="num">Diferencia (unid)</th>
-      <th class="num">Valor Sistema ($)</th>
-      <th class="num">Valor Contado ($)</th>
-      <th class="num">Diferencia ($)</th>
+      <th class="num">STOCK SISTEMA</th>
+      <th class="num">CONTEO</th>
+      <th class="num">DIFERENCIA</th>
+      <th class="num">VALOR SISTEMA $</th>
+      <th class="num">VALOR CONTEO</th>
+      <th class="num">DIFERENCIA $</th>
       <th class="num">% Exactitud</th>
     </tr></thead>
     <tbody>${rows}</tbody>
@@ -1426,12 +1431,12 @@ function buildDDProductTable(data) {
     <thead><tr>
       <th>Código</th>
       <th>Descripción del Producto</th>
-      <th class="num">En Sistema (unid)</th>
-      <th class="num">Contado (unid)</th>
-      <th class="num">Diferencia (unid)</th>
-      <th class="num">Valor Sistema ($)</th>
-      <th class="num">Valor Contado ($)</th>
-      <th class="num">Diferencia ($)</th>
+      <th class="num">STOCK SISTEMA</th>
+      <th class="num">CONTEO</th>
+      <th class="num">DIFERENCIA</th>
+      <th class="num">VALOR SISTEMA $</th>
+      <th class="num">VALOR CONTEO</th>
+      <th class="num">DIFERENCIA $</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -1462,10 +1467,10 @@ function clearDrilldownFilter(year) {
    en la primera fila.
 ──────────────────────────────────────────────────────────────── */
 function styleAnalisisSheet(ws, rows) {
-  const HDR_FILL  = { patternType: 'solid', fgColor: { rgb: '002060' } };
-  const HDR_FONT  = { color: { rgb: 'FFFFFF' }, bold: true, sz: 10 };
+  const HDR_FILL  = { patternType: 'solid', fgColor: { rgb: 'FF002060' } };
+  const HDR_FONT  = { color: { rgb: 'FFFFFFFF' }, bold: true, sz: 10 };
   const HDR_ALIGN = { horizontal: 'center', vertical: 'center', wrapText: true };
-  const THIN_BDR  = { style: 'thin', color: { rgb: 'BBBBBB' } };
+  const THIN_BDR  = { style: 'thin', color: { rgb: 'FFBBBBBB' } };
   const CELL_BDR  = { top: THIN_BDR, bottom: THIN_BDR, left: THIN_BDR, right: THIN_BDR };
 
   // Formatos por columna (índice 0-basado): A=0..L=11
@@ -1509,8 +1514,8 @@ function styleAnalisisSheet(ws, rows) {
 
       // Estilos
       const fontColor = !isHeader && isNum && !isNaN(num)
-        ? (num < 0 ? 'C00000' : num > 0 && (cIdx === 7 || cIdx === 8) ? '0000FF' : '000000')
-        : (isHeader ? 'FFFFFF' : '000000');
+        ? (num < 0 ? 'FFC00000' : num > 0 && (cIdx === 7 || cIdx === 8) ? 'FF0000FF' : 'FF1F2937')
+        : (isHeader ? 'FFFFFFFF' : 'FF1F2937');
 
       ws[addr].s = {
         fill:      isHeader ? HDR_FILL : { patternType: 'none' },
@@ -1580,8 +1585,8 @@ function exportDrilldownTable(year) {
 function renderResumen(id, groups, keyLabel) {
   const sorted = [...groups].sort((a,b) => b.adu - a.adu);
   buildTable(id,
-    [keyLabel, 'Unid Sist', 'Unid Real', 'Peso Sist', 'Peso Real',
-     'Abs Dif Unid', 'Abs Dif Peso', '% Exact Unid', '% Exact Peso'],
+    [keyLabel, 'STOCK SISTEMA', 'CONTEO', 'VALOR SISTEMA $', 'VALOR CONTEO',
+     '|DIFERENCIA|', '|DIFERENCIA $|', '% Exact Unid', '% Exact Peso'],
     sorted.map(g => [
       trunc(g.key.replace(/\x00/g, ' / '), 35),
       cNum(g.us), cNum(g.ur), cNum(g.ps), cNum(g.pr),
@@ -1614,8 +1619,8 @@ function renderComparativeTable(d25, d26) {
 
   buildTable('table-comparative',
     ['Marca','Familia','Producto',
-     'Unid 25','Unid 26','Dif Unid 25','Dif Unid 26',
-     'Peso 25','Peso 26',
+     'STOCK SIS. 25','STOCK SIS. 26','DIFERENCIA 25','DIFERENCIA 26',
+     'VALOR SIS. 25','VALOR SIS. 26',
      '% Exact Unid 25','% Exact Unid 26','Δ Exact Unid',
      '% Exact Peso 25','% Exact Peso 26','Δ Exact Peso'],
     rows.map(r => [
@@ -1810,10 +1815,10 @@ function exportTableToExcel(tableId, fileName) {
   });
 
   const nCols = allRows[0]?.length || 1;
-  const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'002060' } };
-  const HDR_FONT = { color:{ rgb:'FFFFFF' }, bold:true, sz:10 };
+  const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'FF002060' } };
+  const HDR_FONT = { color:{ rgb:'FFFFFFFF' }, bold:true, sz:10 };
   const HDR_ALIGN= { horizontal:'center', vertical:'center', wrapText:true };
-  const THIN_BDR = { style:'thin', color:{ rgb:'BBBBBB' } };
+  const THIN_BDR = { style:'thin', color:{ rgb:'FFBBBBBB' } };
   const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
 
   // Detectar columnas numéricas por los valores de filas de datos
@@ -1855,11 +1860,11 @@ function exportTableToExcel(tableId, fileName) {
 
       // Color condicional en columnas de diferencia (negativo=rojo, positivo=azul)
       const isDifCol = /DIFERENCIA|DIF|DIFF/i.test(String(allRows[0]?.[cIdx]||''));
-      const fontColor = isHeader ? 'FFFFFF'
-        : (isDifCol && numVal !== null ? (numVal < 0 ? 'C00000' : numVal > 0 ? '0000FF' : '000000') : '000000');
+      const fontColor = isHeader ? 'FFFFFFFF'
+        : (isDifCol && numVal !== null ? (numVal < 0 ? 'FFC00000' : numVal > 0 ? 'FF0000FF' : 'FF1F2937') : 'FF1F2937');
 
       ws[addr].s = {
-        fill:  isHeader ? HDR_FILL : isFooter ? { patternType:'solid', fgColor:{ rgb:'DBEAFE' } } : {},
+        fill:  isHeader ? HDR_FILL : isFooter ? { patternType:'solid', fgColor:{ rgb:'FFDBEAFE' } } : { patternType:'none' },
         font:  { color:{ rgb: fontColor }, bold: isHeader || isFooter, sz: isHeader ? 10 : 9 },
         alignment: isHeader ? HDR_ALIGN : { horizontal: (numVal !== null ? 'right' : 'left') },
         border: CELL_BDR,
@@ -2305,10 +2310,10 @@ tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid
     <tbody>
       <tr><td><strong>Total Sistema</strong></td><td class="num">${Math.round(k.us).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(k.ps).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
       <tr><td><strong>Total Conteo</strong></td><td class="num">${Math.round(k.ur).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(k.pr).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
-      <tr><td><strong>Diferencia neta</strong></td><td class="num">${k.du>=0?'+':''}${Math.round(k.du).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(m.difTotal).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
+      <tr><td><strong>Diferencias</strong></td><td class="num">${k.du>=0?'+':''}${Math.round(k.du).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(m.difTotal).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
       <tr style="color:#16a34a"><td><strong>Diferencias (+) sobrantes</strong></td><td class="num">${sobr.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(sobrV).toLocaleString('es-CL')}</td><td class="num">${pctSobr}%</td></tr>
       <tr style="color:#dc2626"><td><strong>Diferencias (−) faltantes</strong></td><td class="num">${falt.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(faltV).toLocaleString('es-CL')}</td><td class="num">${pctFalt}%</td></tr>
-      <tr style="font-weight:700"><td><strong>Dispersión (|+|+|−|)</strong></td><td class="num">${Math.round(k.adu).toLocaleString('es-CL')} unid</td><td class="num">$ ${Math.round(m.dispersion).toLocaleString('es-CL')}</td><td class="num">${pctDisp}%</td></tr>
+      <tr style="font-weight:700"><td><strong>Dispersion</strong></td><td class="num">${Math.round(k.adu).toLocaleString('es-CL')} unid</td><td class="num">$ ${Math.round(m.dispersion).toLocaleString('es-CL')}</td><td class="num">${pctDisp}%</td></tr>
     </tbody>
   </table>
 
@@ -2318,14 +2323,14 @@ tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid
     <div class="top-card">
       <h3 style="color:#dc2626">Top 15 Faltantes — mayor impacto $</h3>
       <table class="data-table">
-        <thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+        <thead><tr><th>Código</th><th>Producto</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
         <tbody>${mkTopRows(topFalt,'#dc2626')}</tbody>
       </table>
     </div>
     <div class="top-card">
       <h3 style="color:#16a34a">Top 15 Sobrantes — mayor impacto $</h3>
       <table class="data-table">
-        <thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+        <thead><tr><th>Código</th><th>Producto</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
         <tbody>${mkTopRows(topSobr,'#16a34a')}</tbody>
       </table>
     </div>
@@ -2370,8 +2375,8 @@ tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid
       <thead>
         <tr>
           <th>Código</th><th>Descripción</th>
-          <th class="num">CONTEO</th><th class="num">STOCK SIS.</th>
-          <th class="num">DIF UNID</th><th class="num">DIF $</th>
+          <th class="num">CONTEO</th><th class="num">STOCK SISTEMA</th>
+          <th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th>
           <th>FAMILIA</th><th>HIPERFAMILIA</th><th>MARCA</th>
           <th>SUBFAMILIA</th><th>ZONA</th><th>ÁREA</th>
         </tr>
@@ -2387,9 +2392,9 @@ tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid
     <table class="data-table">
       <thead><tr>
         <th>Hiperfamilia</th>
-        <th class="num">Unid Sistema</th><th class="num">Unid Conteo</th><th class="num">Dif Unid</th>
+        <th class="num">STOCK SISTEMA</th><th class="num">CONTEO</th><th class="num">DIFERENCIA</th>
         <th class="num">% Exactitud Unid</th>
-        <th class="num">Valor Sistema</th><th class="num">Valor Conteo</th><th class="num">Dif $</th>
+        <th class="num">VALOR SISTEMA $</th><th class="num">VALOR CONTEO</th><th class="num">DIFERENCIA $</th>
         <th class="num">% Exactitud $</th>
       </tr></thead>
       <tbody>
@@ -3260,7 +3265,7 @@ function renderV2PatenteTable(data) {
   const el   = document.getElementById('v2-patente-table');
   if (!rows.length) { el.innerHTML = '<p class="no-data">Sin datos de patente.</p>'; return; }
 
-  const cols = ['Patente','Prods','Correctos','%Exactos','Faltantes','%','Sobrantes','%','Valor Sist.','Valor Conteo','Dif $','Dispersión $'];
+  const cols = ['Patente','Prods','Correctos','%Exactos','Faltantes','%','Sobrantes','%','VALOR SISTEMA $','VALOR CONTEO','DIFERENCIA $','Dispersion $'];
   const numCols = new Set([1,2,3,4,5,6,7,8,9,10,11]);
   let html = `<div class="table-scroll"><table class="data-table" id="v2-pat-tbl">
     <thead><tr>${cols.map((c,i)=>`<th${numCols.has(i)?' class="num"':''}>${c}</th>`).join('')}</tr></thead><tbody>`;
@@ -3349,7 +3354,7 @@ function renderV2Riesgo(data) {
   const el = document.getElementById('v2-riesgo-table');
   if (!enriched.length) { el.innerHTML = '<p class="no-data">Sin diferencias monetarias registradas.</p>'; return; }
 
-  const cols = ['#','Código','Producto','Hiperfamilia','Patente','Área','Stock Sist.','Conteo','Dif. Unid.','Costo Unit.','Riesgo $'];
+  const cols = ['#','Código','Producto','Hiperfamilia','Patente','Área','STOCK SISTEMA','CONTEO','DIFERENCIA','Costo Unit.','DIFERENCIA $'];
   const numColsR = new Set([0,6,7,8,9,10]);
   let html = `<div class="table-scroll"><table class="data-table" id="v2-riesgo-tbl">
     <thead><tr>${cols.map((c,i)=>`<th${numColsR.has(i)?' class="num"':''}>${c}</th>`).join('')}</tr></thead><tbody>`;
@@ -3390,7 +3395,7 @@ function renderV2Especiales(data) {
     if (!rows.length) {
       return html + '<p class="no-data" style="margin:8px 0 16px">No hay registros en esta categoría.</p></div>';
     }
-    const cols = ['#','Código','Producto','Hiperfamilia','Marca','Patente','Área','Stock Sist.','Conteo','Valor Sistema'];
+    const cols = ['#','Código','Producto','Hiperfamilia','Marca','Patente','Área','STOCK SISTEMA','CONTEO','VALOR SISTEMA $'];
     html += `<div class="tbl-wrap"><table class="tbl" id="${tblId}">
       <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
     rows.slice(0, 50).forEach((r, i) => {
@@ -3456,10 +3461,10 @@ function renderAnalisisFinal() {
           <tbody>
             <tr><td><strong>Total Sistema</strong></td><td class="num">${fmt(k.us)}</td><td class="num">${fmtMoney(k.ps)}</td><td class="num">—</td></tr>
             <tr><td><strong>Total Conteo</strong></td><td class="num">${fmt(k.ur)}</td><td class="num">${fmtMoney(k.pr)}</td><td class="num">—</td></tr>
-            <tr><td><strong>Diferencia neta</strong></td><td class="num">${k.du>=0?'+':''}${fmt(k.du)}</td><td class="num">${fmtMoney(m.difTotal)}</td><td class="num">—</td></tr>
+            <tr><td><strong>Diferencias</strong></td><td class="num">${k.du>=0?'+':''}${fmt(k.du)}</td><td class="num">${fmtMoney(m.difTotal)}</td><td class="num">—</td></tr>
             <tr style="color:var(--green)"><td><strong>Diferencias (+) sobrantes</strong></td><td class="num">${fmt(sobr)} prods</td><td class="num">${fmtMoney(sobrV)}</td><td class="num">${pctSobr}%</td></tr>
             <tr style="color:var(--red)"><td><strong>Diferencias (−) faltantes</strong></td><td class="num">${fmt(falt)} prods</td><td class="num">${fmtMoney(faltV)}</td><td class="num">${pctFalt}%</td></tr>
-            <tr style="font-weight:700"><td><strong>Dispersión (|+|+|−|)</strong></td><td class="num">${fmt(k.adu)} unid</td><td class="num">${fmtMoney(m.dispersion)}</td><td class="num">${pctDisp}%</td></tr>
+            <tr style="font-weight:700"><td><strong>Dispersion</strong></td><td class="num">${fmt(k.adu)} unid</td><td class="num">${fmtMoney(m.dispersion)}</td><td class="num">${pctDisp}%</td></tr>
           </tbody>
         </table>
       </div>`;
@@ -3481,14 +3486,14 @@ function renderAnalisisFinal() {
       <div class="chart-card">
         <h4 style="color:var(--red)">Top 15 Faltantes (mayor impacto $)</h4>
         <div class="table-scroll" style="max-height:320px">
-          <table class="data-table"><thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+          <table class="data-table"><thead><tr><th>Código</th><th>Producto</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
           <tbody>${mkRows(topFalt,'var(--red)')}</tbody></table>
         </div>
       </div>
       <div class="chart-card">
         <h4 style="color:var(--green)">Top 15 Sobrantes (mayor impacto $)</h4>
         <div class="table-scroll" style="max-height:320px">
-          <table class="data-table"><thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+          <table class="data-table"><thead><tr><th>Código</th><th>Producto</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
           <tbody>${mkRows(topSobr,'var(--green)')}</tbody></table>
         </div>
       </div>`;
@@ -3504,7 +3509,7 @@ function renderAnalisisFinal() {
   const faltantes = [...data].filter(r=>r.dif_unidades<0 || r.dif_peso<0)
     .sort((a,b)=>(a.dif_peso||0)-(b.dif_peso||0));
   buildTable('final-faltantes-tbl',
-    ['Código','Descripción','CONTEO','STOCK SIS','DIF UNID','DIF $','FAMILIA','HIPERFAMILIA','MARCA'],
+    ['Codigo_tecnico','Descripcion','CONTEO','STOCK SISTEMA','DIFERENCIA','DIFERENCIA $','FAMILIA','MARCA'],
     faltantes.slice(0,200).map(r=>[
       r.codigo||'', trunc(r.producto||'',40),
       cNum(r.unidades_real), cNum(r.unidades_sistema),
@@ -3515,8 +3520,8 @@ function renderAnalisisFinal() {
   // ── Tabla dinamica_HIPER ───────────────────────────────────────
   const byHiper = aggregateBy(data, 'perfamilia').sort((a,b)=>b.adp-a.adp);
   buildTable('final-hiper-tbl',
-    ['Hiperfamilia','Unid Sistema','Unid Conteo','Dif Unid','% Exactitud Unid',
-     'Valor Sistema','Valor Conteo','Dif $','% Exactitud $'],
+    ['FAMILIA','STOCK SISTEMA','CONTEO','DIFERENCIA','% Exactitud Unid',
+     'VALOR SISTEMA $','VALOR CONTEO','DIFERENCIA $','% Exactitud $'],
     byHiper.map(g=>[
       g.fd?.perfamilia||g.key||'(sin cat.)',
       cNum(g.us), cNum(g.ur), cNum(g.du),
@@ -3619,7 +3624,7 @@ function exportFinalExcel() {
     ['Concepto','Unidades','Valor $','%'],
     ['Total Sistema',   Math.round(k.us),  Math.round(k.ps),  ''],
     ['Total Conteo',    Math.round(k.ur),  Math.round(k.pr),  ''],
-    ['Diferencia neta', Math.round(k.du),  Math.round(m.difTotal), ''],
+    ['Diferencias', Math.round(k.du),  Math.round(m.difTotal), ''],
     ['Diferencias (+)', s2,                Math.round(sV2), ''],
     ['Diferencias (−)', f2,                Math.round(fV2), ''],
     ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion), pctD],
@@ -3638,7 +3643,7 @@ function exportFinalExcel() {
   // Hoja 4 — dinamica_HIPER
   const byHiper = aggregateBy(data, 'perfamilia').sort((a,b)=>b.adp-a.adp);
   const ws4 = XLSX.utils.aoa_to_sheet([
-    ['Hiperfamilia','Unid Sistema','Unid Conteo','Dif Unid','% Exact Unid','Valor Sistema','Valor Conteo','Dif $','% Exact $'],
+    ['FAMILIA','STOCK SISTEMA','CONTEO','DIFERENCIA','% Exact Unid','VALOR SISTEMA $','VALOR CONTEO','DIFERENCIA $','% Exact $'],
     ...byHiper.map(g=>[g.fd?.perfamilia||g.key||'',Math.round(g.us),Math.round(g.ur),Math.round(g.du),(g.exact_unid||0).toFixed(2)+'%',Math.round(g.ps),Math.round(g.pr),Math.round(g.dp),(g.exact_peso||0).toFixed(2)+'%']),
   ]);
   XLSX.utils.book_append_sheet(wb, ws4, 'dinamica_HIPER');
@@ -3902,7 +3907,7 @@ function exportRecountExcel() {
   const rows = getRecountRows();
   if (!rows.length) { showToast('Sin datos de reconteo', 'error'); return; }
   const wb = XLSX.utils.book_new();
-  const headers = ['#','Estado','Producto','Marca','Familia','Subfamilia','Dif Unid','Impacto $','Severidad'];
+  const headers = ['#','Estado','Producto','Marca','Familia','Subfamilia','DIFERENCIA','DIFERENCIA $','Severidad'];
   const data = rows.map((r, i) => [
     i + 1,
     localStorage.getItem('recount-status-' + r.rowId) || 'Pendiente',
@@ -3921,7 +3926,7 @@ function exportRecountExcel() {
   // Hoja ranking $
   const byMoney = [...rows].sort((a,b)=>Math.abs(b.money)-Math.abs(a.money)).slice(0,50);
   const ws2 = XLSX.utils.aoa_to_sheet([
-    ['#','Producto','Marca','Dif Unid','Impacto $','Severidad'],
+    ['#','Producto','Marca','DIFERENCIA','DIFERENCIA $','Severidad'],
     ...byMoney.map((r,i)=>[i+1, r.producto||'', r.marca||'', r.dif, Math.round(r.money), r.severityLabel]),
   ]);
   XLSX.utils.book_append_sheet(wb, ws2, 'Ranking_$');
@@ -4189,12 +4194,12 @@ function buildEmbudoGroupTable(year, groups, groupField, groupLabel) {
     <thead><tr>
       <th>${groupLabel}</th>
       <th class="num">N° Items</th>
-      <th class="num">Unid Sistema</th>
-      <th class="num">Unid Físico</th>
-      <th class="num">Dif Unid (±)</th>
-      <th class="num">Valor Sistema ($)</th>
-      <th class="num">Valor Físico ($)</th>
-      <th class="num">Dif $ (±)</th>
+      <th class="num">STOCK SISTEMA</th>
+      <th class="num">CONTEO</th>
+      <th class="num">DIFERENCIA</th>
+      <th class="num">VALOR SISTEMA $</th>
+      <th class="num">VALOR CONTEO</th>
+      <th class="num">DIFERENCIA $</th>
       <th class="num">% Exactitud</th>
     </tr></thead>
     <tbody>${rows}</tbody>
@@ -4220,10 +4225,10 @@ function buildEmbudoProductTable(data) {
   return `<table class="data-table dd-table">
     <thead><tr>
       <th>Código</th><th>Descripción</th>
-      <th class="num">Unid Sist.</th><th class="num">Unid Fís.</th>
-      <th class="num">Dif Unid (±)</th>
-      <th class="num">Valor Sist. ($)</th><th class="num">Valor Fís. ($)</th>
-      <th class="num">Dif $ (±)</th>
+      <th class="num">STOCK SISTEMA</th><th class="num">CONTEO</th>
+      <th class="num">DIFERENCIA</th>
+      <th class="num">VALOR SISTEMA $</th><th class="num">VALOR CONTEO</th>
+      <th class="num">DIFERENCIA $</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -4262,11 +4267,11 @@ function _buildCompColKPIs(data, yearLabel) {
         <div class="kpi-value" style="font-size:1.5rem">${fmtPct(k.exact_unid)}%</div>
       </div>
       <div class="global-kpi-card kpi-peso-row" style="min-height:70px">
-        <div class="kpi-label">Valor Sistema ($)</div>
+        <div class="kpi-label">VALOR SISTEMA $</div>
         <div class="kpi-value" style="font-size:1.5rem">${fmtCompact(k.ps)}</div>
       </div>
       <div class="global-kpi-card kpi-peso-row" style="min-height:70px">
-        <div class="kpi-label">Valor Físico ($)</div>
+        <div class="kpi-label">VALOR CONTEO</div>
         <div class="kpi-value" style="font-size:1.5rem">${fmtCompact(k.pr)}</div>
       </div>
       <div class="global-kpi-card ${difP}" style="min-height:70px">
@@ -4365,10 +4370,10 @@ function renderCompCategoria(d25, d26) {
         <table class="comp-table" id="_comp-cat-tbl">
           <thead><tr>
             <th>${gLbl}</th>
-            <th class="num">Dif Unid 2025</th>
-            <th class="num">Dif Unid 2026</th>
-            <th class="num">Dif $ 2025</th>
-            <th class="num">Dif $ 2026</th>
+            <th class="num">DIFERENCIA 2025</th>
+            <th class="num">DIFERENCIA 2026</th>
+            <th class="num">DIFERENCIA $ 2025</th>
+            <th class="num">DIFERENCIA $ 2026</th>
             <th class="num">Δ Exact Unid</th>
             <th class="num">Δ Exact $</th>
             <th class="num">% Exact 2025</th>
@@ -4446,9 +4451,9 @@ function drillCompProduct(field, value) {
         <table class="comp-table">
           <thead><tr>
             <th>Código</th><th>Producto</th>
-            <th class="num">Unid Sist 25</th><th class="num">Unid Sist 26</th>
-            <th class="num">Dif Unid 25</th><th class="num">Dif Unid 26</th>
-            <th class="num">Dif $ 25</th>   <th class="num">Dif $ 26</th>
+            <th class="num">STOCK SIS. 25</th><th class="num">STOCK SIS. 26</th>
+            <th class="num">DIFERENCIA 25</th><th class="num">DIFERENCIA 26</th>
+            <th class="num">DIFERENCIA $ 25</th><th class="num">DIFERENCIA $ 26</th>
           </tr></thead>
           <tbody>${trows}</tbody>
         </table>

@@ -561,7 +561,7 @@ body {
   text-align: left;
   font-size: 10px; font-weight: 700; text-transform: uppercase;
   color: var(--muted); letter-spacing: .04em;
-  border-bottom: 1px solid var(--border);
+  border: 1px solid #c9ced6;
   white-space: nowrap;
   cursor: pointer; user-select: none;
 }
@@ -571,11 +571,10 @@ body {
 
 .data-table td {
   padding: 6px 11px;
-  border-bottom: 1px solid #f1f5f9;
+  border: 1px solid #c9ced6;
   white-space: nowrap;
   max-width: 220px; overflow: hidden; text-overflow: ellipsis;
 }
-.data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: #f8fafc; }
 
 .data-table .num { text-align: right; font-variant-numeric: tabular-nums; font-family: 'Courier New', monospace; font-size: 11px; }
@@ -903,14 +902,15 @@ body {
 }
 .plano-raw-table {
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 9px;
   table-layout: auto;
+  transform-origin: top left;
 }
 .plano-raw-table td {
   border: 1px solid #cbd5e1;
-  padding: 3px 5px;
-  min-width: 30px;
-  height: 26px;
+  padding: 1px 3px;
+  min-width: 22px;
+  height: 18px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -920,10 +920,10 @@ body {
   background: #fff;
 }
 .plano-raw-table td.cell-num {
-  font-weight: 800; font-size: 12px;
-  border-radius: 3px;
+  font-weight: 800; font-size: 10px;
+  border-radius: 2px;
   cursor: default;
-  min-width: 38px;
+  min-width: 28px;
 }
 .plano-raw-table td.cell-label {
   font-weight: 700; font-size: 10px;

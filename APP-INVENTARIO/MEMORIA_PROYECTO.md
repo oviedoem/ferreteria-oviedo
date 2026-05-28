@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V4.4
+# VERSION: V4.6
 # FECHA: 2026-05-28
 
 ---
@@ -308,6 +308,43 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V4.6 — 2026-05-28
+
+**CAMBIO 0 — Regla anti-retroceso escrita en AGENTS.md**
+- Lista de funcionalidades V4.1→V4.5 protegidas con descripción explícita de qué no tocar
+
+**CAMBIO 1 — Fix Excel fondo negro (exportTableToExcel + styleAnalisisSheet)**
+- xlsx-js-style usa ARGB de 8 dígitos. Todos los `rgb:` corregidos: `'002060'` → `'FF002060'`, `'FFFFFF'` → `'FFFFFFFF'`, `'C00000'` → `'FFC00000'`, `'0000FF'` → `'FF0000FF'`, `'000000'` → `'FF1F2937'`
+- Celdas de datos: `fill:{}` → `fill:{patternType:'none'}` para evitar relleno negro por defecto
+- Footer: `fgColor:{rgb:'DBEAFE'}` → `fgColor:{rgb:'FFDBEAFE'}`
+
+**CAMBIO 2 — Títulos canónicos verbatim (app.js + index.html)**
+- "Dif Unid"/"DIF UNID" → "DIFERENCIA" en todas las tablas
+- "Dif $"/"DIF $"/"Impacto $" → "DIFERENCIA $"
+- "Stock Sist." → "STOCK SISTEMA"
+- "Valor Sistema" → "VALOR SISTEMA $"
+- "Valor Conteo" → "VALOR CONTEO"
+- "Diferencia neta" → "Diferencias" (cuadro RESULTADOS)
+- "Dispersión (|+|+|−|)" → "Dispersion" (cuadro RESULTADOS)
+- Contextos multi-año conservan sufijo: "DIFERENCIA 2025", "DIFERENCIA $ 2026"
+
+**CAMBIO 3 — Bordes completos en tablas (style.css)**
+- `.data-table th`: `border-bottom` → `border: 1px solid #c9ced6` (bordes en los 4 lados)
+- `.data-table td`: `border-bottom` → `border: 1px solid #c9ced6`
+- `.data-table tr:last-child td` eliminado (ya no relevante)
+
+**CAMBIO 4 — Planos: zoom reducido (style.css)**
+- `.plano-raw-table`: `font-size: 11px` → `9px`, `padding: 3px 5px` → `1px 3px`, `height: 26px` → `18px`, `min-width: 30px` → `22px`
+- `.cell-num`: `font-size: 12px` → `10px`, `min-width: 38px` → `28px`
+- Bordes ya existían; merges (V4.4) y cobertura verde/rojo (V4.1) intactos
+
+**CAMBIO 5 — Categorías completas desde hoja FAMILIA (app.js)**
+- `buildFamiliaIndex`: agrega campo `subfamilia` al índice
+- Cadena enriquecimiento `_subfamilia`: agrega `|| cleanText(fam.subfamilia)` como segundo fallback
+- `applyRowMapping`: fallback `'Sin clasificar'` para `marca`, `familia`, `perfamilia` cuando quedan vacíos tras enriquecimiento
+
+**NO tocado:** cálculos de KPIs, parseo CSV, sistema de filtrado, drilldown, gráficos, persistencia, planos merges/cobertura, email Final, impresión
 
 ### V4.4 — 2026-05-28
 

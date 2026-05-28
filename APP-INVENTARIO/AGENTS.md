@@ -3,6 +3,23 @@
 
 ---
 
+## REGLA ANTI-RETROCESO — OBLIGATORIA EN CADA SESIÓN
+
+Antes de tocar una función, anotar explícitamente qué ya FUNCIONA y NO debe cambiar.
+
+**Funcionalidades V4.1→V4.5 protegidas — NUNCA eliminar:**
+- Color print (V4.3): `* { -webkit-print-color-adjust: exact !important }` en @media print
+- Excel profesional (V4.3): `exportTableToExcel` con estilos, bordes, formatos
+- Email Final sin auto-print (V4.4): rama 'final' de `emailReport` sin `printMode` bloqueante
+- Reconteo prioridad/clic (V4.3): `_recountPriority`, `recountFiltrarPorFila`
+- Persistencia (V4.0): `saveDataToIDB`, `loadDataFromIDB`, `restoreSession`
+- Planos merges (V4.4): `renderPlanoGrid` con `spanMap`/`skipSet`
+- Planos cobertura verde/rojo (V4.1): `getPlanoContados`, colores en `patenteStyle`
+
+**Señal de alerta:** Si un cambio necesita tocar más de una función → dos prompts separados.
+
+---
+
 ## PROYECTO INDEPENDIENTE — REGLA ABSOLUTA
 
 ```
