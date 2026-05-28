@@ -8,16 +8,19 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.2 |
-| Fecha ultimo deploy | 2026-05-26 18:29 |
-| Ultimo cambio | fix ventas dias incompletos + tarea auto 18:00 + reparacion ventas 22-26 mayo |
-| Deploy cierre sesion | 2026-05-26 18:29 — todo publicado, sin pendientes |
+| Version | V37.8 |
+| Fecha ultimo deploy | 2026-05-27 23:10 |
+| Ultimo cambio | Fix pedidos-detalle (P_VENDEDORES→IDVENDEDOR directo, CTE CANTIDAD_PENDIENTE, cliente RAZON_SOCIAL) + descargar_despachos.py (BVE/FVE→Dif) + Informe Stock 22 cols (DifLib eliminado) + modal Dif/Ped rediseñados |
+| Deploy cierre sesion | 2026-05-27 23:10 — todo publicado, sin pendientes |
 
 Historial reciente:
+- V37.8 (2026-05-27): fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif + modales
+- V37.7 (2026-05-27): MEM + Pedido + DifStk/DifLib + drill-down + PASO 1D descargar_pedidos.py
+- V37.6 (2026-05-27): fix Informe Stock Fis todo cero (pem_bod/sem_bod en pipeline)
+- V37.5 (2026-05-27): fix diasAntiguedad RCE + auditoria DOC IN GII/GTS
+- V37.4 (2026-05-27): fix disp CEM: ST_DISPONIBLE → ST_FISICO−ST_PEDIDO en descargar_bod.py
+- V37.3 (2026-05-27): Informe Stock Bodegas nuevo modulo en Inventario
 - V37.2 (2026-05-26): fix mid-day run, ACTUALIZAR_TODO_AUTO.bat, tarea programada 18:00
-- V37.1 (2026-05-26): Consulta de Stock (busqueda + ficha ERP-style 8 bodegas)
-- V37 (2026-05-26): campana notificaciones + senales alerta + eliminar restos vvsstock
-- V36.9k (2026-05-26): fix login Google + boton reenviar acceso + recuperacion 5 usuarios huerfanos
 
 ---
 
@@ -72,11 +75,24 @@ PASO 1C  leer_xlsm.py
          → xlsm-enrich.json (enriquecimiento: rut, sector, bodegaCorta, hora, razonSocial)
          REGLA: solo leer_xlsm.py genera este archivo — main.py lo consume, no lo genera
 
-PASO 1D  descargar_bod.py (BODEGAS/)
+PASO 1C  descargar_bod.py (BODEGAS/)
          → data/bod-iem-registros.json (IEM=72, ~19 registros)
          → data/bod-rce-registros.json (RCE=55, ~10 registros)
          → data/bod-cem-registros.json (CEM=24, ~N registros)
          Si falla → continua sin detener el pipeline
+
+PASO 1D  descargar_pedidos.py (BODEGAS/)  [reescrito V37.8]
+         Fuente comprometidos: R_STOCK_PRODUCTOS.ST_PEDIDO (oficial ERP)
+         Fuente detalle: M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0, tipos NVM/VMN/VMP
+         → data/pedidos-comprometidos.json ({cod:{pem,sem,cem,mem}})
+         → data/pedidos-detalle.json ({cod:{bod:[{tipoDoc,numero,fechaEmision,fechaEntrega,atraso,cliente,rut,vendedor,cant}]}})
+         Si falla → panel muestra Ped=0 hasta proximo intento
+
+PASO 1E  descargar_despachos.py (BODEGAS/)  [NUEVO V37.8]
+         Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp = despachos pendientes)
+         → data/despachos-comprometidos.json ({cod:{pem,sem,cem,mem}})
+         → data/despachos-detalle.json ({cod:{bod:[{tipoDoc,numero,fechaEmision,fechaEntrega,atraso,cliente,rut,vendedor,cant}]}})
+         Si falla → panel muestra Dif sin drill-down hasta proximo intento
 
 PASO 2   main.py --sin-deploy
          PASO 1: _catalogo_generado_hoy()? SI → leer_bodegas_desde_actualizar (3s)
