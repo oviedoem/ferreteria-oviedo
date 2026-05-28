@@ -4,6 +4,54 @@
 
 ---
 
+## REGLAS DE TRABAJO — LEER ANTES DE CUALQUIER ACCIÓN
+
+### PRIORIDAD 0 — Aislamiento absoluto
+
+```
+TRABAJAR SOLO EN:   D:\ferreteria-oviedo\APP-INVENTARIO\
+NUNCA TOCAR:        panel-admin.html · panel-cliente.html · panel-vendedor.html
+                    D:\ferreteria-oviedo\  (raíz del otro proyecto)
+                    D:\ferreteria-oviedo-github\
+```
+
+Este proyecto es INDEPENDIENTE del panel admin/cliente/vendedor.
+No compartir funciones, no abrir su preview, no leer sus archivos.
+
+### REGLA — Archivos .md
+
+Solo actualizar los `.md` que están en la **raíz** de `APP-INVENTARIO\`:
+- `MEMORIA_PROYECTO.md` ← este archivo
+- `AGENTS.md`
+
+**Nunca** tocar los `.md` de subdirectorios (`datos/README.md`, `datos/MEMORIA_PROYECTO.md`).
+
+### REGLA — Safe Change en app.js
+
+Antes de modificar cualquier función en `app.js`, declarar:
+```
+TOCO:     [nombre exacto de la función]
+RAZÓN:    [una línea]
+NO TOCO:  [lista de funciones adyacentes que NO se van a cambiar]
+```
+Un prompt = una función tocada. Si el fix necesita 2 funciones → dos prompts en orden.
+
+### REGLA — Cierre de sesión
+
+Antes de terminar cualquier sesión donde se hayan modificado archivos:
+
+1. Verificar que los cambios están guardados en `app.js`, `style.css`, `index.html`
+2. Actualizar `MEMORIA_PROYECTO.md` con los cambios de la sesión
+3. Ejecutar el sync a GitHub:
+   ```
+   D:\ferreteria-oviedo\ACTUALIZAR_GITHUB_APP_INVENTARIO.bat
+   ```
+4. Confirmar el commit exitoso antes de cerrar
+
+**Nunca dejar cambios sin subir a GitHub al terminar la sesión.**
+
+---
+
 ## DESCRIPCIÓN
 
 SPA (Single Page Application) Vanilla JS para análisis de diferencias de inventario.
