@@ -839,12 +839,24 @@
 
       <div class="filters-bar" id="filters-2025v2"></div>
 
+      <!-- ★ TOP RIESGO PRIMERO — mayor utilidad operacional -->
+      <div class="v2-section" style="border-left:4px solid #dc2626">
+        <div class="v2-section-header">
+          <div>
+            <h3 class="v2-section-title">⚠️ Top 30 · Mayor Riesgo $ — Atacar primero</h3>
+            <p class="v2-section-desc">Productos ordenados por diferencia monetaria absoluta. <strong>Estos son los que más impactan en la dispersión — verificar físicamente en orden.</strong></p>
+          </div>
+          <button class="btn btn-xs" onclick="exportTableToExcel('v2-riesgo-tbl','Top_Riesgo_2025')">⬇ xlsx</button>
+        </div>
+        <div id="v2-riesgo-table"></div>
+      </div>
+
       <!-- Resumen por Patente -->
       <div class="v2-section">
         <div class="v2-section-header">
           <div>
             <h3 class="v2-section-title">📍 Resumen por Patente / Sala</h3>
-            <p class="v2-section-desc">Exactitud, correctos, faltantes, sobrantes y valor en riesgo agrupados por patente física.</p>
+            <p class="v2-section-desc">Exactitud, correctos, faltantes, sobrantes y valor en riesgo agrupados por patente física. Ordena por valor de sistema.</p>
           </div>
           <button class="btn btn-xs" onclick="exportTableToExcel('v2-pat-tbl','Resumen_Patentes_2025')">⬇ xlsx</button>
         </div>
@@ -856,22 +868,10 @@
         <div class="v2-section-header">
           <div>
             <h3 class="v2-section-title">💲 Exactitud por Rango de Costo Unitario</h3>
-            <p class="v2-section-desc">¿Los productos de mayor valor unitario son más o menos exactos? Segmentación por precio.</p>
+            <p class="v2-section-desc">¿Los productos de mayor valor unitario son más o menos exactos? % exactos por segmento de precio unitario.</p>
           </div>
         </div>
         <div id="v2-costo-rangos"></div>
-      </div>
-
-      <!-- Top 30 Mayor Riesgo $ -->
-      <div class="v2-section">
-        <div class="v2-section-header">
-          <div>
-            <h3 class="v2-section-title">⚠️ Top 30 · Mayor Riesgo $</h3>
-            <p class="v2-section-desc">Productos ordenados por diferencia monetaria absoluta — los que generan mayor impacto en la dispersión.</p>
-          </div>
-          <button class="btn btn-xs" onclick="exportTableToExcel('v2-riesgo-tbl','Top_Riesgo_2025')">⬇ xlsx</button>
-        </div>
-        <div id="v2-riesgo-table"></div>
       </div>
 
       <!-- Sin Encontrar & Fantasmas -->
@@ -895,6 +895,7 @@
         <h2>📋 Análisis Final · Informe para el dueño</h2>
         <div class="view-actions">
           <button class="btn btn-sm" onclick="exportFinalExcel()">⬇ Excel (4 hojas)</button>
+          <button class="btn btn-sm" onclick="generateReporteFinal()">📑 Reporte Final</button>
           <button class="btn btn-sm btn-ghost" onclick="printMode('final')">🖨 Imprimir</button>
           <button class="btn btn-sm btn-email" onclick="emailReport('final')">✉ Email</button>
         </div>

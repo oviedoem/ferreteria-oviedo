@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V4.1
+# VERSION: V4.3
 # FECHA: 2026-05-28
 
 ---
@@ -309,6 +309,136 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V4.3 — 2026-05-28
+
+**P1 — IMPRESIÓN/EMAIL/REPORTE EN COLOR Y DESDE LA VISTA ACTIVA**
+
+**CAMBIO 1 — Color en impresión (style.css, @media print general ~línea 638)**
+- `* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }` agregado dentro del bloque general
+- Cambiado `display: block !important` → `display: none !important` en `.view` y `.view.hidden` para que SOLO la vista activa imprima (fix: antes mostraba TODAS las vistas)
+- Canvas/chart-wrap: `height: 180px !important; overflow: visible !important` + `canvas { max-width:100%; height:180px }`
+- KPIs con color, números rojo/azul, fondos y gráficos se imprimen correctamente
+
+**CAMBIO 2 — getActiveViewMode() + botones imprimir/email/reporte desde vista activa**
+- Nueva función `getActiveViewMode()`: devuelve el modo del `.view:not(.hidden)` via `id.replace('view-','')` (fallback cuando no hay `data-mode` en el elemento view)
+- `printMode(mode)`: si no llega `mode`, usa `getActiveViewMode()`
+- `emailReport(mode)`: `mode = mode || getActiveViewMode()` al inicio
+- `generateReporteFinal(mode)`: recibe `mode` opcional (no lo usa internamente, pero unifica la firma)
+
+**P2 — EXCEL PROFESIONAL**
+
+**CAMBIO 3 — exportTableToExcel con estilos profesionales**
+- Reescrita para no usar `table_to_sheet` plano
+- Extrae datos DOM → detecta tipos de celda (texto/número) → detecta columnas monetarias por encabezado (`$`, `VALOR`, `COSTO`, etc.)
+- Encabezado: fondo #002060, blanco, negrita, centrado
+- Bordes finos `THIN_BDR` en TODAS las celdas
+- Anchos automáticos por contenido (máx 40)
+- Formato `$ #,##0` para monetarias, `#,##0` para cantidades
+- Condicional rojo/azul en columnas que contienen "DIFERENCIA" o "DIF"
+- Pie de tabla (tfoot con "TOTAL"): fondo #DBEAFE, negrita
+- Freeze fila 1
+- Hoja extra `LEYENDA`: explica columnas clave (DIFERENCIA, DISPERSIÓN, CONTEO, etc.) + timestamp
+
+**P3 — VISTAS MÁS CLARAS**
+
+**CAMBIO 4 — Centro Reconteo: prioridad por impacto $, clic en ranking filtra tabla**
+- Nueva función `_recountPriority(r)`: confirmados → fondo, resto por |money| DESC
+- Nueva función `_recountSemaforoColor(r, maxImpacto)`:
+  - Confirmado → verde · Recontado → azul
+  - pct ≥ 50% → rojo · pct ≥ 20% → naranja · resto → amarillo
+- `renderRecount()` ahora ordena `sorted` por `_recountPriority` DESC antes de renderizar
+- Dot de semáforo (12px, color) antes de cada state-pill en la tabla principal
+- Fila destacada (`id="recount-row-{rowId}"`, fondo amarillo + outline naranja) cuando `window._recountHighlightId` está activo; scroll automático a la fila
+- Nueva función `recountFiltrarPorFila(rowId)`: sets `window._recountHighlightId`, limpia búsqueda, llama `renderRecount()`, hace scroll a la tabla
+- Nueva función `recountLimpiarFiltro()`: limpia highlight y re-renderiza
+- `renderRecountRankings()`: cada `<tr>` tiene `onclick="recountFiltrarPorFila(rowId)"` + cursor:pointer + title "Clic para destacar en la tabla principal"
+  - Dot de semáforo (10px) en columna nueva antes del nombre
+  - Color de valor en ranking usa `semColor` (semáforo) en vez de rojo/azul fijo
+  - `globalMax` calculado sobre todos los rows para comparación uniforme
+
+**CAMBIO 5 — Análisis Avanzado: orden y legibilidad**
+- Top Riesgo $ reubicado como primera sección en index.html (borde izquierdo rojo + "Atacar primero")
+- Tablas `renderV2PatenteTable`, `renderV2CostoRangos`, `renderV2Riesgo`: cambiadas de `class="tbl"` (sin CSS) → `class="data-table"` con `.num` en todas las columnas numéricas
+- `div.tbl-wrap` → `div.table-scroll` (scroll vertical con max-height)
+- Encabezados de columna más claros: "Prods" en vez de "Productos", "Valor Sist." en vez de "Valor Sistema", etc.
+- Top Riesgo: código en `font-family:monospace`, producto truncado con `title` attribute
+
+**CAMBIO 6 — Planos: fiel al Excel + etiquetas especiales**
+- Nueva función `_planoLabelStyle(raw)`: detecta DESPACHO (rojo), ZONA DE SEGURIDAD (naranja), BAÑO (azul), SALA DE VENTAS (verde), PASILLO (gris), CAJA (violeta), BODEGA (verde oscuro)
+- `renderPlanoGrid()`: sin datos de inventario → patentes en amarillo `#FEFF9C` (como el Excel modelo, antes usaba color de zona)
+- Con datos de inventario: verde (contada) / rojo (sin contar) — sin cambios
+- Etiquetas especiales reciben estilo inline de `_planoLabelStyle`
+
+**CAMBIO 7 — CheckList: columnas sticky para scroll horizontal**
+- `th.col-task` y `th.col-resp` → `position: sticky; left: 0/180px; z-index:3`
+- `td.td-task` y `td.td-resp` → `position: sticky; left: 0/180px; z-index:1; background: inherit`
+- `th.col-today` → font-weight:800; font-size:11px (más prominente)
+- Nueva clase `td.td-today` → fondo `#fff7ed` + borde naranja (para celda de hoy en datos)
+- `th.col-weekend` → opacity:.7
+
+**Funciones nuevas:**
+- `getActiveViewMode()` (app.js)
+- `_recountPriority(r)` (app.js)
+- `_recountSemaforoColor(r, maxImpacto)` (app.js)
+- `recountFiltrarPorFila(rowId)` (app.js)
+- `recountLimpiarFiltro()` (app.js)
+- `_planoLabelStyle(raw)` (app.js)
+
+**NO tocado:** `renderAnalisisFinal`, `_renderFinalChart`, `_renderFinalBarras`, `exportFinalExcel`, `getPlanoContados`, cálculos base de KPIs, ninguna función de parseo
+
+**Verificación:**
+- `node --check app.js` → sin errores de sintaxis ✓
+- FIELD_ALIASES verificados contra xlsx 2025/2026 reales → alias cubren todos los encabezados ✓
+
+### V4.2 — 2026-05-28
+
+**CAMBIO 1 — CSS @media print para vista Final (style.css)**
+- Bloque `@media print` agregado al final de style.css específico para `#view-final.print-active`
+- `.print-page-2` para salto de página entre RESULTADOS+gráficos y Tops+Hiperfamilia
+- `.no-print` oculta filtros y botones en impresión
+- Límite Top N=12 filas por tabla vía CSS `nth-child(n+13) { display:none }`
+- Encabezados tabla: fondo #002060 blanco, bordes finos, tipografía 9-10px
+- Gráficos reducidos a 160px de altura, grid 2 columnas
+- `@page { size: letter; margin: 12mm }`
+
+**CAMBIO 2 — emailReport('final') con cuadro RESULTADOS real (app.js)**
+- Rama `if (mode === 'final')` en `emailReport()`: no lee `#kpi-final` (no existe)
+- Lee directamente `state.data2026 / state.data2025` + `calcKPIs()` + `calcMonetarySummary()`
+- Cuerpo email incluye Total Sistema/Conteo, Dif neta, Sobrantes, Faltantes, Dispersión con %
+- Llama `printMode('final')` primero → instruye generar PDF → luego `setTimeout(800ms)` abre mailto
+- Nota explícita: navegadores no permiten adjuntar archivos vía mailto
+
+**CAMBIO 3 — generateReporteFinal() — Reporte interactivo en nueva pestaña (app.js)**
+- Nueva función `generateReporteFinal()` antes de `printMode()`
+- Abre `window.open('','_blank')` con HTML autocontenido (~280 líneas)
+- Embebe `RF_DATA = JSON.stringify(data)` completo en el HTML generado
+- ÍNDICE con anclas: #resumen · #tops · #graficos · #detalle · #por-hiper
+- Sección 1 «Resumen Ejecutivo»: 6 KPI cards + tabla RESULTADOS completa
+- Sección 2 «Top Faltantes y Sobrantes»: Top 15 cada uno con color rojo/verde
+- Sección 3 «Gráficos»: 4 charts vivos con Chart.js CDN (marca/familia/hiper/barras)
+  - Al filtrar, `rfRenderGraficos(filtered)` re-renderiza los 4 gráficos en tiempo real
+- Sección 4 «Detalle Completo»: TODAS las filas del dataset sin recortar
+  - Filtros en cascada: Hiperfamilia → Familia → Subfamilia → Marca (selects dependientes)
+  - `rfCascada()` re-filtra tabla y gráficos simultáneamente
+  - `rfLimpiarFiltros()` restaura vista completa
+  - Tabla: 12 columnas, encabezado sticky, scroll, condicional rojo/azul en DIF UNID / DIF $
+  - Totales en tfoot con fondo azul
+  - Badge "X / Y filas" actualizado al filtrar
+- Sección 5 «Resumen por Hiperfamilia»: tabla agregada con % exactitud unid y $
+- `@media print` propio en el reporte: oculta filtros, limita tablas a 12 filas, encabezados #002060
+- `class="no-print"` en barra de filtros del reporte
+
+**CAMBIO 4 — Botón "📑 Reporte Final" en index.html**
+- Agregado entre botón Excel y botón Imprimir en `.view-actions` de `#view-final`
+- `onclick="generateReporteFinal()"`
+
+**Funciones nuevas/modificadas:**
+- `generateReporteFinal()` — NUEVA en app.js
+- `emailReport(mode)` — rama 'final' reescrita
+- `@media print` (style.css) — bloque nuevo al final del archivo
+
+**NO tocado:** `renderAnalisisFinal`, `_renderFinalChart`, `_renderFinalBarras`, `exportFinalExcel`, ninguna función de 2025/2026/comparative/checklist/planos/mejoras/reconteo
+
 ### V4.0 — 2026-05-28
 
 **TAREA 1 — Menú reordenado por flujo de trabajo real:**
@@ -456,9 +586,6 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ## PENDIENTE
 
 - [ ] Test end-to-end con archivos reales de inventario 2025 y 2026
-- [ ] TAREA 6: view-planos idéntica al Excel modelo (leer hojas Sala 1/1erPiso_A/2doPiso_A/Patio_2)
-- [ ] TAREA 7: view-checklist idéntica al Excel modelo (Hoja1 de CheckList.xlsx)
-- [ ] TAREA 8: Centro Reconteo — rankings explícitos por $ y por unidades ordenables
 - [ ] exportChecklistExcel con layout del modelo
 - [ ] exportPlanosExcel con layout del modelo
 - [ ] Verificar embudo con datos reales (selects populados correctamente)

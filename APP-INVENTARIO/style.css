@@ -636,18 +636,29 @@ body {
 
 /* ── PRINT ───────────────────────────────────────────── */
 @media print {
+  /* Forzar color en todos los elementos (KPIs, gráficos, fondos) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
   .app-header, .sidebar, .view-actions,
   .filters-bar, .tab-btn, .btn, .table-header .btn-xs { display: none !important; }
   .app-body { display: block; }
   .main-content { padding: 0; }
-  .view { display: block !important; }
-  .view.hidden { display: block !important; }
-  #view-2025, #view-2026, #view-comparative { display: none !important; }
+  .view { display: none !important; }
+  .view.hidden { display: none !important; }
   .view.print-active { display: block !important; }
-  .kpi-card, .chart-card, .table-block { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Canvas/gráficos: visible y con altura fija para que Chart.js los imprima */
+  .chart-card { break-inside: avoid; page-break-inside: avoid; }
+  .chart-wrap { height: 180px !important; overflow: visible !important; }
+  canvas { max-width: 100% !important; height: 180px !important; }
+
+  .kpi-card, .table-block { break-inside: avoid; page-break-inside: avoid; }
   body { font-size: 11px; }
   .kpi-value { font-size: 18px; }
-  .chart-wrap { height: 180px; }
 }
 
 /* ── RESPONSIVE ──────────────────────────────────────── */
@@ -757,12 +768,18 @@ body {
   min-width: 28px;
   position: sticky; top: 0; z-index: 2;
 }
-.gantt-table th.col-task  { text-align: left; min-width: 180px; padding-left: 10px; }
-.gantt-table th.col-resp  { text-align: left; min-width: 110px; padding-left: 8px; }
-.gantt-table th.col-neg   { background: #334155; }
-.gantt-table th.col-today { background: var(--orange); }
-.gantt-table th.col-pos   { background: #1A56DB; }
-.gantt-table th.col-weekend { background: #475569; }
+.gantt-table th.col-task  {
+  text-align: left; min-width: 180px; padding-left: 10px;
+  position: sticky; left: 0; z-index: 3; background: #1e293b;
+}
+.gantt-table th.col-resp  {
+  text-align: left; min-width: 110px; padding-left: 8px;
+  position: sticky; left: 180px; z-index: 3; background: #1e293b;
+}
+.gantt-table th.col-neg     { background: #334155; }
+.gantt-table th.col-today   { background: var(--orange); font-weight: 800; font-size: 11px; }
+.gantt-table th.col-pos     { background: #1A56DB; }
+.gantt-table th.col-weekend { background: #475569; opacity: .7; }
 
 .gantt-table td {
   padding: 5px 4px;
@@ -776,19 +793,24 @@ body {
   font-weight: 500; color: var(--text);
   white-space: nowrap; max-width: 220px;
   overflow: hidden; text-overflow: ellipsis;
+  position: sticky; left: 0; z-index: 1;
+  background: inherit;
+  border-right: 2px solid #e2e8f0;
 }
 .gantt-table td.td-resp {
   text-align: left; padding-left: 8px;
   color: var(--muted); font-size: 11px;
   white-space: nowrap;
+  position: sticky; left: 180px; z-index: 1;
+  background: inherit;
+  border-right: 1px solid #e2e8f0;
 }
-.gantt-table td.td-active {
-  background: var(--orange); opacity: .85;
-}
-.gantt-table td.td-weekend { background: #f8fafc; }
-.gantt-table tr:hover td { filter: brightness(.96); }
+.gantt-table td.td-active   { background: var(--orange) !important; opacity: .9; }
+.gantt-table td.td-today    { background: #fff7ed !important; border: 2px solid var(--orange) !important; }
+.gantt-table td.td-weekend  { background: #f8fafc; opacity: .7; }
+.gantt-table tr:hover td    { filter: brightness(.96); }
 .gantt-table tr:nth-child(even) td { background-color: #fafafa; }
-.gantt-table tr:nth-child(even) td.td-active { background: var(--orange); }
+.gantt-table tr:nth-child(even) td.td-active  { background: var(--orange) !important; }
 .gantt-table tr:nth-child(even) td.td-weekend { background: #f1f5f9; }
 
 /* ═══════════════════════════════════════════════════
@@ -1489,4 +1511,57 @@ select.embudo-select:disabled { opacity: .45; cursor: default; }
   .main-panels { grid-template-columns: 1fr; }
   .embudo-panel { position: static; }
   .filter-drawer { width: 100%; }
+}
+
+/* ── IMPRESIÓN VISTA FINAL (máx 2 páginas) ───────────────────── */
+@media print {
+  /* Página 1: RESULTADOS + 4 gráficos */
+  /* Página 2: Tops + tabla Hiperfamilia */
+  .print-page-2 { page-break-before: always; break-before: always; }
+
+  /* Ocultar elementos que no son de la vista Final durante su impresión */
+  #view-final.print-active .no-print { display: none !important; }
+
+  /* Limitar Top sobrantes/faltantes a PRINT_TOP_N filas */
+  #view-final.print-active #final-tops-grid .data-table tbody tr:nth-child(n+13) { display: none !important; }
+  /* Limitar tabla Hiperfamilia a PRINT_TOP_N filas */
+  #view-final.print-active #final-hiper-tbl tbody tr:nth-child(n+13) { display: none !important; }
+  /* Limitar tabla Faltantes a PRINT_TOP_N filas */
+  #view-final.print-active #final-faltantes-tbl tbody tr:nth-child(n+13) { display: none !important; }
+
+  /* Tipografía y márgenes ejecutivos */
+  #view-final.print-active {
+    font-size: 10px !important;
+    padding: 0 !important;
+  }
+  @page { size: letter; margin: 12mm; }
+
+  /* Encabezados tabla estilo ejecutivo */
+  #view-final.print-active table.data-table thead tr th {
+    background: #002060 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 9px !important;
+  }
+  #view-final.print-active table.data-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  #view-final.print-active table.data-table td,
+  #view-final.print-active table.data-table th {
+    border: 0.5px solid #ccc !important;
+    padding: 3px 5px !important;
+  }
+
+  /* Gráficos: reducir altura para caber en página 1 */
+  #view-final.print-active .chart-wrap { height: 160px !important; }
+  #view-final.print-active .charts-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+
+  /* Evitar cortes dentro de bloques */
+  #view-final.print-active .section-card,
+  #view-final.print-active .chart-card { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Ocultar hint vacío */
+  #final-empty { display: none !important; }
 }

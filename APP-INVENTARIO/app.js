@@ -1795,11 +1795,109 @@ function exportResumenGlobalExcel(year) {
 function exportTableToExcel(tableId, fileName) {
   const table = document.getElementById(tableId);
   if (!table?.rows.length) { showToast('Sin datos para exportar.', 'error'); return; }
+
+  // Extraer datos crudos de la tabla (thead + tbody + tfoot)
+  const allRows = [];
+  table.querySelectorAll('tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('th,td')].map(c => {
+      const txt = c.textContent.trim();
+      // Intentar convertir a número: quitar $, puntos miles, espacios
+      const clean = txt.replace(/[$\s]/g,'').replace(/\./g,'').replace(',','.');
+      const n = parseFloat(clean);
+      return (!isNaN(n) && txt !== '' && /[\d]/.test(txt)) ? n : txt;
+    });
+    if (cells.length) allRows.push(cells);
+  });
+
+  const nCols = allRows[0]?.length || 1;
+  const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'002060' } };
+  const HDR_FONT = { color:{ rgb:'FFFFFF' }, bold:true, sz:10 };
+  const HDR_ALIGN= { horizontal:'center', vertical:'center', wrapText:true };
+  const THIN_BDR = { style:'thin', color:{ rgb:'BBBBBB' } };
+  const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
+
+  // Detectar columnas numéricas por los valores de filas de datos
+  const isNumCol = new Array(nCols).fill(false);
+  const isMoneyCol = new Array(nCols).fill(false);
+  for (let ci = 0; ci < nCols; ci++) {
+    const vals = allRows.slice(1).map(r => r[ci]).filter(v => typeof v === 'number');
+    if (vals.length > 0 && vals.length >= allRows.slice(1).length * 0.5) {
+      isNumCol[ci] = true;
+      // Detectar columnas monetarias: encabezado contiene $ o palabras clave
+      const hdr = (allRows[0]?.[ci] || '').toString().toUpperCase();
+      if (/\$|VALOR|COSTO|PRECIO|IMPACTO|DIFERENCIA\s*\$|DIF\s*\$|NETO/.test(hdr)) isMoneyCol[ci] = true;
+    }
+  }
+
+  // Anchos automáticos por columna
+  const colWidths = allRows[0].map((_, ci) => {
+    const maxLen = Math.max(...allRows.map(r => (r[ci]?.toString()||'').length));
+    return { wch: Math.min(Math.max(maxLen + 2, 8), 40) };
+  });
+
+  // Construir worksheet manualmente
+  const ws = {};
+  allRows.forEach((row, rIdx) => {
+    row.forEach((val, cIdx) => {
+      const addr = XLSX.utils.encode_cell({ r: rIdx, c: cIdx });
+      const isHeader = rIdx === 0;
+      const isFooter = rIdx === allRows.length - 1 && typeof allRows[allRows.length-1][0] === 'string'
+        && /total/i.test(String(allRows[allRows.length-1][0]));
+
+      const numVal = typeof val === 'number' ? val : null;
+      ws[addr] = {
+        t: isHeader ? 's' : (numVal !== null ? 'n' : 's'),
+        v: isHeader ? val : (numVal !== null ? numVal : val),
+      };
+      if (numVal !== null && !isHeader) {
+        ws[addr].z = isMoneyCol[cIdx] ? '$ #,##0' : '#,##0';
+      }
+
+      // Color condicional en columnas de diferencia (negativo=rojo, positivo=azul)
+      const isDifCol = /DIFERENCIA|DIF|DIFF/i.test(String(allRows[0]?.[cIdx]||''));
+      const fontColor = isHeader ? 'FFFFFF'
+        : (isDifCol && numVal !== null ? (numVal < 0 ? 'C00000' : numVal > 0 ? '0000FF' : '000000') : '000000');
+
+      ws[addr].s = {
+        fill:  isHeader ? HDR_FILL : isFooter ? { patternType:'solid', fgColor:{ rgb:'DBEAFE' } } : {},
+        font:  { color:{ rgb: fontColor }, bold: isHeader || isFooter, sz: isHeader ? 10 : 9 },
+        alignment: isHeader ? HDR_ALIGN : { horizontal: (numVal !== null ? 'right' : 'left') },
+        border: CELL_BDR,
+      };
+    });
+  });
+
+  ws['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:allRows.length-1,c:nCols-1} });
+  ws['!cols'] = colWidths;
+  ws['!views'] = [{ state:'frozen', xSplit:0, ySplit:1, topLeftCell:'A2' }];
+
+  // Hoja LEYENDA
+  const headers = allRows[0] || [];
+  const legendRows = [
+    ['Columna', 'Descripción'],
+    ['DIFERENCIA / DIF UNID', 'Conteo físico − Stock sistema (negativo = faltante, positivo = sobrante)'],
+    ['DIFERENCIA $ / DIF $', 'Diferencia en unidades × Costo unitario'],
+    ['DISPERSIÓN', '|Faltantes| + |Sobrantes| en $ — mide cuánto se aleja del sistema'],
+    ['CONTEO', 'Unidades físicamente contadas en el inventario'],
+    ['STOCK SISTEMA / UNID SISTEMA', 'Unidades registradas en el sistema (ERP)'],
+    ['VALOR CONTEO / VALOR SISTEMA', 'Unidades × Costo unitario'],
+    ['% EXACTITUD', '(1 − |Dif| / Sistema) × 100 — 100% = sin diferencias'],
+    ...headers.filter(h => h && !['DIFERENCIA','DIF','CONTEO','STOCK','VALOR','EXACTITUD'].some(k => String(h).toUpperCase().includes(k)))
+              .map(h => [String(h), 'Columna descriptiva / clasificación del producto']),
+    ['', ''],
+    ['Generado', `${new Date().toLocaleString('es-CL')} — Ferretería Oviedo · El Manzano`],
+  ];
+  const wsL = XLSX.utils.aoa_to_sheet(legendRows);
+  wsL['!cols'] = [{ wch:32 }, { wch:70 }];
+  ['A1','B1'].forEach(addr => {
+    if (wsL[addr]) wsL[addr].s = { fill: HDR_FILL, font: HDR_FONT, border: CELL_BDR };
+  });
+
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.table_to_sheet(table);
   XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+  XLSX.utils.book_append_sheet(wb, wsL, 'LEYENDA');
   XLSX.writeFile(wb, `${fileName || tableId}_${today()}.xlsx`);
-  showToast('Archivo Excel generado.', 'ok');
+  showToast('Excel generado con estilos profesionales ✓', 'ok');
 }
 
 function generateReport(mode) {
@@ -2035,17 +2133,447 @@ function setupTabs() {
     });
 }
 
+// ── REPORTE FINAL INTERACTIVO ──────────────────────────────────
+function generateReporteFinal(mode) {
+  mode = mode || getActiveViewMode();
+  const data = (state.data2026?.length ? state.data2026 : state.data2025) || [];
+  if (!data.length) { showToast('No hay datos cargados para generar el reporte.', 'error'); return; }
+
+  const year = state.data2026?.length ? '2026' : '2025';
+  const k = calcKPIs(data);
+  const m = calcMonetarySummary(data);
+  let falt = 0, sobr = 0, faltV = 0, sobrV = 0;
+  for (const r of data) {
+    if (r.dif_unidades < 0) { falt++; faltV += Math.abs(r.dif_peso || 0); }
+    else if (r.dif_unidades > 0) { sobr++; sobrV += Math.abs(r.dif_peso || 0); }
+  }
+  const pctDisp = m.totalSistema > 0 ? (m.dispersion / m.totalSistema * 100).toFixed(2) : '0.00';
+  const pctFalt = k.us > 0 ? (Math.abs(data.reduce((s,r)=>s+(r.dif_unidades<0?r.dif_unidades:0),0))/k.us*100).toFixed(2) : '0.00';
+  const pctSobr = k.us > 0 ? (data.reduce((s,r)=>s+(r.dif_unidades>0?r.dif_unidades:0),0)/k.us*100).toFixed(2) : '0.00';
+
+  // Agrupar por hiperfamilia para gráficos
+  const byHiper = aggregateBy(data, 'perfamilia').sort((a,b)=>b.adp-a.adp);
+  const byMarca = aggregateBy(data, 'marca').sort((a,b)=>b.adp-a.adp).slice(0,12);
+  const byFam   = aggregateBy(data, 'familia').sort((a,b)=>b.adp-a.adp).slice(0,12);
+
+  // Tops
+  const topFalt = [...data].filter(r=>r.dif_peso<0).sort((a,b)=>a.dif_peso-b.dif_peso).slice(0,15);
+  const topSobr = [...data].filter(r=>r.dif_peso>0).sort((a,b)=>b.dif_peso-a.dif_peso).slice(0,15);
+
+  // Opciones únicas para filtros en cascada
+  const hipers  = [...new Set(data.map(r=>r.perfamilia||'').filter(Boolean))].sort();
+  const fams    = [...new Set(data.map(r=>r.familia||'').filter(Boolean))].sort();
+  const subfams = [...new Set(data.map(r=>r.subfamilia||'').filter(Boolean))].sort();
+  const marcas  = [...new Set(data.map(r=>r.marca||'').filter(Boolean))].sort();
+
+  // Serializar dataset completo embebido en HTML
+  const dataJSON = JSON.stringify(data);
+
+  const mkTopRows = (arr, colorHex) => arr.map(r =>
+    `<tr>
+      <td class="mono">${r.codigo||'—'}</td>
+      <td class="prod">${(r.producto||'—').substring(0,45)}</td>
+      <td class="num" style="color:${colorHex}">${r.dif_unidades>=0?'+':''}${Math.round(r.dif_unidades||0).toLocaleString('es-CL')}</td>
+      <td class="num" style="color:${colorHex}">$ ${Math.round(r.dif_peso||0).toLocaleString('es-CL')}</td>
+    </tr>`).join('');
+
+  const hiperOpts  = hipers.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('');
+  const famOpts    = fams.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('');
+  const subfamOpts = subfams.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('');
+  const marcaOpts  = marcas.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('');
+
+  const hiperBarrasSobr = byHiper.slice(0,10).map(g=>Math.round(g.pr>g.ps?g.pr-g.ps:0));
+  const hiperBarrasFalt = byHiper.slice(0,10).map(g=>Math.round(g.ps>g.pr?g.ps-g.pr:0));
+
+  const fecha = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'long',year:'numeric'});
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reporte Final Inventario ${year} · El Manzano</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"><\/script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Segoe UI,Arial,sans-serif;font-size:11px;color:#1a1a2e;background:#f5f7fa}
+.page{max-width:1100px;margin:0 auto;padding:24px 20px}
+h1{font-size:20px;color:#002060;margin-bottom:4px}
+h2{font-size:14px;color:#002060;border-bottom:2px solid #002060;padding-bottom:4px;margin:24px 0 12px}
+h3{font-size:12px;color:#002060;margin-bottom:8px}
+.subtitle{color:#666;font-size:11px;margin-bottom:20px}
+.toc{background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:12px 16px;margin-bottom:24px;display:inline-block}
+.toc a{color:#3730a3;text-decoration:none;display:block;margin:2px 0;font-size:11px}
+.toc a:hover{text-decoration:underline}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px}
+.kpi-card{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;text-align:center}
+.kpi-label{font-size:10px;color:#64748b;margin-bottom:4px}
+.kpi-value{font-size:18px;font-weight:700;color:#002060}
+.kpi-sub{font-size:10px;color:#94a3b8}
+.kpi-card.red .kpi-value{color:#dc2626}
+.kpi-card.green .kpi-value{color:#16a34a}
+.res-table{width:100%;border-collapse:collapse;max-width:680px;margin-bottom:18px;background:#fff}
+.res-table th,.res-table td{border:1px solid #cbd5e1;padding:5px 10px;font-size:11px}
+.res-table thead th{background:#002060;color:#fff;font-weight:600;text-align:left}
+.res-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.chart-card{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px}
+.chart-card h3{margin-bottom:8px}
+.chart-wrap{height:200px;position:relative}
+.tops-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.top-card{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px;overflow:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:10.5px}
+.data-table thead th{background:#002060;color:#fff;padding:5px 8px;text-align:left;position:sticky;top:0;white-space:nowrap}
+.data-table tbody tr:nth-child(even){background:#f8fafc}
+.data-table tbody td{padding:4px 8px;border-bottom:1px solid #f1f5f9}
+td.mono{font-family:monospace;font-size:10px;white-space:nowrap}
+td.prod{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid #002060}
+.table-scroll{max-height:400px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:4px}
+.filters-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;margin-bottom:12px}
+.filters-bar label{font-size:10px;color:#64748b;margin-right:2px}
+.filters-bar select{font-size:11px;border:1px solid #cbd5e1;border-radius:4px;padding:3px 6px;color:#1a1a2e;background:#fff}
+.filters-bar button{font-size:11px;padding:4px 10px;border:1px solid #cbd5e1;border-radius:4px;background:#f1f5f9;cursor:pointer}
+.filters-bar button:hover{background:#e2e8f0}
+.dif-neg{color:#dc2626;font-weight:600}
+.dif-pos{color:#16a34a;font-weight:600}
+#badge{font-size:10px;color:#64748b;margin-left:auto}
+.section-divider{margin:32px 0 8px;padding-top:8px;border-top:1px solid #e2e8f0}
+@media print{
+  .filters-bar,.no-print{display:none!important}
+  body{background:#fff}
+  h2{page-break-before:auto}
+  .data-table tbody tr:nth-child(n+13){display:none!important}
+  .chart-wrap{height:160px!important}
+  .charts-grid,.tops-grid{grid-template-columns:1fr 1fr!important}
+  @page{size:letter;margin:12mm}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>📋 Análisis Final · Inventario ${year}</h1>
+  <p class="subtitle">Ferretería Oviedo · El Manzano — ${fecha}</p>
+
+  <!-- ÍNDICE -->
+  <div class="toc">
+    <strong style="font-size:11px;color:#002060">Índice</strong><br>
+    <a href="#resumen">▸ Resumen Ejecutivo</a>
+    <a href="#tops">▸ Top Faltantes y Sobrantes</a>
+    <a href="#graficos">▸ Gráficos</a>
+    <a href="#detalle">▸ Detalle Completo (${data.length.toLocaleString('es-CL')} filas)</a>
+    <a href="#por-hiper">▸ Resumen por Hiperfamilia</a>
+  </div>
+
+  <!-- ══ SECCIÓN 1: RESUMEN EJECUTIVO ══ -->
+  <h2 id="resumen">1 · Resumen Ejecutivo</h2>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Productos</div>
+      <div class="kpi-value">${data.length.toLocaleString('es-CL')}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Unidades Sistema</div>
+      <div class="kpi-value">${Math.round(k.us).toLocaleString('es-CL')}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Unidades Conteo</div>
+      <div class="kpi-value">${Math.round(k.ur).toLocaleString('es-CL')}</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Faltantes</div>
+      <div class="kpi-value">${falt.toLocaleString('es-CL')}</div>
+      <div class="kpi-sub">$ ${Math.round(faltV).toLocaleString('es-CL')}</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Sobrantes</div>
+      <div class="kpi-value">${sobr.toLocaleString('es-CL')}</div>
+      <div class="kpi-sub">$ ${Math.round(sobrV).toLocaleString('es-CL')}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Dispersión Total</div>
+      <div class="kpi-value">${pctDisp}%</div>
+      <div class="kpi-sub">$ ${Math.round(m.dispersion).toLocaleString('es-CL')}</div>
+    </div>
+  </div>
+
+  <table class="res-table">
+    <thead><tr><th>Concepto</th><th>Unidades</th><th>Valor $</th><th>%</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Total Sistema</strong></td><td class="num">${Math.round(k.us).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(k.ps).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
+      <tr><td><strong>Total Conteo</strong></td><td class="num">${Math.round(k.ur).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(k.pr).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
+      <tr><td><strong>Diferencia neta</strong></td><td class="num">${k.du>=0?'+':''}${Math.round(k.du).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(m.difTotal).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
+      <tr style="color:#16a34a"><td><strong>Diferencias (+) sobrantes</strong></td><td class="num">${sobr.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(sobrV).toLocaleString('es-CL')}</td><td class="num">${pctSobr}%</td></tr>
+      <tr style="color:#dc2626"><td><strong>Diferencias (−) faltantes</strong></td><td class="num">${falt.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(faltV).toLocaleString('es-CL')}</td><td class="num">${pctFalt}%</td></tr>
+      <tr style="font-weight:700"><td><strong>Dispersión (|+|+|−|)</strong></td><td class="num">${Math.round(k.adu).toLocaleString('es-CL')} unid</td><td class="num">$ ${Math.round(m.dispersion).toLocaleString('es-CL')}</td><td class="num">${pctDisp}%</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ TOPS ══ -->
+  <h2 id="tops">2 · Top Faltantes y Sobrantes</h2>
+  <div class="tops-grid">
+    <div class="top-card">
+      <h3 style="color:#dc2626">Top 15 Faltantes — mayor impacto $</h3>
+      <table class="data-table">
+        <thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+        <tbody>${mkTopRows(topFalt,'#dc2626')}</tbody>
+      </table>
+    </div>
+    <div class="top-card">
+      <h3 style="color:#16a34a">Top 15 Sobrantes — mayor impacto $</h3>
+      <table class="data-table">
+        <thead><tr><th>Código</th><th>Producto</th><th class="num">Dif Unid</th><th class="num">Dif $</th></tr></thead>
+        <tbody>${mkTopRows(topSobr,'#16a34a')}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ GRÁFICOS ══ -->
+  <h2 id="graficos">3 · Gráficos</h2>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>Dispersión $ por Marca</h3><div class="chart-wrap"><canvas id="rf-marca"></canvas></div></div>
+    <div class="chart-card"><h3>Dispersión $ por Familia</h3><div class="chart-wrap"><canvas id="rf-familia"></canvas></div></div>
+    <div class="chart-card"><h3>Unidades por Hiperfamilia</h3><div class="chart-wrap"><canvas id="rf-hiper"></canvas></div></div>
+    <div class="chart-card"><h3>Faltantes vs Sobrantes por Hiperfamilia</h3><div class="chart-wrap"><canvas id="rf-barras"></canvas></div></div>
+  </div>
+
+  <!-- ══ SECCIÓN 2: DETALLE COMPLETO ══ -->
+  <h2 id="detalle" class="section-divider">4 · Detalle Completo</h2>
+
+  <!-- Filtros en cascada -->
+  <div class="filters-bar no-print" id="rf-filters">
+    <label>Hiperfamilia</label>
+    <select id="rf-hiper-sel" onchange="rfCascada()">
+      <option value="">Todas</option>${hiperOpts}
+    </select>
+    <label>Familia</label>
+    <select id="rf-fam-sel" onchange="rfCascada()">
+      <option value="">Todas</option>${famOpts}
+    </select>
+    <label>Subfamilia</label>
+    <select id="rf-sub-sel" onchange="rfCascada()">
+      <option value="">Todas</option>${subfamOpts}
+    </select>
+    <label>Marca</label>
+    <select id="rf-marca-sel" onchange="rfCascada()">
+      <option value="">Todas</option>${marcaOpts}
+    </select>
+    <button onclick="rfLimpiarFiltros()">Limpiar</button>
+    <span id="badge"></span>
+  </div>
+
+  <div class="table-scroll" id="rf-tabla-wrap">
+    <table class="data-table" id="rf-tabla">
+      <thead>
+        <tr>
+          <th>Código</th><th>Descripción</th>
+          <th class="num">CONTEO</th><th class="num">STOCK SIS.</th>
+          <th class="num">DIF UNID</th><th class="num">DIF $</th>
+          <th>FAMILIA</th><th>HIPERFAMILIA</th><th>MARCA</th>
+          <th>SUBFAMILIA</th><th>ZONA</th><th>ÁREA</th>
+        </tr>
+      </thead>
+      <tbody id="rf-tbody"></tbody>
+      <tfoot><tr id="rf-tfoot"></tr></tfoot>
+    </table>
+  </div>
+
+  <!-- ══ POR HIPERFAMILIA ══ -->
+  <h2 id="por-hiper" class="section-divider">5 · Resumen por Hiperfamilia</h2>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr>
+        <th>Hiperfamilia</th>
+        <th class="num">Unid Sistema</th><th class="num">Unid Conteo</th><th class="num">Dif Unid</th>
+        <th class="num">% Exactitud Unid</th>
+        <th class="num">Valor Sistema</th><th class="num">Valor Conteo</th><th class="num">Dif $</th>
+        <th class="num">% Exactitud $</th>
+      </tr></thead>
+      <tbody>
+        ${byHiper.map(g=>`<tr>
+          <td>${g.fd?.perfamilia||g.key||'(sin cat.)'}</td>
+          <td class="num">${Math.round(g.us).toLocaleString('es-CL')}</td>
+          <td class="num">${Math.round(g.ur).toLocaleString('es-CL')}</td>
+          <td class="num ${g.du<0?'dif-neg':g.du>0?'dif-pos':''}">${g.du>=0?'+':''}${Math.round(g.du).toLocaleString('es-CL')}</td>
+          <td class="num">${(+g.exact_unid||0).toFixed(1)}%</td>
+          <td class="num">$ ${Math.round(g.ps).toLocaleString('es-CL')}</td>
+          <td class="num">$ ${Math.round(g.pr).toLocaleString('es-CL')}</td>
+          <td class="num ${g.dp<0?'dif-neg':g.dp>0?'dif-pos':''}">$ ${Math.round(g.dp).toLocaleString('es-CL')}</td>
+          <td class="num">${(+g.exact_peso||0).toFixed(1)}%</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// Dataset completo embebido
+const RF_DATA = ${dataJSON};
+
+// Render inicial de la tabla de detalle
+function rfRenderTabla(rows) {
+  const tbody = document.getElementById('rf-tbody');
+  const tfoot = document.getElementById('rf-tfoot');
+  if (!tbody) return;
+  let totCo=0,totSis=0,totDifU=0,totDifP=0;
+  tbody.innerHTML = rows.map(r => {
+    totCo  += +(r.unidades_real||0);
+    totSis += +(r.unidades_sistema||0);
+    totDifU+= +(r.dif_unidades||0);
+    totDifP+= +(r.dif_peso||0);
+    const dc = r.dif_unidades<0?'dif-neg':r.dif_unidades>0?'dif-pos':'';
+    const dp = r.dif_peso<0?'dif-neg':r.dif_peso>0?'dif-pos':'';
+    return \`<tr>
+      <td class="mono">\${r.codigo||''}</td>
+      <td class="prod" title="\${(r.producto||'').replace(/"/g,'&quot;')}">\${(r.producto||'').substring(0,45)}</td>
+      <td class="num">\${Math.round(r.unidades_real||0).toLocaleString('es-CL')}</td>
+      <td class="num">\${Math.round(r.unidades_sistema||0).toLocaleString('es-CL')}</td>
+      <td class="num \${dc}">\${r.dif_unidades>=0?'+':''}\${Math.round(r.dif_unidades||0).toLocaleString('es-CL')}</td>
+      <td class="num \${dp}">$ \${Math.round(r.dif_peso||0).toLocaleString('es-CL')}</td>
+      <td>\${r.familia||''}</td>
+      <td>\${r.perfamilia||''}</td>
+      <td>\${r.marca||''}</td>
+      <td>\${r.subfamilia||''}</td>
+      <td>\${r.zona||''}</td>
+      <td>\${r.area||''}</td>
+    </tr>\`;
+  }).join('');
+  const dc = totDifU<0?'dif-neg':totDifU>0?'dif-pos':'';
+  const dp = totDifP<0?'dif-neg':totDifP>0?'dif-pos':'';
+  tfoot.innerHTML = \`
+    <td colspan="2">TOTAL (\${rows.length.toLocaleString('es-CL')} filas)</td>
+    <td class="num">\${Math.round(totCo).toLocaleString('es-CL')}</td>
+    <td class="num">\${Math.round(totSis).toLocaleString('es-CL')}</td>
+    <td class="num \${dc}">\${totDifU>=0?'+':''}\${Math.round(totDifU).toLocaleString('es-CL')}</td>
+    <td class="num \${dp}">$ \${Math.round(totDifP).toLocaleString('es-CL')}</td>
+    <td colspan="6"></td>\`;
+  document.getElementById('badge').textContent = \`\${rows.length.toLocaleString('es-CL')} / \${RF_DATA.length.toLocaleString('es-CL')} filas\`;
+}
+
+function rfGetFiltrado() {
+  const h = document.getElementById('rf-hiper-sel')?.value || '';
+  const f = document.getElementById('rf-fam-sel')?.value || '';
+  const s = document.getElementById('rf-sub-sel')?.value || '';
+  const m = document.getElementById('rf-marca-sel')?.value || '';
+  return RF_DATA.filter(r =>
+    (!h || (r.perfamilia||'') === h) &&
+    (!f || (r.familia||'') === f) &&
+    (!s || (r.subfamilia||'') === s) &&
+    (!m || (r.marca||'') === m)
+  );
+}
+
+function rfCascada() {
+  const filtered = rfGetFiltrado();
+  rfRenderTabla(filtered);
+  rfRenderGraficos(filtered);
+}
+
+function rfLimpiarFiltros() {
+  ['rf-hiper-sel','rf-fam-sel','rf-sub-sel','rf-marca-sel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  rfRenderTabla(RF_DATA);
+  rfRenderGraficos(RF_DATA);
+}
+
+// Gráficos
+const rfCharts = {};
+function rfMkChart(id, type, labels, datasets, opts) {
+  if (rfCharts[id]) { try { rfCharts[id].destroy(); } catch(e){} }
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if (!ctx) return;
+  rfCharts[id] = new Chart(ctx, { type, data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, ...opts } });
+}
+
+function rfRenderGraficos(rows) {
+  // Agrupa por campo, suma adp (dispersión $)
+  function agg(field, n) {
+    const m = {};
+    for (const r of rows) {
+      const k = r[field] || '(sin cat.)';
+      if (!m[k]) m[k] = 0;
+      m[k] += Math.abs(r.dif_peso || 0);
+    }
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n||10);
+  }
+  const marca  = agg('marca', 12);
+  const fam    = agg('familia', 12);
+  const hiper  = agg('perfamilia', 12);
+
+  rfMkChart('rf-marca', 'bar',
+    marca.map(e=>e[0]), [{ data: marca.map(e=>Math.round(e[1])), backgroundColor: 'rgba(220,38,38,0.75)' }],
+    { indexAxis:'y', scales:{ x:{ ticks:{ font:{size:9} } }, y:{ ticks:{ font:{size:9} } } } });
+
+  rfMkChart('rf-familia', 'bar',
+    fam.map(e=>e[0]), [{ data: fam.map(e=>Math.round(e[1])), backgroundColor: 'rgba(59,130,246,0.75)' }],
+    { indexAxis:'y', scales:{ x:{ ticks:{ font:{size:9} } }, y:{ ticks:{ font:{size:9} } } } });
+
+  rfMkChart('rf-hiper', 'doughnut',
+    hiper.map(e=>e[0]),
+    [{ data: hiper.map(e=>Math.round(e[1])), backgroundColor: ['#3b82f6','#ef4444','#10b981','#f59e0b','#6366f1','#ec4899','#14b8a6','#f97316','#8b5cf6','#84cc16','#06b6d4','#a855f7'] }],
+    { plugins:{ legend:{ display:true, position:'right', labels:{font:{size:9}} } } });
+
+  // Barras faltantes vs sobrantes por hiperfamilia
+  const mF = {}, mS = {};
+  for (const r of rows) {
+    const k = r.perfamilia || '(sin cat.)';
+    if (!mF[k]) { mF[k]=0; mS[k]=0; }
+    if (r.dif_peso < 0) mF[k] += Math.abs(r.dif_peso);
+    else if (r.dif_peso > 0) mS[k] += r.dif_peso;
+  }
+  const hiperKeys = Object.keys(mF).sort((a,b)=>(mF[b]+mS[b])-(mF[a]+mS[a])).slice(0,10);
+  rfMkChart('rf-barras', 'bar', hiperKeys,
+    [
+      { label:'Faltantes $', data: hiperKeys.map(k=>Math.round(mF[k])), backgroundColor:'rgba(220,38,38,0.7)' },
+      { label:'Sobrantes $', data: hiperKeys.map(k=>Math.round(mS[k])), backgroundColor:'rgba(22,163,74,0.7)' },
+    ],
+    { plugins:{ legend:{ display:true, labels:{font:{size:9}} } }, scales:{ x:{ ticks:{font:{size:8}} }, y:{ ticks:{font:{size:9}} } } });
+}
+
+// Inicializar
+rfRenderTabla(RF_DATA);
+rfRenderGraficos(RF_DATA);
+<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { showToast('El navegador bloqueó la ventana emergente. Permite ventanas emergentes para esta app.', 'error'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
 // ── PRINT MODE ─────────────────────────────────────────────────
+// Devuelve el data-mode de la vista visible actualmente
+function getActiveViewMode() {
+  const visible = document.querySelector('.view:not(.hidden)');
+  if (visible) {
+    const m = visible.getAttribute('data-mode');
+    if (m) return m;
+    // Fallback: extraer desde el id (view-2025 → '2025')
+    const id = visible.id || '';
+    if (id.startsWith('view-')) return id.replace('view-', '');
+  }
+  return null;
+}
+
 function printMode(mode) {
-  // Marca la vista activa y lanza print
+  const m = mode || getActiveViewMode();
   document.querySelectorAll('.view').forEach(v => v.classList.remove('print-active'));
-  const el = document.getElementById(`view-${mode}`);
+  const el = document.getElementById(`view-${m}`);
   if (el) el.classList.add('print-active');
   window.print();
 }
 
 // ── EMAIL REPORT ───────────────────────────────────────────────
 function emailReport(mode) {
+  mode = mode || getActiveViewMode();
   const titles = {
     '2025': 'Análisis Inventario 2025',
     '2026': 'Análisis Inventario 2026',
@@ -2056,6 +2584,50 @@ function emailReport(mode) {
     final: 'Análisis Final Inventario',
     reconteo: 'Centro de Reconteo',
   };
+
+  // Modo final: leer cuadro RESULTADOS desde #final-resultados (no #kpi-final que no existe)
+  if (mode === 'final') {
+    const data = (state.data2026?.length ? state.data2026 : state.data2025) || [];
+    if (!data.length) { showToast('No hay datos cargados para el informe final.', 'error'); return; }
+
+    const k = calcKPIs(data);
+    const m = calcMonetarySummary(data);
+    let falt = 0, sobr = 0, faltV = 0, sobrV = 0;
+    for (const r of data) {
+      if (r.dif_unidades < 0) { falt++; faltV += Math.abs(r.dif_peso || 0); }
+      else if (r.dif_unidades > 0) { sobr++; sobrV += Math.abs(r.dif_peso || 0); }
+    }
+    const year = state.data2026?.length ? '2026' : '2025';
+    const pctDisp = m.totalSistema > 0 ? (m.dispersion / m.totalSistema * 100).toFixed(2) : '0.00';
+
+    const resumen =
+      `== RESULTADOS · Inventario ${year} ==\n` +
+      `Total Sistema:            ${fmt(k.us)} unid  /  ${fmtMoney(k.ps)}\n` +
+      `Total Conteo:             ${fmt(k.ur)} unid  /  ${fmtMoney(k.pr)}\n` +
+      `Diferencia neta:          ${k.du>=0?'+':''}${fmt(k.du)} unid  /  ${fmtMoney(m.difTotal)}\n` +
+      `Diferencias (+) sobrantes:${fmt(sobr)} prods  /  ${fmtMoney(sobrV)}\n` +
+      `Diferencias (−) faltantes:${fmt(falt)} prods  /  ${fmtMoney(faltV)}\n` +
+      `Dispersión total (|+|+|−|):${fmt(k.adu)} unid  /  ${fmtMoney(m.dispersion)}  (${pctDisp}% del sistema)\n`;
+
+    const fecha = new Date().toLocaleDateString('es-CL');
+    const subject = encodeURIComponent(`Análisis Final · El Manzano — ${fecha}`);
+    const body = encodeURIComponent(
+      `Análisis Final Inventario — Ferretería Oviedo · El Manzano\n` +
+      `Fecha: ${new Date().toLocaleString('es-CL')}\n\n` +
+      resumen +
+      `\n— Reporte PDF —\n` +
+      `Usa el botón "🖨 Imprimir" en la app → Guardar como PDF\n` +
+      `Adjunta el PDF a este correo para incluir los gráficos y el cuadro final.\n` +
+      `(Los navegadores no permiten adjuntar archivos vía mailto:)`
+    );
+
+    // Abrir la impresión primero para que el usuario genere el PDF
+    printMode('final');
+    // Pequeño delay para que el diálogo de impresión no bloquee el mailto
+    setTimeout(() => { window.location.href = `mailto:?subject=${subject}&body=${body}`; }, 800);
+    return;
+  }
+
   const kpiEl = document.getElementById(`kpi-${mode}`);
   let resumen = '';
   if (kpiEl) {
@@ -2519,6 +3091,19 @@ function showPlanoSheet(name) {
 // ── RENDER GRID FIEL AL EXCEL ─────────────────────────────────
 // contados = Set de strings de patentes presentes en inventario (o null)
 // Celdas de patente se colorean verde/rojo según si están en contados
+// Detecta etiquetas especiales de zona y devuelve estilo inline
+function _planoLabelStyle(raw) {
+  const u = raw.toUpperCase();
+  if (/DESPACHO/.test(u))                    return 'background:#fee2e2;color:#991b1b;font-weight:700';
+  if (/ZONA\s+DE\s+SEG|SEGURIDAD/.test(u))   return 'background:#fef3c7;color:#92400e;font-weight:700';
+  if (/BA[ÑN]O/.test(u))                     return 'background:#dbeafe;color:#1e3a8a;font-weight:700';
+  if (/SALA\s+DE\s+VENTAS|SALA\s+VENTAS/.test(u)) return 'background:#dcfce7;color:#14532d;font-weight:700';
+  if (/PASILLO|PASIL/.test(u))               return 'background:#f1f5f9;color:#334155;font-weight:600';
+  if (/CAJA|CAJERO/.test(u))                 return 'background:#ede9fe;color:#4c1d95;font-weight:700';
+  if (/BODEGA|BOD/.test(u))                  return 'background:#f0fdf4;color:#166534;font-weight:600';
+  return '';
+}
+
 function renderPlanoGrid(rows, zone, contados) {
   if (!rows.length) return '<p style="padding:20px;color:var(--muted)">Sin datos en esta hoja.</p>';
 
@@ -2535,7 +3120,10 @@ function renderPlanoGrid(rows, zone, contados) {
   };
 
   const patenteStyle = (raw) => {
-    if (!contados) return { bg: zone.numBg, color: zone.numColor, title: 'Patente ' + raw };
+    if (!contados) {
+      // Sin datos de inventario: amarillo Excel (fiel al modelo)
+      return { bg: '#FEFF9C', color: '#5a4000', title: 'Patente ' + raw };
+    }
     const s   = raw.toUpperCase();
     const num = raw.match(/^(\d+)/)?.[1] || '';
     const ok  = contados.has(s) || (num && contados.has(num));
@@ -2556,8 +3144,12 @@ function renderPlanoGrid(rows, zone, contados) {
         const { bg, color, title } = patenteStyle(raw);
         html += `<td class="cell-num" style="background:${bg};color:${color}" title="${title}">${raw}</td>`;
       } else {
+        // Detectar etiqueta especial de zona
+        const specialStyle = _planoLabelStyle(raw);
         const isLong = raw.length > 3;
-        html += `<td class="${isLong ? 'cell-label' : ''}" title="${raw}">${raw}</td>`;
+        const cls = isLong ? 'cell-label' : '';
+        const style = specialStyle ? ` style="${specialStyle}"` : '';
+        html += `<td class="${cls}"${style} title="${raw}">${raw}</td>`;
       }
     }
     html += '</tr>';
@@ -2648,23 +3240,24 @@ function renderV2PatenteTable(data) {
   const el   = document.getElementById('v2-patente-table');
   if (!rows.length) { el.innerHTML = '<p class="no-data">Sin datos de patente.</p>'; return; }
 
-  const cols = ['Patente','Productos','Correctos','%','Faltantes','%','Sobrantes','%','Valor Sistema','Valor Conteo','Dif $','Dispersión $'];
-  let html = `<div class="tbl-wrap"><table class="tbl" id="v2-pat-tbl">
-    <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  const cols = ['Patente','Prods','Correctos','%Exactos','Faltantes','%','Sobrantes','%','Valor Sist.','Valor Conteo','Dif $','Dispersión $'];
+  const numCols = new Set([1,2,3,4,5,6,7,8,9,10,11]);
+  let html = `<div class="table-scroll"><table class="data-table" id="v2-pat-tbl">
+    <thead><tr>${cols.map((c,i)=>`<th${numCols.has(i)?' class="num"':''}>${c}</th>`).join('')}</tr></thead><tbody>`;
 
   for (const g of rows) {
     const dif  = g.vc - g.vs;
     const disp = Math.abs(g.dp) + Math.abs(g.dn);
     html += `<tr>
       <td><strong>${g.patente}</strong></td>
-      <td>${fmt(g.total)}</td>
-      <td class="delta-pos">${fmt(g.corr)}</td><td>${fmtPct(g.corr/g.total*100)}%</td>
-      <td class="delta-neg">${fmt(g.falt)}</td><td>${fmtPct(g.falt/g.total*100)}%</td>
-      <td style="color:#f59e0b">${fmt(g.sobr)}</td><td>${fmtPct(g.sobr/g.total*100)}%</td>
-      <td>${fmtMoney(g.vs)}</td>
-      <td>${fmtMoney(g.vc)}</td>
-      <td class="${dif<0?'delta-neg':'delta-pos'}">${fmtMoney(dif)}</td>
-      <td>${fmtMoney(disp)}</td>
+      <td class="num">${fmt(g.total)}</td>
+      <td class="num delta-pos">${fmt(g.corr)}</td><td class="num">${fmtPct(g.corr/g.total*100)}%</td>
+      <td class="num delta-neg">${fmt(g.falt)}</td><td class="num">${fmtPct(g.falt/g.total*100)}%</td>
+      <td class="num" style="color:#f59e0b">${fmt(g.sobr)}</td><td class="num">${fmtPct(g.sobr/g.total*100)}%</td>
+      <td class="num">${fmtMoney(g.vs)}</td>
+      <td class="num">${fmtMoney(g.vc)}</td>
+      <td class="num ${dif<0?'delta-neg':'delta-pos'}">${fmtMoney(dif)}</td>
+      <td class="num">${fmtMoney(disp)}</td>
     </tr>`;
   }
   html += '</tbody></table></div>';
@@ -2700,21 +3293,22 @@ function renderV2CostoRangos(data) {
              exact: items.length ? corr / items.length * 100 : 0 };
   }).filter(b => b.total > 0);
 
-  const cols = ['Segmento Precio Unitario','Productos','Correctos','% Exactos','Faltantes','Sobrantes','Valor Sistema','Dispersión $'];
-  let html = `<div class="tbl-wrap"><table class="tbl">
-    <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  const cols = ['Segmento Precio Unitario','Prods','Correctos','% Exactos','Faltantes','Sobrantes','Valor Sist.','Dispersión $'];
+  const numCols2 = new Set([1,2,3,4,5,6,7]);
+  let html = `<div class="table-scroll"><table class="data-table">
+    <thead><tr>${cols.map((c,i)=>`<th${numCols2.has(i)?' class="num"':''}>${c}</th>`).join('')}</tr></thead><tbody>`;
 
   for (const b of buckets) {
     const sem = b.exact >= 95 ? 'delta-pos' : b.exact >= 85 ? '' : 'delta-neg';
     html += `<tr>
       <td><strong>${b.label}</strong></td>
-      <td>${fmt(b.total)}</td>
-      <td class="delta-pos">${fmt(b.corr)}</td>
-      <td class="${sem}">${fmtPct(b.exact)}%</td>
-      <td class="delta-neg">${fmt(b.falt)}</td>
-      <td style="color:#f59e0b">${fmt(b.sobr)}</td>
-      <td>${fmtMoney(b.vs)}</td>
-      <td>${fmtMoney(b.adp)}</td>
+      <td class="num">${fmt(b.total)}</td>
+      <td class="num delta-pos">${fmt(b.corr)}</td>
+      <td class="num ${sem}">${fmtPct(b.exact)}%</td>
+      <td class="num delta-neg">${fmt(b.falt)}</td>
+      <td class="num" style="color:#f59e0b">${fmt(b.sobr)}</td>
+      <td class="num">${fmtMoney(b.vs)}</td>
+      <td class="num">${fmtMoney(b.adp)}</td>
     </tr>`;
   }
   html += '</tbody></table></div>';
@@ -2736,23 +3330,24 @@ function renderV2Riesgo(data) {
   if (!enriched.length) { el.innerHTML = '<p class="no-data">Sin diferencias monetarias registradas.</p>'; return; }
 
   const cols = ['#','Código','Producto','Hiperfamilia','Patente','Área','Stock Sist.','Conteo','Dif. Unid.','Costo Unit.','Riesgo $'];
-  let html = `<div class="tbl-wrap"><table class="tbl" id="v2-riesgo-tbl">
-    <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  const numColsR = new Set([0,6,7,8,9,10]);
+  let html = `<div class="table-scroll"><table class="data-table" id="v2-riesgo-tbl">
+    <thead><tr>${cols.map((c,i)=>`<th${numColsR.has(i)?' class="num"':''}>${c}</th>`).join('')}</tr></thead><tbody>`;
 
   enriched.forEach((r, i) => {
     const dCls = r.dif_unidades < 0 ? 'delta-neg' : 'delta-pos';
     html += `<tr>
-      <td>${i+1}</td>
-      <td>${r.codigo || '—'}</td>
-      <td>${r.producto || '—'}</td>
+      <td class="num">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px">${r.codigo || '—'}</td>
+      <td title="${r.producto||''}">${(r.producto || '—').substring(0,40)}</td>
       <td>${r.perfamilia || '—'}</td>
       <td>${r.patente || '—'}</td>
       <td>${r.area || '—'}</td>
-      <td>${fmt(r.unidades_sistema)}</td>
-      <td>${fmt(r.unidades_real)}</td>
-      <td class="${dCls}">${r.dif_unidades >= 0 ? '+':''}${fmt(r.dif_unidades)}</td>
-      <td>${r.costo > 0 ? fmtMoney(r.costo) : '—'}</td>
-      <td class="delta-neg"><strong>${fmtMoney(r.riesgo)}</strong></td>
+      <td class="num">${fmt(r.unidades_sistema)}</td>
+      <td class="num">${fmt(r.unidades_real)}</td>
+      <td class="num ${dCls}">${r.dif_unidades >= 0 ? '+':''}${fmt(r.dif_unidades)}</td>
+      <td class="num">${r.costo > 0 ? fmtMoney(r.costo) : '—'}</td>
+      <td class="num delta-neg"><strong>${fmtMoney(r.riesgo)}</strong></td>
     </tr>`;
   });
   html += '</tbody></table></div>';
@@ -3134,6 +3729,24 @@ function getRecountRows(){
   }).filter(r=>r.dif!==0 || r.money!==0).sort((a,b)=>Math.abs(b.money)-Math.abs(a.money));
 }
 
+// Calcula prioridad de una fila: confirmados al fondo, resto por |money|
+function _recountPriority(r) {
+  const status = localStorage.getItem('recount-status-' + r.rowId) || 'Pendiente';
+  if (status === 'Confirmado') return -1;            // al fondo
+  return Math.abs(r.money || 0);
+}
+
+// Color semáforo por impacto $ relativo al máximo del conjunto
+function _recountSemaforoColor(r, maxImpacto) {
+  const status = localStorage.getItem('recount-status-' + r.rowId) || 'Pendiente';
+  if (status === 'Confirmado') return '#16a34a';     // verde — ya resuelto
+  if (status === 'Recontado')  return '#2563eb';     // azul — en proceso
+  const pct = maxImpacto > 0 ? Math.abs(r.money || 0) / maxImpacto : 0;
+  if (pct >= 0.5) return '#dc2626';                  // rojo — alto impacto
+  if (pct >= 0.2) return '#ea580c';                  // naranja — medio
+  return '#ca8a04';                                  // amarillo — bajo
+}
+
 function renderRecount(){
   const rows=getRecountRows();
   const search=(document.getElementById('recount-search')?.value||'').toLowerCase();
@@ -3156,8 +3769,8 @@ function renderRecount(){
 
   document.getElementById('recount-summary').innerHTML=`
     <div class="recount-card"><span>Diferencias</span><strong>${filtered.length}</strong></div>
-    <div class="recount-card"><span>Faltantes</span><strong>${faltantes}</strong></div>
-    <div class="recount-card"><span>Sobrantes</span><strong>${sobrantes}</strong></div>
+    <div class="recount-card"><span>Faltantes</span><strong style="color:#fca5a5">${faltantes}</strong></div>
+    <div class="recount-card"><span>Sobrantes</span><strong style="color:#93c5fd">${sobrantes}</strong></div>
     <div class="recount-card"><span>Críticos</span><strong style="color:#fca5a5">${criticos}</strong></div>
     <div class="recount-card"><span>Confirmados</span><strong style="color:#86efac">${confirmados}</strong></div>
     <div class="recount-card"><span>Impacto Total</span><strong>$${Math.round(impacto).toLocaleString('es-CL')}</strong></div>`;
@@ -3165,13 +3778,24 @@ function renderRecount(){
   // Rankings (todos los rows, no filtrados — visión completa)
   renderRecountRankings(rows);
 
+  // Ordenar: mayor impacto primero (confirmados al fondo)
+  const sorted = [...filtered].sort((a, b) => _recountPriority(b) - _recountPriority(a));
+  const maxImpacto = sorted.length ? Math.abs(sorted[0].money || 0) : 1;
+
   const tbody=document.querySelector('#recount-table tbody');
-  tbody.innerHTML=filtered.slice(0,500).map(r=>{
+  const highlightId = window._recountHighlightId || null;
+  tbody.innerHTML=sorted.slice(0,500).map(r=>{
     const key='recount-status-'+r.rowId;
     const status=localStorage.getItem(key)||'Pendiente';
     const statusColor={Confirmado:'#16a34a',Recontado:'#2563eb',Pendiente:''}[status]||'';
-    return `<tr>
-      <td><span class="state-pill" style="${statusColor?'background:'+statusColor+';color:#fff':''}" onclick="toggleRecountStatus(${r.rowId})">${status}</span></td>
+    const semColor = _recountSemaforoColor(r, maxImpacto);
+    const isHighlighted = highlightId !== null && r.rowId === highlightId;
+    const rowStyle = isHighlighted ? 'background:#fef9c3;outline:2px solid #ca8a04' : '';
+    return `<tr id="recount-row-${r.rowId}" style="${rowStyle}">
+      <td style="text-align:center">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${semColor};vertical-align:middle;margin-right:4px" title="Prioridad impacto $"></span>
+        <span class="state-pill" style="${statusColor?'background:'+statusColor+';color:#fff':''}" onclick="toggleRecountStatus(${r.rowId})">${status}</span>
+      </td>
       <td title="${r.producto||''}">${(r.producto||'—').substring(0,45)}</td>
       <td>${r.marca||'—'}</td>
       <td>${r.familia||'—'}</td>
@@ -3181,6 +3805,31 @@ function renderRecount(){
       <td><span class="badge-severity sev-${r.severity}">${r.severityLabel}</span></td>
     </tr>`;
   }).join('');
+
+  // Si hay highlight, hacer scroll hasta la fila
+  if (highlightId !== null) {
+    setTimeout(() => {
+      const el = document.getElementById('recount-row-' + highlightId);
+      if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 80);
+  }
+}
+
+// Clic en ranking: filtra y destaca esa fila en la tabla principal
+function recountFiltrarPorFila(rowId) {
+  window._recountHighlightId = rowId;
+  // Limpiar filtro de búsqueda para no ocultar la fila
+  const searchEl = document.getElementById('recount-search');
+  if (searchEl) searchEl.value = '';
+  renderRecount();
+  // Scroll a la tabla principal
+  const tbl = document.getElementById('recount-table');
+  if (tbl) tbl.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function recountLimpiarFiltro() {
+  window._recountHighlightId = null;
+  renderRecount();
 }
 
 function renderRecountRankings(rows) {
@@ -3191,20 +3840,23 @@ function renderRecountRankings(rows) {
   const fmtMoney = v => '$' + Math.round(Math.abs(v)).toLocaleString('es-CL');
   const trunc    = (s, n) => s && s.length > n ? s.substring(0, n) + '…' : (s || '—');
 
+  const allImpactos = rows.map(r => Math.abs(r.money || 0));
+  const globalMax   = allImpactos.length ? Math.max(...allImpactos) : 1;
+
   const buildRows = (sorted, maxAbsVal, keyFn, valFn) =>
     sorted.slice(0, 20).map((r, i) => {
       const key    = 'recount-status-' + r.rowId;
       const status = localStorage.getItem(key) || 'Pendiente';
       const v      = valFn(r);
-      const pct    = maxAbsVal > 0 ? Math.min(100, Math.round(Math.abs(v) / maxAbsVal * 100)) : 0;
-      const color  = r.dif < 0 ? '#ef4444' : '#3b82f6';
+      const semColor = _recountSemaforoColor(r, globalMax);
       const statusColor = {Confirmado:'#16a34a',Recontado:'#2563eb'}[status] || '#94a3b8';
-      return `<tr>
+      return `<tr style="cursor:pointer" onclick="recountFiltrarPorFila(${r.rowId})" title="Clic para destacar en la tabla principal">
         <td class="rank-num">${i+1}</td>
-        <td class="rank-prod" title="${r.producto||''}">${trunc(r.producto, 40)}</td>
+        <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${semColor};margin-right:4px;vertical-align:middle"></span></td>
+        <td class="rank-prod" title="${r.producto||''}">${trunc(r.producto, 38)}</td>
         <td style="color:var(--muted);font-size:11px">${r.marca||'—'}</td>
         <td style="font-weight:700;color:${r.dif<0?'#dc2626':'#2563eb'};white-space:nowrap">${r.dif>0?'+':''}${r.dif} ud</td>
-        <td class="rank-val" style="color:${color};white-space:nowrap">${fmtMoney(v)}</td>
+        <td class="rank-val" style="color:${semColor};font-weight:700;white-space:nowrap">${fmtMoney(v)}</td>
         <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusColor}" title="${status}"></span></td>
       </tr>`;
     }).join('');
