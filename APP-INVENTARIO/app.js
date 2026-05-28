@@ -1460,6 +1460,56 @@ function clearDrilldownFilter(year) {
   renderDrilldown(year, getFilteredData(year));
 }
 
+/* ── HELPER GENÉRICO: estilos para cualquier hoja (xlsx-js-style) ─
+   Header azul oscuro, bordes finos, anchos automáticos, freeze A2.
+   Detección automática de columnas numéricas y monetarias.
+   Condicional rojo/azul en columnas que contengan DIFERENCIA o DIF.
+──────────────────────────────────────────────────────────────── */
+function styleSimpleSheet(ws, rows) {
+  if (!rows || !rows.length) return ws;
+  const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'FF002060' } };
+  const HDR_FONT = { color:{ rgb:'FFFFFFFF' }, bold:true, sz:10 };
+  const HDR_ALIGN = { horizontal:'center', vertical:'center', wrapText:true };
+  const THIN_BDR = { style:'thin', color:{ rgb:'FFBBBBBB' } };
+  const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
+
+  const nCols = rows[0]?.length || 1;
+  const hdr = rows[0] || [];
+  const isMoneyCol = hdr.map(h => /\$|VALOR|COSTO|PRECIO|IMPACTO|NETO/i.test(String(h)));
+  const isNumCol = hdr.map((_, ci) => {
+    const vals = rows.slice(1).filter(r => typeof r[ci] === 'number' || (!isNaN(parseFloat(r[ci])) && r[ci] !== '' && r[ci] !== null));
+    return vals.length > 0 && vals.length >= rows.slice(1).length * 0.4;
+  });
+
+  ws['!cols'] = hdr.map((_, ci) => {
+    const maxLen = Math.max(...rows.map(r => (r[ci]?.toString() || '').length));
+    return { wch: Math.min(Math.max(maxLen + 2, 8), 45) };
+  });
+  ws['!views'] = [{ state:'frozen', xSplit:0, ySplit:1, topLeftCell:'A2' }];
+
+  rows.forEach((row, rIdx) => {
+    const isHeader = rIdx === 0;
+    row.forEach((val, cIdx) => {
+      const addr = XLSX.utils.encode_cell({ r:rIdx, c:cIdx });
+      if (!ws[addr]) ws[addr] = { t:'s', v: val ?? '' };
+      const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.\-]/g,''));
+      const isNum = !isHeader && isNumCol[cIdx] && !isNaN(num);
+      if (isNum) { ws[addr].t = 'n'; ws[addr].v = num; ws[addr].z = isMoneyCol[cIdx] ? '$ #,##0' : '#,##0'; }
+      const isDif = /DIFERENCIA|DIF\b|DIFF/i.test(String(hdr[cIdx] || ''));
+      const fontRgb = isHeader ? 'FFFFFFFF' : (isDif && isNum ? (num < 0 ? 'FFC00000' : num > 0 ? 'FF0000FF' : 'FF1F2937') : 'FF1F2937');
+      ws[addr].s = {
+        fill:  isHeader ? HDR_FILL : { patternType:'none' },
+        font:  { color:{ rgb: fontRgb }, bold: isHeader, sz: isHeader ? 10 : 9 },
+        alignment: isHeader ? HDR_ALIGN : { horizontal: isNum ? 'right' : 'left' },
+        border: CELL_BDR,
+      };
+    });
+  });
+
+  ws['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:rows.length-1,c:nCols-1} });
+  return ws;
+}
+
 /* ── HELPER: estilos para TABLA_ANALISIS (xlsx-js-style) ────────
    Aplica header #002060/blanco/negrita, anchos, formatos numéricos,
    condicional rojo/azul en columnas H e I, bordes finos, freeze A2.
@@ -1563,7 +1613,7 @@ function exportDrilldownTable(year) {
   // Hoja RESULTADOS (cuadro resumen)
   const k  = calcKPIs(data);
   const m  = calcMonetarySummary(data);
-  const wsR = XLSX.utils.aoa_to_sheet([
+  const rowsR = [
     ['Concepto', 'Unidades', 'Valor $', '%'],
     ['Total Sistema',   Math.round(k.us), Math.round(k.ps), ''],
     ['Total Conteo',    Math.round(k.ur), Math.round(k.pr), ''],
@@ -1572,9 +1622,11 @@ function exportDrilldownTable(year) {
                         Math.round(data.reduce((s,r)=>s+(r.dif_peso>0?r.dif_peso:0),0)), ''],
     ['Diferencias (−)', data.filter(r=>r.dif_unidades<0).length,
                         Math.round(data.reduce((s,r)=>s+(r.dif_peso<0?r.dif_peso:0),0)), ''],
-    ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion),
+    ['Dispersion',      Math.round(k.adu), Math.round(m.dispersion),
                         (m.pctDispersion||0).toFixed(2)+'%'],
-  ]);
+  ];
+  const wsR = XLSX.utils.aoa_to_sheet(rowsR);
+  styleSimpleSheet(wsR, rowsR);
 
   XLSX.utils.book_append_sheet(wb, ws,  'TABLA_ANALISIS');
   XLSX.utils.book_append_sheet(wb, wsR, 'RESULTADOS');
@@ -3620,33 +3672,39 @@ function exportFinalExcel() {
   let f2=0, s2=0, fV2=0, sV2=0;
   for(const r of data){ if(r.dif_unidades<0){f2++;fV2+=Math.abs(r.dif_peso||0);}else if(r.dif_unidades>0){s2++;sV2+=Math.abs(r.dif_peso||0);} }
   const pctD = m.totalSistema>0?(m.dispersion/m.totalSistema*100).toFixed(2)+'%':'0%';
-  const ws2 = XLSX.utils.aoa_to_sheet([
+  const rows2 = [
     ['Concepto','Unidades','Valor $','%'],
     ['Total Sistema',   Math.round(k.us),  Math.round(k.ps),  ''],
     ['Total Conteo',    Math.round(k.ur),  Math.round(k.pr),  ''],
-    ['Diferencias', Math.round(k.du),  Math.round(m.difTotal), ''],
+    ['Diferencias',     Math.round(k.du),  Math.round(m.difTotal), ''],
     ['Diferencias (+)', s2,                Math.round(sV2), ''],
-    ['Diferencias (−)', f2,                Math.round(fV2), ''],
-    ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion), pctD],
-  ]);
+    ['Diferencias (-)', f2,                Math.round(fV2), ''],
+    ['Dispersion',      Math.round(k.adu), Math.round(m.dispersion), pctD],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(rows2);
+  styleSimpleSheet(ws2, rows2);
   XLSX.utils.book_append_sheet(wb, ws2, 'RESULTADOS');
 
   // Hoja 3 — DATOS_FALTANTES
   const faltantes = [...data].filter(r=>r.dif_unidades<0||r.dif_peso<0)
     .sort((a,b)=>(a.dif_peso||0)-(b.dif_peso||0));
-  const ws3 = XLSX.utils.aoa_to_sheet([
-    ['Codigo_tecnico','Descripcion','CONTEO','STOCK SISTEMA','DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERMALIA','MARCA'],
+  const rows3 = [
+    ['Codigo_tecnico','Descripcion','CONTEO','STOCK SISTEMA','DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERFAMILIA','MARCA'],
     ...faltantes.map(r=>[r.codigo||'',r.producto||'',r.unidades_real??0,r.unidades_sistema??0,r.dif_unidades??0,r.dif_peso??0,r.familia||'',r.perfamilia||'',r.marca||'']),
-  ]);
+  ];
+  const ws3 = XLSX.utils.aoa_to_sheet(rows3);
+  styleSimpleSheet(ws3, rows3);
   XLSX.utils.book_append_sheet(wb, ws3, 'DATOS_FALTANTES');
 
   // Hoja 4 — dinamica_HIPER
   const byHiper = aggregateBy(data, 'perfamilia').sort((a,b)=>b.adp-a.adp);
-  const ws4 = XLSX.utils.aoa_to_sheet([
-    ['FAMILIA','STOCK SISTEMA','CONTEO','DIFERENCIA','% Exact Unid','VALOR SISTEMA $','VALOR CONTEO','DIFERENCIA $','% Exact $'],
+  const rows4 = [
+    ['HIPERFAMILIA','STOCK SISTEMA','CONTEO','DIFERENCIA','% Exact Unid','VALOR SISTEMA $','VALOR CONTEO','DIFERENCIA $','% Exact $'],
     ...byHiper.map(g=>[g.fd?.perfamilia||g.key||'',Math.round(g.us),Math.round(g.ur),Math.round(g.du),(g.exact_unid||0).toFixed(2)+'%',Math.round(g.ps),Math.round(g.pr),Math.round(g.dp),(g.exact_peso||0).toFixed(2)+'%']),
-  ]);
-  XLSX.utils.book_append_sheet(wb, ws4, 'dinamica_HIPER');
+  ];
+  const ws4 = XLSX.utils.aoa_to_sheet(rows4);
+  styleSimpleSheet(ws4, rows4);
+  XLSX.utils.book_append_sheet(wb, ws4, 'HIPERFAMILIA');
 
   XLSX.writeFile(wb, `AnalisisFinal_${year}_${today()}.xlsx`);
   showToast('Excel Final con 4 hojas generado ✓', 'ok');
@@ -3919,16 +3977,19 @@ function exportRecountExcel() {
     Math.round(r.money),
     r.severityLabel,
   ]);
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-  ws['!cols'] = [{wch:4},{wch:12},{wch:45},{wch:18},{wch:18},{wch:18},{wch:10},{wch:14},{wch:12}];
+  const rows1 = [headers, ...data];
+  const ws = XLSX.utils.aoa_to_sheet(rows1);
+  styleSimpleSheet(ws, rows1);
   XLSX.utils.book_append_sheet(wb, ws, 'Reconteo');
 
   // Hoja ranking $
   const byMoney = [...rows].sort((a,b)=>Math.abs(b.money)-Math.abs(a.money)).slice(0,50);
-  const ws2 = XLSX.utils.aoa_to_sheet([
+  const rows2 = [
     ['#','Producto','Marca','DIFERENCIA','DIFERENCIA $','Severidad'],
     ...byMoney.map((r,i)=>[i+1, r.producto||'', r.marca||'', r.dif, Math.round(r.money), r.severityLabel]),
-  ]);
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(rows2);
+  styleSimpleSheet(ws2, rows2);
   XLSX.utils.book_append_sheet(wb, ws2, 'Ranking_$');
 
   XLSX.writeFile(wb, `Reconteo_${today()}.xlsx`);
