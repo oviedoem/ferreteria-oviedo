@@ -36,7 +36,7 @@ MD activos raiz:
 - Deploy V37.5a: 2026-05-27 15:12 — fix diasAntiguedad RCE: GRC ausente del filtro DOC IN + dedup por codigoTecnico min(dias) ✅
 - Deploy V37.5b: 2026-05-27 15:28 — auditoria DOC IN: GII+GTS agregados a whitelist + comentario clasificacion ✅
 - Deploy V37.6: 2026-05-27 16:39 — fix Informe Stock Fís todo cero: pem_bod/sem_bod/cem_bod/mem_bod en pipeline + panel ✅
-- Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1D descargar_pedidos.py ✅
+- Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1E descargar_pedidos.py ✅
 - Deploy V37.8: 2026-05-27 23:10 — Fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif (22 cols) + modal Dif/Ped rediseñados ✅
 
 ---
@@ -171,7 +171,7 @@ el disponible.
   Genera `data/despachos-comprometidos.json` y `data/despachos-detalle.json`.
   Estructura idéntica a pedidos-detalle para reutilizar el modal del panel.
   MESES_HISTORICO = 12 meses para despachos.
-- `ACTUALIZAR_TODO.bat`: PASO 1E agregado (después de 1D), llama `descargar_despachos.py`.
+- `ACTUALIZAR_TODO.bat`: PASO 1F agregado (después de 1E), llama `descargar_despachos.py`.
 
 **Frontend (V37.7 — base):**
 - Tabla: de 17 cols → 27 cols (PEM/SEM/CEM/MEM/TOTAL × Disp/Fís/Ped/DifStk/DifLib)
@@ -575,15 +575,15 @@ NO intentar arreglarlo.
 2. procesar-actualizacion.py → Datos.xlsx + escribe catalogo-dinamico.json
 3. xlsxacsv.py             → Datos.csv
 4. csvajson.py             → Datos.json
-   [PASO 1B] leerxlsm.py  → xlsm-enrich.json
-   [PASO 1C] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
+   [PASO 1C] leerxlsm.py  → xlsm-enrich.json
+   [PASO 1D] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
              SQL Server directo (IEM=72, RCE=55, CEM=24), sin XLSM ni macros manuales
              NOTA: El echo del bat dice "IEM y RCE" pero la lógica ya incluye CEM desde V36.9k
-   [PASO 1D] descargar_pedidos.py → pedidos-comprometidos.json + pedidos-detalle.json
+   [PASO 1E] descargar_pedidos.py → pedidos-comprometidos.json + pedidos-detalle.json
              Totales: R_STOCK_PRODUCTOS.ST_PEDIDO (fuente oficial — IDBODEGA lookup dinámico)
              Detalle: M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0, tipos NVM/VMN/VMP (V37.8)
              Campos: tipoDoc, tipoDocLabel, numero, fechaEmision, fechaEntrega, atraso, cliente, rut, vendedor, cant
-   [PASO 1E] descargar_despachos.py → despachos-comprometidos.json + despachos-detalle.json  (NUEVO V37.8)
+   [PASO 1F] descargar_despachos.py → despachos-comprometidos.json + despachos-detalle.json  (NUEVO V37.8)
              Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp, despachos pendientes)
              Estructura JSON idéntica a pedidos-detalle (reutiliza modal panel)
 5. main.py --sin-deploy
