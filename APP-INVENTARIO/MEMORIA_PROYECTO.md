@@ -313,6 +313,22 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.10 — 2026-05-29
+
+**Fix crítico — `const PLANO_SHEETS` borrado por `actualizar_planos.js`**
+
+**Causa:** El script `actualizar_planos.js` reemplazaba `_planoHtml_PATIO_CONSTRUCTOR` buscando el siguiente `\nfunction` como delimitador final. El `const PLANO_SHEETS = {...}` estaba entre esa función y `renderPlanos()` → fue incluido en el bloque "viejo" que se eliminó y no estaba en el bloque nuevo.
+
+**Síntoma:** Botón Planos no hacía nada. `PLANO_SHEETS` es `undefined` → `Object.keys(PLANO_SHEETS)` lanza ReferenceError en DOMContentLoaded → todos los handlers del nav que se registran después no se conectan (Avanzado, Final, Mejoras tampoco responden).
+
+**Fix:** Restaurar `const PLANO_SHEETS` en L3420, justo antes de `renderPlanos()`.
+
+**Regla para `actualizar_planos.js`:** Al regenerar planos, verificar que `const PLANO_SHEETS` sigue presente en app.js después del reemplazo. Si se borra, restaurar de inmediato.
+
+**node --check → OK ✓**
+
+---
+
 ### V7.9 — 2026-05-29
 
 **Fix — `generar_planos.js` + `planos_generated.js` + `app.js`: patentes 1-9 ignoradas**

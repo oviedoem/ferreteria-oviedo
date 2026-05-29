@@ -14,6 +14,17 @@ afirmación sobre la estructura del Excel o los datos:
 
 ---
 
+## REGLA — REGENERAR PLANOS (permanente desde V7.10)
+
+Al correr `generar_planos.js` y actualizar las 4 funciones `_planoHtml_X()` en `app.js`:
+
+1. **Verificar que `const PLANO_SHEETS` sigue presente** en app.js después del reemplazo.
+   - Posición correcta: justo antes de `function renderPlanos()`.
+   - Si no aparece en `grep 'const PLANO_SHEETS' app.js` → restaurar inmediatamente.
+2. **Por qué:** `PLANO_SHEETS` vive entre `_planoHtml_PATIO_CONSTRUCTOR` y `renderPlanos()`. Un script de reemplazo que use `\nfunction` como delimitador lo borra. Su ausencia es un `ReferenceError` que aborta el DOMContentLoaded → todos los tabs del nav quedan sin handler.
+
+---
+
 ## REGLA ANTI-RETROCESO — OBLIGATORIA EN CADA SESIÓN
 
 Antes de tocar una función, anotar explícitamente qué ya FUNCIONA y NO debe cambiar.

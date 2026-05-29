@@ -3417,6 +3417,13 @@ function limpiarCachePlanos() {
   showToast('Inventariador limpiado — plano reiniciado', 'ok');
 }
 
+const PLANO_SHEETS = {
+  'Sala EXHIBICION':      _planoHtml_Sala_EXHIBICION,
+  'BODEGA SALA':          _planoHtml_BODEGA_SALA,
+  'BODEGA 2DO PISO SALA': _planoHtml_BODEGA_2DO_PISO_SALA,
+  'PATIO CONSTRUCTOR':    _planoHtml_PATIO_CONSTRUCTOR
+};
+
 function renderPlanos() {
   const tabsEl    = document.getElementById('plano-tabs');
   const contentEl = document.getElementById('planos-content');
