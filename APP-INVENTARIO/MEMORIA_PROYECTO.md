@@ -309,6 +309,28 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.2 — 2026-05-29
+
+**Fix — `renderCorrelativo()`: guard `if (!tbody) return` (handlers Avanzado/Final/Mejoras no respondían)**
+
+**Causa raíz:** `renderCorrelativo()` (línea 3295) hacía `document.getElementById('corr-tbody')` → null (vista correlativo eliminada en V5.3). Como `corrState.rows` arranca vacío, entraba al branch `!corrState.rows.length` y ejecutaba `tbody.innerHTML = ''` → TypeError. Ese error abortaba el bloque DOMContentLoaded, dejando sin registrar los handlers de `data-mode="2025v2"`, `"mejoras"` y `"final"` → esos 3 botones no respondían al clic.
+
+**Fix aplicado:** Una línea insertada justo después de `const tbody = document.getElementById('corr-tbody')`:
+```js
+if (!tbody) return; // vista correlativo eliminada (V5.3) — evita TypeError que aborta DOMContentLoaded
+```
+
+**Verificaciones:**
+- `node --check app.js` → OK ✓
+- index.html: sin `corr-tbody`, `corr-empty`, `table-correlativo`, `view-checklist`, `drop-checklist`, ni `data-mode="checklist"` ✓
+- `exportChecklistExcel()` y `exportCorrelatjvoExcel()`: tienen null guards propios — solo se activan por interacción de usuario, no en arranque ✓
+- `renderModeV2`, `renderAnalisisFinal`, `getRecountRows`: no referencian corrState ni datos de checklist ✓
+- Handlers `.tab-btn[data-mode="checklist"]` en DOMContentLoaded: `querySelectorAll` devuelve NodeList vacía (botón no existe) → sin crash ✓
+
+**NO tocado:** resto del cuerpo de `renderCorrelativo()`, `initCorrelativoFromPlanos`, `handleCorrInput`, `finalizarPatente`, `resetCorrelativo`, `addCorrelatjvoRow`, `exportCorrelatjvoExcel`, `exportChecklistExcel`, ningún bloque DOMContentLoaded, index.html, style.css.
+
+---
+
 ### V7.1 — 2026-05-29
 
 **Fix — `readFileData()`: avance de patentes no se llenaba (2 bugs)**

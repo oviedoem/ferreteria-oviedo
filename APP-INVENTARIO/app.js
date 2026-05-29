@@ -3294,6 +3294,7 @@ function initCorrelativoFromPlanos(patentes) {
 
 function renderCorrelativo() {
   const tbody = document.getElementById('corr-tbody');
+  if (!tbody) return; // vista correlativo eliminada (V5.3) — evita TypeError que aborta DOMContentLoaded
   const empty = document.getElementById('corr-empty');
   if (!corrState.rows.length) {
     tbody.innerHTML = '';
