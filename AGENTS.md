@@ -39,6 +39,7 @@ MD activos raiz:
 - Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1E descargar_pedidos.py ✅
 - Deploy V37.8: 2026-05-27 23:10 — Fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif (22 cols) + modal Dif/Ped rediseñados ✅
 - Deploy V37.9: 2026-05-28 02:09 — Sync UI: badge V37.8, bat legacy → ACTUALIZAR_TODO, tutoriales actualizados, mejoras V37.8, regla sync permanente ✅
+- Deploy V38.0: 2026-05-29 18:01 — Módulo Despachos Pendientes: filtros FLETE VENTA/DESPACHO, 3 filtros nuevos, costo prom., email, Excel ✅
 
 ---
 
