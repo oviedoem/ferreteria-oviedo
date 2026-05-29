@@ -169,6 +169,7 @@ function autoDetectMapping(headers) {
     if (col) mapping[field] = col;
     else missing.push(field);
   }
+  applySavedMappingRules(headers, mapping);
   return { mapping, missing };
 }
 
@@ -176,6 +177,109 @@ function autoDetectMapping(headers) {
 const OPTIONAL_FIELDS = new Set(['peso_sistema','peso_real','zona','area','patente',
                                   'perfamilia','marca','familia','subfamilia','costo','codigo','dif_valor']);
 const CRITICAL_FIELDS = ['producto','unidades_sistema','unidades_real'];
+const LS_MAPPING_RULES_KEY = 'appInv_mapping_rules_v1';
+
+function normalizeInventoryValue(v) {
+  if (isBlankLike(v)) return '';
+  return v.toString()
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeSku(v) {
+  return normalizeInventoryValue(v)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9._-]/g, '')
+    .toUpperCase();
+}
+
+function normalizeProductName(v) {
+  return normalizeInventoryValue(v)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
+
+function normalizeNumber(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  const s = normalizeInventoryValue(v).replace(/\s/g, '');
+  if (!s) return 0;
+  const cleaned = s.replace(/[^\d.,\-]/g, '');
+  if (!cleaned || cleaned === '-' || cleaned === ',' || cleaned === '.') return 0;
+  const hasComma = cleaned.includes(',');
+  const hasDot   = cleaned.includes('.');
+  let normalized = cleaned;
+  if (hasComma && hasDot) {
+    normalized = cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')
+      ? cleaned.replace(/\./g, '').replace(',', '.')
+      : cleaned.replace(/,/g, '');
+  } else if (hasComma && !hasDot) {
+    normalized = cleaned.replace(',', '.');
+  }
+  const n = parseFloat(normalized);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function _stableHash(input) {
+  const s = String(input || '');
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+function buildCompositeKey(row) {
+  const sku = row._sku_norm || normalizeSku(row.codigo);
+  const product = row._producto_norm || normalizeProductName(row.producto);
+  const patente = normalizeSku(row.patente);
+  return [sku || product, patente, row.unidades_sistema, row.unidades_real].join('|');
+}
+
+function buildRowHash(row) {
+  return _stableHash([
+    row.sourceFile || '',
+    row.compositeKey || buildCompositeKey(row),
+    row.peso_sistema,
+    row.peso_real,
+    row.dif_peso,
+  ].join('|'));
+}
+
+function loadMappingRules() {
+  try { return JSON.parse(localStorage.getItem(LS_MAPPING_RULES_KEY) || '{}') || {}; }
+  catch { return {}; }
+}
+
+function saveMappingRules(mapping) {
+  const rules = loadMappingRules();
+  for (const [field, col] of Object.entries(mapping || {})) {
+    if (col) rules[normalizeHeader(col)] = field;
+  }
+  try { localStorage.setItem(LS_MAPPING_RULES_KEY, JSON.stringify(rules)); }
+  catch {}
+}
+
+function applySavedMappingRules(headers, mapping) {
+  const rules = loadMappingRules();
+  const byNorm = new Map((headers || []).map(h => [normalizeHeader(h), h]));
+  for (const [normCol, field] of Object.entries(rules)) {
+    if (!FIELD_ALIASES[field] || mapping[field]) continue;
+    const realCol = byNorm.get(normCol);
+    if (realCol) mapping[field] = realCol;
+  }
+}
+
+function isInvalidNumericInput(v) {
+  if (isBlankLike(v)) return false;
+  if (typeof v === 'number') return !Number.isFinite(v);
+  const raw = normalizeInventoryValue(v);
+  const hasDigit = /\d/.test(raw);
+  if (!hasDigit) return true;
+  return !Number.isFinite(normalizeNumber(raw));
+}
 
 function applyRowMapping(rawRow, mapping) {
   const row = {};
@@ -196,6 +300,8 @@ function applyRowMapping(rawRow, mapping) {
   for (const f of Object.keys(FIELD_ALIASES)) {
     if (!(f in row)) row[f] = '';
   }
+  row._num_invalid_fields = ['unidades_sistema','unidades_real','peso_sistema','peso_real','costo','dif_valor']
+    .filter(f => isInvalidNumericInput(row[f]));
   // Convertir numéricos
   row.unidades_sistema = parseNum(row.unidades_sistema);
   row.unidades_real    = parseNum(row.unidades_real);
@@ -212,8 +318,10 @@ function applyRowMapping(rawRow, mapping) {
   row.abs_dif_peso     = Math.abs(row.dif_peso);
   // Normalizar strings
   for (const f of ['producto','patente','zona','area','marca','familia','perfamilia','subfamilia','codigo','bodega']) {
-    row[f] = cleanText(row[f]);
+    row[f] = normalizeInventoryValue(row[f]);
   }
+  row._sku_norm = normalizeSku(row.codigo);
+  row._producto_norm = normalizeProductName(row.producto);
   // Fallback "Sin clasificar" para campos de categoría que quedan vacíos
   for (const f of ['marca','familia','perfamilia']) {
     if (!row[f]) row[f] = 'Sin clasificar';
@@ -225,25 +333,103 @@ function isValidInventoryRow(row) {
   return Boolean(cleanText(row.producto) || cleanText(row.codigo));
 }
 
+function validateInventoryRows(rows, ctx = {}) {
+  const existingHashes = ctx.existingHashes || new Set([...(state.data2025 || []), ...(state.data2026 || [])].map(r => r.rowHash).filter(Boolean));
+  const batchHashes = new Set();
+  const compositeSeen = new Set();
+  const warnings = [];
+  const errors = [];
+  const validRows = [];
+  let emptyRows = 0;
+  let duplicates = 0;
+
+  rows.forEach((row, idx) => {
+    const rowNum = idx + 1;
+    if (!isValidInventoryRow(row)) {
+      emptyRows++;
+      return;
+    }
+
+    const rowWarnings = [];
+    if (!row._sku_norm) rowWarnings.push('SKU vacio');
+    if (row._num_invalid_fields?.length) rowWarnings.push(`tipo numerico invalido: ${row._num_invalid_fields.join('/')}`);
+    for (const f of ['unidades_sistema','unidades_real','peso_sistema','peso_real','costo','dif_peso']) {
+      if (!Number.isFinite(Number(row[f]))) rowWarnings.push(`${f} invalido`);
+    }
+    if (row.unidades_sistema < 0 || row.unidades_real < 0) rowWarnings.push('unidades negativas');
+    if (row.peso_sistema < 0 || row.peso_real < 0) rowWarnings.push('valor negativo');
+    if (row.costo < 0) rowWarnings.push('costo negativo');
+    if ((row.peso_sistema || row.peso_real) && !row.costo && !row.dif_valor_excel) rowWarnings.push('valor sin costo/diferencia');
+
+    row.sourceFile = ctx.sourceFile || row.sourceFile || '';
+    row.importTimestamp = ctx.importTimestamp || Date.now();
+    row.compositeKey = buildCompositeKey(row);
+    row.rowHash = buildRowHash(row);
+
+    if (batchHashes.has(row.rowHash) || existingHashes.has(row.rowHash)) {
+      duplicates++;
+      rowWarnings.push('duplicado exacto omitido');
+      warnings.push({ row: rowNum, msg: rowWarnings.join(', ') });
+      return;
+    }
+    batchHashes.add(row.rowHash);
+
+    if (compositeSeen.has(row.compositeKey)) rowWarnings.push('posible duplicado producto/patente');
+    compositeSeen.add(row.compositeKey);
+
+    if (!row.producto && !row.codigo) errors.push({ row: rowNum, msg: 'sin producto ni codigo' });
+    if (rowWarnings.length) warnings.push({ row: rowNum, msg: rowWarnings.join(', ') });
+    existingHashes.add(row.rowHash);
+    validRows.push(row);
+  });
+
+  return {
+    validRows,
+    summary: {
+      sourceFile: ctx.sourceFile || '',
+      valid: validRows.length,
+      warnings: warnings.length,
+      errors: errors.length,
+      emptyRows,
+      duplicates,
+      warningItems: warnings.slice(0, 5),
+      errorItems: errors.slice(0, 5),
+    },
+  };
+}
+
+function mergeValidationSummaries(items) {
+  return items.reduce((acc, s) => {
+    acc.valid += s.valid || 0;
+    acc.warnings += s.warnings || 0;
+    acc.errors += s.errors || 0;
+    acc.emptyRows += s.emptyRows || 0;
+    acc.duplicates += s.duplicates || 0;
+    acc.warningItems.push(...(s.warningItems || []));
+    acc.errorItems.push(...(s.errorItems || []));
+    return acc;
+  }, { valid:0, warnings:0, errors:0, emptyRows:0, duplicates:0, warningItems:[], errorItems:[] });
+}
+
+function renderValidationSummary(summary) {
+  const el = document.getElementById('validation-summary');
+  if (!el || !summary) return;
+  const details = [];
+  if (summary.emptyRows) details.push(`${summary.emptyRows.toLocaleString('es-CL')} filas vacias omitidas`);
+  if (summary.duplicates) details.push(`${summary.duplicates.toLocaleString('es-CL')} duplicados exactos omitidos`);
+  for (const w of (summary.warningItems || []).slice(0, 3)) details.push(`Fila ${w.row}: ${w.msg}`);
+  for (const e of (summary.errorItems || []).slice(0, 3)) details.push(`Error fila ${e.row}: ${e.msg}`);
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <strong>Validacion de datos</strong>
+    <div class="val-ok">Filas validas: ${summary.valid.toLocaleString('es-CL')}</div>
+    <div class="val-warn">Advertencias: ${summary.warnings.toLocaleString('es-CL')}</div>
+    <div class="val-error">Errores criticos: ${summary.errors.toLocaleString('es-CL')}</div>
+    ${details.length ? `<div class="val-detail">${details.map(d => `<div>${d}</div>`).join('')}</div>` : ''}`;
+}
+
 function parseNum(v) {
-  if (v === null || v === undefined || v === '') return 0;
-  if (typeof v === 'number') return isNaN(v) ? 0 : v;
-  const s = v.toString().replace(/\s/g, '');
-  // Manejar formato europeo (1.234,56) y americano (1,234.56)
-  const cleaned = s.replace(/[^\d.,\-]/g, '');
-  const hasComma = cleaned.includes(',');
-  const hasDot   = cleaned.includes('.');
-  let normalized = cleaned;
-  if (hasComma && hasDot) {
-    // Detectar cuál es separador decimal (el último)
-    normalized = cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')
-      ? cleaned.replace(/\./g, '').replace(',', '.')
-      : cleaned.replace(/,/g, '');
-  } else if (hasComma && !hasDot) {
-    normalized = cleaned.replace(',', '.');
-  }
-  const n = parseFloat(normalized);
-  return isNaN(n) ? 0 : n;
+  return normalizeNumber(v);
 }
 
 // ── SELECCIÓN INTELIGENTE DE HOJA ─────────────────────────────
@@ -466,6 +652,8 @@ async function loadFiles(files, year) {
   showToast('Leyendo archivos…', 'info');
   let allRows = [];
   let sharedMapping = null;
+  const validationSummaries = [];
+  const importHashes = new Set([...(state.data2025 || []), ...(state.data2026 || [])].map(r => r.rowHash).filter(Boolean));
 
   for (let i = 0; i < fileArr.length; i++) {
     const file = fileArr[i];
@@ -487,6 +675,15 @@ async function loadFiles(files, year) {
           sharedMapping = fallback;
         } else {
           // Último recurso: mostrar diálogo solo con los campos faltantes
+          renderValidationSummary({
+            valid: 0,
+            warnings: 0,
+            errors: critMissing.length,
+            emptyRows: 0,
+            duplicates: 0,
+            warningItems: [],
+            errorItems: critMissing.map((f, idx) => ({ row: idx + 1, msg: `columna requerida no detectada: ${FIELD_LABELS[f] || f}` })),
+          });
           state.pendingLoad = { files: fileArr.slice(i), year, partialMapping: mapping };
           showMappingDialog(data.headers, mapping, year);
           return;
@@ -494,16 +691,25 @@ async function loadFiles(files, year) {
       } else {
         for (const f of missing) if (!mapping[f]) mapping[f] = null;
         sharedMapping = mapping;
+        saveMappingRules(sharedMapping);
       }
     }
 
     const normalized = data.rows
       .map(r => applyRowMapping(r, sharedMapping))
       .filter(isValidInventoryRow);
-    debugValidateRecountRows(normalized, `${year} · ${file.name}`);
-    allRows = allRows.concat(normalized);
+    const checked = validateInventoryRows(normalized, { sourceFile: file.name, importTimestamp: Date.now(), existingHashes: importHashes });
+    validationSummaries.push(checked.summary);
+    debugValidateRecountRows(checked.validRows, `${year} · ${file.name}`);
+    allRows = allRows.concat(checked.validRows);
   }
 
+  const validationSummary = mergeValidationSummaries(validationSummaries);
+  renderValidationSummary(validationSummary);
+  if (validationSummary.errors > 0 && !allRows.length) {
+    showToast('Carga bloqueada: errores críticos en los datos.', 'error');
+    return;
+  }
   if (!allRows.length) { showToast('Sin datos válidos en los archivos.', 'error'); return; }
 
   if (year === '2025') state.data2025 = state.data2025.concat(allRows);
@@ -593,6 +799,9 @@ async function applyMapping() {
 
   const { files } = state.pendingLoad;
   let allRows = [];
+  const validationSummaries = [];
+  const importHashes = new Set([...(state.data2025 || []), ...(state.data2026 || [])].map(r => r.rowHash).filter(Boolean));
+  saveMappingRules(mapping);
   for (const file of files) {
     let data;
     try { data = await readFileData(file); }
@@ -600,9 +809,19 @@ async function applyMapping() {
     const rows = data.rows
       .map(r => applyRowMapping(r, mapping))
       .filter(isValidInventoryRow);
-    debugValidateRecountRows(rows, `${year} · ${file.name} · mapping manual`);
-    allRows = allRows.concat(rows);
+    const checked = validateInventoryRows(rows, { sourceFile: file.name, importTimestamp: Date.now(), existingHashes: importHashes });
+    validationSummaries.push(checked.summary);
+    debugValidateRecountRows(checked.validRows, `${year} · ${file.name} · mapping manual`);
+    allRows = allRows.concat(checked.validRows);
   }
+
+  const validationSummary = mergeValidationSummaries(validationSummaries);
+  renderValidationSummary(validationSummary);
+  if (validationSummary.errors > 0 && !allRows.length) {
+    showToast('Carga bloqueada: errores críticos en los datos.', 'error');
+    return;
+  }
+  if (!allRows.length) { showToast('Sin datos válidos en los archivos.', 'error'); return; }
 
   if (year === '2025') state.data2025 = state.data2025.concat(allRows);
   else                 state.data2026 = state.data2026.concat(allRows);

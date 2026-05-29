@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.1
+# VERSION: V5.2
 # FECHA: 2026-05-28
 
 ---
@@ -308,6 +308,48 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.2 — 2026-05-28
+
+**FASE 1 — Robustez de datos incremental**
+
+**Validación previa antes de consolidar**
+- Nueva función `validateInventoryRows(rows, ctx)` aplicada en `loadFiles()` y `applyMapping()` después del mapeo y antes de concatenar en `state.data2025/data2026`.
+- Valida filas vacías, SKU vacío, tipos numéricos inválidos, números negativos, valores/pesos negativos, posibles duplicados producto/patente y duplicados exactos.
+- Duplicados exactos se omiten como advertencia para prevenir doble carga accidental.
+- Advertencias no bloquean operación. Solo bloquea si no quedan filas válidas o faltan columnas críticas.
+
+**Resumen visual**
+- Nuevo placeholder `#validation-summary` en sidebar.
+- Nueva función `renderValidationSummary(summary)` muestra:
+  - Filas válidas
+  - Advertencias
+  - Errores críticos
+  - Detalle breve de filas vacías/duplicadas/primeras advertencias.
+
+**Normalización interna**
+- Nuevas funciones:
+  - `normalizeInventoryValue()`
+  - `normalizeSku()`
+  - `normalizeProductName()`
+  - `normalizeNumber()`
+- `parseNum()` ahora delega en `normalizeNumber()` para mejorar formatos chilenos y caracteres invisibles.
+- `applyRowMapping()` agrega `_sku_norm` y `_producto_norm` para matching/validación interna sin cambiar nombres visibles ni columnas exportadas.
+
+**Metadata por fila**
+- Nuevas funciones:
+  - `buildCompositeKey(row)`
+  - `buildRowHash(row)`
+- Cada fila válida recibe `sourceFile`, `importTimestamp`, `compositeKey`, `rowHash`.
+
+**Persistencia de reglas de mapeo**
+- Nuevo `LS_MAPPING_RULES_KEY = appInv_mapping_rules_v1`.
+- Nuevas funciones `loadMappingRules()`, `saveMappingRules(mapping)`, `applySavedMappingRules(headers, mapping)`.
+- Los mapeos detectados o manuales se guardan en `localStorage` para acelerar cargas futuras.
+
+**NO tocado:** filtros, comparativos, exports, KPIs, persistencia IndexedDB existente, Planos, reconteo, email/print, `getFilteredData`, `renderMode*`.
+
+**Verificación:** `node --check app.js` → OK ✓
 
 ### V5.1 — 2026-05-28
 
