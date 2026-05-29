@@ -313,6 +313,17 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.6 — 2026-05-29
+
+**Fix — tab Mejoras 2026 mostraba contenido hardcodeado sin archivos cargados**
+
+- **Causa:** onclick handler de `.tab-btn[data-mode="mejoras"]` llamaba `switchToMode('mejoras')` directamente sin verificar `state.data2025/data2026`. El view contiene KPIs y texto hardcodeado (valores de análisis previo) que siempre eran visibles.
+- **Fix:** guard `if (!state.data2025.length && !state.data2026.length)` → toast + `return`. Sin datos: permanece en welcome screen. Con datos: comportamiento anterior sin cambio.
+- **NO tocado:** `switchToMode`, `refreshView`, contenido de `view-mejoras` en index.html, ninguna otra función.
+- **node --check → OK ✓**
+
+---
+
 ### V7.5 — 2026-05-29
 
 **Auditoría 4 puntos — A/B/C ya presentes, D corregido**
