@@ -35,7 +35,7 @@ const state = {
 
 // ── MAPEO DE COLUMNAS ──────────────────────────────────────────
 // Incluye columnas específicas de archivos El Manzano:
-//   TABLA_ANALISIS: Descripcion, CONTEO (físico), STOCK SISTEMA, FAMILIA, MARCA, HIPERMALIA
+//   TABLA_ANALISIS: Descripcion, CONTEO (físico), STOCK SISTEMA, FAMILIA, MARCA, HIPERFAMILIA
 //   AREA 2/3 / registro2026: CODIGO, PRODUCTOS, AREA, PATENTE, CONTEO, CONTO
 const FIELD_ALIASES = {
   producto:         ['DESCRIPCION','DESCRIPCIÓN','PRODUCTOS','PRODUCTO','SKU',
@@ -1460,11 +1460,11 @@ function clearDrilldownFilter(year) {
   renderDrilldown(year, getFilteredData(year));
 }
 
-/* ── HELPER GENÉRICO: estilos para cualquier hoja (xlsx-js-style) ─
-   Header azul oscuro, bordes finos, anchos automáticos, freeze A2.
-   Detección automática de columnas numéricas y monetarias.
-   Condicional rojo/azul en columnas que contengan DIFERENCIA o DIF.
-──────────────────────────────────────────────────────────────── */
+/* ── HELPER: estilador genérico para cualquier hoja xlsx-js-style ─
+   Aplica header #002060/blanco/negrita, bordes finos, anchos auto,
+   formato $ / #,##0 según encabezado, condicional rojo/azul en cols
+   DIFERENCIA/DIF, freeze fila 1. Celdas de datos con fondo blanco.
+──────────────────────────────────────────────────────────────────── */
 function styleSimpleSheet(ws, rows) {
   if (!rows || !rows.length) return ws;
   const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'FF002060' } };
@@ -1613,20 +1613,18 @@ function exportDrilldownTable(year) {
   // Hoja RESULTADOS (cuadro resumen)
   const k  = calcKPIs(data);
   const m  = calcMonetarySummary(data);
-  const rowsR = [
+  const wsR = XLSX.utils.aoa_to_sheet([
     ['Concepto', 'Unidades', 'Valor $', '%'],
     ['Total Sistema',   Math.round(k.us), Math.round(k.ps), ''],
     ['Total Conteo',    Math.round(k.ur), Math.round(k.pr), ''],
     ['Diferencia',      Math.round(k.du), Math.round(m.difTotal), ''],
     ['Diferencias (+)', data.filter(r=>r.dif_unidades>0).length,
                         Math.round(data.reduce((s,r)=>s+(r.dif_peso>0?r.dif_peso:0),0)), ''],
-    ['Diferencias (-)', data.filter(r=>r.dif_unidades<0).length,
+    ['Diferencias (−)', data.filter(r=>r.dif_unidades<0).length,
                         Math.round(data.reduce((s,r)=>s+(r.dif_peso<0?r.dif_peso:0),0)), ''],
-    ['Dispersion',      Math.round(k.adu), Math.round(m.dispersion),
+    ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion),
                         (m.pctDispersion||0).toFixed(2)+'%'],
-  ];
-  const wsR = XLSX.utils.aoa_to_sheet(rowsR);
-  styleSimpleSheet(wsR, rowsR);
+  ]);
 
   XLSX.utils.book_append_sheet(wb, ws,  'TABLA_ANALISIS');
   XLSX.utils.book_append_sheet(wb, wsR, 'RESULTADOS');
@@ -1858,6 +1856,7 @@ function exportTableToExcel(tableId, fileName) {
   table.querySelectorAll('tr').forEach(tr => {
     const cells = [...tr.querySelectorAll('th,td')].map(c => {
       const txt = c.textContent.trim();
+      // Intentar convertir a número: quitar $, puntos miles, espacios
       const clean = txt.replace(/[$\s]/g,'').replace(/\./g,'').replace(',','.');
       const n = parseFloat(clean);
       return (!isNaN(n) && txt !== '' && /[\d]/.test(txt)) ? n : txt;
@@ -1871,40 +1870,37 @@ function exportTableToExcel(tableId, fileName) {
   const ws = XLSX.utils.aoa_to_sheet(allRows);
   styleSimpleSheet(ws, allRows);
 
-  // Override fila footer (TOTAL): fondo azul claro + negrita
+  // Override footer TOTAL en azul claro (después de styleSimpleSheet)
   const lastR = allRows.length - 1;
   if (typeof allRows[lastR]?.[0] === 'string' && /total/i.test(String(allRows[lastR][0]))) {
-    const THIN_BDR = { style:'thin', color:{ rgb:'FFBBBBBB' } };
-    const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
     for (let ci = 0; ci < nCols; ci++) {
       const addr = XLSX.utils.encode_cell({ r: lastR, c: ci });
       if (ws[addr]) ws[addr].s = { ...ws[addr].s,
         fill: { patternType:'solid', fgColor:{ rgb:'FFDBEAFE' } },
-        font: { ...(ws[addr].s?.font || {}), bold: true },
-        border: CELL_BDR,
+        font: { ...(ws[addr].s?.font || {}), bold:true },
       };
     }
   }
 
   // Hoja LEYENDA
-  const headers = allRows[0] || [];
   const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'FF002060' } };
   const HDR_FONT = { color:{ rgb:'FFFFFFFF' }, bold:true, sz:10 };
   const THIN_BDR = { style:'thin', color:{ rgb:'FFBBBBBB' } };
   const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
+  const headers = allRows[0] || [];
   const legendRows = [
-    ['Columna', 'Descripcion'],
-    ['DIFERENCIA / DIF UNID', 'Conteo fisico - Stock sistema (negativo=faltante, positivo=sobrante)'],
-    ['DIFERENCIA $ / DIF $', 'Diferencia en unidades x Costo unitario'],
-    ['DISPERSION', '|Faltantes| + |Sobrantes| en $ - cuanto se aleja del sistema'],
-    ['CONTEO', 'Unidades fisicamente contadas en el inventario'],
+    ['Columna', 'Descripción'],
+    ['DIFERENCIA / DIF UNID', 'Conteo físico − Stock sistema (negativo = faltante, positivo = sobrante)'],
+    ['DIFERENCIA $ / DIF $', 'Diferencia en unidades × Costo unitario'],
+    ['DISPERSIÓN', '|Faltantes| + |Sobrantes| en $ — mide cuánto se aleja del sistema'],
+    ['CONTEO', 'Unidades físicamente contadas en el inventario'],
     ['STOCK SISTEMA / UNID SISTEMA', 'Unidades registradas en el sistema (ERP)'],
-    ['VALOR CONTEO / VALOR SISTEMA', 'Unidades x Costo unitario'],
-    ['% EXACTITUD', '(1 - |Dif| / Sistema) x 100 -- 100% = sin diferencias'],
+    ['VALOR CONTEO / VALOR SISTEMA', 'Unidades × Costo unitario'],
+    ['% EXACTITUD', '(1 − |Dif| / Sistema) × 100 — 100% = sin diferencias'],
     ...headers.filter(h => h && !['DIFERENCIA','DIF','CONTEO','STOCK','VALOR','EXACTITUD'].some(k => String(h).toUpperCase().includes(k)))
-              .map(h => [String(h), 'Columna descriptiva / clasificacion del producto']),
+              .map(h => [String(h), 'Columna descriptiva / clasificación del producto']),
     ['', ''],
-    ['Generado', `${new Date().toLocaleString('es-CL')} -- Ferreteria Oviedo El Manzano`],
+    ['Generado', `${new Date().toLocaleString('es-CL')} — Ferretería Oviedo · El Manzano`],
   ];
   const wsL = XLSX.utils.aoa_to_sheet(legendRows);
   wsL['!cols'] = [{ wch:32 }, { wch:70 }];
@@ -3616,7 +3612,7 @@ function exportFinalExcel() {
   // Hoja 1 — TABLA_ANALISIS (12 columnas, estilizada)
   const headers = ['Codigo_tecnico','Descripcion','CONTEO','COSTO $','VALOR CONTEO',
                    'STOCK SISTEMA','VALOR SISTEMA $','DIFERENCIA','DIFERENCIA $',
-                   'FAMILIA','HIPERMALIA','MARCA'];
+                   'FAMILIA','HIPERFAMILIA','MARCA'];
   const rows = [headers, ...data.map(r=>[
     r.codigo||'', r.producto||'',
     r.unidades_real??0, r.costo??0, r.peso_real??0,
@@ -3634,39 +3630,33 @@ function exportFinalExcel() {
   let f2=0, s2=0, fV2=0, sV2=0;
   for(const r of data){ if(r.dif_unidades<0){f2++;fV2+=Math.abs(r.dif_peso||0);}else if(r.dif_unidades>0){s2++;sV2+=Math.abs(r.dif_peso||0);} }
   const pctD = m.totalSistema>0?(m.dispersion/m.totalSistema*100).toFixed(2)+'%':'0%';
-  const rows2 = [
+  const ws2 = XLSX.utils.aoa_to_sheet([
     ['Concepto','Unidades','Valor $','%'],
     ['Total Sistema',   Math.round(k.us),  Math.round(k.ps),  ''],
     ['Total Conteo',    Math.round(k.ur),  Math.round(k.pr),  ''],
-    ['Diferencias',     Math.round(k.du),  Math.round(m.difTotal), ''],
+    ['Diferencias', Math.round(k.du),  Math.round(m.difTotal), ''],
     ['Diferencias (+)', s2,                Math.round(sV2), ''],
-    ['Diferencias (-)', f2,                Math.round(fV2), ''],
-    ['Dispersion',      Math.round(k.adu), Math.round(m.dispersion), pctD],
-  ];
-  const ws2 = XLSX.utils.aoa_to_sheet(rows2);
-  styleSimpleSheet(ws2, rows2);
+    ['Diferencias (−)', f2,                Math.round(fV2), ''],
+    ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion), pctD],
+  ]);
   XLSX.utils.book_append_sheet(wb, ws2, 'RESULTADOS');
 
   // Hoja 3 — DATOS_FALTANTES
   const faltantes = [...data].filter(r=>r.dif_unidades<0||r.dif_peso<0)
     .sort((a,b)=>(a.dif_peso||0)-(b.dif_peso||0));
-  const rows3 = [
+  const ws3 = XLSX.utils.aoa_to_sheet([
     ['Codigo_tecnico','Descripcion','CONTEO','STOCK SISTEMA','DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERFAMILIA','MARCA'],
     ...faltantes.map(r=>[r.codigo||'',r.producto||'',r.unidades_real??0,r.unidades_sistema??0,r.dif_unidades??0,r.dif_peso??0,r.familia||'',r.perfamilia||'',r.marca||'']),
-  ];
-  const ws3 = XLSX.utils.aoa_to_sheet(rows3);
-  styleSimpleSheet(ws3, rows3);
+  ]);
   XLSX.utils.book_append_sheet(wb, ws3, 'DATOS_FALTANTES');
 
   // Hoja 4 — dinamica_HIPER
   const byHiper = aggregateBy(data, 'perfamilia').sort((a,b)=>b.adp-a.adp);
-  const rows4 = [
-    ['HIPERFAMILIA','STOCK SISTEMA','CONTEO','DIFERENCIA','% Exact Unid','VALOR SISTEMA $','VALOR CONTEO','DIFERENCIA $','% Exact $'],
+  const ws4 = XLSX.utils.aoa_to_sheet([
+    ['FAMILIA','STOCK SISTEMA','CONTEO','DIFERENCIA','% Exact Unid','VALOR SISTEMA $','VALOR CONTEO','DIFERENCIA $','% Exact $'],
     ...byHiper.map(g=>[g.fd?.perfamilia||g.key||'',Math.round(g.us),Math.round(g.ur),Math.round(g.du),(g.exact_unid||0).toFixed(2)+'%',Math.round(g.ps),Math.round(g.pr),Math.round(g.dp),(g.exact_peso||0).toFixed(2)+'%']),
-  ];
-  const ws4 = XLSX.utils.aoa_to_sheet(rows4);
-  styleSimpleSheet(ws4, rows4);
-  XLSX.utils.book_append_sheet(wb, ws4, 'HIPERFAMILIA');
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws4, 'dinamica_HIPER');
 
   XLSX.writeFile(wb, `AnalisisFinal_${year}_${today()}.xlsx`);
   showToast('Excel Final con 4 hojas generado ✓', 'ok');
@@ -3939,19 +3929,16 @@ function exportRecountExcel() {
     Math.round(r.money),
     r.severityLabel,
   ]);
-  const rows1 = [headers, ...data];
-  const ws = XLSX.utils.aoa_to_sheet(rows1);
-  styleSimpleSheet(ws, rows1);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  ws['!cols'] = [{wch:4},{wch:12},{wch:45},{wch:18},{wch:18},{wch:18},{wch:10},{wch:14},{wch:12}];
   XLSX.utils.book_append_sheet(wb, ws, 'Reconteo');
 
   // Hoja ranking $
   const byMoney = [...rows].sort((a,b)=>Math.abs(b.money)-Math.abs(a.money)).slice(0,50);
-  const rows2 = [
+  const ws2 = XLSX.utils.aoa_to_sheet([
     ['#','Producto','Marca','DIFERENCIA','DIFERENCIA $','Severidad'],
     ...byMoney.map((r,i)=>[i+1, r.producto||'', r.marca||'', r.dif, Math.round(r.money), r.severityLabel]),
-  ];
-  const ws2 = XLSX.utils.aoa_to_sheet(rows2);
-  styleSimpleSheet(ws2, rows2);
+  ]);
   XLSX.utils.book_append_sheet(wb, ws2, 'Ranking_$');
 
   XLSX.writeFile(wb, `Reconteo_${today()}.xlsx`);

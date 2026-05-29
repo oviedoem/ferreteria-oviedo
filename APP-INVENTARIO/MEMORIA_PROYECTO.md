@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V4.6
+# VERSION: V4.8
 # FECHA: 2026-05-28
 
 ---
@@ -309,74 +309,36 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
-### V4.8 — 2026-05-29 (reconciliacion A+B)
+### V4.8 — 2026-05-28 (MERGE celular + V4.6)
 
-**FUSION DE TRABAJOS — sin perder mejoras de ninguno de los dos lados:**
-- (A) cloud: styleSimpleSheet + hojas RESULTADOS/DATOS_FALTANTES/HIPERFAMILIA/Reconteo
-- (B) PC local V4.6: exportTableToExcel reescrita, buildFamiliaIndex+subfamilia,
-  bordes CSS .data-table, titulos canonicos, regla anti-retroceso AGENTS.md
+**Origen del merge:**
+- Rama TRABAJO (V4.6): exportTableToExcel reescrita con estilos, buildFamiliaIndex+subfamilia, bordes .data-table, títulos canónicos, regla anti-retroceso.
+- Rama celular (origin/main dc02e99→77160a0): `styleSimpleSheet()`, renombres HIPERMALIA→HIPERFAMILIA en salidas, y workflow `.github/workflows/deploy-inventario.yml`.
 
-**CAMBIO 1 — exportTableToExcel usa styleSimpleSheet como ESTILADOR UNICO**
-- Eliminada lógica de estilos inline duplicada (HDR_FILL/THIN_BDR/CELL_BDR repetidos)
-- Conservado: extraccion crudos thead/tbody/tfoot (B) + hoja LEYENDA con ASCII puro
-- Override footer (fila TOTAL): fondo #DBEAFE + negrita, aplicado post-styleSimpleSheet
-- Unico estilador de datos: styleSimpleSheet → fondo blanco garantizado, sin negro
+**CAMBIO 1 — styleSimpleSheet agregado (de celular)**
+- Función `styleSimpleSheet(ws, rows)` insertada antes de `styleAnalisisSheet`.
+- Estilador genérico de propósito general: header #002060 blanco, bordes FFBBBBBB, columnas auto, formato `$ #,##0` / `#,##0` según encabezado, condicional rojo/azul en DIFERENCIA/DIF, freeze A2, datos con `patternType:'none'`.
+- `styleAnalisisSheet` conservado (TABLA_ANALISIS 12-col — anchos fijos, formatos por índice).
 
-**CAMBIO 2 — Typo corregido: HIPERMALIA → HIPERFAMILIA en exportDrilldownTable**
-- Header TABLA_ANALISIS columna K corregido
-- Consistente con hoja 'HIPERFAMILIA' de exportFinalExcel
+**CAMBIO 2 — exportTableToExcel refactorizada para usar styleSimpleSheet**
+- Inline style logic eliminada (HDR_FILL, HDR_FONT, HDR_ALIGN, isNumCol, isMoneyCol, colWidths, bucle ws manual).
+- Ahora: `XLSX.utils.aoa_to_sheet(allRows)` + `styleSimpleSheet(ws, allRows)`.
+- CONSERVADO de V4.6: extracción DOM thead/tbody/tfoot, hoja LEYENDA, override footer TOTAL azul `FFDBEAFE` aplicado después de `styleSimpleSheet`.
 
-**CAMBIO 3 — ASCII puro en strings Excel (sin tildes/emdash)**
-- 'Diferencias (-)' en lugar de 'Diferencias (-)' con caracter especial
-- Textos LEYENDA: sin tildes, sin simbolos unicode (compatibilidad ANSI)
+**CAMBIO 3 — HIPERMALIA → HIPERFAMILIA en headers de salida Excel**
+- Líneas de output cambiadas: `exportDrilldownTable` (header array `~l.1541`), `exportFinalExcel` hoja 1 (`~l.3605`) y hoja 3 (`~l.3638`).
+- Aliases de lectura (`FIELD_ALIASES`, `rowValueByAliases`) — intactos. Siguen reconociendo 'HIPERMALIA' como typo real de los archivos EM.
 
-**ESTADO UNICO ESTILADOR:**
-| Funcion | Estilador datos | Notas |
-|---|---|---|
-| exportTableToExcel | styleSimpleSheet | + override footer TOTAL |
-| exportDrilldownTable TABLA_ANALISIS | styleAnalisisSheet | 12 cols fijas |
-| exportDrilldownTable RESULTADOS | styleSimpleSheet | |
-| exportFinalExcel ws1 | styleAnalisisSheet | |
-| exportFinalExcel ws2/ws3/ws4 | styleSimpleSheet | |
-| exportRecountExcel | styleSimpleSheet | ambas hojas |
+**CAMBIO 4 — Workflow deploy-inventario.yml (de celular)**
+- Copiado a `D:\ferreteria-oviedo\APP-INVENTARIO\.github\workflows\deploy-inventario.yml`.
+- Dispara en push a main con paths `APP-INVENTARIO/**` o vía `workflow_dispatch`.
+- Despliega a GitHub Pages usando la carpeta `APP-INVENTARIO` como raíz.
 
-**VERIFICACION:**
-- node --check app.js: OK
-- HDR_FILL en datos: solo en styleSimpleSheet y styleAnalisisSheet
-- buildFamiliaIndex con subfamilia: intacto (V4.6)
-- Workflow GitHub Pages: intacto (.github/workflows/deploy-inventario.yml)
-- Anti-retroceso AGENTS.md: intacto (V4.6)
-
-**NO TOCADO:** parseo, filtrado, drilldown, KPIs, planos, checklist, reconteo,
-panel-admin/cliente/vendedor, firebase.json, ninguna funcion de render
-
-### V4.7 — 2026-05-28 (cloud session)
-
-**CAMBIO 1 — styleSimpleSheet: helper genérico de estilos Excel**
-- Nueva función `styleSimpleSheet(ws, rows)` para aplicar formato profesional a cualquier hoja
-- Header fila 1: fondo #002060, texto blanco negrita, centrado
-- Bordes finos #BBBBBB en todas las celdas
-- Detección automática de columnas numéricas y monetarias ($, VALOR, COSTO...)
-- Condicional rojo (negativo) / azul (positivo) en columnas DIFERENCIA/DIF
-- Anchos automáticos por contenido (máx 45), freeze fila 1
-
-**CAMBIO 2 — Fix Excel desalineado sin formato (3 funciones)**
-- `exportDrilldownTable`: hoja RESULTADOS ahora con `styleSimpleSheet`
-- `exportFinalExcel`: hojas RESULTADOS, DATOS_FALTANTES, HIPERFAMILIA con estilos
-  (antes todas sin formato — causa del "desalineado" reportado)
-- `exportRecountExcel`: hojas Reconteo y Ranking_$ con estilos completos
-- "Dispersión" / "Diferencias (−)" con caracteres especiales reemplazados por ASCII
-  para compatibilidad con xlsx
-
-**CAMBIO 3 — GitHub Pages workflow**
-- `.github/workflows/deploy-inventario.yml`: despliega solo APP-INVENTARIO/ a GitHub Pages
-- Se activa en push a main cuando hay cambios en APP-INVENTARIO/
-- URL resultante (activar en Settings → Pages → Source: GitHub Actions):
-  https://oviedoem.github.io/ferreteria-oviedo/
-- PR mergeado a main: commit d8181dc
-
-**NO tocado:** styleAnalisisSheet, exportTableToExcel, toda la lógica render/parseo/filtrado,
-panel-admin.html, panel-cliente.html, panel-vendedor.html
+**Verificación:**
+- `node --check app.js` → sin errores ✓
+- Aliases HIPERMALIA de lectura intactos ✓
+- styleSimpleSheet es el único estilador genérico; styleAnalisisSheet conservado para TABLA_ANALISIS ✓
+- Mejoras V4.1→V4.6 sin regresiones ✓
 
 ### V4.6 — 2026-05-28
 
