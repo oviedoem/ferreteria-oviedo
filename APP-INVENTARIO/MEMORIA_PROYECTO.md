@@ -309,6 +309,36 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.0 — 2026-05-29
+
+**Planos — bordes por celda idénticos al Excel (generar_planos.js)**
+
+**Problema:** Las 4 funciones `_planoHtml_X()` generaban HTML sin bordes. SheetJS community (0.18.5) no parsea `border` en `cell.s`. El Excel sí tiene bordes definidos en `xl/styles.xml` (73 definiciones: thin, medium).
+
+**Solución:** Nuevo script `generar_planos.js` que:
+1. Lee `xl/styles.xml` directamente del ZIP del XLSX (Node.js `zlib.inflateRawSync`) → 73 definiciones de borde con lados independientes (left/right/top/bottom, style thin/medium/etc.)
+2. Lee `xl/worksheets/sheetN.xml` directamente → extrae atributo `s` (xf-index) por celda
+3. Mapea: `cell xf-index → CellXf[xfId].borderId → borderDefs[borderId]` → CSS inline
+4. CSS: `thin` → `1px solid #000`, `medium` → `2px solid #000`
+5. Regenera las 4 funciones con colgroup, merges, fills Y bordes completos
+
+**Resultado verificado:**
+- Sala EXHIBICION: 55 patentes ✓
+- BODEGA SALA: 212 patentes (+1 vs anterior — mejora de detección)
+- BODEGA 2DO PISO SALA: 103 patentes (+3 vs anterior)
+- PATIO CONSTRUCTOR: 99 patentes ✓
+- **Total: 469 patentes** (vs 465 antes)
+- 582 instancias border-top:1px solid, 2987 fills — fiel al Excel
+- Fix adicional: eliminado bug `<<colgroup` (doble `<`) que tenía la versión anterior
+- `node --check app.js` → OK ✓
+
+**Archivo nuevo:**
+- `generar_planos.js` — script generador reutilizable para futuros cambios de plano
+
+**NO tocado:** `renderPlanos()`, `switchPlanoTab()`, `applyPatenteCellStates()`, `renderPlanoZonaProgress()`, `getPlanoContados()`, `loadPlanosFromFile()`
+
+---
+
 ### V6.0 — 2026-05-29
 
 **Fix crítico — `PLANO_SHEETS` restaurada + botón Actualizar Plano + tabs Avanzado/Final/Mejoras**
