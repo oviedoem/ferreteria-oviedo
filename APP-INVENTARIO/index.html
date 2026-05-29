@@ -304,6 +304,7 @@
           <button class="btn btn-sm btn-ghost" onclick="printMode('planos')">🖨 Imprimir</button>
           <button class="btn btn-sm btn-email" onclick="emailReport('planos')">✉ Email</button>
           <button class="btn btn-sm" onclick="document.getElementById('input-plano-update').click()" title="Cargar nuevo archivo de planos (2027 en adelante)">📂 Actualizar Plano</button>
+          <button class="btn btn-sm btn-ghost" onclick="limpiarCachePlanos()" title="Borra inventariador y marcas de conteo del plano">🧹 Limpiar Inventariador</button>
           <input type="file" id="input-plano-update" accept=".xlsx,.xls" hidden
             onchange="if(this.files.length){loadPlanosFromFile(this.files[0]);this.value='';}">
         </div>

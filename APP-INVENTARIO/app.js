@@ -3414,6 +3414,14 @@ const PLANO_SHEETS = {
 };
 
 
+function limpiarCachePlanos() {
+  window._inventariadorPorPatente = new Map();
+  window._patentesCargadas = new Set();
+  applyPatenteCellStates();
+  Object.keys(PLANO_SHEETS || {}).forEach(renderPlanoZonaProgress);
+  showToast('Inventariador limpiado — plano reiniciado', 'ok');
+}
+
 function renderPlanos() {
   const tabsEl    = document.getElementById('plano-tabs');
   const contentEl = document.getElementById('planos-content');
