@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.5
+# VERSION: V5.6
 # FECHA: 2026-05-29
 
 ---
@@ -308,6 +308,28 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.6 — 2026-05-29
+
+**Fix — `_planoHtml_PATIO_CONSTRUCTOR()`: 72 → 99 patentes**
+
+- **Causa raíz:** la función `isPatente` usaba `/^\d{2,4}$/` (número puro) y no detectaba
+  celdas con formato `"NNN texto"` (ej: `"397 MIX"`, `"412 VOLCAN..."`, `"386 tubo"`).
+  PATIO CONSTRUCTOR tiene 27 celdas de este tipo — las otras 3 hojas solo tienen números puros.
+- **Dato erróneo en V5.5:** la auditoría reportó PATIO 72/72, 0 faltantes — era incorrecto.
+  El `isPatente` del script de auditoría tenía el mismo bug que el generador.
+- **Fix:** `extractPatente(v)` matchea `/^(\d{2,4})(\s|$)/` — extrae el número inicial,
+  permite texto posterior. `data-patente` almacena solo el número; la celda muestra el texto completo.
+- **Verificación set-a-set:** Excel=99, HTML=99, missing=0, extra=0. Los 27 reportados
+  presentes en HTML: 27/27. Otras 3 funciones intactas (55/211/100).
+- **`node --check app.js` → OK ✓**
+
+**Conteo final correcto de patentes hardcodeadas:**
+- Sala EXHIBICION: 55
+- BODEGA SALA: 211
+- BODEGA 2DO PISO SALA: 100
+- PATIO CONSTRUCTOR: 99
+- **Total: 465 patentes** con `data-patente` correctas
 
 ### V5.5 — 2026-05-29
 
@@ -919,7 +941,7 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ## PENDIENTE
 
 - [ ] Test end-to-end con archivos REALES de producción (los ejemplos son datos sintéticos)
-- [ ] P6: cargar inventario real y confirmar plano fiel + patentes verdes con badge, rojas sin contar, % cobertura correcto
+- [ ] P6: cargar inventario real y confirmar plano fiel + patentes verdes con badge, rojas sin contar, % cobertura correcto (465 patentes totales)
 - [ ] Verificar embudo con datos reales (selects populados correctamente)
 - [ ] Verificar renderCompCategoria con datos reales (delta colors)
 
