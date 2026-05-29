@@ -511,7 +511,7 @@ async function loadFiles(files, year) {
 
   saveDataToIDB(year, year === '2025' ? state.data2025 : state.data2026);
   updateSidebarStatus(year);
-  refreshView();
+  _showLoadedYearCoverage(year);
   saveStateToLS();
   const n = allRows.length.toLocaleString('es-CL');
   showToast(`✓ ${n} registros cargados (${year})`, 'ok');
@@ -610,7 +610,7 @@ async function applyMapping() {
   state.pendingLoad = null;
   saveDataToIDB(year, year === '2025' ? state.data2025 : state.data2026);
   updateSidebarStatus(year);
-  refreshView();
+  _showLoadedYearCoverage(year);
   saveStateToLS();
   showToast(`${allRows.length.toLocaleString('es-CL')} registros cargados (${year})`, 'ok');
 }
@@ -862,6 +862,119 @@ function _toggleCoverage(ctx, modo) {
   window._coverageModo[ctx] = modo;
   const data = window._coverageData[ctx];
   if (data) _renderCoverageBanner(data, ctx);
+}
+
+function _coveragePatenteKey(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  return s.match(/^(\d+)/)?.[1] || s.toUpperCase();
+}
+
+function _coverageHtml(text) {
+  return String(text ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
+}
+
+function _buildCoverageZonas() {
+  const universo = Array.isArray(planosPatentes) ? planosPatentes : [];
+  const contados = getPlanoContados();
+  if (!universo.length) return { ready: false, groups: [], total: 0, counted: 0, pct: 0 };
+  const bySala = new Map();
+
+  universo.forEach(p => {
+    const sala = p.zona || p.area || 'Sin sala';
+    const patente = String(p.patente || '').trim();
+    if (!patente) return;
+    if (!bySala.has(sala)) bySala.set(sala, { sala, total: 0, counted: 0, missing: [] });
+    const g = bySala.get(sala);
+    const key = _coveragePatenteKey(patente);
+    const full = patente.toUpperCase();
+    const isCounted = !!contados && (contados.has(full) || (key && contados.has(key)));
+    g.total++;
+    if (isCounted) g.counted++;
+    else g.missing.push(patente);
+  });
+
+  const groups = [...bySala.values()].map(g => ({
+    ...g,
+    pct: g.total ? Math.round(g.counted / g.total * 100) : 0,
+    missing: g.missing.sort((a, b) => parseInt(a) - parseInt(b)),
+  }));
+  const total = groups.reduce((s, g) => s + g.total, 0);
+  const counted = groups.reduce((s, g) => s + g.counted, 0);
+  const pct = total ? Math.round(counted / total * 100) : 0;
+  return { ready: !!contados, groups, total, counted, pct };
+}
+
+function renderCoverageZonas(year) {
+  const el = document.getElementById('inv-coverage-zonas-' + year);
+  if (!el) return;
+  const cov = _buildCoverageZonas();
+  if (!cov.total) {
+    el.innerHTML = `
+      <div class="inv-zonas-card inv-zonas-empty">
+        <div class="inv-zonas-head">
+          <div class="inv-zonas-icon">📍</div>
+          <div>
+            <h3>Avance de conteo: Patentes y Zonas</h3>
+            <p>Carga el archivo de Planos para cruzar el universo total de patentes con lo contado en REGISTROS.</p>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const dot = cov.pct >= 90 ? 'ok' : cov.pct >= 70 ? 'warn' : 'bad';
+  const detail = cov.groups.map(g => {
+    const cls = g.pct >= 90 ? 'ok' : g.pct >= 70 ? 'warn' : 'bad';
+    const missing = g.missing.length
+      ? g.missing.slice(0, 36).map(p => `<span>${_coverageHtml(p)}</span>`).join('')
+      : '<em>Sin pendientes</em>';
+    const more = g.missing.length > 36 ? `<small>+${g.missing.length - 36} más</small>` : '';
+    return `
+      <div class="inv-zona-row">
+        <div class="inv-zona-row-top">
+          <strong>${_coverageHtml(g.sala)}</strong>
+          <span class="inv-zona-pill ${cls}">${g.counted}/${g.total} · ${g.pct}%</span>
+        </div>
+        <div class="inv-zona-missing">${missing}${more}</div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="inv-zonas-card">
+      <div class="inv-zonas-head">
+        <div class="inv-zonas-icon">📍</div>
+        <div class="inv-zonas-title">
+          <h3>Avance de conteo: Patentes y Zonas</h3>
+          <p>Terminar conteo → pasar a reconteo con base completa.</p>
+        </div>
+        <div class="inv-zonas-total">
+          <span class="inv-zonas-dot ${dot}"></span>
+          <strong>${cov.counted} de ${cov.total}</strong>
+          <small>patentes contadas (${cov.pct}%)</small>
+        </div>
+      </div>
+      <div class="inv-zonas-grid">${detail}</div>
+    </div>`;
+}
+
+function _highlightCoveragePanels(year) {
+  setTimeout(() => {
+    const panels = [
+      document.querySelector(`#inv-coverage-banner-${year} .inv-en-curso`),
+      document.querySelector(`#inv-coverage-zonas-${year} .inv-zonas-card`),
+    ].filter(Boolean);
+    if (!panels.length) return;
+    panels.forEach(p => p.classList.add('coverage-pulse'));
+    panels[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => panels.forEach(p => p.classList.remove('coverage-pulse')), 2200);
+  }, 250);
 }
 
 // ── AGREGACIÓN ─────────────────────────────────────────────────
@@ -2066,6 +2179,13 @@ function getCurrentMode() {
   return document.querySelector('.tab-btn.active')?.dataset.mode || '2025';
 }
 
+function _showLoadedYearCoverage(year) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === year));
+  refreshView();
+  renderCoverageZonas(year);
+  _highlightCoveragePanels(year);
+}
+
 function refreshView() {
   const has25 = state.data2025.length > 0;
   const has26 = state.data2026.length > 0;
@@ -2100,6 +2220,7 @@ function renderMode(year) {
 
   const data = getFilteredData(year);
   _renderCoverageBanner(data, year);
+  renderCoverageZonas(year);
   renderResumenGlobal(year);
   renderEmbudo(year);
   renderFilters(year);
@@ -2982,6 +3103,8 @@ async function loadPlanos(file) {
     planosPatentes = extractPatentesFromGridSheets(planosData);
 
     renderPlanos(wb.SheetNames);
+    renderCoverageZonas('2025');
+    renderCoverageZonas('2026');
     // Sincronizar con correlativo
     if (planosPatentes.length) initCorrelativoFromPlanos(planosPatentes);
 

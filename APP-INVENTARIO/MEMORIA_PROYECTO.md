@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.0
+# VERSION: V5.1
 # FECHA: 2026-05-28
 
 ---
@@ -308,6 +308,29 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.1 — 2026-05-28
+
+**CAMBIO B — Nuevo panel "Avance de conteo: Patentes y Zonas"**
+- Nueva función `renderCoverageZonas(year)` debajo del banner de inventario en curso para vistas 2025/2026.
+- Nuevo helper `_buildCoverageZonas()` cruza el universo ya cargado desde Planos (`planosPatentes`, derivado de `planosData`) contra el set existente de contadas (`getPlanoContados()`).
+- El panel muestra total global "X de Y patentes contadas (Z%)", semáforo y detalle por sala/zona con lista de patentes faltantes.
+- Si aún no hay Planos cargados, muestra una card informativa para cargar Planos y poder cruzar el universo real.
+- Texto operativo agregado: "Terminar conteo → pasar a reconteo con base completa."
+
+**CAMBIO C — Destaque post-carga de paneles de avance**
+- Nueva función `_showLoadedYearCoverage(year)` activa la vista del año cargado después de leer inventario.
+- Nueva función `_highlightCoveragePanels(year)` hace scroll y aplica destaque breve a los paneles de unidades/valor y patentes/zonas.
+- `loadFiles()` y `applyMapping()` usan el nuevo flujo post-carga.
+- `loadPlanos()` re-renderiza los paneles de patentes/zonas para 2025/2026 cuando se actualiza el universo de Planos.
+
+**index.html / style.css:**
+- Placeholders `inv-coverage-zonas-2025` y `inv-coverage-zonas-2026`.
+- Nuevas clases `.inv-zonas-*` con estilo ámbar destacado consistente con V4.9/V5.0 y animación `.coverage-pulse`.
+
+**NO tocado:** `getPlanoContados`, `renderPlanoGrid`, `renderPlanos`, merges de Planos, colores verde/rojo de cobertura, cálculos V4.9/V5.0, reconteo, persistencia, email/print.
+
+**Verificación:** `node --check app.js` → OK ✓
 
 ### V5.0 — 2026-05-28
 
