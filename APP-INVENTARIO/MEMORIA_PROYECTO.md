@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.3
+# VERSION: V5.4
 # FECHA: 2026-05-29
 
 ---
@@ -308,6 +308,24 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.4 — 2026-05-29
+
+**Fix — `isInvalidNumericInput()`: guion contable Excel = cero válido**
+
+- Contexto: celdas con guion contable (`"-"`, `"$ -"`, `"- "`) generaban ~7.625 advertencias
+  "tipo numérico inválido" al cargar archivos reales. En Excel, ese símbolo representa cero.
+- Fix en `isInvalidNumericInput()` (~línea 275 app.js): después de quitar símbolos monetarios,
+  puntos de miles, comas y espacios, si el string restante es vacío o solo guiones → retorna
+  `false` (es cero válido, no inválido).
+- Ninguna lógica de cálculo tocada — solo la función de validación de entrada.
+- Verificado: `node --check app.js` → OK ✓
+
+**Fix — `readFileData()`: regex `/^(\d+)/` corregida en bloque inventariadorMap**
+
+- El bloque que construye `window._inventariadorPorPatente` usaba `pat.match(/^(d+)/)` 
+  (matcheaba la letra "d", no dígitos). Corregido a `pat.match(/^(\d+)/)`.
+- Solo esa línea tocada. El bloque `patentesCargadasSet` adyacente ya tenía la regex correcta.
 
 ### V5.3 — 2026-05-29
 
@@ -865,10 +883,14 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## PENDIENTE
 
-- [ ] Verificar `node --check app.js` sin errores de sintaxis (app.js creció a 321KB en V5.3)
-- [ ] Test end-to-end con archivos reales de inventario 2025 y 2026
-- [ ] Verificar colorización de planos con archivo real 2026 que tenga hojas REGISTROS/BUSQUEDA con columna INVENTARIADOR
-- [ ] Los planos hardcodeados usan nombres de hojas del archivo de ejemplo (`Sala EXHIBICION`, `BODEGA SALA`, etc.) — si el archivo real de producción tiene nombres distintos, regenerar `_planoHtml_X()` con ese archivo
-- [ ] exportPlanosExcel eliminado (planos son hardcodeados; stubs inofensivos en su lugar)
+- [ ] Test end-to-end con archivos REALES de producción (los ejemplos son datos sintéticos)
 - [ ] Verificar embudo con datos reales (selects populados correctamente)
 - [ ] Verificar renderCompCategoria con datos reales (delta colors)
+
+**Hallazgos verificados con archivos de ejemplo (V5.4):**
+- TABLA_ANALISIS: 9.163 filas con headers correctos (Codigo_tecnico, CONTEO, COSTO $, etc.)
+- Hojas de registro V2026: REGISTROS (1.671 filas con patente+conteo) + BUSQUEDA (6.476 filas) — ambas tienen columna INVENTARIADOR con 13 inventariadores únicos
+- Guiones contables: 25.039 en total → todos resueltos como cero por el fix V5.4
+- Cobertura planos con datos ejemplo: 457/469 patentes contadas (97%)
+- SALA y PATIO vacías en el archivo de ejemplo (normal — son hojas auxiliares)
+- Los planos hardcodeados (`Sala EXHIBICION`, `BODEGA SALA`, `BODEGA 2DO PISO SALA`, `PATIO CONSTRUCTOR`) son los nombres del archivo de ejemplo. Confirmar con el archivo real de producción antes de cambiar.

@@ -276,6 +276,9 @@ function isInvalidNumericInput(v) {
   if (isBlankLike(v)) return false;
   if (typeof v === 'number') return !Number.isFinite(v);
   const raw = normalizeInventoryValue(v);
+  // Guion contable de Excel ("-", "$ -", "$-") = CERO en formato contable chileno → válido.
+  // Si tras quitar símbolos/guiones/espacios no queda nada, es un cero contable, no un error.
+  if (raw.replace(/[^\dA-Za-z]/g, '') === '') return false;
   const hasDigit = /\d/.test(raw);
   if (!hasDigit) return true;
   return !Number.isFinite(normalizeNumber(raw));
