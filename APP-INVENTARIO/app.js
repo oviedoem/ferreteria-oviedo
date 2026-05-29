@@ -4132,6 +4132,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.tab-btn[data-mode="mejoras"]').forEach(btn => {
     btn.onclick = () => {
+      if (!state.data2025.length && !state.data2026.length) {
+        showToast('Carga datos de inventario 2025 o 2026 primero.', 'info');
+        return;
+      }
       switchToMode('mejoras');
       document.getElementById('welcome-screen').style.display = 'none';
     };
