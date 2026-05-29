@@ -1,6 +1,6 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.2
-# Fecha: 2026-05-26
+# Version activa: V37.10
+# Fecha: 2026-05-29
 # Versiones anteriores disponibles en _HISTORICO/
 
 ---
@@ -9,14 +9,33 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.2 |
-| Fecha | 2026-05-26 |
-| Deploy | 2026-05-26 18:29 |
+| Version | V37.10 |
+| Fecha | 2026-05-29 |
+| Deploy | 2026-05-29 19:26 |
 | Sin pendientes | SI — todo publicado al cierre de sesion |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.10 — 2026-05-29
+- panel-admin.html: módulo Despachos Pendientes (BVE/FVE pendientes de despacho, email, Excel)
+- ACTUALIZAR_GITHUB.bat: fix firestore.indexes.json, +storage.rules/update-sw-version.js/ESTADO_PROYECTO.md, V37, pull --rebase
+- ACTUALIZAR_GITHUB_APP_INVENTARIO.bat movido a APP-INVENTARIO/
+- AGENTS.md: encriptar_credenciales.py en Scripts activos; changelog V37.10; deploy V37.10
+
+### V37.4 — 2026-05-26
+- Limpieza carpeta raiz: 11 archivos movidos a _HISTORICO/ (scripts diagnostico, xlsx ad-hoc, bats one-time, log, lnk, html ERP)
+- Carpetas eliminadas: _ARCHIVADOS/ (2 bats → _HISTORICO), docs/ (vacía)
+- AGENTS.md: regla de limpieza + schema SQL Server tablas ventas + troubleshooting Justime DLL
+
+### V37.3 — 2026-05-26
+- panel-admin.html: columna CEM agregada a vadmRenderQuiebre (header verde + celda)
+- panel-admin.html: columna CEM agregada a vadmRenderSobreStock (cem en prods.push + header + celda)
+- panel-admin.html: vadmRenderBodFem() fetch resiliente — cada JSON con .catch individual (IEM/RCE/CEM no bloquean entre si)
+- Reorganizacion MD: MEMORY.md + ESTADO_PROYECTO.md creados, docs/ consolidado en _HISTORICO/
+- Deploy: 2026-05-26 22:12 — ferreteria-oviedo.web.app
+- GitHub: commit 4b78f04
 
 ### V37.2 — 2026-05-26
 - descargar_ventas_erp.py: fix dias incompletos (mid-day run) — re-descarga hoy si max_f >= hoy

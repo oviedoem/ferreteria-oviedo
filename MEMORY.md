@@ -8,12 +8,13 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.8 |
-| Fecha ultimo deploy | 2026-05-28 02:09 |
-| Ultimo cambio | V37.9: sync UI badge V37.8, bat legacy→ACTUALIZAR_TODO (16 ocurrencias), tutoriales actualizados, mejoras V37.8, regla sync permanente en AGENTS.md |
-| Deploy cierre sesion | 2026-05-28 02:09 — todo publicado, sin pendientes |
+| Version | V37.10 |
+| Fecha ultimo deploy | 2026-05-29 19:26 |
+| Ultimo cambio | V37.10: módulo Despachos Pendientes (panel-admin) + fix ACTUALIZAR_GITHUB.bat + limpieza raíz (bat APP-INVENTARIO + encriptar_credenciales) |
+| Deploy cierre sesion | 2026-05-29 19:26 — todo publicado, sin pendientes |
 
 Historial reciente:
+- V37.10 (2026-05-29): Despachos Pendientes + fix ACTUALIZAR_GITHUB + limpieza raíz
 - V37.9 (2026-05-28): sync UI badge, bat legacy→ACTUALIZAR_TODO, tutoriales, mejoras, regla sync AGENTS.md
 - V37.8 (2026-05-27): fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif + modales
 - V37.7 (2026-05-27): MEM + Pedido + DifStk/DifLib + drill-down + PASO 1E descargar_pedidos.py

@@ -39,7 +39,7 @@ MD activos raiz:
 - Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1E descargar_pedidos.py ✅
 - Deploy V37.8: 2026-05-27 23:10 — Fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif (22 cols) + modal Dif/Ped rediseñados ✅
 - Deploy V37.9: 2026-05-28 02:09 — Sync UI: badge V37.8, bat legacy → ACTUALIZAR_TODO, tutoriales actualizados, mejoras V37.8, regla sync permanente ✅
-- Deploy V38.0: 2026-05-29 18:01 — Módulo Despachos Pendientes: filtros FLETE VENTA/DESPACHO, 3 filtros nuevos, costo prom., email, Excel ✅
+- Deploy V37.10: 2026-05-29 19:26 — Despachos Pendientes (panel-admin) + fix ACTUALIZAR_GITHUB.bat (firestore.indexes.json, storage.rules, update-sw-version.js, ESTADO_PROYECTO.md, V37, pull --rebase) + mover bat APP-INVENTARIO a su carpeta + encriptar_credenciales.py en lista limpieza ✅
 
 ---
 
@@ -182,6 +182,29 @@ VALIDACION antes de hacer commit:
 ---
 
 ## CHANGELOG
+
+### V37.10 — 2026-05-29
+
+**panel-admin.html — Nuevo módulo Despachos Pendientes (grupo Inventario)**
+- Subtab 'despachos' con tabla agrupada por documento (folio, doc, fecha emisión,
+  vendedor, cliente, observación derivada, fecha despacho, N° ítems).
+- Fuente única: /data/despachos-detalle.json (PASO 1F del pipeline, sin nuevas descargas).
+- Observación derivada por fechas: Entrega de empaque / Por despachar / Sin fecha.
+- Detalle al clic: código, descripción (_vadmStockMap), cantidad, bodega.
+- Filtros adicionales: FLETE VENTA excluido, email, Excel exportable.
+- Variables/funciones nuevas: _dpDetalleRaw, _dpDocs, dpRenderPendientes,
+  dpToggleDoc, dpFiltrar. Registro en vadmReRenderTabActivo.
+
+**ACTUALIZAR_GITHUB.bat — fixes y completitud del sync**
+- Typo firestore_indexes.json → firestore.indexes.json (no se subía desde su creación).
+- Agregados: storage.rules, update-sw-version.js, ESTADO_PROYECTO.md.
+- Etiqueta commit V36 → V37.
+- git pull --rebase antes del push (consistencia con ACTUALIZAR_GITHUB_APP_INVENTARIO.bat).
+
+**Limpieza raíz**
+- ACTUALIZAR_GITHUB_APP_INVENTARIO.bat movido a APP-INVENTARIO/ (corresponde a esa carpeta).
+- encriptar_credenciales.py agregado a "Scripts activos" en regla de limpieza
+  (lo usan descargar_bod.py y descargar_despachos.py vía credenciales_db.enc).
 
 ### V37.7 — 2026-05-27
 
@@ -1051,7 +1074,7 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 | Assets | FONDO3.jpg, PERSONA.jpg, logo_oviedo_white.jpg, logo_oviedo.jpg |
 | Credenciales | credenciales_db.ini (NUNCA a git) |
 | BATs activos | ACTUALIZAR_TODO.bat, ACTUALIZAR_TODO_AUTO.bat, PUBLICAR.bat, ACTUALIZAR_GITHUB.bat |
-| Scripts activos | diagnostico_huerfanos.py |
+| Scripts activos | diagnostico_huerfanos.py, encriptar_credenciales.py |
 | MDs activos | AGENTS.md, MEMORY.md, ESTADO_PROYECTO.md |
 | Carpetas | data/ · VENTAS EL MANZANO/ · BODEGAS/ · CATALOGO PRODUCTOS/ · backups/ · .claude/ · _HISTORICO/ · logs/ |
 
