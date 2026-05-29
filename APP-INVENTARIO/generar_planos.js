@@ -152,7 +152,7 @@ function getFillColor(cell) {
 function extractPatente(v) {
   if (typeof v !== 'string' && typeof v !== 'number') return null;
   const s = String(v).trim();
-  const m = s.match(/^(\d{2,4})(\s|$)/);
+  const m = s.match(/^(\d{1,4})(\s|$)/);
   return m ? m[1] : null;
 }
 

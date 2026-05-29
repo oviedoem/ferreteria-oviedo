@@ -3,6 +3,17 @@
 
 ---
 
+## REGLA — NO DIAGNOSTICAR SIN CERTEZA (permanente desde V7.9)
+
+Antes de concluir que algo "no es una patente", "es una etiqueta de zona" o cualquier
+afirmación sobre la estructura del Excel o los datos:
+
+1. **Verificar primero en el Excel real** — nunca asumir basándose solo en la posición de la celda o el número de dígitos.
+2. **Si hay duda → preguntar al usuario** antes de descartar o ignorar el dato.
+3. Ejemplo de error documentado: patentes 1-9 en Sala EXHIBICION fueron erróneamente clasificadas como "etiquetas de zona". El Excel y REGISTROS sí tenían esos números como patentes reales con productos contados.
+
+---
+
 ## REGLA ANTI-RETROCESO — OBLIGATORIA EN CADA SESIÓN
 
 Antes de tocar una función, anotar explícitamente qué ya FUNCIONA y NO debe cambiar.

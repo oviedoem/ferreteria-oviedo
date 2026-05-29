@@ -313,6 +313,27 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.9 — 2026-05-29
+
+**Fix — `generar_planos.js` + `planos_generated.js` + `app.js`: patentes 1-9 ignoradas**
+
+**Causa raíz:** `extractPatente()` en `generar_planos.js` usaba regex `/^(\d{2,4})(\s|$)/` (mínimo 2 dígitos). Las patentes de 1 dígito (1-9) presentes en el Excel plano y en REGISTROS no recibían atributo `data-patente` → `applyPatenteCellStates()` nunca las coloreaba.
+
+**Error de diagnóstico documentado:** Claude diagnosticó incorrectamente que los números 1-9 en el plano eran "etiquetas de zona" sin verificar el Excel real ni REGISTROS. El usuario corrigió — esos números SON patentes reales con registros en REGISTROS. **Regla permanente:** no diagnosticar si no hay certeza, consultar al usuario primero.
+
+**Fix:**
+- `generar_planos.js` L155: `/^(\d{2,4})(\s|$)/` → `/^(\d{1,4})(\s|$)/`
+- `node generar_planos.js` regenera `planos_generated.js`
+- `node actualizar_planos.js` (nuevo script temporal) reemplaza las 4 funciones en `app.js`
+
+**Resultado verificado:**
+- Sala EXHIBICION: 55 → **64 patentes** (recuperadas 1,2,3,4,5,6,7,8,9)
+- BODEGA SALA / BODEGA 2DO / PATIO: sin cambio (no tienen patentes de 1 dígito)
+
+**node --check → OK ✓**
+
+---
+
 ### V7.8 — 2026-05-29
 
 **Fix — `.plano-patente-pendiente` (style.css): patentes no contadas eran invisibles**
