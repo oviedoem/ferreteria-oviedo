@@ -969,6 +969,8 @@ function clearAllData() {
     document.getElementById(`input-${y}`).value = '';
   });
   document.getElementById('sidebar-info').innerHTML = '';
+  const vs = document.getElementById('validation-summary');
+  if (vs) { vs.innerHTML = ''; vs.classList.add('hidden'); }
 
   Object.values(state.charts).forEach(c => c.destroy());
   state.charts = {};
@@ -4878,9 +4880,11 @@ if (_origClearFilters) {
 }
 
 // ── Init de persistencia al cargar ────────────────────────────
+// Auto-restore deshabilitado: la app siempre parte limpia. restoreSession()
+// conservada como función pero no se llama automáticamente.
 document.addEventListener('DOMContentLoaded', () => {
-  restoreSession();
-  window.addEventListener('beforeunload', saveStateToLS);
+  clearIDB().catch(() => {});
+  localStorage.removeItem(LS_STATE_KEY);
 });
 
 // ── Hook en parseFile para guardar datasets en IDB ───────────

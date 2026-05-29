@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.7
+# VERSION: V5.8
 # FECHA: 2026-05-29
 
 ---
@@ -308,6 +308,16 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.8 — 2026-05-29
+
+**Fix — App parte limpia al abrir (sin auto-restore de sesión)**
+
+- **Causa raíz**: `restoreSession()` se ejecutaba en `DOMContentLoaded` → cargaba datos del IndexedDB previo → `importHashes` llenaba con los 9.162 hashes → al intentar cargar el mismo archivo nuevamente, todas las filas se detectaban como duplicados → `allRows` vacío → `loadFiles()` retornaba antes de `updateSidebarStatus()` → status quedaba en "Sin archivos".
+- **Fix**: `DOMContentLoaded` ahora llama `clearIDB()` + `localStorage.removeItem(LS_STATE_KEY)`. La app siempre parte limpia. `restoreSession()` se conserva como función pero no se llama automáticamente.
+- **Fix 2**: `clearAllData()` ahora limpia `#validation-summary` (innerHTML + clase `.hidden`) para evitar que queden visibles números de cargas anteriores.
+- **NO tocado**: `restoreSession()`, `saveDataToIDB`, `saveStateToLS`, `loadFiles`, `updateSidebarStatus`, lógica de importHashes.
+- **`node --check` → OK ✓**
 
 ### V5.7 — 2026-05-29
 
