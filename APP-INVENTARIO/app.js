@@ -845,8 +845,12 @@ function _renderCoverageBanner(data, ctx) {
   const label = modo === 'valor' ? '$ contados' : 'unidades contadas';
   el.innerHTML = `
     <div class="inv-en-curso">
-      <span>⏳ <strong>Inventario EN CURSO</strong> — conteo parcial: ${fmtC} de ${fmtT} ${label} (${cov.pct.toFixed(1)}%).<br>
-      Los % de diferencia y dispersión aún <strong>NO son definitivos</strong>.</span>
+      <div class="inv-en-curso-icon">⏳</div>
+      <div class="inv-en-curso-body">
+        <div class="inv-en-curso-title">Inventario EN CURSO</div>
+        <div class="inv-en-curso-main">Conteo parcial: <strong>${fmtC}</strong> de <strong>${fmtT}</strong> ${label} <strong>(${cov.pct.toFixed(1)}%)</strong>.</div>
+        <div class="inv-en-curso-note">Los % de diferencia y dispersión aún <strong>NO son definitivos</strong>.</div>
+      </div>
       <span class="inv-en-curso-toggle">
         <button onclick="_toggleCoverage('${ctx}','unidades')" class="${modo==='unidades'?'active':''}">Unidades</button>
         <button onclick="_toggleCoverage('${ctx}','valor')"    class="${modo==='valor'?'active':''}">Valor</button>
@@ -1257,16 +1261,7 @@ function renderCharts(year, data) {
       'Dif. $ (abs)', COLORS[1],
       (lbl) => drillIntoGroup(year, 'marca', lbl));
 
-    // Gráfico 3: Zona — Valor Sistema vs Conteo
-    const byZona = aggregateBy(data, 'zona').sort((a,b) => b.ps - a.ps).slice(0,12);
-    const h4zona = document.querySelector(`#chart-zona-${year}`)?.closest('.chart-card')?.querySelector('h4');
-    if (h4zona) h4zona.textContent = 'Valor $ Sistema vs Conteo por Zona';
-    groupedBarChart(`chart-zona-${year}`, byZona.map(r => r.fd.zona || '(sin zona)'), [
-      { label: '$ Sistema', data: byZona.map(r => r.ps) },
-      { label: '$ Conteo',  data: byZona.map(r => r.pr) },
-    ]);
-
-    // Gráfico 4: Donut Hiperfamilia $
+    // Gráfico 3: Donut Hiperfamilia $
     const byHiperD = aggregateBy(data, 'perfamilia').sort((a,b) => b.adp - a.adp).slice(0,12);
     const h4pie1 = document.querySelector(`#chart-pie-hiper-${year}`)?.closest('.chart-card')?.querySelector('h4');
     if (h4pie1) h4pie1.textContent = 'Dispersión $ por Hiperfamilia';
@@ -1298,16 +1293,7 @@ function renderCharts(year, data) {
       'Dif. Unidades', COLORS[1],
       (lbl) => drillIntoGroup(year, 'marca', lbl));
 
-    // Gráfico 3: Zona — Sistema vs Real
-    const byZona = aggregateBy(data, 'zona').sort((a,b) => b.us - a.us).slice(0,12);
-    const h4zona = document.querySelector(`#chart-zona-${year}`)?.closest('.chart-card')?.querySelector('h4');
-    if (h4zona) h4zona.textContent = 'Unidades Sistema vs Real por Zona';
-    groupedBarChart(`chart-zona-${year}`, byZona.map(r => r.fd.zona || '(sin zona)'), [
-      { label: 'Unidades Sistema', data: byZona.map(r => r.us) },
-      { label: 'Unidades Real',    data: byZona.map(r => r.ur) },
-    ]);
-
-    // Gráfico 4: Donut Hiperfamilia unidades
+    // Gráfico 3: Donut Hiperfamilia unidades
     const byHiperD = aggregateBy(data, 'perfamilia').sort((a,b) => b.adu - a.adu).slice(0,12);
     const h4pie1 = document.querySelector(`#chart-pie-hiper-${year}`)?.closest('.chart-card')?.querySelector('h4');
     if (h4pie1) h4pie1.textContent = 'Diferencia Unidades por Hiperfamilia';
@@ -1636,7 +1622,7 @@ function exportDrilldownTable(year) {
   const headers = [
     'Codigo_tecnico','Descripcion','CONTEO','COSTO $',
     'VALOR CONTEO','STOCK SISTEMA','VALOR SISTEMA $',
-    'DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERFAMILIA','MARCA',
+    'DIFERENCIA','DIFERENCIA $','FAMILIA','MARCA',
   ];
 
   const rows = [headers, ...data.map(r => [
@@ -1650,18 +1636,17 @@ function exportDrilldownTable(year) {
     r.dif_unidades   ?? 0,
     r.dif_peso       ?? 0,
     r.familia        || '',
-    r.perfamilia     || '',
     r.marca          || '',
   ])];
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  styleAnalisisSheet(ws, rows);
+  styleSimpleSheet(ws, rows);
 
   // Hoja RESULTADOS (cuadro resumen)
   const k  = calcKPIs(data);
   const m  = calcMonetarySummary(data);
-  const wsR = XLSX.utils.aoa_to_sheet([
+  const resultRows = [
     ['Concepto', 'Unidades', 'Valor $', '%'],
     ['Total Sistema',   Math.round(k.us), Math.round(k.ps), ''],
     ['Total Conteo',    Math.round(k.ur), Math.round(k.pr), ''],
@@ -1672,7 +1657,9 @@ function exportDrilldownTable(year) {
                         Math.round(data.reduce((s,r)=>s+(r.dif_peso<0?r.dif_peso:0),0)), ''],
     ['Dispersión',      Math.round(k.adu), Math.round(m.dispersion),
                         (m.pctDispersion||0).toFixed(2)+'%'],
-  ]);
+  ];
+  const wsR = XLSX.utils.aoa_to_sheet(resultRows);
+  styleSimpleSheet(wsR, resultRows);
 
   XLSX.utils.book_append_sheet(wb, ws,  'TABLA_ANALISIS');
   XLSX.utils.book_append_sheet(wb, wsR, 'RESULTADOS');

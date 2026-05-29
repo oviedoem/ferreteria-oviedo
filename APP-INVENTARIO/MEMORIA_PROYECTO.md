@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V4.9
+# VERSION: V5.0
 # FECHA: 2026-05-28
 
 ---
@@ -308,6 +308,33 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.0 — 2026-05-28
+
+**CAMBIO A — Banner "Inventario EN CURSO" más visible**
+- `_renderCoverageBanner(data, ctx)`: markup reorganizado en icono, cuerpo textual y toggle.
+- `style.css`: `.inv-en-curso` pasa a card destacada con más padding, borde izquierdo ámbar más fuerte, título legible, sombra y layout responsive.
+- Conservado: color ámbar, ⏳, toggle Unidades|Valor, impresión en color y umbral/lógica de `getCountCoverage`.
+
+**CAMBIO D — Gráfico zona eliminado/verificado**
+- Verificado que no existen `chart-zona-*`, texto "Sistema vs Conteo por Zona" ni llamada `groupedBarChart` asociada a zona en `index.html`/`app.js`.
+- No se tocaron los demás gráficos del grid.
+
+**CAMBIO E — Énfasis al Desglose interactivo**
+- `index.html`: acordeón de `drilldown-2025` y `drilldown-2026` queda abierto por defecto.
+- `style.css`: bloque `.dd-section` destacado, más espacio, título mayor y scroll interno alto/cómodo para `#dd-tbl-{year}` sin recortes agresivos.
+- Conservado: `toggleAcc(btn)` e `initAccordions()` siguen conectados a DOMContentLoaded.
+
+**CAMBIO F — Excel del Desglose en formato TABLA_ANALISIS**
+- `exportDrilldownTable(year)`: hoja `TABLA_ANALISIS` genera 11 columnas exactas:
+  `Codigo_tecnico`, `Descripcion`, `CONTEO`, `COSTO $`, `VALOR CONTEO`, `STOCK SISTEMA`, `VALOR SISTEMA $`, `DIFERENCIA`, `DIFERENCIA $`, `FAMILIA`, `MARCA`.
+- Export por producto usando `getFilteredData(year)`.
+- Estilado cambiado a `styleSimpleSheet(ws, rows)` para header #002060/blanco, bordes, datos blancos, freeze A2, formatos y condicional rojo/azul en columnas de diferencia.
+- Hoja `RESULTADOS` se mantiene y también se estiliza con `styleSimpleSheet`.
+
+**NO tocado:** `getCountCoverage`, `_toggleCoverage`, cálculos de KPI/monetarios, filtros, persistencia, reconteo, planos, email/print, demás gráficos.
+
+**Verificación:** `node --check app.js` → OK ✓
 
 ### V4.9 — 2026-05-28
 
