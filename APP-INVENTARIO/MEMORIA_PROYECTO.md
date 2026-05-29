@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V4.8
+# VERSION: V4.9
 # FECHA: 2026-05-28
 
 ---
@@ -308,6 +308,38 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V4.9 — 2026-05-28
+
+**Banner "Inventario EN CURSO" — conteo parcial (solo informativo, sin tocar cálculos)**
+
+**Nuevas funciones (app.js):**
+- `getCountCoverage(data, modo)` — calcula % de inventario contado:
+  - `'unidades'`: contados=Σ `unidades_real` / total=Σ `unidades_sistema`
+  - `'valor'`: contados=Σ `peso_real` / total=Σ `peso_sistema`
+  - Devuelve `{ modo, contados, total, pct }`
+- `_renderCoverageBanner(data, ctx)` — inyecta banner si `pct < COUNT_EN_CURSO_PCT (90)`
+- `_toggleCoverage(ctx, modo)` — toggle Unidades|Valor del banner (sin re-render completo)
+- Constante `COUNT_EN_CURSO_PCT = 90` — umbral configurable
+- Estado `window._coverageModo` + `window._coverageData` — por contexto (`'2025'`/`'2026'`/`'final'`)
+
+**Llamadas añadidas (1 línea cada una):**
+- `renderMode(year)`: `_renderCoverageBanner(data, year)` antes de `renderResumenGlobal`
+- `renderAnalisisFinal()`: `_renderCoverageBanner(data, 'final')` después de `emptyEl.style.display='none'`
+
+**index.html:** 3 divs placeholder (`inv-coverage-banner-2025`, `-2026`, `-final`)
+
+**style.css:** clase `.inv-en-curso` (fondo ámbar #fff7ed, borde #fed7aa, borde-left naranja #f97316, color oscuro #7c2d12) + `.inv-en-curso-toggle` con botones activo/inactivo. Incluye `print-color-adjust: exact` para PDF/impresión en color.
+
+**Comportamiento:**
+- Inventario completo (≥90%): sin banner
+- Inventario parcial (<90%): banner ámbar con ⏳ + toggle Unidades|Valor
+- Toggle recalcula `getCountCoverage` y re-inyecta solo el banner (no re-renderiza la vista)
+- Se imprime en color (respeta `print-color-adjust` existente)
+
+**NO tocado:** `calcKPIs`, `calcMonetarySummary`, `renderResumenGlobal`, `renderKPIs`, `renderMonetaryKPIs`, ningún cálculo existente.
+
+**Verificación:** `node --check app.js` → OK ✓
 
 ### V4.8 — 2026-05-28 (MERGE celular + V4.6)
 

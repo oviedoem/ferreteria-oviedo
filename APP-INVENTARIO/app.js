@@ -812,6 +812,54 @@ function calcMonetarySummary(data) {
   };
 }
 
+// ── COBERTURA DE CONTEO (banner informativo — no altera cálculos) ──────────────
+const COUNT_EN_CURSO_PCT = 90;  // < 90% = inventario "en curso"
+window._coverageModo = {};
+window._coverageData = {};
+
+/* Mide cuánto del inventario YA se contó (detecta conteo parcial). No cambia cálculos.
+   'unidades': contados=Σ unidades_real / total=Σ unidades_sistema
+   'valor'   : contados=Σ peso_real / total=Σ peso_sistema $
+   pct = contados/total*100 */
+function getCountCoverage(data, modo) {
+  modo = modo || 'unidades';
+  let contados = 0, total = 0;
+  if (modo === 'valor') {
+    for (const r of data) { total += r.peso_sistema || 0; contados += r.peso_real || 0; }
+  } else {
+    for (const r of data) { total += r.unidades_sistema || 0; contados += r.unidades_real || 0; }
+  }
+  const pct = total > 0 ? contados / total * 100 : 0;
+  return { modo, contados, total, pct };
+}
+
+function _renderCoverageBanner(data, ctx) {
+  const el = document.getElementById('inv-coverage-banner-' + ctx);
+  if (!el) return;
+  window._coverageData[ctx] = data;
+  const modo = window._coverageModo[ctx] || 'unidades';
+  const cov  = getCountCoverage(data, modo);
+  if (cov.pct >= COUNT_EN_CURSO_PCT) { el.innerHTML = ''; return; }
+  const fmtC  = modo === 'valor' ? fmtMoney(cov.contados) : fmt(cov.contados);
+  const fmtT  = modo === 'valor' ? fmtMoney(cov.total)    : fmt(cov.total);
+  const label = modo === 'valor' ? '$ contados' : 'unidades contadas';
+  el.innerHTML = `
+    <div class="inv-en-curso">
+      <span>⏳ <strong>Inventario EN CURSO</strong> — conteo parcial: ${fmtC} de ${fmtT} ${label} (${cov.pct.toFixed(1)}%).<br>
+      Los % de diferencia y dispersión aún <strong>NO son definitivos</strong>.</span>
+      <span class="inv-en-curso-toggle">
+        <button onclick="_toggleCoverage('${ctx}','unidades')" class="${modo==='unidades'?'active':''}">Unidades</button>
+        <button onclick="_toggleCoverage('${ctx}','valor')"    class="${modo==='valor'?'active':''}">Valor</button>
+      </span>
+    </div>`;
+}
+
+function _toggleCoverage(ctx, modo) {
+  window._coverageModo[ctx] = modo;
+  const data = window._coverageData[ctx];
+  if (data) _renderCoverageBanner(data, ctx);
+}
+
 // ── AGREGACIÓN ─────────────────────────────────────────────────
 function aggregateBy(data, ...fields) {
   const map = new Map();
@@ -2064,6 +2112,7 @@ function renderMode(year) {
   view.classList.remove('hidden');
 
   const data = getFilteredData(year);
+  _renderCoverageBanner(data, year);
   renderResumenGlobal(year);
   renderEmbudo(year);
   renderFilters(year);
@@ -3446,6 +3495,7 @@ function renderAnalisisFinal() {
     return;
   }
   if (emptyEl) emptyEl.style.display = 'none';
+  _renderCoverageBanner(data, 'final');
 
   const k = calcKPIs(data);
   const m = calcMonetarySummary(data);
