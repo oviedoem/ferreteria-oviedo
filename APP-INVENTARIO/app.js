@@ -1889,8 +1889,8 @@ function buildDDProductTable(data) {
   }).join('');
   return `<table class="data-table dd-table">
     <thead><tr>
-      <th>Código</th>
-      <th>Descripción del Producto</th>
+      <th>Codigo_tecnico</th>
+      <th>Descripcion</th>
       <th class="num">STOCK SISTEMA</th>
       <th class="num">CONTEO</th>
       <th class="num">DIFERENCIA</th>
@@ -2129,9 +2129,9 @@ function renderComparativeTable(d25, d26) {
   }).sort((a,b) => a.dU - b.dU); // peor empeoramiento primero
 
   buildTable('table-comparative',
-    ['Marca','Familia','Producto',
-     'STOCK SIS. 25','STOCK SIS. 26','DIFERENCIA 25','DIFERENCIA 26',
-     'VALOR SIS. 25','VALOR SIS. 26',
+    ['Marca','Familia','Descripcion',
+     'STOCK SISTEMA 25','STOCK SISTEMA 26','DIFERENCIA 25','DIFERENCIA 26',
+     'VALOR SISTEMA $ 25','VALOR SISTEMA $ 26',
      '% Exact Unid 25','% Exact Unid 26','Δ Exact Unid',
      '% Exact Peso 25','% Exact Peso 26','Δ Exact Peso'],
     rows.map(r => [
@@ -2813,14 +2813,14 @@ tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid
     <div class="top-card">
       <h3 style="color:#dc2626">Top 15 Faltantes — mayor impacto $</h3>
       <table class="data-table">
-        <thead><tr><th>Código</th><th>Producto</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
+        <thead><tr><th>Codigo_tecnico</th><th>Descripcion</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
         <tbody>${mkTopRows(topFalt,'#dc2626')}</tbody>
       </table>
     </div>
     <div class="top-card">
       <h3 style="color:#16a34a">Top 15 Sobrantes — mayor impacto $</h3>
       <table class="data-table">
-        <thead><tr><th>Código</th><th>Producto</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
+        <thead><tr><th>Codigo_tecnico</th><th>Descripcion</th><th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th></tr></thead>
         <tbody>${mkTopRows(topSobr,'#16a34a')}</tbody>
       </table>
     </div>
@@ -2864,7 +2864,7 @@ tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid
     <table class="data-table" id="rf-tabla">
       <thead>
         <tr>
-          <th>Código</th><th>Descripción</th>
+          <th>Codigo_tecnico</th><th>Descripcion</th>
           <th class="num">CONTEO</th><th class="num">STOCK SISTEMA</th>
           <th class="num">DIFERENCIA</th><th class="num">DIFERENCIA $</th>
           <th>FAMILIA</th><th>HIPERFAMILIA</th><th>MARCA</th>

@@ -309,6 +309,27 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.3 — 2026-05-29
+
+**Regla permanente — Títulos de columnas idénticos al Excel real**
+
+Todos los títulos de datos en la app, informes descargables, PDFs y análisis DEBEN ser exactamente iguales a los del Excel de inventario de El Manzano. No inventar nombres alternativos.
+
+**Columnas canónicas (del Excel real):**
+`Codigo_tecnico` · `Descripcion` · `CONTEO` · `COSTO $` · `VALOR CONTEO` · `STOCK SISTEMA` · `VALOR SISTEMA $` · `DIFERENCIA` · `DIFERENCIA $` · `FAMILIA`
+
+**Cambios aplicados en app.js:**
+- `buildEmbudoProductTable`: `Código` → `Codigo_tecnico`, `Descripción del Producto` → `Descripcion`
+- `renderAnalisisFinal` tops faltantes/sobrantes: `Código` → `Codigo_tecnico`, `Producto` → `Descripcion`
+- `renderAnalisisFinal` tabla detalle (rf-tabla): `Código` → `Codigo_tecnico`, `Descripción` → `Descripcion`
+- `exportTableToExcel` comparativa: `Producto` → `Descripcion`, `STOCK SIS. 25/26` → `STOCK SISTEMA 25/26`, `VALOR SIS. 25/26` → `VALOR SISTEMA $ 25/26`
+
+**node --check → OK ✓**
+
+**NO tocado:** `buildEmbudoGroupTable`, `renderDrilldown`, `exportDrilldownTable` (ya tenían headers correctos), KPI cards (son labels de resumen, no columnas de datos), lógica de filtrado, parseo, cálculos.
+
+---
+
 ### V7.2 — 2026-05-29
 
 **Fix — `renderCorrelativo()`: guard `if (!tbody) return` (handlers Avanzado/Final/Mejoras no respondían)**
