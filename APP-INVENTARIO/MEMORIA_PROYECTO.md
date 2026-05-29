@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.6
+# VERSION: V5.7
 # FECHA: 2026-05-29
 
 ---
@@ -308,6 +308,21 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.7 — 2026-05-29
+
+**Auditoría de cierre — Cambios A/D/E/F verificados completos**
+
+Sesión anterior quedó incompleta en el cierre (push pendiente). Auditoría confirmó:
+
+- **CAMBIO A** — Banner `.inv-en-curso` como card: padding 24/30px, icon 48px, body con title (20px/900) + main (16px/600) + note, toggle Unidades|Valor, print-color-adjust. CSS:1625 + markup en `_renderCoverageBanner`. ✓
+- **CAMBIO D** — Gráfico "Valor $ Sistema vs Conteo por Zona": nunca existió en el código. No requirió cambio. ✓
+- **CAMBIO E** — Desglose interactivo abierto por defecto: `class="acc-content dd-acc-content open"` en index.html:134/217. CSS `.dd-acc-content.open { max-height:none; overflow:visible }`. Table scroll con `max-height: min(78vh, 920px)`. ✓
+- **CAMBIO F** — `exportDrilldownTable(year)`: 11 columnas exactas (Codigo_tecnico, Descripcion, CONTEO, COSTO $, VALOR CONTEO, STOCK SISTEMA, VALOR SISTEMA $, DIFERENCIA, DIFERENCIA $, FAMILIA, MARCA), por producto, estilada con `styleSimpleSheet`, hoja RESULTADOS incluida. ✓
+
+**Funciones protegidas V4.1→V4.9:** todas intactas. `renderPlanoGrid` fue reemplazada intencionalmente por `_planoHtml_X()` en V5.3 (cambio documentado).
+
+**`node --check app.js` → OK ✓**
 
 ### V5.6 — 2026-05-29
 
