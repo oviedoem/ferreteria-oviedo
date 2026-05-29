@@ -309,6 +309,30 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.1 — 2026-05-29
+
+**Fix — `readFileData()`: avance de patentes no se llenaba (2 bugs)**
+
+**Bug 1 — sheet names en mayúsculas no reconocidas:**
+- `registroSheets` tenía `['busqueda',...]` — el Excel real tiene `BUSQUEDA` y `REGISTROS` (caps)
+- `wb.SheetNames.includes()` es case-sensitive → nunca encontraba esas hojas → `_patentesCargadas` quedaba vacío
+- Fix: lista ampliada a `['REGISTROS','BUSQUEDA','busqueda','SALA','PATIO','EXHIBICION','SEM','AREA 2','AREA 3','registro2026']`
+
+**Bug 2 — lógica "cualquier fila" en vez de "todas las filas":**
+- Código anterior: si UNA fila de la patente tenía CONTEO > 0 → patente marcada como contada
+- Correcto según regla de negocio: una patente está contada cuando TODAS sus filas tienen CONTEO > 0
+- Fix: nuevo algoritmo por grupos — agrupa filas por patente, cuenta {total, counted}, solo agrega al Set si `counted === total`
+
+**También actualizado:** `invSheets` (mapa inventariador) expandido con las mismas hojas para consistencia.
+
+**Impacto:** `window._patentesCargadas` ahora se llena correctamente al cargar el Excel → `renderCoverageZonas()`, `applyPatenteCellStates()` y `renderPlanoZonaProgress()` reciben datos reales → panel de avance y colores del plano funcionan automáticamente.
+
+**Regla persistente guardada en memoria:** NUNCA tocar `D:\ferreteria-oviedo\` (raíz). Solo `D:\ferreteria-oviedo\APP-INVENTARIO\`.
+
+**NO tocado:** `getPlanoContados`, `_buildCoverageZonas`, `renderCoverageZonas`, `applyPatenteCellStates`, `renderPlanoZonaProgress`, `loadFiles`
+
+---
+
 ### V7.0 — 2026-05-29
 
 **Planos — bordes por celda idénticos al Excel (generar_planos.js)**

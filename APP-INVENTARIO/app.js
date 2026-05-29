@@ -611,20 +611,30 @@ async function readFileData(file) {
           const missingIndex = buildMissingDataIndex(wb);
           const catalogIndex = buildCatalogFromBodegas(wb);
 
-          // Extraer patentes contadas directamente de hojas de registro
+          // Extraer patentes completamente contadas desde hojas de registro.
+          // Una patente se considera "contada" solo cuando TODOS sus códigos tienen CONTEO > 0.
           const patentesCargadasSet = new Set();
-          const registroSheets = ['busqueda','AREA 2','AREA 3','registro2026','SALA','PATIO'];
+          const registroSheets = ['REGISTROS','BUSQUEDA','busqueda','SALA','PATIO','EXHIBICION','SEM','AREA 2','AREA 3','registro2026'];
           for (const sName of registroSheets) {
             if (!wb.SheetNames.includes(sName)) continue;
             try {
               const rRows = XLSX.utils.sheet_to_json(wb.Sheets[sName], { defval: '', raw: false });
+              // Agrupar por patente: total de filas vs filas con CONTEO > 0
+              const grupos = {};
               for (const r of rRows) {
                 const pat = String(r.PATENTE || r.Patente || r.patente || '').trim();
+                if (!pat) continue;
+                const patKey = pat.toUpperCase();
                 const conteo = parseFloat(String(r.CONTEO || r.Conteo || r.conteo || 0));
-                const conto  = parseFloat(String(r.CONTO  || r.Conto  || r.conto  || 0));
-                if (pat && (conteo > 0 || conto > 0)) {
-                  patentesCargadasSet.add(pat.toUpperCase());
-                  const num = pat.match(/^(\d+)/)?.[1];
+                if (!grupos[patKey]) grupos[patKey] = { total: 0, counted: 0 };
+                grupos[patKey].total++;
+                if (conteo > 0) grupos[patKey].counted++;
+              }
+              // Solo marcar como contada si TODAS las filas de esa patente están contadas
+              for (const [patKey, g] of Object.entries(grupos)) {
+                if (g.total > 0 && g.counted === g.total) {
+                  patentesCargadasSet.add(patKey);
+                  const num = patKey.match(/^(\d+)/)?.[1];
                   if (num) patentesCargadasSet.add(num);
                 }
               }
@@ -636,7 +646,7 @@ async function readFileData(file) {
 
           // Construir mapa patente → inventariador (PROMPT-3 PASO 1)
           const inventariadorMap = new Map();
-          const invSheets = ['REGISTROS','BUSQUEDA','busqueda','registro2026'];
+          const invSheets = ['REGISTROS','BUSQUEDA','busqueda','SALA','PATIO','EXHIBICION','SEM','AREA 2','AREA 3','registro2026'];
           for (const sName of invSheets) {
             if (!wb.SheetNames.includes(sName)) continue;
             try {
