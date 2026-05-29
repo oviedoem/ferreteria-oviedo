@@ -1810,3 +1810,130 @@ select.embudo-select:disabled { opacity: .45; cursor: default; }
   .inv-zonas-total { align-items: flex-start; min-width: 0; width: 100%; }
   .inv-zonas-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Plano: contenedor con scroll horizontal ── */
+.plano-overflow-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+.plano-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11px;
+  font-family: Calibri, Arial, sans-serif;
+}
+
+/* ── Celdas de patente ── */
+.plano-patente {
+  cursor: default;
+  position: relative;
+  transition: background 0.25s, box-shadow 0.2s, transform 0.15s;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.plano-patente:hover {
+  transform: scale(1.08);
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* Estado PENDIENTE: borde rojo sutil sin destruir color Excel */
+.plano-patente-pendiente {
+  outline: 1.5px solid rgba(239,68,68,0.45);
+  outline-offset: -1px;
+}
+
+/* Estado LISTA: overlay verde sobre estilos Excel */
+.plano-patente-lista {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 2px 8px rgba(5,150,105,0.5);
+  outline: 2px solid #047857;
+  outline-offset: -1px;
+}
+
+/* Badge inventariador */
+.plano-inv-badge {
+  display: block;
+  font-size: 7.5px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+  margin-top: 1px;
+}
+
+/* ── Barra de progreso por hoja ── */
+.plano-zona-progress-bar { margin-bottom: 10px; }
+
+.plano-prog-inner {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plano-prog-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plano-prog-track {
+  background: #e2e8f0;
+  border-radius: 99px;
+  height: 7px;
+  overflow: hidden;
+}
+
+.plano-prog-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.7s ease;
+}
+
+/* ── Tabs del plano ── */
+.plano-tab-btn {
+  padding: 6px 14px;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.plano-tab-btn.active {
+  background: #ffffff;
+  color: #1e40af;
+  border-color: #1e40af;
+  border-bottom: 2px solid #fff;
+  margin-bottom: -1px;
+  z-index: 1;
+  position: relative;
+}
+
+.plano-tab-btn:hover:not(.active) {
+  background: #f1f5f9;
+  color: #334155;
+}

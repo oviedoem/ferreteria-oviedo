@@ -607,6 +607,51 @@ async function readFileData(file) {
           const famIndex     = buildFamiliaIndex(wb);
           const missingIndex = buildMissingDataIndex(wb);
           const catalogIndex = buildCatalogFromBodegas(wb);
+
+          // Extraer patentes contadas directamente de hojas de registro
+          const patentesCargadasSet = new Set();
+          const registroSheets = ['busqueda','AREA 2','AREA 3','registro2026','SALA','PATIO'];
+          for (const sName of registroSheets) {
+            if (!wb.SheetNames.includes(sName)) continue;
+            try {
+              const rRows = XLSX.utils.sheet_to_json(wb.Sheets[sName], { defval: '', raw: false });
+              for (const r of rRows) {
+                const pat = String(r.PATENTE || r.Patente || r.patente || '').trim();
+                const conteo = parseFloat(String(r.CONTEO || r.Conteo || r.conteo || 0));
+                const conto  = parseFloat(String(r.CONTO  || r.Conto  || r.conto  || 0));
+                if (pat && (conteo > 0 || conto > 0)) {
+                  patentesCargadasSet.add(pat.toUpperCase());
+                  const num = pat.match(/^(\d+)/)?.[1];
+                  if (num) patentesCargadasSet.add(num);
+                }
+              }
+            } catch { /* skip */ }
+          }
+          if (patentesCargadasSet.size > 0) {
+            window._patentesCargadas = patentesCargadasSet;
+          }
+
+          // Construir mapa patente → inventariador (PROMPT-3 PASO 1)
+          const inventariadorMap = new Map();
+          const invSheets = ['REGISTROS','BUSQUEDA','busqueda','registro2026'];
+          for (const sName of invSheets) {
+            if (!wb.SheetNames.includes(sName)) continue;
+            try {
+              const rRows = XLSX.utils.sheet_to_json(wb.Sheets[sName], { defval:'', raw:false });
+              for (const r of rRows) {
+                const pat = String(r.PATENTE || r.Patente || r.patente || '').trim().toUpperCase();
+                const inv = String(r.INVENTARIADOR || r.Inventariador || r.inventariador || '').trim();
+                const conteo = parseFloat(String(r.CONTEO || r.Conteo || 0));
+                if (pat && inv && conteo > 0 && !inventariadorMap.has(pat)) {
+                  inventariadorMap.set(pat, inv);
+                  const num = pat.match(/^(d+)/)?.[1];
+                  if (num && !inventariadorMap.has(num)) inventariadorMap.set(num, inv);
+                }
+              }
+            } catch { /* skip */ }
+          }
+          window._inventariadorPorPatente = inventariadorMap;
+
           const bodegaIndex  = Object.fromEntries(Object.entries(catalogIndex).filter(([,v]) => v.bodega).map(([k,v]) => [k, v.bodega]));
           const enriched = rows.map(r => {
             const cod = cleanText(rowValueByAliases(r, ['Codigo_tecnico','CODIGO','Codigo_Tecnico','Codigo','CODIGO_TECNICO']));
@@ -716,6 +761,12 @@ async function loadFiles(files, year) {
   else                 state.data2026 = state.data2026.concat(allRows);
 
   saveDataToIDB(year, year === '2025' ? state.data2025 : state.data2026);
+  renderCoverageZonas(year);
+  // Refrescar estados del plano hardcodeado si ya está renderizado
+  if (document.querySelector('#planos-content .plano-patente')) {
+    applyPatenteCellStates();
+    Object.keys(PLANO_SHEETS || {}).forEach(renderPlanoZonaProgress);
+  }
   updateSidebarStatus(year);
   _showLoadedYearCoverage(year);
   saveStateToLS();
@@ -1062,12 +1113,16 @@ function _renderCoverageBanner(data, ctx) {
   const fmtC  = modo === 'valor' ? fmtMoney(cov.contados) : fmt(cov.contados);
   const fmtT  = modo === 'valor' ? fmtMoney(cov.total)    : fmt(cov.total);
   const label = modo === 'valor' ? '$ contados' : 'unidades contadas';
+  const prodContados = data.filter(r => (r.unidades_real || 0) > 0).length;
+  const prodTotal    = data.length;
+  const pctProd      = prodTotal > 0 ? (prodContados / prodTotal * 100) : 0;
   el.innerHTML = `
     <div class="inv-en-curso">
       <div class="inv-en-curso-icon">⏳</div>
       <div class="inv-en-curso-body">
         <div class="inv-en-curso-title">Inventario EN CURSO</div>
-        <div class="inv-en-curso-main">Conteo parcial: <strong>${fmtC}</strong> de <strong>${fmtT}</strong> ${label} <strong>(${cov.pct.toFixed(1)}%)</strong>.</div>
+        <div class="inv-en-curso-main">Conteo parcial: <strong>${fmt(prodContados)}</strong> de <strong>${fmt(prodTotal)}</strong> productos contados <strong>(${pctProd.toFixed(1)}%)</strong>.</div>
+        <div class="inv-en-curso-main" style="font-size:0.85em;color:#666">Unidades: <strong>${fmtC}</strong> de <strong>${fmtT}</strong> ${label} <strong>(${cov.pct.toFixed(1)}%)</strong>.</div>
         <div class="inv-en-curso-note">Los % de diferencia y dispersión aún <strong>NO son definitivos</strong>.</div>
       </div>
       <span class="inv-en-curso-toggle">
@@ -1225,30 +1280,35 @@ function renderKPIs(year, data) {
   const semU = semaforo(k.exact_unid);
   const semP = semaforo(k.exact_peso);
   document.getElementById(`kpi-${year}`).innerHTML = `
+    <div class="kpi-card kpi-neutral">
+      <div class="kpi-label">TOTAL UNID. SISTEMA</div>
+      <div class="kpi-value">${fmt(k.us)}</div>
+      <div class="kpi-sub">stock en sistema</div>
+    </div>
+    <div class="kpi-card kpi-neutral">
+      <div class="kpi-label">TOTAL UNID. FÍSICO</div>
+      <div class="kpi-value">${fmt(k.ur)}</div>
+      <div class="kpi-sub">conteo físico real</div>
+    </div>
+    <div class="kpi-card kpi-neutral">
+      <div class="kpi-label">DIFERENCIA UNIDADES</div>
+      <div class="kpi-value">${k.adu >= 0 ? '+' : ''}${fmt(k.adu)}</div>
+      <div class="kpi-sub">STOCK SISTEMA: ${fmt(k.us)} / CONTEO: ${fmt(k.ur)}</div>
+    </div>
     <div class="kpi-card ${semU}">
-      <div class="kpi-label">Exactitud Unidades</div>
+      <div class="kpi-label">EXACTITUD UNIDADES</div>
       <div class="kpi-value">${fmtPct(k.exact_unid)}%</div>
       <div class="kpi-sub">${semLabel(semU)}</div>
     </div>
+    <div class="kpi-card kpi-neutral">
+      <div class="kpi-label">DIFERENCIA $</div>
+      <div class="kpi-value">${k.adp >= 0 ? '+' : ''}${fmt(k.adp)}</div>
+      <div class="kpi-sub">VALOR SISTEMA: $${fmt(k.ps)} / VALOR CONTEO: $${fmt(k.pr)}</div>
+    </div>
     <div class="kpi-card ${semP}">
-      <div class="kpi-label">Exactitud Peso</div>
+      <div class="kpi-label">EXACTITUD $</div>
       <div class="kpi-value">${fmtPct(k.exact_peso)}%</div>
       <div class="kpi-sub">${semLabel(semP)}</div>
-    </div>
-    <div class="kpi-card kpi-neutral">
-      <div class="kpi-label">Σ Dif. Unidades (abs)</div>
-      <div class="kpi-value">${fmt(k.adu)}</div>
-      <div class="kpi-sub">Sist: ${fmt(k.us)} / Real: ${fmt(k.ur)}</div>
-    </div>
-    <div class="kpi-card kpi-neutral">
-      <div class="kpi-label">Σ Dif. Peso (abs)</div>
-      <div class="kpi-value">${fmt(k.adp)}</div>
-      <div class="kpi-sub">Sist: ${fmt(k.ps)} / Real: ${fmt(k.pr)}</div>
-    </div>
-    <div class="kpi-card kpi-neutral">
-      <div class="kpi-label">Registros</div>
-      <div class="kpi-value">${fmt(k.count)}</div>
-      <div class="kpi-sub">productos analizados</div>
     </div>`;
 }
 
@@ -1305,17 +1365,17 @@ function renderCountKPIs(year, data) {
     <div class="kpi-count-header">📦 Conteo Total: <strong>${fmt(c.total)}</strong> productos</div>
     <div class="kpi-count-grid">
       <div class="kpi-count-card count-corr">
-        <div class="kpi-count-label">Correctos</div>
+        <div class="kpi-count-label">PRODUCTOS EXACTOS</div>
         <div class="kpi-count-value">${fmt(c.correctos)}</div>
         <div class="kpi-count-pct">${fmtPct(c.pctCorr)}%</div>
       </div>
-      <div class="kpi-count-card count-falt">
-        <div class="kpi-count-label">Faltantes</div>
+      <div class="kpi-count-card count-falt" style="background:#fff0f0">
+        <div class="kpi-count-label">PRODUCTOS FALTANTES</div>
         <div class="kpi-count-value">${fmt(c.faltantes)}</div>
         <div class="kpi-count-pct">${fmtPct(c.pctFalt)}%</div>
       </div>
-      <div class="kpi-count-card count-sobr">
-        <div class="kpi-count-label">Sobrantes</div>
+      <div class="kpi-count-card count-sobr" style="background:#f0fff4">
+        <div class="kpi-count-label">PRODUCTOS SOBRANTES</div>
         <div class="kpi-count-value">${fmt(c.sobrantes)}</div>
         <div class="kpi-count-pct">${fmtPct(c.pctSobr)}%</div>
       </div>
@@ -1339,34 +1399,34 @@ function renderMonetaryKPIs(year, data) {
     <div class="kpi-monetary-header">💰 Dispersión en $ (Peso monetario)</div>
     <div class="kpi-monetary-grid">
       <div class="kpi-mon-card">
-        <div class="kpi-mon-label">Total Sistema</div>
+        <div class="kpi-mon-label">TOTAL $ SISTEMA</div>
         <div class="kpi-mon-value">${fmtMoney(m.totalSistema)}</div>
         <div class="kpi-mon-pct">valor en sistema</div>
       </div>
       <div class="kpi-mon-card">
-        <div class="kpi-mon-label">Total Conteo</div>
+        <div class="kpi-mon-label">TOTAL $ FÍSICO</div>
         <div class="kpi-mon-value">${fmtMoney(m.totalConteo)}</div>
         <div class="kpi-mon-pct">valor físico real</div>
       </div>
       <div class="kpi-mon-card ${m.difTotal < 0 ? 'mon-neg' : 'mon-pos'}">
-        <div class="kpi-mon-label">Diferencia Global</div>
+        <div class="kpi-mon-label">DIFERENCIA $</div>
         <div class="kpi-mon-value">${fmtMoney(m.difTotal)}</div>
         <div class="kpi-mon-pct">${pctSign(m.pctDifTotal)} sobre sistema</div>
       </div>
       <div class="kpi-mon-card mon-pos">
-        <div class="kpi-mon-label">Diferencias + (sobrantes)</div>
+        <div class="kpi-mon-label">DIFERENCIAS + SOBRANTES</div>
         <div class="kpi-mon-value">${fmtMoney(m.difPos)}</div>
         <div class="kpi-mon-pct">${pctSign(m.pctDifPos)} sobre sistema</div>
       </div>
       <div class="kpi-mon-card mon-neg">
-        <div class="kpi-mon-label">Diferencias − (faltantes)</div>
+        <div class="kpi-mon-label">DIFERENCIAS − FALTANTES</div>
         <div class="kpi-mon-value">${fmtMoney(m.difNeg)}</div>
         <div class="kpi-mon-pct">${fmtPct(m.pctDifNeg)}% sobre sistema</div>
       </div>
       <div class="kpi-mon-card mon-disp">
-        <div class="kpi-mon-label">Dispersión total</div>
+        <div class="kpi-mon-label">DISPERSIÓN TOTAL</div>
         <div class="kpi-mon-value">${fmtMoney(m.dispersion)}</div>
-        <div class="kpi-mon-pct">${fmtPct(m.pctDispersion)}% del sistema · |dif+|+|dif−|</div>
+        <div class="kpi-mon-pct">dispersión: $${fmt(m.dispersion)}</div>
       </div>
     </div>`;
 }
@@ -2538,7 +2598,17 @@ function generateReporteFinal(mode) {
     if (r.dif_unidades < 0) { falt++; faltV += Math.abs(r.dif_peso || 0); }
     else if (r.dif_unidades > 0) { sobr++; sobrV += Math.abs(r.dif_peso || 0); }
   }
-  const pctDisp = m.totalSistema > 0 ? (m.dispersion / m.totalSistema * 100).toFixed(2) : '0.00';
+  // Helper local: formato porcentaje chileno con signo, base monetaria (NO redefinir fmtPct global)
+  const _pct = (val, decimals) => {
+    if (!isFinite(val)) return '—';
+    return (val >= 0 ? '+' : '') + val.toFixed(decimals === undefined ? 2 : decimals).replace('.', ',') + '%';
+  };
+  const _pctBase = m.totalSistema || 1;
+  const pctDif   = m.totalSistema > 0 ? m.difTotal   / _pctBase * 100 : null;
+  const pctDifP  = m.totalSistema > 0 ? m.difPos      / _pctBase * 100 : null;
+  const pctDifN  = m.totalSistema > 0 ? m.difNeg      / _pctBase * 100 : null;
+  const pctDisp  = m.totalSistema > 0 ? m.dispersion  / _pctBase * 100 : null;
+  // Estos se usan solo en el texto sub de cards (base unidades — conservar para no romper)
   const pctFalt = k.us > 0 ? (Math.abs(data.reduce((s,r)=>s+(r.dif_unidades<0?r.dif_unidades:0),0))/k.us*100).toFixed(2) : '0.00';
   const pctSobr = k.us > 0 ? (data.reduce((s,r)=>s+(r.dif_unidades>0?r.dif_unidades:0),0)/k.us*100).toFixed(2) : '0.00';
 
@@ -2686,20 +2756,20 @@ tfoot td{font-weight:700;background:#dbeafe;padding:5px 8px;border-top:2px solid
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Dispersión Total</div>
-      <div class="kpi-value">${pctDisp}%</div>
+      <div class="kpi-value">${pctDisp !== null ? pctDisp.toFixed(2).replace('.',',') + '%' : '—'}</div>
       <div class="kpi-sub">$ ${Math.round(m.dispersion).toLocaleString('es-CL')}</div>
     </div>
   </div>
 
   <table class="res-table">
-    <thead><tr><th>Concepto</th><th>Unidades</th><th>Valor $</th><th>%</th></tr></thead>
+    <thead><tr><th>Concepto</th><th>Unidades</th><th>Valor $</th><th>EN %</th></tr></thead>
     <tbody>
       <tr><td><strong>Total Sistema</strong></td><td class="num">${Math.round(k.us).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(k.ps).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
       <tr><td><strong>Total Conteo</strong></td><td class="num">${Math.round(k.ur).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(k.pr).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
-      <tr><td><strong>Diferencias</strong></td><td class="num">${k.du>=0?'+':''}${Math.round(k.du).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(m.difTotal).toLocaleString('es-CL')}</td><td class="num">—</td></tr>
-      <tr style="color:#16a34a"><td><strong>Diferencias (+) sobrantes</strong></td><td class="num">${sobr.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(sobrV).toLocaleString('es-CL')}</td><td class="num">${pctSobr}%</td></tr>
-      <tr style="color:#dc2626"><td><strong>Diferencias (−) faltantes</strong></td><td class="num">${falt.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(faltV).toLocaleString('es-CL')}</td><td class="num">${pctFalt}%</td></tr>
-      <tr style="font-weight:700"><td><strong>Dispersion</strong></td><td class="num">${Math.round(k.adu).toLocaleString('es-CL')} unid</td><td class="num">$ ${Math.round(m.dispersion).toLocaleString('es-CL')}</td><td class="num">${pctDisp}%</td></tr>
+      <tr><td><strong>Diferencias</strong></td><td class="num">${k.du>=0?'+':''}${Math.round(k.du).toLocaleString('es-CL')}</td><td class="num">$ ${Math.round(m.difTotal).toLocaleString('es-CL')}</td><td class="num" style="text-align:right;font-weight:600;color:#dc2626">${pctDif !== null ? _pct(pctDif) : '—'}</td></tr>
+      <tr><td><strong>Diferencias (+) sobrantes</strong></td><td class="num">${sobr.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(sobrV).toLocaleString('es-CL')}</td><td class="num" style="text-align:right;font-weight:600;color:#1d4ed8">${pctDifP !== null ? _pct(pctDifP) : '—'}</td></tr>
+      <tr><td><strong>Diferencias (−) faltantes</strong></td><td class="num">${falt.toLocaleString('es-CL')} prods</td><td class="num">$ ${Math.round(faltV).toLocaleString('es-CL')}</td><td class="num" style="text-align:right;font-weight:600;color:#dc2626">${pctDifN !== null ? _pct(pctDifN) : '—'}</td></tr>
+      <tr style="font-weight:700"><td><strong>Dispersión</strong></td><td class="num">${Math.round(k.adu).toLocaleString('es-CL')} unid</td><td class="num">$ ${Math.round(m.dispersion).toLocaleString('es-CL')}</td><td class="num" style="text-align:right;font-weight:600;color:#334155">${pctDisp !== null ? _pct(pctDisp) : '—'}</td></tr>
     </tbody>
   </table>
 
@@ -3278,327 +3348,147 @@ function exportCorrelatjvoExcel() {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   PLANOS DE PATENTES
+   PLANOS DE PATENTES — HTML HARDCODEADO
    ═══════════════════════════════════════════════════════════════ */
 
-// Solo las 4 hojas visibles del archivo de planos
-const PLANO_ZONES = {
-  'Sala 1':    { label: 'Sala 1',          color: '#1e40af', numBg: '#dbeafe', numColor: '#1e3a8a' },
-  '1erPiso_A': { label: '1er Piso Bod. A', color: '#166534', numBg: '#dcfce7', numColor: '#14532d' },
-  '2doPiso_A': { label: '2do Piso Bod. A', color: '#6b21a8', numBg: '#ede9fe', numColor: '#4c1d95' },
-  'Patio_2':   { label: 'Patio 2',         color: '#92400e', numBg: '#fef3c7', numColor: '#78350f' },
+let planosPatentes = []; // [{patente, zona, area}] — poblado desde DOM al cargar
+
+// ── PLANOS HARDCODEADOS (generado automáticamente) ──────────────
+
+function _planoHtml_Sala_EXHIBICION() {
+  return `<table class="plano-table"><<colgroup><col style="width:50px"><col style="width:39px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:39px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:39px"><col style="width:26px"><col style="width:54px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:62px"><col style="width:26px"><col style="width:39px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:48px"><col style="width:26px"><col style="width:26px"><col style="width:45px"><col style="width:26px"><col style="width:39px"><col style="width:44px"><col style="width:26px"><col style="width:39px"><col style="width:64px"></colgroup><tbody><tr style="height:15px"><td colspan="49">Plano_patentes_Sala_EM</td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td colspan="10">JARDIN</td><td></td><td></td><td></td><td>SMART</td><td></td><td></td><td></td><td></td><td></td><td>CORDEL</td><td></td><td colspan="5">HERRAMIENTAS</td><td colspan="5">HERRAMIENTAS</td><td colspan="6">BARRA CORTINA</td><td></td><td></td><td colspan="6">MODULOS</td></tr><tr style="height:15px"><td rowspan="4">PPR</td><td rowspan="9">4</td><td rowspan="2" colspan="12">5</td><td rowspan="2" colspan="9">6</td><td rowspan="2" colspan="2">7</td><td rowspan="2" colspan="16">8</td><td rowspan="2" colspan="2">9</td><td class="plano-patente" rowspan="2" colspan="6" data-patente="10">10</td></tr><tr style="height:15px"></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FF0000;">RICARDO - VANESSA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="2">EINHEL</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="10" data-patente="11">11</td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="6" data-patente="55">55</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="6">SHOWER</td></tr><tr style="height:15px"><td rowspan="4">HIDRA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="4">SIKA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:25.8px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="4" colspan="4" data-patente="50">50</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="64">64</td><td class="plano-patente" rowspan="2" colspan="6" data-patente="63">63</td><td class="plano-patente" rowspan="4" data-patente="54">54</td><td rowspan="4">HOYADOR</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="62">62</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="61">61</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="60">60</td><td class="plano-patente" rowspan="4" colspan="2" data-patente="59">59</td><td rowspan="4">MIXA</td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="51">51</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="52">52</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="53">53</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="56">56</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="57">57</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="58">58</td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td rowspan="9">EMPAQUE</td><td rowspan="9">3</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="2">FAS</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:25.8px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6">MEGABRIGTH</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:31.8px"><td></td><td></td><td></td><td></td><td rowspan="5"></td><td rowspan="5"></td><td rowspan="4">WEBER</td><td class="plano-patente" rowspan="4" data-patente="33">33</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="49">49</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="48">48</td><td class="plano-patente" rowspan="2" colspan="6" data-patente="47">47</td><td class="plano-patente" rowspan="4" data-patente="38">38</td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="2">BLACK</td><td class="plano-patente" rowspan="4" data-patente="39">39</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="46">46</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="45">45</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="44">44</td><td class="plano-patente" rowspan="4" colspan="2" data-patente="43">43</td><td rowspan="4">MUEBLES</td><td></td><td></td><td></td><td rowspan="9">BAÑO  ESPEJO</td><td class="plano-patente" rowspan="9" data-patente="12">12</td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="2">DECKER</td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="34">34</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="35">35</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="36">36</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="37">37</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="40">40</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="41">41</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="42">42</td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:21px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="9">PINTURA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td rowspan="4"></td><td rowspan="4"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td rowspan="5">SOQUINA</td><td colspan="12">EINHEL - HYUNDAI</td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">ESTANTE</td><td class="plano-patente" rowspan="4" data-patente="24">24</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="32">32</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="31">31</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="30">30</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="29">29</td><td rowspan="4"></td><td></td><td></td></tr><tr style="height:21px"><td></td><td rowspan="2"></td><td rowspan="2" colspan="3">CAJA</td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="12" data-patente="21">21</td><td class="plano-patente" rowspan="3" data-patente="22">22</td><td colspan="3">ESTANTE</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:21.600000000000005px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="25">25</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="26">26</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="27">27</td><td class="plano-patente" rowspan="2" colspan="3" data-patente="28">28</td><td></td><td></td></tr><tr style="height:21.600000000000005px"><td></td><td style="background:#FF0000;">B</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="9" data-patente="13">13</td></tr><tr style="height:30px"><td>OF</td><td rowspan="2" colspan="2">2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="6" data-patente="23">23</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="6">BILDER</td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td rowspan="5">TECLE</td><td rowspan="5" colspan="3">1</td><td colspan="3"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FF0000;">RAFA - GREGORIO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:28.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:19.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="7">GENERADOR</td><td colspan="7">PARLANTES</td><td colspan="7">HIDROLAVADORA</td><td colspan="7">COMPRESOR</td><td></td><td colspan="4">BOMBAS</td><td></td><td></td></tr><tr style="height:19.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="20">20</td><td class="plano-patente" rowspan="3" colspan="7" data-patente="19">19</td><td class="plano-patente" rowspan="3" colspan="7" data-patente="18">18</td><td class="plano-patente" rowspan="3" colspan="7" data-patente="17">17</td><td class="plano-patente" rowspan="3" colspan="7" data-patente="16">16</td><td class="plano-patente" rowspan="3" colspan="6" data-patente="15">15</td><td></td></tr><tr style="height:19.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="2" data-patente="14">14</td></tr><tr style="height:28.2px"><td></td><td></td><td></td><td></td><td colspan="6">ENTRADA</td><td colspan="3"></td></tr></tbody></table>`;
+}
+
+function _planoHtml_BODEGA_SALA() {
+  return `<table class="plano-table"><<colgroup><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:34px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:51px"><col style="width:26px"><col style="width:16px"><col style="width:16px"><col style="width:16px"><col style="width:16px"><col style="width:13px"><col style="width:19px"><col style="width:18px"><col style="width:18px"><col style="width:16px"><col style="width:16px"><col style="width:22px"><col style="width:22px"><col style="width:22px"><col style="width:22px"><col style="width:22px"><col style="width:22px"><col style="width:22px"><col style="width:22px"><col style="width:22px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:34px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:21px"><col style="width:31px"></colgroup><tbody><tr style="height:21px"><td>Plano_patentes_1er.piso_bodega_A</td><td></td><td></td><td></td><td colspan="93"></td></tr><tr style="height:16.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="100">100</td><td></td><td></td><td></td><td colspan="26" style="background:#FFFF00;"></td><td></td><td></td><td class="plano-patente" data-patente="106">106</td><td></td><td></td><td></td><td colspan="34" style="background:#FFFF00;"></td><td class="plano-patente" rowspan="15" data-patente="111" style="background:#FFFF00;">111</td></tr><tr style="height:16.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="99">99</td><td></td><td></td><td></td><td colspan="26" style="background:#FFFF00;"></td><td></td><td></td><td class="plano-patente" data-patente="105">105</td><td></td><td></td><td></td><td colspan="34" style="background:#FFFF00;"></td></tr><tr style="height:16.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="98">98</td><td></td><td></td><td></td><td colspan="26" style="background:#FFFF00;"></td><td></td><td></td><td class="plano-patente" data-patente="104">104</td><td></td><td></td><td></td><td colspan="34" style="background:#FFFF00;"></td></tr><tr style="height:16.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="97">97</td><td></td><td></td><td></td><td colspan="26" style="background:#FFFF00;"></td><td></td><td></td><td class="plano-patente" data-patente="103">103</td><td></td><td></td><td></td><td colspan="34" style="background:#FFFF00;"></td></tr><tr style="height:16.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="96">96</td><td></td><td></td><td></td><td colspan="26" style="background:#FFFF00;"></td><td rowspan="2" colspan="6"></td><td colspan="34" style="background:#FFFF00;"></td></tr><tr style="height:16.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="95">95</td><td></td><td></td><td></td><td colspan="26" style="background:#FFFF00;"></td><td colspan="34" style="background:#FFFF00;"></td></tr><tr style="height:11.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="94">94</td><td class="plano-patente" data-patente="93">93</td><td class="plano-patente" data-patente="92">92</td><td class="plano-patente" data-patente="91">91</td><td class="plano-patente" rowspan="7" data-patente="90" style="background:#FFFF00;">90</td><td class="plano-patente" rowspan="7" data-patente="89" style="background:#FFFF00;">89</td><td class="plano-patente" rowspan="7" data-patente="88" style="background:#FFFF00;">88</td><td rowspan="7" style="background:#FFFF00;">CLAVOS</td><td rowspan="7" style="background:#FFFF00;"></td><td rowspan="7" style="background:#FFFF00;"></td><td rowspan="7" style="background:#FFFF00;"></td><td rowspan="7">FRAGUES Y TORNILLO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>CLAVOS</td><td></td><td></td><td></td><td rowspan="9"></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>smart tools</td><td></td><td></td><td></td><td colspan="8"></td><td></td><td></td><td></td><td></td><td></td><td>smart tools</td><td></td><td></td><td></td><td colspan="8"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>CADENAS</td><td></td><td></td><td></td><td colspan="9"></td><td></td><td></td><td></td><td></td><td></td><td>LIJAS</td><td></td><td></td><td></td><td colspan="8"></td><td></td><td></td><td></td><td></td><td></td><td></td><td>PALAS/RASTRILLO</td><td></td><td></td><td></td><td colspan="10"></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="181">181</td><td></td><td></td><td></td><td rowspan="2" colspan="14" style="background:#FFFF00;"></td><td></td><td></td><td></td><td class="plano-patente" data-patente="147">147</td><td></td><td></td><td></td><td rowspan="2" colspan="8" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="123">123</td><td></td><td></td><td></td><td rowspan="2" colspan="10" style="background:#FFFF00;"></td><td style="background:#FFFF00;"></td><td rowspan="12"></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="5" colspan="2"></td><td></td><td></td><td></td><td></td><td></td><td rowspan="5"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="73">73</td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="15" style="background:#FFFF00;"></td><td class="plano-patente" rowspan="4" data-patente="83" style="background:#FFFF00;">83</td><td class="plano-patente" rowspan="4" data-patente="82" style="background:#FFFF00;">82</td><td rowspan="4" style="background:#FFFF00;">LISTEL</td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4"></td><td>HELLA</td><td class="plano-patente" data-patente="182">182</td><td class="plano-patente" data-patente="183">183</td><td class="plano-patente" data-patente="184">184</td><td class="plano-patente" rowspan="4" data-patente="185">185</td><td class="plano-patente" rowspan="4" data-patente="186" style="background:#FFFF00;">186</td><td class="plano-patente" rowspan="4" data-patente="187" style="background:#FFFF00;">187</td><td class="plano-patente" rowspan="4" data-patente="188" style="background:#FFFF00;">188</td><td class="plano-patente" rowspan="4" data-patente="212" style="background:#FFFF00;">212</td><td class="plano-patente" rowspan="4" data-patente="211" style="background:#FFFF00;">211</td><td class="plano-patente" rowspan="4" data-patente="210" style="background:#FFFF00;">210</td><td class="plano-patente" rowspan="4" data-patente="209" style="background:#FFFF00;">209</td><td class="plano-patente" rowspan="4" data-patente="208" style="background:#FFFF00;">208</td><td class="plano-patente" rowspan="4" data-patente="207" style="background:#FFFF00;">207</td><td class="plano-patente" rowspan="4" data-patente="206" style="background:#FFFF00;">206</td><td rowspan="4" style="background:#FFFF00;">FERRO</td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4"></td><td></td><td class="plano-patente" data-patente="150">150</td><td class="plano-patente" data-patente="151">151</td><td class="plano-patente" rowspan="16" data-patente="152" style="background:#FFFF00;">152</td><td class="plano-patente" rowspan="16" data-patente="180" style="background:#FFFF00;">180</td><td class="plano-patente" rowspan="16" data-patente="179" style="background:#FFFF00;">179</td><td class="plano-patente" rowspan="16" data-patente="178" style="background:#FFFF00;">178</td><td class="plano-patente" rowspan="16" data-patente="177" style="background:#FFFF00;">177</td><td class="plano-patente" rowspan="4" data-patente="176" style="background:#FFFF00;">176</td><td class="plano-patente" rowspan="4" data-patente="175" style="background:#FFFF00;">175</td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4" style="background:#FFFF00;"></td><td rowspan="4" style="background:#FFFF00;"></td><td></td><td></td><td>TAJAMAR</td><td class="plano-patente" data-patente="124">124</td><td class="plano-patente" data-patente="125">125</td><td class="plano-patente" data-patente="126">126</td><td class="plano-patente" rowspan="10" data-patente="127">127</td><td class="plano-patente" rowspan="10" data-patente="128" style="background:#FFFF00;">128</td><td class="plano-patente" rowspan="10" data-patente="122" style="background:#FFFF00;">122</td><td class="plano-patente" rowspan="10" data-patente="121" style="background:#FFFF00;">121</td><td class="plano-patente" rowspan="10" data-patente="120" style="background:#FFFF00;">120</td><td class="plano-patente" rowspan="10" data-patente="119" style="background:#FFFF00;">119</td><td class="plano-patente" rowspan="10" data-patente="118" style="background:#FFFF00;">118</td><td class="plano-patente" rowspan="10" data-patente="117" style="background:#FFFF00;">117</td><td rowspan="10" style="background:#FFFF00;"></td><td rowspan="10" style="background:#FFFF00;"></td><td rowspan="10" style="background:#FFFF00;"></td><td rowspan="10" style="background:#FFFF00;"></td><td></td><td></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="72">72</td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="15" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td>ODIS</td><td></td><td rowspan="14"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td class="plano-patente" data-patente="71">71</td><td></td><td></td><td></td><td colspan="4" style="background:#FFFF00;">CAJA</td><td rowspan="2" colspan="2"></td><td colspan="13" style="background:#FFFF00;"></td><td rowspan="2" colspan="2" style="background:#FF0000;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="113">113</td><td class="plano-patente" data-patente="114">114</td><td class="plano-patente" rowspan="7" data-patente="115">115</td><td class="plano-patente" rowspan="8" data-patente="116" style="background:#FFFF00;">116</td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="70">70</td><td></td><td></td><td></td><td colspan="4" style="background:#FFFF00;"></td><td colspan="13" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td class="plano-patente" data-patente="69">69</td><td></td><td></td><td></td><td colspan="4" style="background:#FFFF00;"></td><td></td><td></td><td colspan="13" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="189">189</td><td class="plano-patente" data-patente="190">190</td><td class="plano-patente" data-patente="191">191</td><td class="plano-patente" data-patente="192">192</td><td class="plano-patente" rowspan="24" data-patente="193" style="background:#FFFF00;">193</td><td class="plano-patente" rowspan="24" data-patente="194" style="background:#FFFF00;">194</td><td class="plano-patente" rowspan="24" data-patente="195" style="background:#FFFF00;">195</td><td class="plano-patente" rowspan="24" data-patente="196" style="background:#FFFF00;">196</td><td class="plano-patente" rowspan="24" data-patente="197" style="background:#FFFF00;">197</td><td class="plano-patente" rowspan="24" data-patente="205" style="background:#FFFF00;">205</td><td class="plano-patente" rowspan="24" data-patente="204" style="background:#FFFF00;">204</td><td class="plano-patente" rowspan="24" data-patente="203" style="background:#FFFF00;">203</td><td class="plano-patente" rowspan="24" data-patente="202" style="background:#FFFF00;">202</td><td class="plano-patente" rowspan="24" data-patente="201" style="background:#FFFF00;">201</td><td class="plano-patente" rowspan="24" data-patente="200" style="background:#FFFF00;">200</td><td class="plano-patente" rowspan="24" data-patente="199" style="background:#FFFF00;">199</td><td rowspan="24" style="background:#FFFF00;"></td><td rowspan="24" style="background:#FFFF00;"></td><td rowspan="24" style="background:#FFFF00;"></td><td rowspan="24" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="12" data-patente="170" style="background:#FFFF00;">170</td><td class="plano-patente" rowspan="12" data-patente="169" style="background:#FFFF00;">169</td><td rowspan="12" style="background:#FFFF00;"></td><td rowspan="12" style="background:#FFFF00;"></td><td rowspan="12" style="background:#FFFF00;"></td><td rowspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="68">68</td><td></td><td></td><td></td><td colspan="4" style="background:#FFFF00;"></td><td></td><td></td><td colspan="13" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="5"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td class="plano-patente" data-patente="67">67</td><td></td><td></td><td></td><td colspan="4" style="background:#FFFF00;"></td><td></td><td></td><td colspan="13" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td>FULL SELLO - SIKA</td><td></td><td></td><td></td><td rowspan="20" colspan="2"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="66">66</td><td></td><td></td><td></td><td colspan="4" style="background:#FFFF00;"></td><td></td><td></td><td colspan="13" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="65">65</td><td></td><td></td><td></td><td colspan="4" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td>HIDRA</td><td></td><td></td><td></td><td colspan="4"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="16"></td><td></td><td></td><td></td><td></td><td rowspan="5"></td><td></td><td></td><td class="plano-patente" data-patente="129">129</td><td class="plano-patente" data-patente="130">130</td><td class="plano-patente" data-patente="131">131</td><td class="plano-patente" data-patente="132">132</td><td class="plano-patente" rowspan="18" data-patente="133" style="background:#FFFF00;">133</td><td class="plano-patente" rowspan="18" data-patente="134" style="background:#FFFF00;">134</td><td class="plano-patente" rowspan="18" data-patente="135" style="background:#FFFF00;">135</td><td class="plano-patente" rowspan="18" data-patente="136" style="background:#FFFF00;">136</td><td class="plano-patente" rowspan="18" data-patente="137" style="background:#FFFF00;">137</td><td class="plano-patente" rowspan="18" data-patente="146" style="background:#FFFF00;">146</td><td class="plano-patente" rowspan="18" data-patente="145" style="background:#FFFF00;">145</td><td class="plano-patente" rowspan="18" data-patente="144" style="background:#FFFF00;">144</td><td class="plano-patente" rowspan="18" data-patente="143" style="background:#FFFF00;">143</td><td class="plano-patente" rowspan="18" data-patente="142" style="background:#FFFF00;">142</td><td class="plano-patente" rowspan="18" data-patente="141" style="background:#FFFF00;">141</td><td class="plano-patente" rowspan="18" data-patente="140" style="background:#FFFF00;">140</td><td class="plano-patente" rowspan="18" data-patente="139" style="background:#FFFF00;">139</td><td class="plano-patente" rowspan="18" data-patente="138" style="background:#FFFF00;">138</td><td rowspan="18" style="background:#FFFF00;"></td><td rowspan="18" style="background:#FFFF00;"></td><td rowspan="18" style="background:#FFFF00;"></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>TORNILLOS</td><td></td><td></td><td></td><td colspan="4"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="213">213</td><td></td><td></td><td></td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="214">214</td><td></td><td></td><td></td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="215">215</td><td></td><td></td><td></td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>PPR</td><td></td><td></td><td></td><td rowspan="6"></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="216">216</td><td></td><td></td><td></td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="153">153</td><td class="plano-patente" data-patente="154">154</td><td class="plano-patente" data-patente="155">155</td><td class="plano-patente" rowspan="12" data-patente="156">156</td><td class="plano-patente" rowspan="12" data-patente="157" style="background:#FFFF00;">157</td><td class="plano-patente" rowspan="12" data-patente="158" style="background:#FFFF00;">158</td><td class="plano-patente" rowspan="12" data-patente="168" style="background:#FFFF00;">168</td><td class="plano-patente" rowspan="12" data-patente="167" style="background:#FFFF00;">167</td><td class="plano-patente" rowspan="12" data-patente="166" style="background:#FFFF00;">166</td><td class="plano-patente" rowspan="12" data-patente="165" style="background:#FFFF00;">165</td><td class="plano-patente" rowspan="12" data-patente="164" style="background:#FFFF00;">164</td><td class="plano-patente" rowspan="12" data-patente="163" style="background:#FFFF00;">163</td><td class="plano-patente" rowspan="12" data-patente="162" style="background:#FFFF00;">162</td><td class="plano-patente" rowspan="12" data-patente="161" style="background:#FFFF00;">161</td><td class="plano-patente" rowspan="12" data-patente="160" style="background:#FFFF00;">160</td><td class="plano-patente" rowspan="12" data-patente="159" style="background:#FFFF00;">159</td><td rowspan="12" style="background:#FFFF00;"></td><td rowspan="12" style="background:#FFFF00;"></td><td rowspan="12" style="background:#FFFF00;"></td><td rowspan="12" style="background:#FFFF00;"></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td>HEMIC</td><td></td><td></td><td></td><td class="plano-patente" colspan="4" data-patente="220">220</td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="224">224</td><td></td><td class="plano-patente" data-patente="221">221</td><td></td><td rowspan="2" colspan="2" style="background:#FFFF00;"></td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="222">222</td><td></td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="223">223</td><td></td><td></td><td></td><td colspan="12" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="6"></td><td></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="241">241</td><td></td><td></td><td></td><td rowspan="12" colspan="2" style="background:#FFFF00;"></td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td rowspan="7" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td>DISCO LIJA</td><td></td><td rowspan="10"></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td rowspan="5"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6" style="background:#FFFF00;"></td><td></td><td></td><td colspan="7"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="198">198</td><td></td><td></td><td></td><td colspan="16" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td colspan="12"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="18"></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>MIX</td><td></td><td></td><td></td><td colspan="7"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="8"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="7"></td><td></td><td class="plano-patente" data-patente="249">249</td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>PERFILES</td><td></td><td></td><td></td><td colspan="6"></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="16"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="242">242</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>DILUYENTE</td><td></td><td></td><td></td><td colspan="9"></td><td>SPRAY</td><td></td><td></td><td></td><td colspan="6"></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="243">243</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td colspan="7"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" data-patente="265">265</td><td></td><td></td><td></td><td colspan="14" style="background:#FFFF00;"></td><td colspan="9" style="background:#FFFF00;"></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="244">244</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td colspan="11"></td><td></td><td colspan="9"></td><td colspan="8"></td><td></td><td></td><td></td><td colspan="15"></td><td></td><td></td><td colspan="14" style="background:#FFFF00;"></td><td colspan="9" style="background:#FFFF00;"></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="245">245</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="14" style="background:#FFFF00;"></td><td colspan="9" style="background:#FFFF00;"></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="246">246</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="14" style="background:#FFFF00;"></td><td colspan="9" style="background:#FFFF00;"></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="247">247</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="14" style="background:#FFFF00;"></td><td colspan="9" style="background:#FFFF00;"></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="248">248</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="14" style="background:#FFFF00;"></td><td colspan="9" style="background:#FFFF00;"></td></tr><tr style="height:15px"><td></td><td class="plano-patente" data-patente="248">248</td><td></td><td></td><td></td><td colspan="20" style="background:#FFFF00;"></td><td colspan="11" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="19" style="background:#FFFF00;"></td><td colspan="14" style="background:#FFFF00;"></td><td colspan="9" style="background:#FFFF00;"></td></tr></tbody></table>`;
+}
+
+function _planoHtml_BODEGA_2DO_PISO_SALA() {
+  return `<table class="plano-table"><<colgroup><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:40px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"><col style="width:24px"></colgroup><tbody><tr style="height:15.6px"><td colspan="47">Plano_patentes_2do.piso_bodega_A</td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:27px"><td></td><td></td><td></td><td></td><td></td><td colspan="11">ZAPATOS SEGURIDAD</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" colspan="20" data-patente="342" style="background:#92D050;">342</td><td rowspan="7"></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="5" data-patente="376" style="background:#92D050;">376</td><td class="plano-patente" rowspan="3" colspan="5" data-patente="377" style="background:#92D050;">377</td><td class="plano-patente" rowspan="3" colspan="5" data-patente="378" style="background:#92D050;">378</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="4">REP. SANITARIO</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>MIX MOLDURAS, BARRA CORTINA, CARRO TOLVA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="4">PASTO SINTETICO</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:11.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:28.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="20" data-patente="342" style="background:#92D050;">342</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:28.2px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">SERVIDOR</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="375" style="background:#92D050;">375</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="12">SANITARIOS</td><td class="plano-patente" rowspan="12" data-patente="336" style="background:#92D050;">336</td><td class="plano-patente" rowspan="12" data-patente="337" style="background:#92D050;">337</td><td class="plano-patente" rowspan="12" data-patente="338" style="background:#92D050;">338</td><td class="plano-patente" rowspan="12" data-patente="339" style="background:#92D050;">339</td><td class="plano-patente" rowspan="12" data-patente="340" style="background:#92D050;">340</td><td class="plano-patente" rowspan="12" data-patente="341" style="background:#92D050;">341</td><td class="plano-patente" rowspan="12" data-patente="313" style="background:#92D050;">313</td><td class="plano-patente" rowspan="12" data-patente="312" style="background:#92D050;">312</td><td class="plano-patente" rowspan="12" data-patente="311" style="background:#92D050;">311</td><td class="plano-patente" rowspan="12" data-patente="310" style="background:#92D050;">310</td><td class="plano-patente" rowspan="12" data-patente="309" style="background:#92D050;">309</td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="12" data-patente="303" style="background:#92D050;">303</td><td class="plano-patente" rowspan="12" data-patente="304" style="background:#92D050;">304</td><td class="plano-patente" rowspan="12" data-patente="305" style="background:#92D050;">305</td><td class="plano-patente" rowspan="12" data-patente="306" style="background:#92D050;">306</td><td class="plano-patente" rowspan="12" data-patente="307" style="background:#92D050;">307</td><td class="plano-patente" rowspan="12" data-patente="308" style="background:#92D050;">308</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td rowspan="7">STHILL</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="10">DEWALT</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="8">BLIK</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="374" style="background:#92D050;">374</td><td></td><td></td><td></td><td></td><td rowspan="8">HOFFENS</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="363" style="background:#92D050;">363</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="343" style="background:#92D050;">343</td><td rowspan="12">SANITARIOS</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="373" style="background:#92D050;">373</td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="362" style="background:#92D050;">362</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="344" style="background:#92D050;">344</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="372" style="background:#92D050;">372</td><td rowspan="6">SOLMAQ</td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="361" style="background:#92D050;">361</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="345" style="background:#92D050;">345</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="371" style="background:#92D050;">371</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="360" style="background:#92D050;">360</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="346" style="background:#92D050;">346</td><td></td><td></td><td rowspan="11">FAS - TEBI</td><td class="plano-patente" rowspan="12" data-patente="330" style="background:#92D050;">330</td><td class="plano-patente" rowspan="12" data-patente="331" style="background:#92D050;">331</td><td class="plano-patente" rowspan="12" data-patente="332" style="background:#92D050;">332</td><td class="plano-patente" rowspan="12" data-patente="333" style="background:#92D050;">333</td><td class="plano-patente" rowspan="12" data-patente="334" style="background:#92D050;">334</td><td class="plano-patente" rowspan="12" data-patente="335" style="background:#92D050;">335</td><td class="plano-patente" rowspan="12" data-patente="317" style="background:#92D050;">317</td><td class="plano-patente" rowspan="12" data-patente="316" style="background:#92D050;">316</td><td class="plano-patente" rowspan="12" data-patente="315" style="background:#92D050;">315</td><td class="plano-patente" rowspan="12" data-patente="314" style="background:#92D050;">314</td><td rowspan="5">HYUNDAI</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="12" data-patente="298" style="background:#92D050;">298</td><td class="plano-patente" rowspan="12" data-patente="299" style="background:#92D050;">299</td><td class="plano-patente" rowspan="12" data-patente="300" style="background:#92D050;">300</td><td class="plano-patente" rowspan="12" data-patente="301" style="background:#92D050;">301</td><td class="plano-patente" rowspan="12" data-patente="302" style="background:#92D050;">302</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="8">AMESTY</td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="5">BOSCH</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="370" style="background:#92D050;">370</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="359" style="background:#92D050;">359</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="347" style="background:#92D050;">347</td><td rowspan="5">DUCA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td rowspan="6">ALBALUX</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="369" style="background:#92D050;">369</td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="358" style="background:#92D050;">358</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="348" style="background:#92D050;">348</td><td></td><td></td><td rowspan="5">REDBO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="5">APOWER</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="368" style="background:#92D050;">368</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="357" style="background:#92D050;">357</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="349" style="background:#92D050;">349</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="11">RIEGO</td><td rowspan="11">ILUMINACION</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="367" style="background:#92D050;">367</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="356" style="background:#92D050;">356</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="350" style="background:#92D050;">350</td><td></td><td rowspan="12" colspan="2">MIXA HOFFENS</td><td class="plano-patente" rowspan="12" data-patente="324" style="background:#92D050;">324</td><td class="plano-patente" rowspan="12" data-patente="325" style="background:#92D050;">325</td><td class="plano-patente" rowspan="12" data-patente="326" style="background:#92D050;">326</td><td class="plano-patente" rowspan="12" data-patente="327" style="background:#92D050;">327</td><td class="plano-patente" rowspan="12" data-patente="328" style="background:#92D050;">328</td><td class="plano-patente" rowspan="12" data-patente="329" style="background:#92D050;">329</td><td class="plano-patente" rowspan="12" data-patente="322" style="background:#92D050;">322</td><td class="plano-patente" rowspan="12" data-patente="321" style="background:#92D050;">321</td><td class="plano-patente" rowspan="12" data-patente="320" style="background:#92D050;">320</td><td class="plano-patente" rowspan="12" data-patente="319" style="background:#92D050;">319</td><td class="plano-patente" rowspan="12" data-patente="318" style="background:#92D050;">318</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="10" data-patente="293" style="background:#92D050;">293</td><td class="plano-patente" rowspan="10" data-patente="294" style="background:#92D050;">294</td><td class="plano-patente" rowspan="10" data-patente="295" style="background:#92D050;">295</td><td class="plano-patente" rowspan="10" data-patente="296" style="background:#92D050;">296</td><td class="plano-patente" rowspan="10" data-patente="297" style="background:#92D050;">297</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="10">EINHELL</td><td></td><td></td><td></td><td rowspan="8">BLACK DECKER</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="366" style="background:#92D050;">366</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="355" style="background:#92D050;">355</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="351" style="background:#92D050;">351</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="365" style="background:#92D050;">365</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="354" style="background:#92D050;">354</td><td class="plano-patente" rowspan="3" colspan="4" data-patente="352" style="background:#92D050;">352</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td rowspan="4">CASCO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="4" data-patente="364" style="background:#92D050;">364</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="8" data-patente="353" style="background:#92D050;">353</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="12" data-patente="289" style="background:#92D050;">289</td><td class="plano-patente" rowspan="12" data-patente="290" style="background:#92D050;">290</td><td class="plano-patente" rowspan="12" data-patente="291" style="background:#92D050;">291</td><td class="plano-patente" rowspan="12" colspan="2" data-patente="292" style="background:#92D050;">292</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="6">CALEFONT</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="4" data-patente="364">364</td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="8">MIX REPOSICION</td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="11" data-patente="323" style="background:#92D050;">323</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6">ESPEJOS</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="7">RUEDAS</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td style="background:#FF0000;"></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="5" colspan="2" data-patente="279">279</td><td class="plano-patente" colspan="7" data-patente="279" style="background:#92D050;">279</td><td class="plano-patente" colspan="22" data-patente="284" style="background:#92D050;">284</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td style="background:#FF0000;"></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" colspan="7" data-patente="280" style="background:#92D050;">280</td><td class="plano-patente" colspan="22" data-patente="285" style="background:#92D050;">285</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td style="background:#FF0000;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" colspan="7" data-patente="281" style="background:#92D050;">281</td><td class="plano-patente" colspan="22" data-patente="286" style="background:#92D050;">286</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td style="background:#FF0000;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" colspan="7" data-patente="282" style="background:#92D050;">282</td><td class="plano-patente" colspan="22" data-patente="287" style="background:#92D050;">287</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td style="background:#FF0000;"></td><td rowspan="2" colspan="8">ESCALERA ACCESO</td><td class="plano-patente" colspan="7" data-patente="283" style="background:#92D050;">283</td><td class="plano-patente" colspan="22" data-patente="288" style="background:#92D050;">288</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="8">TERMO</td><td></td><td></td><td></td><td colspan="7">CALEFONT</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table>`;
+}
+
+function _planoHtml_PATIO_CONSTRUCTOR() {
+  return `<table class="plano-table"><<colgroup><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:36px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:33px"><col style="width:36px"><col style="width:36px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:36px"><col style="width:36px"><col style="width:35px"><col style="width:37px"><col style="width:45px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"></colgroup><tbody><tr style="height:15.75px"><td colspan="48">Plano_patentes_Patio_2</td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td rowspan="32" colspan="2" style="background:#FFFF00;">397 MIX</td><td rowspan="2" colspan="5" style="background:#FFFF00;">399 CD</td><td rowspan="37" colspan="2" style="background:#FFFF00;">398 MIX</td><td rowspan="3" colspan="2" style="background:#FFFF00;">411 MIX</td><td></td><td rowspan="3" colspan="13" style="background:#FFFF00;">412 VOLCAN- SACOS Y AISLAPOL</td><td rowspan="3" colspan="3" style="background:#FF0000;">GENERADOR</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="410" style="background:#FFFF00;">410</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="5" colspan="2">POLI</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="3" colspan="8" style="background:#FFFF00;">413  MADERA</td><td rowspan="4" colspan="3" style="background:#FFFF00;">445 CARR -TAMBOR</td><td></td><td></td><td></td><td rowspan="4">CERA</td><td class="plano-patente" rowspan="4" data-patente="447" style="background:#FFFF00;">447</td><td class="plano-patente" rowspan="4" data-patente="446" style="background:#FFFF00;">446</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="409" style="background:#FFFF00;">409</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="3" colspan="8" style="background:#FFFF00;">414 OSB - TERC</td><td></td><td></td><td></td><td></td><td></td><td colspan="8">TINETA - CERAMICA</td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="14" data-patente="442" style="background:#FFFF00;">442</td><td class="plano-patente" rowspan="14" data-patente="443" style="background:#FFFF00;">443</td><td class="plano-patente" rowspan="14" data-patente="444" style="background:#FFFF00;">444</td><td rowspan="16">CERAMICA</td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="448" style="background:#FFFF00;">448</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="451" style="background:#FFFF00;">451</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="452" style="background:#FFFF00;">452</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="453" style="background:#FFFF00;">453</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="454" style="background:#FFFF00;">454</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="455" style="background:#FFFF00;">455</td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="408" style="background:#FFFF00;">408</td><td></td><td></td><td></td><td></td><td colspan="3">SIDING</td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="5" style="background:#FFFF00;">415 PUER Y AMES</td><td></td><td rowspan="5" colspan="2" style="background:#FFFF00;">430 META</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="449" style="background:#FFFF00;">449</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td rowspan="8" colspan="3"></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="407" style="background:#FFFF00;">407</td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="416" style="background:#FFFF00;">416</td><td rowspan="9" colspan="2" style="background:#FFFF00;">429 PUER</td><td></td><td></td><td></td><td></td><td></td><td colspan="2">POLI</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="7">TINETA</td><td class="plano-patente" rowspan="7" colspan="2" data-patente="456" style="background:#FFFF00;">456</td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="450" style="background:#FFFF00;">450</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="406" style="background:#FFFF00;">406</td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="417" style="background:#FFFF00;">417</td><td></td><td></td><td rowspan="6" colspan="2" style="background:#FFFF00;">431 PUER</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="2">SIMPLISIMA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="405" style="background:#FFFF00;">405</td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="418" style="background:#FFFF00;">418</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="7">TINETA</td><td class="plano-patente" rowspan="7" colspan="2" data-patente="457" style="background:#FFFF00;">457</td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="404" style="background:#FFFF00;">404</td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="419" style="background:#FFFF00;">419</td><td rowspan="7" colspan="2" style="background:#FFFF00;">428 MALLA</td><td></td><td></td><td rowspan="3" colspan="2" style="background:#FFFF00;">432 MOLD</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="3" data-patente="441" style="background:#FFFF00;">441</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="4" colspan="2" data-patente="403" style="background:#FFFF00;">403</td><td></td><td></td><td class="plano-patente" rowspan="4" colspan="2" data-patente="420" style="background:#FFFF00;">420</td><td></td><td></td><td rowspan="4" colspan="2" style="background:#FFFF00;">433 SLA BAÑO</td><td class="plano-patente" rowspan="4" colspan="2" data-patente="440" style="background:#FFFF00;">440</td><td rowspan="13">MUEBLE - SACOS</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="9">CERAMICAS</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="4" data-patente="460" style="background:#FFFF00;">460</td><td class="plano-patente" rowspan="2" colspan="4" data-patente="459" style="background:#FFFF00;">459</td><td class="plano-patente" rowspan="2" colspan="4" data-patente="458" style="background:#FFFF00;">458</td><td rowspan="2" colspan="3" style="background:#FF0000;">GENERADOR</td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="402" style="background:#FFFF00;">402</td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="421" style="background:#FFFF00;">421</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="426" style="background:#FFFF00;">426</td><td></td><td></td><td rowspan="3" colspan="2" style="background:#FFFF00;">434 VOLCAN</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="439" style="background:#FFFF00;">439</td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="3" colspan="2" style="background:#FFFF00;">462 TINETA</td><td rowspan="3" colspan="2" style="background:#FFFF00;">461 MUEBLE</td><td rowspan="25" colspan="10">SALA DE VENTAS</td><td></td></tr><tr style="height:15.6px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="7">PLACA PVC</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="401" style="background:#FFFF00;">401</td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="422" style="background:#FFFF00;">422</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="425" style="background:#FFFF00;">425</td><td></td><td></td><td rowspan="3" colspan="2" style="background:#FFFF00;">435 VOLCAN</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="438" style="background:#FFFF00;">438</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td rowspan="2" colspan="3" style="background:#FF0000;">GAS GRUA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="3" colspan="2" style="background:#FFFF00;">464 TINETA</td><td rowspan="3" colspan="2" style="background:#FFFF00;">463 MUEBLE</td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="400" style="background:#FFFF00;">400</td><td></td><td class="plano-patente" rowspan="3" colspan="2" data-patente="423" style="background:#FFFF00;">423</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="424" style="background:#FFFF00;">424</td><td></td><td></td><td rowspan="3" colspan="2" style="background:#FFFF00;">436 ONEPIECE</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="437" style="background:#FFFF00;">437</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="2" colspan="6">ENTRADA BOEGA SALA</td><td class="plano-patente" rowspan="2" data-patente="466" style="background:#FFFF00;">466</td><td class="plano-patente" rowspan="2" data-patente="465" style="background:#FFFF00;">465</td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">CANAL</td><td></td><td rowspan="5" colspan="4" style="background:#FF0000;">DESPACHO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="3" data-patente="471" style="background:#FFFF00;">471</td><td class="plano-patente" rowspan="3" data-patente="470" style="background:#FFFF00;">470</td><td class="plano-patente" rowspan="3" data-patente="469" style="background:#FFFF00;">469</td><td class="plano-patente" rowspan="3" data-patente="468" style="background:#FFFF00;">468</td><td class="plano-patente" rowspan="3" data-patente="467" style="background:#FFFF00;">467</td><td></td></tr><tr style="height:15.6px"><td colspan="3">CASILLERO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15.6px"><td rowspan="4" colspan="3">COMEDOR</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">BAÑO</td><td style="background:#FF0000;">B</td><td></td></tr><tr style="height:16.8px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">BODEGA</td><td class="plano-patente" colspan="3" data-patente="472" style="background:#FFFF00;">472</td><td></td></tr><tr style="height:16.8px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td class="plano-patente" rowspan="2" colspan="3" data-patente="396" style="background:#FFFF00;">396</td><td colspan="3">PILAR</td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" colspan="7" data-patente="473" style="background:#FFFF00;">473</td><td></td></tr><tr style="height:16.8px"><td class="plano-patente" rowspan="2" colspan="3" data-patente="395" style="background:#FFFF00;">395</td><td colspan="3">CADENA</td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="4">BETONERA</td><td></td><td colspan="3">BASURERO</td><td></td></tr><tr style="height:16.8px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="9">EXHIBICIONES</td><td></td></tr><tr style="height:15px"><td class="plano-patente" rowspan="2" colspan="3" data-patente="394" style="background:#FFFF00;">394</td><td colspan="3">PILAR</td><td></td><td rowspan="5">MALLA</td><td class="plano-patente" rowspan="5" data-patente="392" style="background:#FFFF00;">392</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="391" style="background:#FFFF00;">391</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td colspan="3">CADENA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td rowspan="19" colspan="3" style="background:#FFFF00;">FOSAS 387</td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="2" data-patente="390" style="background:#FFFF00;">390</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td rowspan="5">MALLA</td><td class="plano-patente" rowspan="5" data-patente="393" style="background:#FFFF00;">393</td><td class="plano-patente" rowspan="3" colspan="2" data-patente="389" style="background:#FFFF00;">389</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:14.4px"><td></td><td></td><td></td><td></td><td colspan="6">MALLA 15X15 LISA</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">ZINC ACA.</td><td colspan="3">ZINC 5V</td><td colspan="4">METALCOM</td><td colspan="4">CABALLETE</td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="2" data-patente="388" style="background:#FFFF00;">388</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" colspan="3" data-patente="474" style="background:#FFFF00;">474</td><td class="plano-patente" colspan="3" data-patente="475" style="background:#FFFF00;">475</td><td></td><td class="plano-patente" colspan="4" data-patente="476" style="background:#FFFF00;">476</td><td class="plano-patente" colspan="4" data-patente="477" style="background:#FFFF00;">477</td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td></td><td></td><td colspan="3">MIX</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td colspan="5">ESTRIADO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="7" colspan="3" data-patente="478" style="background:#FFFF00;">478</td><td></td></tr><tr style="height:16.8px"><td class="plano-patente" colspan="6" data-patente="385" style="background:#FFFF00;">385</td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td rowspan="6" colspan="2" style="background:#FFFF00;">427 FISITERM</td><td rowspan="3" colspan="4" style="background:#FFFF00;">384 2MM</td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">TUBERIA</td><td></td></tr><tr style="height:16.8px"><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="3">FIERRO</td><td></td></tr><tr style="height:16.8px"><td rowspan="2" colspan="4" style="background:#FFFF00;">383 3MM</td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td rowspan="3" colspan="4" style="background:#FFFF00;">382 MIX</td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td rowspan="3" colspan="2" style="background:#FFFF00;">386 tubo</td><td></td><td style="background:#FFFF00;"></td><td></td><td colspan="9">MALLAS CERCO 3MT Y 15X15</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="4">METALCOM</td><td></td><td></td><td></td><td></td><td></td><td colspan="5">METALCOM</td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td></td><td style="background:#FFFF00;"></td><td class="plano-patente" rowspan="2" colspan="10" data-patente="380" style="background:#FFFF00;">380</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="plano-patente" rowspan="2" colspan="15" data-patente="379" style="background:#FFFF00;">379</td><td></td><td></td><td></td></tr><tr style="height:16.8px"><td class="plano-patente" colspan="4" data-patente="381" style="background:#FFFF00;">381</td><td></td><td style="background:#FFFF00;"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="height:15px"><td></td><td></td><td>PLETINA - LAMINADO</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="6">ACCESO LOCAL</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table>`;
+}
+
+const PLANO_SHEETS = {
+  "Sala EXHIBICION": _planoHtml_Sala_EXHIBICION,
+  "BODEGA SALA": _planoHtml_BODEGA_SALA,
+  "BODEGA 2DO PISO SALA": _planoHtml_BODEGA_2DO_PISO_SALA,
+  "PATIO CONSTRUCTOR": _planoHtml_PATIO_CONSTRUCTOR,
 };
 
-const PLANO_NUM_COLORS = [
-  '#dbeafe','#dcfce7','#ede9fe','#ffedd5','#fef3c7','#d1fae5','#fce7f3','#e0f2fe',
-];
 
-let planosData  = {}; // { sheetName: rows2d }
-let planosDataMerges = {}; // { sheetName: XLSX merges[] }
-let planosPatentes = []; // [{patente, zona, area}]
-
-async function loadPlanos(file) {
-  showToast('Leyendo planos…', 'info');
-  try {
-    const wb = await new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        try { res(XLSX.read(new Uint8Array(e.target.result), { type: 'array' })); }
-        catch (err) { rej(err); }
-      };
-      reader.onerror = rej;
-      reader.readAsArrayBuffer(file);
-    });
-
-    planosData = {};
-    planosDataMerges = {};
-    wb.SheetNames.forEach(name => {
-      const ws = wb.Sheets[name];
-      planosData[name] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-      planosDataMerges[name] = ws['!merges'] || [];
-    });
-
-    // Extraer patentes de las 4 hojas visibles (escanea la cuadrícula)
-    planosPatentes = extractPatentesFromGridSheets(planosData);
-
-    renderPlanos(wb.SheetNames);
-    renderCoverageZonas('2025');
-    renderCoverageZonas('2026');
-    // Sincronizar con correlativo
-    if (planosPatentes.length) initCorrelativoFromPlanos(planosPatentes);
-
-    switchToMode('planos');
-    const visibleCount = ['Sala 1','1erPiso_A','2doPiso_A','Patio_2'].filter(n => wb.SheetNames.includes(n)).length;
-    document.getElementById('status-planos').textContent = `${visibleCount} hojas · ${planosPatentes.length} patentes`;
-    document.getElementById('status-planos').className = 'upload-status ok';
-    showToast(`Planos cargados · ${planosPatentes.length} patentes detectadas ✓`, 'ok');
-  } catch (e) {
-    showToast('Error al leer Planos: ' + e.message, 'error');
-  }
-}
-
-// Extrae patentes únicas escaneando las 4 hojas visibles de la cuadrícula
-function extractPatentesFromGridSheets(allData) {
-  const VISIBLE = ['Sala 1','1erPiso_A','2doPiso_A','Patio_2'];
-  const seen = new Set();
-  const result = [];
-  const isPatenteNum = (v) => {
-    if (v === '' || v === null || v === undefined) return false;
-    const s = String(v).trim();
-    const m = s.match(/^(\d{2,4})(\s+\S+)?$/);
-    return m && parseInt(m[1], 10) > 1;
-  };
-  for (const sheetName of VISIBLE) {
-    const rows = allData[sheetName];
-    if (!rows) continue;
-    const z = PLANO_ZONES[sheetName];
-    for (const row of rows) {
-      for (const cell of row) {
-        const s = String(cell || '').trim();
-        if (isPatenteNum(s) && !seen.has(s)) {
-          seen.add(s);
-          result.push({ patente: s, zona: z ? z.label : sheetName, area: sheetName });
-        }
-      }
-    }
-  }
-  return result.sort((a, b) => parseInt(a.patente) - parseInt(b.patente));
-}
-
-// Devuelve Set con todas las patentes presentes en los datos cargados
-// (normalizado: string completo + solo dígitos iniciales para match flexible)
-function getPlanoContados() {
-  const data = (state.data2026?.length ? state.data2026 : null) || (state.data2025?.length ? state.data2025 : null);
-  if (!data?.length) return null;
-  const s = new Set();
-  data.forEach(r => {
-    const p = String(r.patente || '').trim();
-    if (!p) return;
-    s.add(p.toUpperCase());
-    const m = p.match(/^(\d+)/);
-    if (m) s.add(m[1]);
-  });
-  return s;
-}
-
-// Render principal — solo las 4 hojas visibles
-function renderPlanos(allSheetNames) {
-  const ordered    = ['Sala 1','1erPiso_A','2doPiso_A','Patio_2'];
-  const sheetNames = ordered.filter(n => allSheetNames.includes(n));
-
-  const content = document.getElementById('planos-content');
-  const tabsEl  = document.getElementById('plano-tabs');
-  const legendEl= document.getElementById('plano-legend');
-  const emptyEl = document.getElementById('planos-empty');
+function renderPlanos() {
+  const tabsEl    = document.getElementById('plano-tabs');
+  const contentEl = document.getElementById('planos-content');
+  const emptyEl   = document.getElementById('planos-empty');
   if (emptyEl) emptyEl.style.display = 'none';
 
-  const contados = getPlanoContados();
-
-  // Leyenda con indicadores de cobertura
-  let legendHtml = sheetNames.map(name => {
-    const z = PLANO_ZONES[name];
-    return `<span class="legend-chip" style="background:${hexToRgba(z.color,.1)};color:${z.color}">
-      <span class="dot" style="background:${z.color}"></span>${z.label}
-    </span>`;
-  }).join('');
-  if (contados) {
-    legendHtml += `<span class="legend-chip" style="background:#bbf7d0;color:#14532d"><span class="dot" style="background:#16a34a"></span>Contada</span>`;
-    legendHtml += `<span class="legend-chip" style="background:#fee2e2;color:#991b1b"><span class="dot" style="background:#dc2626"></span>Sin contar</span>`;
-  } else {
-    legendHtml += `<span class="legend-chip" style="background:#f1f5f9;color:#64748b">Carga datos de inventario para ver cobertura</span>`;
-  }
-  legendEl.innerHTML = legendHtml;
+  const sheetNames = Object.keys(PLANO_SHEETS);
 
   // Tabs
-  tabsEl.innerHTML = sheetNames.map((name, i) => {
-    const z = PLANO_ZONES[name];
-    return `<button class="plano-tab-btn${i===0?' active':''}"
-              onclick="showPlanoSheet('${name}')"
-              style="${i===0?`border-color:${z.color};background:${z.color};color:#fff`:''}">
-              ${z.label}
-            </button>`;
-  }).join('');
+  tabsEl.innerHTML = sheetNames.map((name, i) =>
+    `<button class="plano-tab-btn${i===0?' active':''}" data-sheet="${name}"
+      onclick="switchPlanoTab('${name}')">${name}</button>`
+  ).join('');
 
-  const isPatenteCell = v => {
-    if (v === '' || v === null || v === undefined) return false;
-    const s = String(v).trim();
-    const m = s.match(/^(\d{2,4})(\s+\S+)?$/);
-    return m && parseInt(m[1], 10) > 1;
-  };
+  // Contenido
+  contentEl.innerHTML = sheetNames.map((name, i) =>
+    `<div class="plano-sheet-wrap${i===0?'':' hidden'}" id="plano-sheet-${safeName(name)}" data-sheet="${name}">
+      <div class="plano-zona-progress-bar" id="plano-prog-${safeName(name)}"></div>
+      <div class="plano-overflow-wrap">${PLANO_SHEETS[name]()}</div>
+    </div>`
+  ).join('');
 
-  // Una sección por hoja — layout FIEL al Excel
-  content.innerHTML = sheetNames.map((name, i) => {
-    const z    = PLANO_ZONES[name];
-    const rows = planosData[name] || [];
-
-    // Calcular cobertura en esta hoja
-    let totalPat = 0, contadaPat = 0;
-    rows.forEach(row => (row || []).forEach(cell => {
-      if (!isPatenteCell(cell)) return;
-      totalPat++;
-      if (!contados) return;
-      const s   = String(cell).trim();
-      const num = s.match(/^(\d+)/)?.[1] || '';
-      if (contados.has(s.toUpperCase()) || (num && contados.has(num))) contadaPat++;
+  // Poblar planosPatentes desde DOM para _buildCoverageZonas()
+  planosPatentes = [...document.querySelectorAll('#planos-content .plano-patente')]
+    .map(td => ({
+      patente: td.dataset.patente,
+      zona: td.closest('.plano-sheet-wrap')?.dataset.sheet || '',
+      area: td.closest('.plano-sheet-wrap')?.dataset.sheet || '',
     }));
 
-    const pct = totalPat > 0 ? Math.round(contadaPat / totalPat * 100) : 0;
-    const coverageHtml = contados && totalPat > 0
-      ? `<span class="plano-coverage-badge">` +
-        `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${pct>=80?'#4ade80':pct>=50?'#fb923c':'#f87171'}"></span>` +
-        `${contadaPat}/${totalPat} contadas · ${pct}%</span>`
-      : `<span style="opacity:.65;font-size:11px">${totalPat} patentes</span>`;
+  applyPatenteCellStates();
+  sheetNames.forEach(renderPlanoZonaProgress);
+}
 
-    const inner = renderPlanoGrid(rows, z, contados, planosDataMerges[name] || []);
+function switchPlanoTab(name) {
+  document.querySelectorAll('.plano-tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.sheet === name));
+  document.querySelectorAll('.plano-sheet-wrap').forEach(el =>
+    el.classList.toggle('hidden', el.dataset.sheet !== name));
+}
 
-    return `<div class="plano-sheet${i>0?' hidden':''}" id="plano-sheet-${safeName(name)}">
-      <div class="plano-sheet-header" style="background:${z.color}">
-        <div>
-          <div class="plano-sheet-title">${z.label}</div>
-          <div style="margin-top:4px">${coverageHtml}</div>
-        </div>
-        <button class="btn btn-xs"
-          style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3)"
-          onclick="exportSheetExcel('${name}')">⬇ Excel</button>
+function applyPatenteCellStates() {
+  const contadas = window._patentesCargadas;
+  const invMap   = window._inventariadorPorPatente;
+
+  document.querySelectorAll('#planos-content .plano-patente').forEach(td => {
+    const pat  = String(td.dataset.patente || td.textContent || '').trim();
+    if (!pat) return;
+    const norm = pat.toUpperCase();
+    const num  = norm.match(/^(d+)/)?.[1];
+    const lista = contadas?.has(norm) || (num && contadas?.has(num));
+    const inv   = invMap?.get(norm) || (num ? invMap?.get(num) : null);
+
+    td.classList.remove('plano-patente-lista', 'plano-patente-pendiente');
+    const oldBadge = td.querySelector('.plano-inv-badge');
+    if (oldBadge) oldBadge.remove();
+
+    if (lista) {
+      td.classList.add('plano-patente-lista');
+      if (inv) {
+        const badge = document.createElement('div');
+        badge.className = 'plano-inv-badge';
+        badge.textContent = inv.split(' ')[0];
+        td.appendChild(badge);
+      }
+    } else if (contadas) {
+      td.classList.add('plano-patente-pendiente');
+    }
+  });
+}
+
+function renderPlanoZonaProgress(sheetName) {
+  const container = document.querySelector(`#planos-content [data-sheet="${sheetName}"]`);
+  if (!container) return;
+
+  const patentes = [...container.querySelectorAll('.plano-patente')]
+    .map(td => String(td.dataset.patente || '').trim()).filter(Boolean);
+  const total = patentes.length;
+  if (!total) return;
+
+  const contadas = window._patentesCargadas;
+  const listas = patentes.filter(p => {
+    const norm = p.toUpperCase();
+    const num  = norm.match(/^(d+)/)?.[1];
+    return contadas?.has(norm) || (num && contadas?.has(num));
+  }).length;
+
+  const pct   = Math.round(listas / total * 100);
+  const color = pct === 100 ? '#059669' : pct >= 50 ? '#f59e0b' : '#ef4444';
+
+  const progEl = document.getElementById(`plano-prog-${safeName(sheetName)}`);
+  if (!progEl) return;
+  progEl.innerHTML = `
+    <div class="plano-prog-inner">
+      <div class="plano-prog-stats">
+        <span style="color:#059669;font-weight:700">✓ ${listas} contadas</span>
+        <span style="color:#64748b">${total - listas} pendientes</span>
+        <span style="color:${color};font-size:16px;font-weight:800;margin-left:auto">${pct}%</span>
       </div>
-      <div class="plano-raw-wrap">${inner}</div>
+      <div class="plano-prog-track">
+        <div class="plano-prog-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
     </div>`;
-  }).join('');
-}
-
-function showPlanoSheet(name) {
-  document.querySelectorAll('.plano-sheet').forEach(el => el.classList.add('hidden'));
-  const target = document.getElementById(`plano-sheet-${safeName(name)}`);
-  if (target) target.classList.remove('hidden');
-
-  document.querySelectorAll('.plano-tab-btn').forEach(btn => {
-    const active = btn.textContent.trim() === PLANO_ZONES[name]?.label;
-    btn.classList.toggle('active', active);
-    const z = PLANO_ZONES[name];
-    btn.style.borderColor = active ? z.color : '';
-    btn.style.background  = active ? z.color : '';
-    btn.style.color       = active ? '#fff'  : '';
-  });
-}
-
-// ── RENDER GRID FIEL AL EXCEL ─────────────────────────────────
-// contados = Set de strings de patentes presentes en inventario (o null)
-// Celdas de patente se colorean verde/rojo según si están en contados
-// Detecta etiquetas especiales de zona y devuelve estilo inline
-function _planoLabelStyle(raw) {
-  const u = raw.toUpperCase();
-  if (/DESPACHO/.test(u))                    return 'background:#fee2e2;color:#991b1b;font-weight:700';
-  if (/ZONA\s+DE\s+SEG|SEGURIDAD/.test(u))   return 'background:#fef3c7;color:#92400e;font-weight:700';
-  if (/BA[ÑN]O/.test(u))                     return 'background:#dbeafe;color:#1e3a8a;font-weight:700';
-  if (/SALA\s+DE\s+VENTAS|SALA\s+VENTAS/.test(u)) return 'background:#dcfce7;color:#14532d;font-weight:700';
-  if (/PASILLO|PASIL/.test(u))               return 'background:#f1f5f9;color:#334155;font-weight:600';
-  if (/CAJA|CAJERO/.test(u))                 return 'background:#ede9fe;color:#4c1d95;font-weight:700';
-  if (/BODEGA|BOD/.test(u))                  return 'background:#f0fdf4;color:#166534;font-weight:600';
-  return '';
-}
-
-function renderPlanoGrid(rows, zone, contados, merges) {
-  if (!rows.length) return '<p style="padding:20px;color:var(--muted)">Sin datos en esta hoja.</p>';
-
-  let lastRow = 0;
-  rows.forEach((r, i) => { if ((r || []).some(c => c !== '' && c !== null && c !== undefined)) lastRow = i; });
-  const trimmed = rows.slice(0, lastRow + 1);
-  const maxCols = Math.max(...trimmed.map(r => (r || []).length), 1);
-
-  // Build merge map: key "r,c" → {rowspan, colspan}; skip set for covered cells
-  const spanMap = {};
-  const skipSet = new Set();
-  (merges || []).forEach(m => {
-    const rs = m.e.r - m.s.r + 1;
-    const cs = m.e.c - m.s.c + 1;
-    if (rs > 1 || cs > 1) {
-      spanMap[`${m.s.r},${m.s.c}`] = { rowspan: rs, colspan: cs };
-      for (let r = m.s.r; r <= m.e.r; r++) {
-        for (let c = m.s.c; c <= m.e.c; c++) {
-          if (r !== m.s.r || c !== m.s.c) skipSet.add(`${r},${c}`);
-        }
-      }
-    }
-  });
-
-  const isPatenteNum = (v) => {
-    if (v === '' || v === null || v === undefined) return false;
-    const s = String(v).trim();
-    const m = s.match(/^(\d{2,4})(\s+\S+)?$/);
-    return m && parseInt(m[1], 10) > 1;
-  };
-
-  const patenteStyle = (raw) => {
-    if (!contados) {
-      return { bg: '#FEFF9C', color: '#5a4000', title: 'Patente ' + raw };
-    }
-    const s   = raw.toUpperCase();
-    const num = raw.match(/^(\d+)/)?.[1] || '';
-    const ok  = contados.has(s) || (num && contados.has(num));
-    return ok
-      ? { bg: '#bbf7d0', color: '#14532d', title: 'Contada ✓ — Patente ' + raw }
-      : { bg: '#fee2e2', color: '#991b1b', title: 'Sin contar — Patente ' + raw };
-  };
-
-  let html = `<table class="plano-raw-table">`;
-  trimmed.forEach((row, ri) => {
-    html += '<tr>';
-    for (let ci = 0; ci < maxCols; ci++) {
-      if (skipSet.has(`${ri},${ci}`)) continue; // celda cubierta por un merge
-      const sp    = spanMap[`${ri},${ci}`] || {};
-      const rsAttr = sp.rowspan && sp.rowspan > 1 ? ` rowspan="${sp.rowspan}"` : '';
-      const csAttr = sp.colspan && sp.colspan > 1 ? ` colspan="${sp.colspan}"` : '';
-      const v   = (row || [])[ci];
-      const raw = (v !== null && v !== undefined) ? String(v).trim() : '';
-      if (raw === '') {
-        html += `<td${rsAttr}${csAttr}></td>`;
-      } else if (isPatenteNum(raw)) {
-        const { bg, color, title } = patenteStyle(raw);
-        html += `<td class="cell-num"${rsAttr}${csAttr} style="background:${bg};color:${color}" title="${title}">${raw}</td>`;
-      } else {
-        const specialStyle = _planoLabelStyle(raw);
-        const isLong = raw.length > 3;
-        const cls = isLong ? 'cell-label' : '';
-        const styleAttr = specialStyle
-          ? ` style="${specialStyle}${(rsAttr || csAttr) ? ';vertical-align:middle' : ''}"`
-          : ((rsAttr || csAttr) ? ' style="vertical-align:middle"' : '');
-        html += `<td class="${cls}"${rsAttr}${csAttr}${styleAttr} title="${raw}">${raw}</td>`;
-      }
-    }
-    html += '</tr>';
-  });
-  html += '</table>';
-  return html;
-}
-
-function countPatentesInSheet(rows) {
-  let count = 0;
-  rows.forEach(r => r.forEach(c => {
-    const s = String(c || '').trim();
-    if (s && !isNaN(parseFloat(s)) && parseFloat(s) > 10) count++;
-  }));
-  return count;
 }
 
 function exportPlanosExcel() {
-  if (!Object.keys(planosData).length) { showToast('Carga el archivo de Planos primero', 'error'); return; }
-  const wb = XLSX.utils.book_new();
-  Object.entries(planosData).forEach(([name, rows]) => {
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 31));
-  });
-  XLSX.writeFile(wb, `Planos_Patentes_${today()}.xlsx`);
-  showToast('Excel de planos generado ✓', 'ok');
+  showToast('Los planos están hardcodeados — usa el archivo Excel original', 'info');
 }
-
-function exportSheetExcel(sheetName) {
-  const rows = planosData[sheetName];
-  if (!rows) return;
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), sheetName.substring(0, 31));
-  XLSX.writeFile(wb, `Plano_${safeName(sheetName)}_${today()}.xlsx`);
-  showToast(`Excel "${sheetName}" generado ✓`, 'ok');
-}
+function exportSheetExcel() { exportPlanosExcel(); }
+function countPatentesInSheet() { return 0; }
 
 // ── UTILS PLANOS ────────────────────────────────────────────────
 function safeName(s) { return s.replace(/[^a-zA-Z0-9]/g, '_'); }
@@ -4058,29 +3948,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   showWelcome();
 
-  // CheckList drag & drop
-  const clInput = document.getElementById('input-checklist');
-  document.getElementById('btn-load-checklist').onclick = () => clInput.click();
-  clInput.onchange = () => { if (clInput.files[0]) loadChecklist(clInput.files[0]); };
-  const clZone = document.getElementById('drop-checklist');
-  clZone.ondragover = e => { e.preventDefault(); clZone.classList.add('drag-over'); };
-  clZone.ondragleave = () => clZone.classList.remove('drag-over');
-  clZone.ondrop = e => {
-    e.preventDefault(); clZone.classList.remove('drag-over');
-    if (e.dataTransfer.files[0]) loadChecklist(e.dataTransfer.files[0]);
-  };
-
-  // Planos drag & drop
-  const plInput = document.getElementById('input-planos');
-  document.getElementById('btn-load-planos').onclick = () => plInput.click();
-  plInput.onchange = () => { if (plInput.files[0]) loadPlanos(plInput.files[0]); };
-  const plZone = document.getElementById('drop-planos');
-  plZone.ondragover = e => { e.preventDefault(); plZone.classList.add('drag-over'); };
-  plZone.ondragleave = () => plZone.classList.remove('drag-over');
-  plZone.ondrop = e => {
-    e.preventDefault(); plZone.classList.remove('drag-over');
-    if (e.dataTransfer.files[0]) loadPlanos(e.dataTransfer.files[0]);
-  };
+  // Planos hardcodeados — renderizar en arranque
+  renderPlanos();
 
   // Tab de checklist y planos (modos extra)
   document.querySelectorAll('.tab-btn[data-mode="checklist"]').forEach(btn => {
@@ -4093,6 +3962,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.onclick = () => {
       switchToMode('planos');
       document.getElementById('welcome-screen').style.display = 'none';
+      // Re-aplicar estados si datos ya cargados
+      if (document.querySelector('#planos-content .plano-patente')) {
+        applyPatenteCellStates();
+        Object.keys(PLANO_SHEETS || {}).forEach(renderPlanoZonaProgress);
+      }
     };
   });
 

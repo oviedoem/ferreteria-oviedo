@@ -1,6 +1,6 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.2
-# FECHA: 2026-05-28
+# VERSION: V5.3
+# FECHA: 2026-05-29
 
 ---
 
@@ -308,6 +308,73 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.3 — 2026-05-29
+
+**PROMPT-1 — 4 cambios visuales y de lógica**
+
+**C1 — Eliminar menú CheckList**
+- `index.html`: eliminados botón tab `data-mode="checklist"`, `div#view-checklist` completo y `div#drop-checklist` del sidebar.
+- `app.js` DOMContentLoaded: eliminado bloque de drag&drop del checklist (referencias a elementos ya inexistentes).
+- Guard `if (mode === 'checklist' || mode === 'planos') return` en `refreshView()` — ya existía, conservado.
+- `switchToMode` allViews: `'checklist'` sigue en la lista (inofensivo, el view no existe pero no rompe).
+
+**C2 — Patentes y zonas contadas automáticas**
+- `readFileData()`: nuevo bloque que lee hojas `['busqueda','AREA 2','AREA 3','registro2026','SALA','PATIO']` y construye `window._patentesCargadas` (Set) con patentes que tienen CONTEO > 0. Fix aplicado: `?.[1]` en lugar de `?.` (syntax error del prompt).
+- `getPlanoContados()`: reescrita — Fuente 1 es `window._patentesCargadas`; Fuente 2 es fallback desde `row.patente`.
+- `loadFiles()`: agrega `renderCoverageZonas(year)` después de `saveDataToIDB`.
+
+**C3 — Conteo de productos consistente en banner**
+- `_renderCoverageBanner()`: calcula `prodContados` = filas con `unidades_real > 0` y `prodTotal` = total filas. Línea principal muestra "X de Y productos contados (Z%)". Sub-línea muestra unidades (toggle existente conservado).
+
+**C4 — Títulos KPIs idénticos a planilla Excel**
+- `renderKPIs()`: reordenado y renombrado — TOTAL UNID. SISTEMA → TOTAL UNID. FÍSICO → DIFERENCIA UNIDADES → EXACTITUD UNIDADES → DIFERENCIA $ → EXACTITUD $.
+- `renderCountKPIs()`: PRODUCTOS EXACTOS / FALTANTES (fondo rojo suave) / SOBRANTES (fondo verde suave).
+- `renderMonetaryKPIs()`: TOTAL $ SISTEMA / TOTAL $ FÍSICO / DIFERENCIA $ / DIFERENCIAS + SOBRANTES / DIFERENCIAS − FALTANTES / DISPERSIÓN TOTAL.
+- `renderKPIsComp()` no tocada.
+
+**PROMPT-2 — Tabla res-table en generateReporteFinal()**
+- Helper local `_pct(val, decimals)` creado dentro de `generateReporteFinal()` — NO redefinió `fmtPct()` global (que rompe 15+ callers).
+- Columna EN % en `res-table`: base monetaria (`m.totalSistema`), formato chileno (coma decimal), colores por fila (rojo Diferencias/Faltantes, azul Sobrantes, neutro Dispersión). Diferencias obtiene su % (antes mostraba `—`).
+- Card KPI "Dispersión Total" corregida para usar `pctDisp` como número con `.toFixed(2).replace('.',',')`.
+- Punto 6 del prompt (hoja RESULTADOS xlsm) no implementado — no existe en el código.
+
+**PROMPT-3 + PROMPT-4 fusionados — Planos hardcodeados + colorización**
+
+**Arquitectura nueva: plano fijo sin carga de archivo**
+- Eliminado `div#drop-planos` del sidebar en `index.html`.
+- Eliminado bloque drag&drop de planos en DOMContentLoaded de `app.js`.
+- `renderPlanos()` ya no recibe `allSheetNames` — llama funciones hardcodeadas.
+- `renderPlanos()` se llama en DOMContentLoaded → plano visible inmediatamente al abrir la app.
+
+**HTML hardcodeado desde Excel real**
+- Script Node.js generó 4 funciones `_planoHtml_X()` desde `Planos patentes 2026 EM.xlsx`:
+  - `_planoHtml_Sala_EXHIBICION()` — 34 filas, 49 cols, 109 merges, 55 patentes únicas (10–64)
+  - `_planoHtml_BODEGA_SALA()` — 55 filas, 93 cols, 262 merges, 211 patentes únicas (65–278)
+  - `_planoHtml_BODEGA_2DO_PISO_SALA()` — 57 filas, 51 cols, 137 merges, 100 patentes únicas (279–378)
+  - `_planoHtml_PATIO_CONSTRUCTOR()` — 70 filas, 48 cols, 147 merges, 72 patentes únicas (379–478)
+- Total: 373 celdas `data-patente` generadas.
+- Colores RGB del Excel preservados con `background:#RRGGBB` inline.
+- `const PLANO_SHEETS` mapea nombre → función generadora.
+
+**Colorización post-render (DOM)**
+- `applyPatenteCellStates()`: aplica `.plano-patente-lista` (verde) o `.plano-patente-pendiente` (borde rojo) sobre celdas `data-patente` ya renderizadas. Badge con primer nombre del inventariador en celdas listas.
+- `renderPlanoZonaProgress(sheetName)`: barra de progreso por hoja (contadas/pendientes/%).
+- `switchPlanoTab(name)`: switch de tabs por `data-sheet`.
+
+**PROMPT-3 PASO 1 — Mapa inventariador**
+- `readFileData()`: nuevo bloque que lee hojas `['REGISTROS','BUSQUEDA','busqueda','registro2026']` y construye `window._inventariadorPorPatente` (Map patente→nombre).
+
+**Auto-refresh**
+- `loadFiles()`: después de cargar 2025/2026, si hay `.plano-patente` en el DOM → llama `applyPatenteCellStates()` + `renderPlanoZonaProgress()` por cada hoja.
+- Tab Planos: onclick también re-aplica estados si hay datos cargados.
+
+**CSS agregado a style.css**
+- `.plano-overflow-wrap`, `.plano-table`, `.plano-patente`, `.plano-patente:hover`, `.plano-patente-pendiente`, `.plano-patente-lista`, `.plano-inv-badge`, `.plano-zona-progress-bar`, `.plano-prog-*`, `.plano-tab-btn`, `.plano-tab-btn.active`.
+
+**NO tocado:** `calcKPIs`, `calcMonetarySummary`, `getFilteredData`, `renderMode*`, sistema de filtrado, persistencia, reconteo, exports, email/print, `fmtPct` global, `venAdmParseFecha`, `venAdmFmt`.
+
+**Verificación:** `node --check app.js` pendiente (ver PENDIENTE).
 
 ### V5.2 — 2026-05-28
 
@@ -798,8 +865,10 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## PENDIENTE
 
+- [ ] Verificar `node --check app.js` sin errores de sintaxis (app.js creció a 321KB en V5.3)
 - [ ] Test end-to-end con archivos reales de inventario 2025 y 2026
-- [ ] exportChecklistExcel con layout del modelo
-- [ ] exportPlanosExcel con layout del modelo
+- [ ] Verificar colorización de planos con archivo real 2026 que tenga hojas REGISTROS/BUSQUEDA con columna INVENTARIADOR
+- [ ] Los planos hardcodeados usan nombres de hojas del archivo de ejemplo (`Sala EXHIBICION`, `BODEGA SALA`, etc.) — si el archivo real de producción tiene nombres distintos, regenerar `_planoHtml_X()` con ese archivo
+- [ ] exportPlanosExcel eliminado (planos son hardcodeados; stubs inofensivos en su lugar)
 - [ ] Verificar embudo con datos reales (selects populados correctamente)
 - [ ] Verificar renderCompCategoria con datos reales (delta colors)

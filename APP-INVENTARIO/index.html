@@ -21,7 +21,6 @@
   </div>
   <nav class="mode-tabs">
     <button class="tab-btn active" data-mode="planos">🗺️ Planos</button>
-    <button class="tab-btn" data-mode="checklist">📋 CheckList</button>
     <button class="tab-btn tab-recount" data-mode="reconteo">🔁 Centro Reconteo</button>
     <button class="tab-btn" data-mode="2025">📊 Análisis 2025</button>
     <button class="tab-btn" data-mode="2026">📈 Análisis 2026</button>
@@ -60,24 +59,6 @@
       <input type="file" id="input-2026" multiple accept=".xlsx,.xls,.csv,.xlsm" hidden>
       <button class="btn btn-blue w-full" id="btn-load-2026">📂 Cargar 2026</button>
       <div class="upload-status" id="status-2026">Sin archivos</div>
-    </div>
-
-    <div class="upload-zone" id="drop-checklist">
-      <div class="upload-icon">📋</div>
-      <p><strong>CheckList</strong></p>
-      <p class="upload-hint">Arrastra el .xlsx del<br>CheckList aquí</p>
-      <input type="file" id="input-checklist" accept=".xlsx,.xls,.xlsm" hidden>
-      <button class="btn btn-sm w-full" id="btn-load-checklist">📂 Cargar CheckList</button>
-      <div class="upload-status" id="status-checklist">Sin archivo</div>
-    </div>
-
-    <div class="upload-zone" id="drop-planos">
-      <div class="upload-icon">🗺️</div>
-      <p><strong>Planos Patentes</strong></p>
-      <p class="upload-hint">Arrastra el .xlsx de<br>Planos aquí</p>
-      <input type="file" id="input-planos" accept=".xlsx,.xls,.xlsm" hidden>
-      <button class="btn btn-sm w-full" id="btn-load-planos">📂 Cargar Planos</button>
-      <div class="upload-status" id="status-planos">Sin archivo</div>
     </div>
 
     <button class="btn btn-ghost w-full" onclick="clearAllData()">🗑 Limpiar todo</button>
@@ -313,61 +294,6 @@
       </div>
     </div><!-- /view-comparative -->
 
-    <!-- ── MODO CHECKLIST ────────────────────────────────────────── -->
-    <div id="view-checklist" class="view hidden">
-      <div class="view-header">
-        <h2>📋 CheckList de Inventario</h2>
-        <div class="view-actions">
-          <button class="btn btn-sm" onclick="exportChecklistExcel()">⬇ Excel</button>
-          <button class="btn btn-sm" onclick="generateReport('checklist')">📄 Reporte</button>
-          <button class="btn btn-sm btn-ghost" onclick="printMode('checklist')">🖨 Imprimir</button>
-          <button class="btn btn-sm btn-email" onclick="emailReport('checklist')">✉ Email</button>
-        </div>
-      </div>
-
-      <!-- Correlativo tracker -->
-      <div class="section-card" id="correlativo-section">
-        <div class="section-card-header">
-          <h3>🔢 Correlativo de Patentes</h3>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <span class="badge-info" id="corr-counter">0 iniciadas</span>
-            <button class="btn btn-xs" onclick="resetCorrelativo()">↺ Reiniciar</button>
-            <button class="btn btn-xs" onclick="exportCorrelatjvoExcel()">⬇ Exportar</button>
-          </div>
-        </div>
-        <p class="section-hint">Escribe <strong>1</strong> en el campo "Inicio" cuando comiences a inventariar esa patente. El correlativo se asigna automáticamente.</p>
-        <div class="table-scroll" style="max-height:340px">
-          <table id="table-correlativo" class="data-table corr-table">
-            <thead><tr>
-              <th style="width:60px">Corr.</th>
-              <th>Zona / Área</th>
-              <th>Patente</th>
-              <th>Responsable</th>
-              <th style="width:80px">Estado</th>
-              <th style="width:70px;text-align:center">Inicio</th>
-              <th style="width:70px;text-align:center">Fin</th>
-            </tr></thead>
-            <tbody id="corr-tbody"></tbody>
-          </table>
-        </div>
-        <p class="section-hint" id="corr-empty" style="text-align:center;padding:20px">
-          Carga el archivo de Planos para ver las patentes, o usa el botón para agregar manualmente.
-          <br><br>
-          <button class="btn btn-sm btn-orange" onclick="addCorrelatjvoRow()">+ Agregar patente manualmente</button>
-        </p>
-      </div>
-
-      <!-- Gantt -->
-      <div class="section-card" id="gantt-section" style="display:none">
-        <div class="section-card-header">
-          <h3>📅 Cronograma de Tareas</h3>
-          <button class="btn btn-xs" onclick="exportTableToExcel('gantt-table','CheckList_Cronograma')">⬇ Excel</button>
-        </div>
-        <div class="table-scroll" style="max-height:420px;overflow-x:auto">
-          <table id="gantt-table" class="gantt-table"></table>
-        </div>
-      </div>
-    </div><!-- /view-checklist -->
 
     <!-- ── MODO PLANOS ─────────────────────────────────────────────── -->
     <div id="view-planos" class="view hidden">
