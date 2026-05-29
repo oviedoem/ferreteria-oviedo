@@ -229,6 +229,10 @@ scheduleSave()                     // V4.0: debounce 800ms para saveStateToLS
 clearSavedSession()                // V4.0: borra LS + IDB + estado → welcome
 restoreSession()                   // V4.0: async, restaura datos + estado + muestra banner
 
+// Exportaciones KPI y reporte rápido
+exportResumenGlobalExcel(year)     // exporta KPIs en Excel (hoja KPIs_YEAR, 13 filas) — year: '2025'|'2026'|'comparative'
+generateReport(mode)               // abre HTML en nueva pestaña con KPIs + tops por modo (distinto de generateReporteFinal)
+
 // Planos (V4.1)
 getPlanoContados()                 // V4.1: devuelve Set con patentes presentes en datos cargados
 renderPlanos(allSheetNames)        // V4.1: +leyenda verde/rojo +badge cobertura por hoja
@@ -308,6 +312,35 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V7.5 — 2026-05-29
+
+**Auditoría 4 puntos — A/B/C ya presentes, D corregido**
+
+**Prompt A — `limpiarCachePlanos()`**: ya existía desde V7.4. Sin cambio.
+
+**Prompt B — `exportResumenGlobalExcel(year)`**: ya existía (sesión anterior no documentada). Sin cambio.
+- Fuente: `calcKPIs(data)` + `calcMonetarySummary(data)` · hoja `KPIs_YEAR` o `KPIs_Comparativo`
+- 13 filas: Unidades Sistema/Físico/Diferencia/Dispersión/Exactitud%, $ Sistema/Físico/Diferencia/Dispersión/Exactitud%, Faltantes/Sobrantes/Total
+- Usa `XLSX.utils.aoa_to_sheet` · nombre archivo `KPIs_YEAR.xlsx`
+
+**Prompt C — `generateReport(mode)`**: ya existía (sesión anterior no documentada). Sin cambio.
+- Modos: `'2025'` · `'2026'` · `'comparative'`
+- Abre `window.open('','_blank')` con HTML autocontenido: KPIs + top tablas por modo + tabla detalle completa
+- Columnas canónicas: `Codigo_tecnico · Descripcion · CONTEO · COSTO $ · VALOR CONTEO · STOCK SISTEMA · VALOR SISTEMA $ · DIFERENCIA · DIFERENCIA $ · FAMILIA · MARCA`
+- Distinta de `generateReporteFinal()` (que es solo para el tab Final)
+
+**Prompt D — Fix CSS `#session-restore-banner` (index.html línea 35):**
+- Doble atributo `style` en la misma etiqueta: `display:none` duplicado → `align-items`, `gap`, `font-size` ignorados por el navegador
+- Fix: fusionados en un solo atributo `style` eliminando el segundo `display:none`
+
+**Funciones nuevas agregadas al mapa JS CLAVE (documentación):**
+- `exportResumenGlobalExcel(year)` — exporta KPIs en Excel (1 hoja, 13 filas)
+- `generateReport(mode)` — reporte HTML en nueva pestaña para 2025/2026/comparative
+
+**node --check → OK ✓**
+
+---
 
 ### V7.3 — 2026-05-29
 
