@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.8
+# VERSION: V5.9
 # FECHA: 2026-05-29
 
 ---
@@ -308,6 +308,24 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.9 — 2026-05-29
+
+**Fix crítico — `getPlanoContados()` restaurada (función borrada en sesión V5.3-V5.6)**
+
+- **Causa raíz**: `getPlanoContados()` fue eliminada accidentalmente en alguna sesión entre V5.3 y V5.6. Era llamada desde `_buildCoverageZonas()` (línea 1162) y desde `applyPatenteCellStates()`. Su ausencia causaba `ReferenceError: getPlanoContados is not defined`.
+- **Impacto del bug**: El ReferenceError ocurría en `loadFiles()` en la llamada `renderCoverageZonas(year)` (línea 767), **antes** de `updateSidebarStatus()` (línea 773). Resultado: status quedaba en "Sin archivos", `renderMode()` nunca se llamaba, los gráficos no renderizan, el panel de patentes no aparecía.
+- **Fix**: `getPlanoContados()` restaurada según especificación V5.3:
+  - Fuente 1: `window._patentesCargadas` (Set construido por `readFileData` desde hojas de registro)
+  - Fuente 2: fallback construye Set desde `state.data2025/data2026[].patente`
+  - Retorna `null` si sin datos cargados.
+- **Insertada** justo antes de `_buildCoverageZonas()`.
+- **NO tocado**: `applyPatenteCellStates`, `renderPlanoZonaProgress`, `_buildCoverageZonas`, `loadFiles`, `updateSidebarStatus`.
+- **`node --check` → OK ✓**
+
+**Fix V5.8 — App parte limpia (mantenido)**
+- DOMContentLoaded llama `clearIDB()` + `localStorage.removeItem(LS_STATE_KEY)` → sin auto-restore.
+- `clearAllData()` limpia `#validation-summary`.
 
 ### V5.8 — 2026-05-29
 

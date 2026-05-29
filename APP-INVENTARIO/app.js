@@ -1159,6 +1159,25 @@ function _coverageHtml(text) {
   }[ch]));
 }
 
+// Fuente 1: Set de patentes contadas desde hojas de registro (readFileData).
+// Fuente 2: fallback desde row.patente si no existe Fuente 1.
+// Devuelve null si no hay datos cargados.
+function getPlanoContados() {
+  const f1 = window._patentesCargadas;
+  if (f1 instanceof Set && f1.size > 0) return f1;
+  const all = [...(state.data2025 || []), ...(state.data2026 || [])];
+  if (!all.length) return null;
+  const s = new Set();
+  all.forEach(r => {
+    const p = String(r.patente || '').trim();
+    if (!p) return;
+    s.add(p.toUpperCase());
+    const num = p.match(/^(\d+)/)?.[1];
+    if (num) s.add(num);
+  });
+  return s.size > 0 ? s : null;
+}
+
 function _buildCoverageZonas() {
   const universo = Array.isArray(planosPatentes) ? planosPatentes : [];
   const contados = getPlanoContados();
