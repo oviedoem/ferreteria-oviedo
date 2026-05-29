@@ -1007,14 +1007,22 @@ Sesión anterior quedó incompleta en el cierre (push pendiente). Auditoría con
 ## PENDIENTE
 
 - [ ] Test end-to-end con archivos REALES de producción (los ejemplos son datos sintéticos)
-- [ ] P6: cargar inventario real y confirmar plano fiel + patentes verdes con badge, rojas sin contar, % cobertura correcto (465 patentes totales)
+- [ ] Confirmar planos hardcodeados con archivo real: 465 patentes (Sala EXHIBICION=55, BODEGA SALA=211, BODEGA 2DO PISO SALA=100, PATIO CONSTRUCTOR=99)
 - [ ] Verificar embudo con datos reales (selects populados correctamente)
 - [ ] Verificar renderCompCategoria con datos reales (delta colors)
+- [ ] Probar botón "📂 Actualizar Plano" con archivo Excel 2027 real cuando esté disponible
+
+**Estado funcional confirmado (V6.0 — 2026-05-29):**
+- ✅ Cargar 2025/2026: status verde + gráficos + KPIs + banner EN CURSO
+- ✅ Tabs Planos / Centro Reconteo / Análisis 2025 / Análisis 2026 / Comparativo / Avanzado / Final / Mejoras: todos responden
+- ✅ Planos hardcodeados se renderizan al abrir la app (465 patentes, 4 hojas)
+- ✅ Avance por patente: aparece al cargar inventario con planos
+- ✅ Email (mailto) y PDF (window.print) funcionales en todas las vistas
+- ✅ Excel export: TABLA_ANALISIS 11 cols con styleSimpleSheet, hoja RESULTADOS
+- ✅ App parte limpia al abrir (sin auto-restore de sesión)
 
 **Hallazgos verificados con archivos de ejemplo (V5.4):**
 - TABLA_ANALISIS: 9.163 filas con headers correctos (Codigo_tecnico, CONTEO, COSTO $, etc.)
-- Hojas de registro V2026: REGISTROS (1.671 filas con patente+conteo) + BUSQUEDA (6.476 filas) — ambas tienen columna INVENTARIADOR con 13 inventariadores únicos
-- Guiones contables: 25.039 en total → todos resueltos como cero por el fix V5.4
-- Cobertura planos con datos ejemplo: 457/469 patentes contadas (97%)
-- SALA y PATIO vacías en el archivo de ejemplo (normal — son hojas auxiliares)
-- Los planos hardcodeados (`Sala EXHIBICION`, `BODEGA SALA`, `BODEGA 2DO PISO SALA`, `PATIO CONSTRUCTOR`) son los nombres del archivo de ejemplo. Confirmar con el archivo real de producción antes de cambiar.
+- Hojas de registro V2026: REGISTROS (1.671 filas) + BUSQUEDA (6.476 filas)
+- Guiones contables: 25.039 → todos resueltos como cero (fix V5.4)
+- Cobertura planos con datos ejemplo: 457/469 patentes (97%)
