@@ -303,6 +303,9 @@
           <button class="btn btn-sm" onclick="exportPlanosExcel()">⬇ Excel</button>
           <button class="btn btn-sm btn-ghost" onclick="printMode('planos')">🖨 Imprimir</button>
           <button class="btn btn-sm btn-email" onclick="emailReport('planos')">✉ Email</button>
+          <button class="btn btn-sm" onclick="document.getElementById('input-plano-update').click()" title="Cargar nuevo archivo de planos (2027 en adelante)">📂 Actualizar Plano</button>
+          <input type="file" id="input-plano-update" accept=".xlsx,.xls" hidden
+            onchange="if(this.files.length){loadPlanosFromFile(this.files[0]);this.value='';}">
         </div>
       </div>
 
@@ -314,10 +317,6 @@
 
       <!-- Contenido de cada hoja del plano (imprimible por página) -->
       <div id="planos-content"></div>
-
-      <p class="section-hint" id="planos-empty" style="text-align:center;padding:40px">
-        Carga el archivo <strong>Planos patentes 2026 EM.xlsx</strong> para ver los planos.
-      </p>
     </div><!-- /view-planos -->
 
     <!-- ── MODO MEJORAS 2026 ─────────────────────────────────────── -->

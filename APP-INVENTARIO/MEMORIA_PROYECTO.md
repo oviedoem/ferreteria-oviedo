@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.9
+# VERSION: V6.0
 # FECHA: 2026-05-29
 
 ---
@@ -308,6 +308,29 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V6.0 — 2026-05-29
+
+**Fix crítico — `PLANO_SHEETS` restaurada + botón Actualizar Plano + tabs Avanzado/Final/Mejoras**
+
+**Bug 1 — `PLANO_SHEETS` no definida (causa raíz de todos los tabs rotos)**
+- `PLANO_SHEETS` perdida en sesión V5.3-V5.6. Al ejecutar `renderPlanos()` en DOMContentLoaded, `Object.keys(PLANO_SHEETS)` lanzaba ReferenceError que detenía el bloque completo. Resultado: los `.onclick` handlers de Análisis Avanzado, Análisis Final y Mejoras 2026 nunca se registraban → esos botones no respondían.
+- **Fix**: `const PLANO_SHEETS = { 'Sala EXHIBICION': _planoHtml_Sala_EXHIBICION, 'BODEGA SALA': _planoHtml_BODEGA_SALA, 'BODEGA 2DO PISO SALA': _planoHtml_BODEGA_2DO_PISO_SALA, 'PATIO CONSTRUCTOR': _planoHtml_PATIO_CONSTRUCTOR }` insertada justo antes de `renderPlanos()`.
+- Ahora todos los tabs del nav (Análisis Avanzado, Análisis Final, Mejoras 2026, Planos) funcionan.
+
+**Feature — Botón "📂 Actualizar Plano" para 2027**
+- `index.html`: botón + `<input type="file" id="input-plano-update" hidden>` en `view-planos` header.
+- `app.js`: nueva función `loadPlanosFromFile(file)` + helper `_wsToPlanoHtml(ws)`:
+  - Lee Excel con SheetJS `cellStyles:true` → preserva merges (rowspan/colspan), colores de fill (#RRGGBB), bordes (top/bottom/left/right).
+  - Detecta patentes por regex `/^(\d{2,4})(\s|$)/` → `data-patente` + `class="plano-patente"`.
+  - Reconstruye `planosPatentes` desde DOM → re-aplica `applyPatenteCellStates` y `renderPlanoZonaProgress`.
+  - Excluye hojas de registro (REGISTROS, BUSQUEDA, etc.) — solo hojas de plano.
+- Planos hardcodeados (2026) siguen siendo el render por defecto. El botón es para actualizar a 2027+.
+- `planos-empty` legacy eliminado de HTML (no necesario con planos hardcodeados).
+
+**Email/PDF**: revisados — `emailReport()` y `printMode()` funcionan correctamente (encoding OK).
+
+**`node --check` → OK ✓**
 
 ### V5.9 — 2026-05-29
 
