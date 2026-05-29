@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — Panel de Diferencias de Inventario · El Manzano
-# VERSION: V5.4
+# VERSION: V5.5
 # FECHA: 2026-05-29
 
 ---
@@ -308,6 +308,41 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ---
 
 ## HISTORIAL DE CAMBIOS
+
+### V5.5 — 2026-05-29
+
+**P1–P3 — Fix regex `/^(d+)/` → `/^(\d+)/` (3 ocurrencias)**
+
+- `readFileData()` línea ~650: bloque `inventariadorMap` usaba literal `d` en lugar de `\d`.
+- `applyPatenteCellStates()` línea ~3434: misma regex errónea — cobertura verde/rojo fallaba.
+- `renderPlanoZonaProgress()` línea ~3468: misma regex errónea — % por zona fallaba.
+- Las 3 ocurrencias corregidas. El bloque `patentesCargadasSet` adyacente ya tenía `\d` — no tocado.
+
+**P4 — Auditoría de fidelidad _planoHtml_X() vs Excel real**
+
+- Causa raíz detectada: `BODEGA SALA` tiene `ref E1:CS55` (columna inicial = E, offset=4).
+  `sheet_to_json({header:1})` devuelve índices **relativos** (E→0), pero `ws['!merges']` usa
+  índices **absolutos** (E→4). El generador original usó `ci` relativo para buscar en
+  `spanMap`/`skipSet` con coordenadas absolutas → **69 patentes perdidas** en BODEGA SALA
+  (de 211 solo se generaron 143).
+- Las otras 3 hojas tienen `ref A1:...` (offset=0), por eso no tenían discrepancia.
+
+**P5 — Regeneración corregida de las 4 funciones _planoHtml_X()**
+
+- Script regenerador corregido: calcula `colOffset = refStart.c` y `rowOffset = refStart.r`
+  desde `ws['!ref']`; todas las búsquedas en `skipSet`/`spanMap` y los accesos a
+  `ws[addr]` usan coordenadas absolutas (`absR = ri + rowOffset`, `absC = ci + colOffset`).
+- Resultado verificado (0 faltantes, 0 extras):
+  - Sala EXHIBICION:       Excel=55  HTML=55  ✓
+  - BODEGA SALA:           Excel=211 HTML=211 ✓  (antes: 143, +68 recuperadas)
+  - BODEGA 2DO PISO SALA:  Excel=100 HTML=100 ✓
+  - PATIO CONSTRUCTOR:     Excel=72  HTML=72  ✓
+- Total: 438 patentes con `data-patente` correctas, merges/rowspan/colspan y colores RGB fieles al Excel.
+- `node --check app.js` → OK ✓
+
+**NO tocado:** `renderPlanos()`, `switchPlanoTab()`, `applyPatenteCellStates()` (firma y lógica),
+`renderPlanoZonaProgress()` (firma y lógica), CSS `.plano-patente/-lista/-pendiente/.plano-inv-badge`,
+`exportPlanosExcel`/`exportSheetExcel`/`countPatentesInSheet` (stubs intencionales).
 
 ### V5.4 — 2026-05-29
 
@@ -884,6 +919,7 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 ## PENDIENTE
 
 - [ ] Test end-to-end con archivos REALES de producción (los ejemplos son datos sintéticos)
+- [ ] P6: cargar inventario real y confirmar plano fiel + patentes verdes con badge, rojas sin contar, % cobertura correcto
 - [ ] Verificar embudo con datos reales (selects populados correctamente)
 - [ ] Verificar renderCompCategoria con datos reales (delta colors)
 
