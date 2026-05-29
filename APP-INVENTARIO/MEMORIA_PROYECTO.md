@@ -313,6 +313,33 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.7 — 2026-05-29
+
+**Fix — `readFileData()`: patentes no detectadas como contadas (CONTEO vs CONTO)**
+
+**Causa raíz:** El campo `CONTEO` representa las unidades físicas encontradas en el conteo (puede ser 0 si el producto no estaba). El campo `CONTO` es el flag de visita del inventariador (>0 = producto fue visitado, independiente del resultado). El código usaba `CONTEO > 0` como criterio de "visitado" → patentes con un producto contado como 0 unidades (CONTEO=0, CONTO=1) quedaban excluidas del Set `_patentesCargadas`. Ejemplo: Patente 11, producto TREB0028: CONTEO=0 (no encontrado físicamente), CONTO=1 (fue visitado). La patente tenía 10/11 filas con CONTEO>0 → toda la patente marcada como NO contada.
+
+**Fix — bloque `patentesCargadasSet` (L614-645):**
+- `registroSheets`: reducido de 10 entradas a solo `['REGISTROS']` (fuente oficial per instrucción de usuario; SALA/PATIO/EXHIBICION tienen 0 filas, SEM tiene estructura incompatible)
+- Criterio cambiado: `CONTEO > 0` → `CONTO > 0` (field lookup: `r.CONTO || r.Conto || r.conto`)
+- Comentario actualizado para explicar la diferencia CONTEO vs CONTO
+
+**Fix — bloque `inventariadorMap` (L649-667):**
+- `invSheets`: mismo cambio, solo `['REGISTROS']`
+- Criterio: `conteo > 0` → `conto > 0`
+
+**Resultado verificado (Node.js):**
+- Antes: 232 patentes contadas (CONTEO)
+- Después: 247 patentes contadas (CONTO = todas las presentes en REGISTROS)
+- Patentes 11, 12, 18, 22, 24, 38, 50, 62 → ahora CONTADAS correctamente en Sala EXHIBICION
+- Patente 56 → genuinamente ausente de REGISTROS → correctamente NO contada
+
+**NO tocado:** `getPlanoContados()`, `applyPatenteCellStates()`, `renderPlanoZonaProgress()`, `loadFiles()`, resto de `readFileData()`, ninguna función de render, index.html, style.css.
+
+**node --check → OK ✓**
+
+---
+
 ### V7.6 — 2026-05-29
 
 **Fix — tab Mejoras 2026 mostraba contenido hardcodeado sin archivos cargados**
