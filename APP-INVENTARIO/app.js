@@ -1588,7 +1588,7 @@ function exportDrilldownTable(year) {
   const headers = [
     'Codigo_tecnico','Descripcion','CONTEO','COSTO $',
     'VALOR CONTEO','STOCK SISTEMA','VALOR SISTEMA $',
-    'DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERMALIA','MARCA',
+    'DIFERENCIA','DIFERENCIA $','FAMILIA','HIPERFAMILIA','MARCA',
   ];
 
   const rows = [headers, ...data.map(r => [
@@ -1620,7 +1620,7 @@ function exportDrilldownTable(year) {
     ['Diferencia',      Math.round(k.du), Math.round(m.difTotal), ''],
     ['Diferencias (+)', data.filter(r=>r.dif_unidades>0).length,
                         Math.round(data.reduce((s,r)=>s+(r.dif_peso>0?r.dif_peso:0),0)), ''],
-    ['Diferencias (−)', data.filter(r=>r.dif_unidades<0).length,
+    ['Diferencias (-)', data.filter(r=>r.dif_unidades<0).length,
                         Math.round(data.reduce((s,r)=>s+(r.dif_peso<0?r.dif_peso:0),0)), ''],
     ['Dispersion',      Math.round(k.adu), Math.round(m.dispersion),
                         (m.pctDispersion||0).toFixed(2)+'%'],
@@ -1858,7 +1858,6 @@ function exportTableToExcel(tableId, fileName) {
   table.querySelectorAll('tr').forEach(tr => {
     const cells = [...tr.querySelectorAll('th,td')].map(c => {
       const txt = c.textContent.trim();
-      // Intentar convertir a número: quitar $, puntos miles, espacios
       const clean = txt.replace(/[$\s]/g,'').replace(/\./g,'').replace(',','.');
       const n = parseFloat(clean);
       return (!isNaN(n) && txt !== '' && /[\d]/.test(txt)) ? n : txt;
@@ -1867,82 +1866,45 @@ function exportTableToExcel(tableId, fileName) {
   });
 
   const nCols = allRows[0]?.length || 1;
-  const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'FF002060' } };
-  const HDR_FONT = { color:{ rgb:'FFFFFFFF' }, bold:true, sz:10 };
-  const HDR_ALIGN= { horizontal:'center', vertical:'center', wrapText:true };
-  const THIN_BDR = { style:'thin', color:{ rgb:'FFBBBBBB' } };
-  const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
 
-  // Detectar columnas numéricas por los valores de filas de datos
-  const isNumCol = new Array(nCols).fill(false);
-  const isMoneyCol = new Array(nCols).fill(false);
-  for (let ci = 0; ci < nCols; ci++) {
-    const vals = allRows.slice(1).map(r => r[ci]).filter(v => typeof v === 'number');
-    if (vals.length > 0 && vals.length >= allRows.slice(1).length * 0.5) {
-      isNumCol[ci] = true;
-      // Detectar columnas monetarias: encabezado contiene $ o palabras clave
-      const hdr = (allRows[0]?.[ci] || '').toString().toUpperCase();
-      if (/\$|VALOR|COSTO|PRECIO|IMPACTO|DIFERENCIA\s*\$|DIF\s*\$|NETO/.test(hdr)) isMoneyCol[ci] = true;
+  // Estilado unificado via styleSimpleSheet
+  const ws = XLSX.utils.aoa_to_sheet(allRows);
+  styleSimpleSheet(ws, allRows);
+
+  // Override fila footer (TOTAL): fondo azul claro + negrita
+  const lastR = allRows.length - 1;
+  if (typeof allRows[lastR]?.[0] === 'string' && /total/i.test(String(allRows[lastR][0]))) {
+    const THIN_BDR = { style:'thin', color:{ rgb:'FFBBBBBB' } };
+    const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
+    for (let ci = 0; ci < nCols; ci++) {
+      const addr = XLSX.utils.encode_cell({ r: lastR, c: ci });
+      if (ws[addr]) ws[addr].s = { ...ws[addr].s,
+        fill: { patternType:'solid', fgColor:{ rgb:'FFDBEAFE' } },
+        font: { ...(ws[addr].s?.font || {}), bold: true },
+        border: CELL_BDR,
+      };
     }
   }
 
-  // Anchos automáticos por columna
-  const colWidths = allRows[0].map((_, ci) => {
-    const maxLen = Math.max(...allRows.map(r => (r[ci]?.toString()||'').length));
-    return { wch: Math.min(Math.max(maxLen + 2, 8), 40) };
-  });
-
-  // Construir worksheet manualmente
-  const ws = {};
-  allRows.forEach((row, rIdx) => {
-    row.forEach((val, cIdx) => {
-      const addr = XLSX.utils.encode_cell({ r: rIdx, c: cIdx });
-      const isHeader = rIdx === 0;
-      const isFooter = rIdx === allRows.length - 1 && typeof allRows[allRows.length-1][0] === 'string'
-        && /total/i.test(String(allRows[allRows.length-1][0]));
-
-      const numVal = typeof val === 'number' ? val : null;
-      ws[addr] = {
-        t: isHeader ? 's' : (numVal !== null ? 'n' : 's'),
-        v: isHeader ? val : (numVal !== null ? numVal : val),
-      };
-      if (numVal !== null && !isHeader) {
-        ws[addr].z = isMoneyCol[cIdx] ? '$ #,##0' : '#,##0';
-      }
-
-      // Color condicional en columnas de diferencia (negativo=rojo, positivo=azul)
-      const isDifCol = /DIFERENCIA|DIF|DIFF/i.test(String(allRows[0]?.[cIdx]||''));
-      const fontColor = isHeader ? 'FFFFFFFF'
-        : (isDifCol && numVal !== null ? (numVal < 0 ? 'FFC00000' : numVal > 0 ? 'FF0000FF' : 'FF1F2937') : 'FF1F2937');
-
-      ws[addr].s = {
-        fill:  isHeader ? HDR_FILL : isFooter ? { patternType:'solid', fgColor:{ rgb:'FFDBEAFE' } } : { patternType:'none' },
-        font:  { color:{ rgb: fontColor }, bold: isHeader || isFooter, sz: isHeader ? 10 : 9 },
-        alignment: isHeader ? HDR_ALIGN : { horizontal: (numVal !== null ? 'right' : 'left') },
-        border: CELL_BDR,
-      };
-    });
-  });
-
-  ws['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:allRows.length-1,c:nCols-1} });
-  ws['!cols'] = colWidths;
-  ws['!views'] = [{ state:'frozen', xSplit:0, ySplit:1, topLeftCell:'A2' }];
-
   // Hoja LEYENDA
   const headers = allRows[0] || [];
+  const HDR_FILL = { patternType:'solid', fgColor:{ rgb:'FF002060' } };
+  const HDR_FONT = { color:{ rgb:'FFFFFFFF' }, bold:true, sz:10 };
+  const THIN_BDR = { style:'thin', color:{ rgb:'FFBBBBBB' } };
+  const CELL_BDR = { top:THIN_BDR, bottom:THIN_BDR, left:THIN_BDR, right:THIN_BDR };
   const legendRows = [
-    ['Columna', 'Descripción'],
-    ['DIFERENCIA / DIF UNID', 'Conteo físico − Stock sistema (negativo = faltante, positivo = sobrante)'],
-    ['DIFERENCIA $ / DIF $', 'Diferencia en unidades × Costo unitario'],
-    ['DISPERSIÓN', '|Faltantes| + |Sobrantes| en $ — mide cuánto se aleja del sistema'],
-    ['CONTEO', 'Unidades físicamente contadas en el inventario'],
+    ['Columna', 'Descripcion'],
+    ['DIFERENCIA / DIF UNID', 'Conteo fisico - Stock sistema (negativo=faltante, positivo=sobrante)'],
+    ['DIFERENCIA $ / DIF $', 'Diferencia en unidades x Costo unitario'],
+    ['DISPERSION', '|Faltantes| + |Sobrantes| en $ - cuanto se aleja del sistema'],
+    ['CONTEO', 'Unidades fisicamente contadas en el inventario'],
     ['STOCK SISTEMA / UNID SISTEMA', 'Unidades registradas en el sistema (ERP)'],
-    ['VALOR CONTEO / VALOR SISTEMA', 'Unidades × Costo unitario'],
-    ['% EXACTITUD', '(1 − |Dif| / Sistema) × 100 — 100% = sin diferencias'],
+    ['VALOR CONTEO / VALOR SISTEMA', 'Unidades x Costo unitario'],
+    ['% EXACTITUD', '(1 - |Dif| / Sistema) x 100 -- 100% = sin diferencias'],
     ...headers.filter(h => h && !['DIFERENCIA','DIF','CONTEO','STOCK','VALOR','EXACTITUD'].some(k => String(h).toUpperCase().includes(k)))
-              .map(h => [String(h), 'Columna descriptiva / clasificación del producto']),
+              .map(h => [String(h), 'Columna descriptiva / clasificacion del producto']),
     ['', ''],
-    ['Generado', `${new Date().toLocaleString('es-CL')} — Ferretería Oviedo · El Manzano`],
+    ['Generado', `${new Date().toLocaleString('es-CL')} -- Ferreteria Oviedo El Manzano`],
   ];
   const wsL = XLSX.utils.aoa_to_sheet(legendRows);
   wsL['!cols'] = [{ wch:32 }, { wch:70 }];

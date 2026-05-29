@@ -309,6 +309,47 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V4.8 — 2026-05-29 (reconciliacion A+B)
+
+**FUSION DE TRABAJOS — sin perder mejoras de ninguno de los dos lados:**
+- (A) cloud: styleSimpleSheet + hojas RESULTADOS/DATOS_FALTANTES/HIPERFAMILIA/Reconteo
+- (B) PC local V4.6: exportTableToExcel reescrita, buildFamiliaIndex+subfamilia,
+  bordes CSS .data-table, titulos canonicos, regla anti-retroceso AGENTS.md
+
+**CAMBIO 1 — exportTableToExcel usa styleSimpleSheet como ESTILADOR UNICO**
+- Eliminada lógica de estilos inline duplicada (HDR_FILL/THIN_BDR/CELL_BDR repetidos)
+- Conservado: extraccion crudos thead/tbody/tfoot (B) + hoja LEYENDA con ASCII puro
+- Override footer (fila TOTAL): fondo #DBEAFE + negrita, aplicado post-styleSimpleSheet
+- Unico estilador de datos: styleSimpleSheet → fondo blanco garantizado, sin negro
+
+**CAMBIO 2 — Typo corregido: HIPERMALIA → HIPERFAMILIA en exportDrilldownTable**
+- Header TABLA_ANALISIS columna K corregido
+- Consistente con hoja 'HIPERFAMILIA' de exportFinalExcel
+
+**CAMBIO 3 — ASCII puro en strings Excel (sin tildes/emdash)**
+- 'Diferencias (-)' en lugar de 'Diferencias (-)' con caracter especial
+- Textos LEYENDA: sin tildes, sin simbolos unicode (compatibilidad ANSI)
+
+**ESTADO UNICO ESTILADOR:**
+| Funcion | Estilador datos | Notas |
+|---|---|---|
+| exportTableToExcel | styleSimpleSheet | + override footer TOTAL |
+| exportDrilldownTable TABLA_ANALISIS | styleAnalisisSheet | 12 cols fijas |
+| exportDrilldownTable RESULTADOS | styleSimpleSheet | |
+| exportFinalExcel ws1 | styleAnalisisSheet | |
+| exportFinalExcel ws2/ws3/ws4 | styleSimpleSheet | |
+| exportRecountExcel | styleSimpleSheet | ambas hojas |
+
+**VERIFICACION:**
+- node --check app.js: OK
+- HDR_FILL en datos: solo en styleSimpleSheet y styleAnalisisSheet
+- buildFamiliaIndex con subfamilia: intacto (V4.6)
+- Workflow GitHub Pages: intacto (.github/workflows/deploy-inventario.yml)
+- Anti-retroceso AGENTS.md: intacto (V4.6)
+
+**NO TOCADO:** parseo, filtrado, drilldown, KPIs, planos, checklist, reconteo,
+panel-admin/cliente/vendedor, firebase.json, ninguna funcion de render
+
 ### V4.7 — 2026-05-28 (cloud session)
 
 **CAMBIO 1 — styleSimpleSheet: helper genérico de estilos Excel**
