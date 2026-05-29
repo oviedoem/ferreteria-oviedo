@@ -1840,10 +1840,13 @@ select.embudo-select:disabled { opacity: .45; cursor: default; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-/* Estado PENDIENTE: borde rojo sutil sin destruir color Excel */
+/* Estado PENDIENTE: fondo rojo tenue + borde visible para patentes no contadas */
 .plano-patente-pendiente {
-  outline: 1.5px solid rgba(239,68,68,0.45);
+  background: rgba(254, 226, 226, 0.92) !important;
+  outline: 2px solid rgba(220, 38, 38, 0.75);
   outline-offset: -1px;
+  color: #7f1d1d !important;
+  font-weight: 700 !important;
 }
 
 /* Estado LISTA: overlay verde sobre estilos Excel */

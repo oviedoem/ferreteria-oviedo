@@ -313,6 +313,31 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.8 — 2026-05-29
+
+**Fix — `.plano-patente-pendiente` (style.css): patentes no contadas eran invisibles**
+
+**Causa:** La clase `.plano-patente-pendiente` solo tenía `outline: 1.5px solid rgba(239,68,68,0.45)` — borde de 1.5px al 45% de opacidad. Las celdas del plano generadas desde Excel sin color de relleno aparecían completamente blancas: sin borde visible, sin color, sin textura. El usuario no podía distinguir patentes contadas de pendientes.
+
+**Fix en style.css:**
+```css
+.plano-patente-pendiente {
+  background: rgba(254, 226, 226, 0.92) !important;  /* fondo rosa/rojo tenue */
+  outline: 2px solid rgba(220, 38, 38, 0.75);         /* borde rojo visible */
+  outline-offset: -1px;
+  color: #7f1d1d !important;                           /* texto rojo oscuro */
+  font-weight: 700 !important;                         /* número legible */
+}
+```
+
+**Resultado:** Patentes no contadas aparecen claramente en rosa/rojo con número legible. Patentes contadas siguen en verde con inventariador.
+
+**Nota sobre celdas de zona:** Los números 1-9 visibles en el plano son etiquetas de área/zona del Excel (identificadores de secciones), NO patentes. No tienen `data-patente` y no se colorean, lo cual es correcto.
+
+**NO tocado:** `.plano-patente-lista`, `.plano-patente`, `.plano-inv-badge`, ninguna función JS.
+
+---
+
 ### V7.7 — 2026-05-29
 
 **Fix — `readFileData()`: patentes no detectadas como contadas (CONTEO vs CONTO)**
