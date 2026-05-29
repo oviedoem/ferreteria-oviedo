@@ -749,6 +749,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('mem')">🔧 Merma MEM</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')">🔖 Liquidación</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('informe-stock')">📊 Informe Stock</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('despachos')">🚚 Despachos Pendientes</button>
       </div>
     </div>
     <div class="sidebar-group">
@@ -929,6 +930,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <button class="vadm-stab vadm-stab-inv"        id="vstab-bajrot"     onclick="vadmSubTab('bajrot')">📉 Baja Rotación</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-mem"        onclick="vadmSubTab('mem')">🔧 MEM Merma</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-informe-stock" onclick="vadmSubTab('informe-stock')">📊 Informe Stock</button>
+          <button class="vadm-stab vadm-stab-inv"        id="vstab-despachos"     onclick="vadmSubTab('despachos')">🚚 Despachos</button>
         </div>
         <!-- ÁRBOL RETAIL -->
         <div class="vadm-subtabs" id="vstabs-arbol" style="display:none">
@@ -1658,6 +1660,64 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           </div>
         </div><!-- /vsec-informe-stock -->
 
+        <!-- ── DESPACHOS PENDIENTES ── -->
+        <div class="vadm-section" id="vsec-despachos">
+          <!-- Fila 1: título + acciones -->
+          <div class="vadm-anal-bar" style="flex-wrap:wrap;gap:10px;align-items:center">
+            <span class="vadm-filter-tag" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa">🚚 Despachos Pendientes — BVE / FVE sin guía de despacho</span>
+            <button class="ven-adm-btn" onclick="dpRenderPendientes()">🔄 Actualizar</button>
+            <button class="ven-adm-btn" onclick="dpEnviarEmail()" style="background:#1e3a8a;color:#fff;border-color:#1e3a8a">📧 Enviar Reporte</button>
+            <button class="ven-adm-btn" onclick="dpExportExcel()" style="background:#166534;color:#fff;border-color:#166534">📊 Excel</button>
+          </div>
+          <!-- Fila 2: filtros -->
+          <div class="vadm-anal-bar" style="flex-wrap:wrap;gap:8px;align-items:center;padding-top:6px">
+            <input type="text" id="dpFolioFiltro" placeholder="N° documento…" oninput="dpFiltrar()"
+              style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;width:120px">
+            <input type="text" id="dpBuscar" placeholder="Cliente o vendedor…" oninput="dpFiltrar()"
+              style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;min-width:160px">
+            <span style="font-size:11px;color:#6b7280">Emisión:</span>
+            <input type="date" id="dpDesde" onchange="dpFiltrar()"
+              style="font-size:12px;padding:3px 6px;border:1px solid #d1d5db;border-radius:4px">
+            <span style="font-size:11px;color:#6b7280">—</span>
+            <input type="date" id="dpHasta" onchange="dpFiltrar()"
+              style="font-size:12px;padding:3px 6px;border:1px solid #d1d5db;border-radius:4px">
+            <select id="dpTipoFilter" onchange="dpFiltrar()"
+              style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
+              <option value="">Todos los tipos</option>
+              <option value="boleta">Boleta</option>
+              <option value="factura">Factura</option>
+            </select>
+            <select id="dpObsFiltro" onchange="dpFiltrar()"
+              style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
+              <option value="">Todos los estados</option>
+              <option value="empaque">Entrega de empaque</option>
+              <option value="despachar">Por despachar (programado)</option>
+              <option value="sin">Sin fecha</option>
+            </select>
+          </div>
+          <div id="dpKpi" style="padding:8px 16px 4px"></div>
+          <div id="dpStatus" style="font-size:12px;color:#9ca3af;padding:2px 16px 6px"></div>
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px">
+            <table id="dpTabla" style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="background:#f1f5f9;font-size:11px">
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:90px">Folio</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px">Documento</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;white-space:nowrap">F. Emisión</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:90px">Vendedor</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:160px">Cliente</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:140px">Observación</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;white-space:nowrap">F. Despacho</th>
+                  <th style="text-align:center;padding:6px 8px;border:1px solid #e2e8f0">Ítems</th>
+                </tr>
+              </thead>
+              <tbody id="dpTbody">
+                <tr><td colspan="8" style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Haga clic en 🔄 Actualizar para cargar</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div><!-- /vsec-despachos -->
+
         <!-- ══════════════════════════════════════════════════
              ÁRBOL RETAIL — secciones
              ══════════════════════════════════════════════════ -->
@@ -1922,7 +1982,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <div data-coop-hide style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-top:14px">
           <div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px">🔄 Cómo actualizar el catálogo</div>
           <ol style="font-size:12px;color:#14532d;line-height:1.9;padding-left:16px;margin:0">
-            <li>Ejecutar <strong>ACTUALIZAR_Y_PUBLICAR.bat</strong> desde <code>D:\ferreteria-oviedo\</code></li>
+            <li>Ejecutar <strong>ACTUALIZAR_TODO.bat</strong> desde <code>D:\ferreteria-oviedo\</code></li>
             <li><strong>[0]</strong> <code>descargar_erp.py</code> — descarga precios (VisorRS → CSV) + stock (HTTP) → <code>actualizar.xlsx</code></li>
             <li><strong>[1]</strong> <code>procesar-actualizacion.py</code> — <code>actualizar.xlsx</code> → <code>Datos.xlsx</code></li>
             <li><strong>[2]</strong> <code>xlsx_a_csv.py</code> — <code>Datos.xlsx</code> → <code>Datos.csv</code></li>
@@ -1969,8 +2029,8 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <div data-coop-hide style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-top:14px">
           <div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px">🔄 Cómo actualizar las ventas</div>
           <ol style="font-size:12px;color:#14532d;line-height:1.9;padding-left:16px;margin:0">
-            <li>Ejecutar <strong>PREPARAR_Y_PUBLICAR.bat</strong> desde <code>D:\ferreteria-oviedo\VENTAS EL MANZANO LOCAL\</code></li>
-            <li>El bat exporta desde Justime (o usa el XLSM existente) → genera <code>data/ventas-manzano.json</code> → publica a Firebase Hosting</li>
+            <li>Ejecutar <strong>ACTUALIZAR_TODO.bat</strong> desde <code>D:\ferreteria-oviedo\</code></li>
+            <li>El bat descarga precios + stock ERP, procesa el catálogo, descarga ventas y publica JSON + catálogo a Firebase Hosting</li>
             <li>El panel Admin → Ventas muestra los datos actualizados al hacer clic en Actualizar</li>
           </ol>
         </div>
@@ -2115,13 +2175,13 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));venAdmCargar()">
             <div class="tc-icon">📈</div>
             <div class="tc-title">Ventas El Manzano</div>
-            <div class="tc-desc">Análisis ABC, quiebre de stock, detalle por vendedor y ranking de clientes. Se actualiza automáticamente a las 7 PM.</div>
+            <div class="tc-desc">Análisis ABC, quiebre de stock, detalle por vendedor y ranking de clientes. Se actualiza automáticamente a las 18:00 vía tarea programada.</div>
             <div class="tc-link">Ir a Ventas →</div>
           </div>
           <div class="tut-card-v2" onclick="showTab('url',document.querySelector('[onclick*=\'url\']'))">
             <div class="tc-icon">🔗</div>
             <div class="tc-title">Actualizar Catálogo</div>
-            <div class="tc-desc">Ejecuta ACTUALIZAR_Y_PUBLICAR.bat: descarga precios del ERP → procesa → publica en Firebase en 4 pasos automáticos.</div>
+            <div class="tc-desc">Ejecuta ACTUALIZAR_TODO.bat: descarga precios + stock ERP → procesa catálogo + ventas → publica en Firebase automáticamente.</div>
             <div class="tc-link">Ir a URL/Conexión →</div>
           </div>
           <div class="tut-card-v2" onclick="showTab('precios',document.querySelector('[onclick*=\'precios\']'))">
@@ -2154,6 +2214,12 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <div class="tc-desc">Recibe alertas con sonido cuando un vendedor o cliente inicia sesión o genera una cotización.</div>
             <div class="tc-link">Ir a Notificaciones →</div>
           </div>
+          <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('inventario');setTimeout(function(){vadmSubTab('vsec-quiebre');},200);},300)">
+            <div class="tc-icon">📊</div>
+            <div class="tc-title">Informe Stock V37.8</div>
+            <div class="tc-desc">22 columnas: Disp/Fís/Ped/Dif × 4 bodegas. Clic en Ped → pedidos comprometidos (NVM/VMN/VMP). Clic en Dif → despachos BVE/FVE pendientes.</div>
+            <div class="tc-link">Ir a Inventario →</div>
+          </div>
           <div class="tut-card-v2" onclick="abrirWaManual()" style="border-color:#25D366">
             <div class="tc-icon" style="background:#25D366">💬</div>
             <div class="tc-title">WhatsApp Business</div>
@@ -2171,7 +2237,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           No hay que editar ningún archivo manualmente.
         </p>
         <ol style="font-size:13px;line-height:2.2;padding-left:18px;color:#374151;margin-bottom:12px">
-          <li>Ejecuta <strong>ACTUALIZAR_Y_PUBLICAR.bat</strong> en <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">D:\ferreteria-oviedo\</code></li>
+          <li>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> en <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">D:\ferreteria-oviedo\</code></li>
           <li><strong>[0]</strong> Descarga precios desde VisorRS (CSV) y stock desde el ERP → <code>actualizar.xlsx</code></li>
           <li><strong>[1]</strong> <code>procesar-actualizacion.py</code> → <code>Datos.xlsx</code></li>
           <li><strong>[2]</strong> <code>xlsx_a_csv.py</code> → <code>Datos.csv</code></li>
@@ -2179,20 +2245,20 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <li><strong>[4]</strong> <code>firebase deploy</code> → sitio publicado. Los paneles actualizan solos vía Service Worker</li>
         </ol>
         <div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e">
-          Si el bat pregunta visibilidad de precios y no respondes en 30 segundos, avanza sin cambios (opción E por defecto).
+          Si el bat pregunta visibilidad de precios y no respondes en 10 segundos, avanza con precios ocultos (opción N por defecto).
         </div>
       </div>
 
       <div class="card">
         <div class="card-title"><span>📈</span> Cómo actualizar las ventas El Manzano</div>
         <p style="font-size:12px;color:#6b7280;margin-bottom:14px;line-height:1.6">
-          Las ventas se descargan automáticamente desde el ERP cada día a las <strong>7 PM</strong> vía tarea programada de Windows.
+          Las ventas se descargan automáticamente desde el ERP cada día a las <strong>18:00 (6 PM)</strong> vía tarea programada de Windows (ACTUALIZAR_TODO_AUTO.bat).
           También puedes actualizarlas manualmente en cualquier momento.
         </p>
         <ol style="font-size:13px;line-height:2.2;padding-left:18px;color:#374151;margin-bottom:14px">
-          <li>Ejecuta <strong>PREPARAR_Y_PUBLICAR.bat</strong> en <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">D:\ferreteria-oviedo\VENTAS EL MANZANO LOCAL\</code></li>
-          <li>El bat descarga el reporte desde Justime (Playwright) o usa el XLSM existente si ya está disponible</li>
-          <li>Genera <code>data/ventas-manzano.json</code> y hace deploy a Firebase Hosting</li>
+          <li>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> en <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">D:\ferreteria-oviedo\</code></li>
+          <li>El bat descarga precios + stock ERP (SSRS + VisorRS), procesa el catálogo, descarga ventas ERP y enriquece con XLSM del Servidor 2</li>
+          <li>Genera <code>data/ventas-manzano-YYYY-MM.json</code> (splits mensual + anual) y hace deploy a Firebase Hosting</li>
           <li>En el panel, ve a <strong>Ventas</strong> y haz clic en <strong>Actualizar</strong> para ver los datos nuevos</li>
         </ol>
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px">
@@ -2240,7 +2306,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
               <option value="SUBIR_VENTAS.bat">SUBIR_VENTAS.bat (docs)</option>
               <option value="SUBIR_VENTAS.bat (cat)">SUBIR_VENTAS.bat (categorias)</option>
               <option value="SUBIR_VENTAS_MANZANO.bat">SUBIR_VENTAS_MANZANO.bat</option>
-              <option value="ACTUALIZAR_Y_PUBLICAR.bat">ACTUALIZAR_Y_PUBLICAR.bat</option>
+              <option value="ACTUALIZAR_TODO.bat">ACTUALIZAR_TODO.bat</option>
               <option value="PUBLICAR_COMPRAS.bat">PUBLICAR_COMPRAS.bat</option>
               <option value="otro">Otro script</option>
             </select>
@@ -2288,12 +2354,12 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
               <span style="font-size:13px;font-weight:700;color:#1a1a1a">Task Scheduler — Automatización horaria sin daemon</span>
-              <span class="mejora-status plan">Planificado</span>
+              <span class="mejora-status" style="background:#dcfce7;color:#15803d;border:1px solid #86efac">✓ Completado V37.2</span>
             </div>
             <div style="font-size:12px;color:#6b7280;line-height:1.6">
-              Programar ACTUALIZAR_VENTAS.bat en el Programador de tareas de Windows para ejecutarse
-              automáticamente cada mañana a las 7am y/o después de cada jornada. Cero interacción manual
-              para la actualización rutinaria. Complementa al daemon para tareas recurrentes.
+              Implementado V37.2 (2026-05-27): ACTUALIZAR_TODO_AUTO.bat corre cada día a las 18:00 vía
+              Task Scheduler de Windows. StartWhenAvailable=true: si el PC estaba apagado, corre al
+              encenderse. Log en <code>logs/auto_YYYYMMDD_HH00.log</code>.
             </div>
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
               <span style="font-size:10px;padding:2px 8px;background:#f0fdf4;border-radius:8px;color:#166534;font-weight:600">Costo: $0 — nativo Windows</span>
@@ -2320,8 +2386,8 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       <!-- Encabezado con stats -->
       <div class="card" style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V33</div>
-          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-05-13</span>
+          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.8</div>
+          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-05-28</span>
         </div>
         <div id="mejorasStats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
         <div id="listaMejoras"></div>
@@ -3040,7 +3106,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V36.9i<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">24-05-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.8<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">27-05-2026</span></div>
 
 <script>
 
@@ -5575,7 +5641,13 @@ function renderMejoras(){
     ['Seguridad', 'ok',      '🚷','Rate limiting login — 3 paneles','5 intentos fallidos → bloqueo 10 min en localStorage. Admin, vendedor y cliente. V33.5.'],
     ['Seguridad', 'ok',      '🖼️','Logos y fondos restaurados','logo_oviedo.jpg recuperado desde PANEL ADMIN COMPRAS. FONDO3.jpeg→.jpg corregido. V33.5.'],
     // ── CATÁLOGO ──
-    ['Catálogo',  'ok',      '📦','Catálogo 5.912 productos','Pipeline ERP → Excel → JSON → Hosting. Se actualiza con ACTUALIZAR_Y_PUBLICAR.bat.'],
+    // ── INVENTARIO ──
+    ['Inventario','ok',      '📊','Informe Stock ERP 22 cols — V37.8','Disp/Fís/Ped/Dif × PEM/SEM/CEM/MEM. Modales Ped y Dif con detalle de docs BVE/FVE/NVM.'],
+    ['Inventario','ok',      '🔍','Consulta de Stock — V37.1','Búsqueda por código o descripción. Ficha 8 bodegas: Disp/Tráns/Fís/Valor/Estado.'],
+    ['Inventario','ok',      '🗓️','Análisis bodegas IEM/RCE/CEM — V36.9k','SQL Server directo. Días de antigüedad por producto. Filtros bodega y rango días.'],
+    ['Inventario','ok',      '⏰','Tarea automática 18:00 — V37.2','ACTUALIZAR_TODO_AUTO.bat corre cada día 18:00. StartWhenAvailable. Log en logs/auto_*.log.'],
+    // ── CATÁLOGO ──
+    ['Catálogo',  'ok',      '📦','Catálogo 6.011 productos','Pipeline ERP → Excel → JSON → Hosting. Se actualiza con ACTUALIZAR_TODO.bat.'],
     ['Catálogo',  'ok',      '🟢','Stock badges (verde/amarillo/rojo)','Cantidad en tiempo real desde JSON. 3 niveles de color, legible en móvil.'],
     ['Catálogo',  'ok',      '💰','Toggle precios por panel','Admin controla visibilidad independiente: cliente / vendedor.'],
     ['Catálogo',  'ok',      '🛒','Carrito/PDF modo sin precios','Carrito muestra stock. PDF cambia a "Solicitud de Productos" automáticamente.'],
@@ -7026,7 +7098,7 @@ function vadmCargarLineas(){
           // Fallback final: Firestore
           if(!window.db){
             status.textContent='⚠️ Sin datos: JSON no disponible y Firestore sin conexión'; status.style.color='#d97706';
-            if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos disponibles.<br>Ejecuta <strong>PREPARAR_Y_PUBLICAR.bat</strong> para generar los datos.</div>';
+            if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos.</div>';
             return;
           }
           window.db.collection('ventasLineas').limit(5000).get()
@@ -7152,9 +7224,9 @@ function _vadmAplicarDatos(arr, status, fuente){
   }
 
   if(!data.length){
-    status.textContent='⚠️ Sin datos — ejecuta PREPARAR_Y_PUBLICAR.bat';
+    status.textContent='⚠️ Sin datos — ejecuta ACTUALIZAR_TODO.bat';
     status.style.color='#d97706';
-    if(body) body.innerHTML='<div class="ven-adm-empty">No hay datos disponibles.<br>Ejecuta <strong>PREPARAR_Y_PUBLICAR.bat</strong> para generar los datos locales.</div>';
+    if(body) body.innerHTML='<div class="ven-adm-empty">No hay datos disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos locales.</div>';
     return;
   }
   status.innerHTML='✅ <strong>'+data.length+' registros</strong> ('+fuente+')';
@@ -9510,7 +9582,7 @@ function vadmRenderTransito(){
 
   if(!prods.length){
     bd.innerHTML='<div class="ven-adm-empty">Sin productos en tránsito.'+(Object.keys(_vadmStockMap).length?
-      ' (El campo TRANSITO no está disponible en el catálogo actual — ejecuta ACTUALIZAR_Y_PUBLICAR.bat para regenerar Datos.json con la columna -Trans-.)':
+      ' (El campo TRANSITO no está disponible en el catálogo actual — ejecuta ACTUALIZAR_TODO.bat para regenerar Datos.json con la columna -Trans-.)':
       '')+'</div>'; return;
   }
 
@@ -9589,7 +9661,7 @@ function vadmRenderMerma(){
     })
     .catch(function(e){
       _vadmMermaLoading=false;
-      bd.innerHTML='<div class="ven-adm-empty">merma.json no disponible — ejecuta ACTUALIZAR_Y_PUBLICAR.bat para generarlo ('+e.message+')</div>';
+      bd.innerHTML='<div class="ven-adm-empty">merma.json no disponible — ejecuta ACTUALIZAR_TODO.bat para generarlo ('+e.message+')</div>';
     });
 }
 
@@ -9785,8 +9857,8 @@ function vadmRenderBajaRot(){
         vadmRenderBajaRot();
       })
       .catch(function(){
-        if(st){ st.textContent='⚠️ Sin datos de ventas para '+desdeYear+'. Ejecuta PREPARAR_Y_PUBLICAR.bat'; st.style.color='#d97706'; }
-        if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay datos de ventas disponibles para '+desdeYear+'.<br>Ejecuta <strong>PREPARAR_Y_PUBLICAR.bat</strong> para generarlos.</div>';
+        if(st){ st.textContent='⚠️ Sin datos de ventas para '+desdeYear+'. Ejecuta ACTUALIZAR_TODO.bat'; st.style.color='#d97706'; }
+        if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay datos de ventas disponibles para '+desdeYear+'.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generarlos.</div>';
       });
     return;
   }
@@ -9836,7 +9908,7 @@ function vadmRenderBajaRot(){
 
   if(!prods.length){
     if(st){ st.textContent='Sin productos con stock en PEM o SEM.'; st.style.color='#d97706'; }
-    if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay productos con stock comercial (PEM+SEM+CEM+MEM = 0).<br>Actualiza el catálogo ejecutando <strong>ACTUALIZAR_Y_PUBLICAR.bat</strong>.</div>';
+    if(bd) bd.innerHTML='<div class="ven-adm-empty">No hay productos con stock comercial (PEM+SEM+CEM+MEM = 0).<br>Actualiza el catálogo ejecutando <strong>ACTUALIZAR_TODO.bat</strong>.</div>';
     return;
   }
 
@@ -10098,6 +10170,7 @@ function _vadmExcelInventario(inv){
     '<Style ss:ID="cyan"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#0891B2"/><Interior ss:Color="#E0F2FE" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>'+
     '<Style ss:ID="tot"><Alignment ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/></Style>'+
     '<Style ss:ID="totn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>';
+  if(inv.tab==='despachos'){ if(window.dpExportExcel) window.dpExportExcel(); return; }
   var rows=[], wsName='';
   // Extra styles for per-bodega columns
   XS+='<Style ss:ID="hG"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#14532D" ss:Pattern="Solid"/></Style>'+
@@ -11185,6 +11258,7 @@ function vadmReRenderTabActivo(){
   else if(id==='analisis'){}        // stub — no usa filtros globales
   else if(id==='stockconsulta'){}   // stub — búsqueda directa, no usa filtros globales
   else if(id==='informe-stock'){}   // stub — datos cargados por TSV, no usa filtros globales
+  else if(id==='despachos')     dpRenderPendientes();
 }
 
 // ── Helper: comprueba si un registro XLSM pasa el filtro global _vadmVendSel ──
@@ -12362,7 +12436,7 @@ function venAdmRenderizarTabla(datos){
   var body = document.getElementById('vadmBody');
   if(!body) return;
   if(!datos.length){
-    body.innerHTML = '<div class="ven-adm-empty">Sin registros en el período seleccionado.<br><span style="font-size:11px;color:#9ca3af">Ejecuta <strong>PREPARAR_Y_PUBLICAR.bat</strong> para actualizar los datos de ventas.</span></div>';
+    body.innerHTML = '<div class="ven-adm-empty">Sin registros en el período seleccionado.<br><span style="font-size:11px;color:#9ca3af">Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para actualizar los datos de ventas.</span></div>';
     return;
   }
 
@@ -13189,7 +13263,11 @@ function _vadmDespacharHtmlEmail(datos, perStr, tab){
   // Árbol de descomposición
   if(tab==='arbol'||tab==='arboltabla'||tab==='arbolheat')
                            return _vadmHtmlEmailArbol(datos, perStr, tab);
-  // Detalle y cualquier tab no listado → resumen de ventas
+  // Tabs sin ventas con reporte propio
+  if(tab==='despachos') return window._vadmHtmlEmailDespachos ? window._vadmHtmlEmailDespachos() : _vadmHtmlEmailNoDisponible(tab);
+  if(tab==='informe-stock'||tab==='analisis'||tab==='stockconsulta'||tab==='adquisiciones')
+    return _vadmHtmlEmailNoDisponible(tab);
+  // Detalle y cualquier tab de ventas no listado → resumen de ventas
   return _vadmHtmlEmailDetalle(datos, perStr, tab);
 }
 
@@ -14198,11 +14276,26 @@ function _vadmComputeInventarioData(tab){
 }
 
 function vadmAbrirEmailModal(){
+  var tabId = _vadmTabActiva();
+  // Tabs que tienen su propio reporte y no dependen de _vadmLineas
+  var _tabsSinVentas = ['despachos','informe-stock','analisis','stockconsulta','adquisiciones'];
+  if(_tabsSinVentas.indexOf(tabId) >= 0){
+    // Redirigir al handler propio si existe
+    if(tabId==='despachos' && window.dpEnviarEmail){ window.dpEnviarEmail(); return; }
+    // Resto: abrir modal con HTML "no disponible"
+    var _htmlND = typeof _vadmHtmlEmailNoDisponible==='function' ? _vadmHtmlEmailNoDisponible(tabId) : '';
+    var _prev=document.getElementById('vadmEmailPreview');
+    if(_prev) _prev.innerHTML=_htmlND;
+    var _ha=document.getElementById('vadmEmailHtmlArea');
+    if(_ha) _ha.value=typeof _vadmEmailFullDoc==='function'?_vadmEmailFullDoc(_htmlND):'';
+    if(typeof vadmCambiarTabEmail==='function') vadmCambiarTabEmail('vista');
+    var _m=document.getElementById('vadmEmailModal'); if(_m) _m.style.display='flex';
+    return;
+  }
   if(!_vadmLineas.length){
     alert('Carga los datos primero (haz clic en 🔄 Actualizar en la pestaña Análisis).');
     return;
   }
-  var tabId = _vadmTabActiva();
   var datos = _vadmDatosEmailFiltrados();
   // Guardar estado compartido para que correo+Excel usen los mismos datos que el HTML
   _vadmEmailCurrentTab     = tabId;
@@ -16767,6 +16860,319 @@ window.isbAbrirDetalle = function(cod, bod, tipo){
 
 window.isbCerrarDetalle = function(){
   var m=document.getElementById('isbDetalleModal'); if(m) m.style.display='none';
+};
+
+})();
+</script>
+
+<!-- ── DESPACHOS PENDIENTES — lógica encapsulada ──────────────────────────── -->
+<script>
+(function(){
+'use strict';
+
+var _dpDetalleRaw  = null;  // JSON crudo cacheado: {cod:{pem:[...],sem:[...], ...}}
+var _dpDocs        = {};    // reagrupado por numero: {numero:{tipoDoc,...,items:[]}}
+var _dpDocsList    = [];    // array ordenado fechaEmision ASC
+var _dpListaActual = [];    // lista actualmente renderizada → email / Excel
+
+function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function _dpStatus(msg, tipo){
+  var el = document.getElementById('dpStatus'); if(!el) return;
+  el.textContent = msg;
+  el.style.color = tipo==='err'?'#b91c1c' : tipo==='ok'?'#166534' : '#9ca3af';
+}
+
+function _dpTipoLabel(tipoDoc){
+  if(!tipoDoc) return '';
+  var t = tipoDoc.toUpperCase();
+  if(t.charAt(0)==='B') return 'Boleta';
+  if(t.charAt(0)==='F') return 'Factura';
+  return tipoDoc;
+}
+
+function _dpObservacion(fechaEmision, fechaEntrega){
+  var fd = venAdmParseFecha(fechaEntrega);
+  if(!fd) return {text:'Sin fecha',                       color:'#9ca3af', key:'sin'};
+  var fe = venAdmParseFecha(fechaEmision);
+  if(fd === fe) return {text:'Entrega de empaque',         color:'#16a34a', key:'empaque'};
+  if(fd  >  fe) return {text:'Por despachar (programado)', color:'#d97706', key:'despachar'};
+  return          {text:'Sin fecha',                       color:'#9ca3af', key:'sin'};
+}
+
+var _DP_CODIGOS_SOLO = ['FLETE VENTA', 'DESPACHO'];
+function _dpEsFleteSolo(items){
+  if(items.length !== 1) return false;
+  var cod = (items[0].cod||'').trim().toUpperCase();
+  return _DP_CODIGOS_SOLO.indexOf(cod) >= 0;
+}
+
+function _dpBuildDocs(){
+  _dpDocs = {};
+  var raw = _dpDetalleRaw || {};
+  Object.keys(raw).forEach(function(cod){
+    var bods = raw[cod];
+    ['pem','sem','cem','mem'].forEach(function(bod){
+      var docs = bods[bod] || [];
+      docs.forEach(function(d){
+        var num = String(d.numero || '');
+        if(!num) return;
+        if(!_dpDocs[num]){
+          _dpDocs[num] = {
+            tipoDoc:      d.tipoDoc      || '',
+            tipoDocLabel: d.tipoDocLabel || '',
+            fechaEmision: d.fechaEmision || '',
+            fechaEntrega: d.fechaEntrega || '',
+            cliente:      d.cliente      || '',
+            rut:          d.rut          || '',
+            vendedor:     d.vendedor     || '',
+            items: []
+          };
+        }
+        _dpDocs[num].items.push({cod: cod, cant: d.cant || 0, bod: bod});
+      });
+    });
+  });
+  // Excluir docs cuyo único ítem es FLETE VENTA
+  Object.keys(_dpDocs).forEach(function(num){
+    if(_dpEsFleteSolo(_dpDocs[num].items)) delete _dpDocs[num];
+  });
+  _dpDocsList = Object.keys(_dpDocs).map(function(num){
+    return Object.assign({num: num}, _dpDocs[num]);
+  }).sort(function(a, b){
+    return venAdmParseFecha(a.fechaEmision) - venAdmParseFecha(b.fechaEmision);
+  });
+}
+
+function _dpItemsHtml(items){
+  var thS = 'padding:5px 8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:11px;font-weight:700';
+  var tdS = 'padding:4px 8px;border:1px solid #e2e8f0;font-size:12px';
+  var html = '<table style="width:100%;border-collapse:collapse;margin:0">'
+    + '<thead><tr>'
+    + '<th style="'+thS+';text-align:left">Código</th>'
+    + '<th style="'+thS+';text-align:left">Descripción</th>'
+    + '<th style="'+thS+';text-align:right">Cant</th>'
+    + '<th style="'+thS+';text-align:right">Costo Prom.</th>'
+    + '<th style="'+thS+';text-align:right">Valor Total</th>'
+    + '<th style="'+thS+';text-align:left">Bodega</th>'
+    + '</tr></thead><tbody>';
+  items.forEach(function(it){
+    var p     = (_vadmStockMap && _vadmStockMap[it.cod]) ? _vadmStockMap[it.cod] : null;
+    var desc  = p ? (p.desc  || it.cod) : it.cod;
+    var costo = p ? (p.costo || 0)      : 0;
+    var valor = costo * it.cant;
+    html += '<tr>'
+      + '<td style="'+tdS+';font-family:monospace">'+_esc(it.cod)+'</td>'
+      + '<td style="'+tdS+'">'+_esc(desc)+'</td>'
+      + '<td style="'+tdS+';text-align:right;font-weight:700">'+it.cant+'</td>'
+      + '<td style="'+tdS+';text-align:right;color:#4b5563">'+venAdmFmt(costo)+'</td>'
+      + '<td style="'+tdS+';text-align:right;font-weight:700;color:#1e3a8a">'+venAdmFmt(valor)+'</td>'
+      + '<td style="'+tdS+';color:#4b5563">'+_esc(it.bod.toUpperCase())+'</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function _dpRenderTabla(list){
+  _dpListaActual = list;
+  var tbody = document.getElementById('dpTbody'); if(!tbody) return;
+  var kpi   = document.getElementById('dpKpi');
+  var total = list.length;
+  if(kpi) kpi.innerHTML = '<span style="font-size:15px;font-weight:700;color:#c2410c">'+total+'</span>'
+    + ' <span style="font-size:12px;color:#6b7280">documento'+(total!==1?'s':'')+' pendiente'+(total!==1?'s':'')+' de despacho</span>';
+
+  if(!total){
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Sin despachos pendientes con los filtros actuales</td></tr>';
+    return;
+  }
+
+  var tdS = 'border:1px solid #e2e8f0;padding:5px 8px;font-size:12px;vertical-align:middle';
+  var rows = '';
+  list.forEach(function(doc){
+    var tLabel  = _dpTipoLabel(doc.tipoDoc) || doc.tipoDocLabel;
+    var obs     = _dpObservacion(doc.fechaEmision, doc.fechaEntrega);
+    var feDesp  = venAdmParseFecha(doc.fechaEntrega) ? doc.fechaEntrega : '—';
+    var detHtml = _dpItemsHtml(doc.items);
+
+    rows += '<tr class="dp-doc-row" data-folio="'+_esc(doc.num)+'" onclick="dpToggleDoc(this)" style="cursor:pointer">'
+      + '<td style="'+tdS+';font-family:monospace;font-weight:700;color:#1e3a8a">'
+      + '<span class="dp-arrow" style="margin-right:5px;font-size:10px;color:#9ca3af">▶</span>'+_esc(doc.num)+'</td>'
+      + '<td style="'+tdS+'">'+_esc(tLabel)+'</td>'
+      + '<td style="'+tdS+';white-space:nowrap">'+_esc(doc.fechaEmision||'—')+'</td>'
+      + '<td style="'+tdS+';color:#374151">'+_esc(doc.vendedor||'—')+'</td>'
+      + '<td style="'+tdS+';max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_esc(doc.rut)+'">'+_esc(doc.cliente||'—')+'</td>'
+      + '<td style="'+tdS+'">'
+      + '<span style="font-size:11px;font-weight:700;color:'+obs.color+';background:'+obs.color+'1a;padding:2px 7px;border-radius:10px">'+_esc(obs.text)+'</span></td>'
+      + '<td style="'+tdS+';white-space:nowrap">'+_esc(feDesp)+'</td>'
+      + '<td style="'+tdS+';text-align:center;font-weight:700">'+doc.items.length+'</td>'
+      + '</tr>'
+      + '<tr class="dp-detail-row" style="display:none">'
+      + '<td colspan="8" style="padding:0 0 0 32px;background:#f8fafc;border:1px solid #e2e8f0">'+detHtml+'</td></tr>';
+  });
+  tbody.innerHTML = rows;
+}
+
+window.dpRenderPendientes = function(){
+  if(_dpDetalleRaw !== null && Object.keys(_vadmStockMap||{}).length){
+    _dpBuildDocs(); window.dpFiltrar(); return;
+  }
+  _dpStatus('Cargando despachos…', '');
+  Promise.all([
+    _dpDetalleRaw !== null
+      ? Promise.resolve(_dpDetalleRaw)
+      : fetch('/data/despachos-detalle.json?_='+Date.now())
+          .then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; }),
+    new Promise(function(resolve){
+      if(Object.keys(_vadmStockMap||{}).length){ resolve(); return; }
+      window._vadmCargarStockMap(function(){ resolve(); });
+    })
+  ]).then(function(res){
+    _dpDetalleRaw = res[0] || {};
+    _dpStatus('', '');
+    _dpBuildDocs();
+    window.dpFiltrar();
+  });
+};
+
+window.dpFiltrar = function(){
+  var folio  = ((document.getElementById('dpFolioFiltro')||{}).value||'').toLowerCase();
+  var bus    = ((document.getElementById('dpBuscar')||{}).value||'').toLowerCase();
+  var desde  = ((document.getElementById('dpDesde')||{}).value||'');
+  var hasta  = ((document.getElementById('dpHasta')||{}).value||'');
+  var tipo   = ((document.getElementById('dpTipoFilter')||{}).value||'');
+  var obsKey = ((document.getElementById('dpObsFiltro')||{}).value||'');
+
+  var desdeMs = desde ? new Date(desde+'T00:00:00').getTime() : 0;
+  var hastaMs = hasta ? new Date(hasta+'T23:59:59').getTime() : 0;
+
+  var list = _dpDocsList.filter(function(doc){
+    if(folio && String(doc.num).toLowerCase().indexOf(folio) < 0) return false;
+    if(bus && (doc.cliente||'').toLowerCase().indexOf(bus) < 0
+           && (doc.vendedor||'').toLowerCase().indexOf(bus) < 0) return false;
+    if(desdeMs || hastaMs){
+      var fe = venAdmParseFecha(doc.fechaEmision);
+      if(desdeMs && fe < desdeMs) return false;
+      if(hastaMs && fe > hastaMs) return false;
+    }
+    if(tipo && _dpTipoLabel(doc.tipoDoc).toLowerCase() !== tipo) return false;
+    if(obsKey && _dpObservacion(doc.fechaEmision, doc.fechaEntrega).key !== obsKey) return false;
+    return true;
+  });
+  _dpRenderTabla(list);
+};
+
+window.dpToggleDoc = function(tr){
+  var detail = tr.nextElementSibling;
+  if(!detail || !detail.classList.contains('dp-detail-row')) return;
+  var isOpen = detail.style.display !== 'none';
+  document.querySelectorAll('.dp-detail-row').forEach(function(r){ r.style.display='none'; });
+  document.querySelectorAll('.dp-doc-row .dp-arrow').forEach(function(a){ a.textContent='▶'; });
+  if(!isOpen){
+    detail.style.display = '';
+    var arrow = tr.querySelector('.dp-arrow');
+    if(arrow) arrow.textContent = '▼';
+  }
+};
+
+/* ── HTML para email ── */
+window._vadmHtmlEmailDespachos = function(){
+  var list = _dpListaActual;
+  if(!list || !list.length)
+    return '<p style="color:#9ca3af;font-family:Arial,sans-serif;padding:24px">Sin despachos pendientes en la vista actual.</p>';
+  var fechaHoy = new Date().toLocaleDateString('es-CL');
+  var thS = 'padding:7px 9px;border:1px solid #e2e8f0;background:#1e3a8a;color:#fff;font-size:11px;font-weight:700;text-align:left';
+  var tdS = 'padding:5px 9px;border:1px solid #e2e8f0;font-size:12px;vertical-align:middle';
+  var rows = list.map(function(doc, i){
+    var tLabel = _dpTipoLabel(doc.tipoDoc) || doc.tipoDocLabel;
+    var obs    = _dpObservacion(doc.fechaEmision, doc.fechaEntrega);
+    var feDesp = venAdmParseFecha(doc.fechaEntrega) ? doc.fechaEntrega : '—';
+    var bg     = i%2===0 ? '#fff' : '#f9fafb';
+    return '<tr style="background:'+bg+'">'
+      +'<td style="'+tdS+';font-family:monospace;font-weight:700;color:#1e3a8a">'+_esc(doc.num)+'</td>'
+      +'<td style="'+tdS+'">'+_esc(tLabel)+'</td>'
+      +'<td style="'+tdS+';white-space:nowrap">'+_esc(doc.fechaEmision||'—')+'</td>'
+      +'<td style="'+tdS+'">'+_esc(doc.vendedor||'—')+'</td>'
+      +'<td style="'+tdS+'">'+_esc(doc.cliente||'—')+'</td>'
+      +'<td style="'+tdS+'"><span style="color:'+obs.color+';font-weight:700">'+_esc(obs.text)+'</span></td>'
+      +'<td style="'+tdS+';white-space:nowrap">'+_esc(feDesp)+'</td>'
+      +'<td style="'+tdS+';text-align:center;font-weight:700">'+doc.items.length+'</td>'
+      +'</tr>';
+  }).join('');
+  return '<div style="max-width:820px;margin:0 auto;font-family:Arial,sans-serif">'
+    +'<div style="background:#1e3a8a;padding:20px 24px;border-radius:10px 10px 0 0">'
+    +'<div style="font-size:18px;font-weight:800;color:#fff">🚚 Despachos Pendientes — El Manzano</div>'
+    +'<div style="font-size:12px;color:#bfdbfe;margin-top:4px">'+fechaHoy+' · '+list.length+' documento'+(list.length!==1?'s':'')+'</div>'
+    +'</div>'
+    +'<div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +'<th style="'+thS+'">Folio</th><th style="'+thS+'">Tipo</th>'
+    +'<th style="'+thS+'">F. Emisión</th><th style="'+thS+'">Vendedor</th>'
+    +'<th style="'+thS+'">Cliente</th><th style="'+thS+'">Observación</th>'
+    +'<th style="'+thS+'">F. Despacho</th><th style="'+thS+';text-align:center">Ítems</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'</div></div>';
+};
+
+/* ── Abrir modal email con datos actuales de Despachos ── */
+window.dpEnviarEmail = function(){
+  if(!_dpDocsList.length){
+    if(window.toast) toast('Carga los despachos primero con 🔄 Actualizar','err');
+    else alert('Carga los despachos primero con 🔄 Actualizar');
+    return;
+  }
+  _vadmEmailCurrentTab    = 'despachos';
+  _vadmEmailInventarioData = {tab:'despachos'};
+  var fechaHoy = new Date().toLocaleDateString('es-CL');
+  var asunto   = 'Despachos Pendientes El Manzano — '+fechaHoy;
+  if(document.getElementById('vadmEmailAsunto'))
+    document.getElementById('vadmEmailAsunto').value = asunto;
+  var lbl = document.getElementById('vadmEmailTabLabel');
+  if(lbl) lbl.textContent = 'Reporte: 🚚 Despachos Pendientes · '+_dpListaActual.length+' documentos';
+  var html = window._vadmHtmlEmailDespachos();
+  var prev = document.getElementById('vadmEmailPreview');
+  if(prev){
+    prev.innerHTML = html;
+    prev.querySelectorAll('table').forEach(function(t){
+      t.style.tableLayout='fixed'; t.style.borderCollapse='collapse'; t.style.width='100%';
+    });
+    prev.querySelectorAll('td,th').forEach(function(c){
+      c.style.overflow='hidden'; c.style.wordBreak='break-word'; c.style.boxSizing='border-box';
+    });
+  }
+  var htmlArea = document.getElementById('vadmEmailHtmlArea');
+  if(htmlArea) htmlArea.value = _vadmEmailFullDoc(html);
+  if(document.getElementById('vadmEmailFeedback'))
+    document.getElementById('vadmEmailFeedback').textContent = '';
+  if(window.vadmCambiarTabEmail) vadmCambiarTabEmail('vista');
+  var modal = document.getElementById('vadmEmailModal');
+  if(modal) modal.style.display = 'flex';
+};
+
+/* ── Exportar Excel con la vista actual ── */
+window.dpExportExcel = function(){
+  if(!_dpListaActual.length){
+    if(window.toast) toast('Sin datos para exportar','err'); return;
+  }
+  if(typeof XLSX === 'undefined'){
+    if(window.toast) toast('Librería XLSX no disponible','err'); return;
+  }
+  var headers = ['Folio','Tipo','F. Emisión','Vendedor','Cliente','Observación','F. Despacho','N° Ítems','Códigos (cant)'];
+  var rows = [headers];
+  _dpListaActual.forEach(function(doc){
+    var tLabel  = _dpTipoLabel(doc.tipoDoc) || doc.tipoDocLabel;
+    var obs     = _dpObservacion(doc.fechaEmision, doc.fechaEntrega);
+    var feDesp  = venAdmParseFecha(doc.fechaEntrega) ? doc.fechaEntrega : '';
+    var codigos = doc.items.map(function(it){ return it.cod+'×'+it.cant; }).join(' | ');
+    rows.push([doc.num, tLabel, doc.fechaEmision||'', doc.vendedor||'', doc.cliente||'',
+               obs.text, feDesp, doc.items.length, codigos]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:10},{wch:12},{wch:14},{wch:32},{wch:26},{wch:12},{wch:8},{wch:35}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Despachos Pendientes');
+  XLSX.writeFile(wb, 'DespachosPendientes_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  if(window.toast) toast('📊 Excel exportado','ok');
 };
 
 })();

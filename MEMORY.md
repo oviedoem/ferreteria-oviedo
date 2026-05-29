@@ -9,11 +9,12 @@
 | Campo | Valor |
 |---|---|
 | Version | V37.8 |
-| Fecha ultimo deploy | 2026-05-27 23:10 |
-| Ultimo cambio | Fix pedidos-detalle (P_VENDEDORES→IDVENDEDOR directo, CTE CANTIDAD_PENDIENTE, cliente RAZON_SOCIAL) + descargar_despachos.py (BVE/FVE→Dif) + Informe Stock 22 cols (DifLib eliminado) + modal Dif/Ped rediseñados |
-| Deploy cierre sesion | 2026-05-27 23:10 — todo publicado, sin pendientes |
+| Fecha ultimo deploy | 2026-05-28 02:09 |
+| Ultimo cambio | V37.9: sync UI badge V37.8, bat legacy→ACTUALIZAR_TODO (16 ocurrencias), tutoriales actualizados, mejoras V37.8, regla sync permanente en AGENTS.md |
+| Deploy cierre sesion | 2026-05-28 02:09 — todo publicado, sin pendientes |
 
 Historial reciente:
+- V37.9 (2026-05-28): sync UI badge, bat legacy→ACTUALIZAR_TODO, tutoriales, mejoras, regla sync AGENTS.md
 - V37.8 (2026-05-27): fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif + modales
 - V37.7 (2026-05-27): MEM + Pedido + DifStk/DifLib + drill-down + PASO 1E descargar_pedidos.py
 - V37.6 (2026-05-27): fix Informe Stock Fis todo cero (pem_bod/sem_bod en pipeline)

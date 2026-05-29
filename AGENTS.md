@@ -38,6 +38,7 @@ MD activos raiz:
 - Deploy V37.6: 2026-05-27 16:39 — fix Informe Stock Fís todo cero: pem_bod/sem_bod/cem_bod/mem_bod en pipeline + panel ✅
 - Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1E descargar_pedidos.py ✅
 - Deploy V37.8: 2026-05-27 23:10 — Fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif (22 cols) + modal Dif/Ped rediseñados ✅
+- Deploy V37.9: 2026-05-28 02:09 — Sync UI: badge V37.8, bat legacy → ACTUALIZAR_TODO, tutoriales actualizados, mejoras V37.8, regla sync permanente ✅
 
 ---
 
@@ -141,6 +142,41 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde Po
 - Ejecutar siempre como último paso.
 - Si BLOQUEADO: revisar archivo sensible en repo antes de reintentar.
 - Si falla por red: reportar el error pero NO omitir el intento.
+
+---
+
+## REGLA: Sincronizacion de UI con cada deploy
+
+Cada vez que se hace un deploy de nueva version (V37.X.Y),
+OBLIGATORIO actualizar EN EL MISMO COMMIT:
+
+1. **Version Badge** en panel-admin.html linea ~3043:
+   - Numero de version (ej: V37.8)
+   - Fecha (formato DD-MM-YYYY)
+
+2. **Version Badge** en panel-cliente.html (si lo tiene)
+
+3. **Tutoriales** (panel-admin.html ~L2086-2204):
+   - Si la version cambio nombres de archivos, scripts o flujos: actualizar
+   - Si introduce funcionalidad nueva visible al usuario: agregar tutorial
+
+4. **Mejoras planificadas** (panel-admin.html ~L2206-2330):
+   - Eliminar/marcar como completadas las mejoras que esta version entrega
+   - Agregar entrada en mejorasItems (JS array ~L5540) con resumen V37.X.Y
+
+5. **Mensajes de error** que mencionan el .bat:
+   - Si dicen ACTUALIZAR_Y_PUBLICAR.bat -> corregir a ACTUALIZAR_TODO.bat
+   - Si mencionan rutas o scripts viejos -> actualizar
+
+6. **_HISTORICO/MANUAL_MAESTRO.md**:
+   - Actualizar referencias operativas (bats, scripts, rutas)
+
+7. **CHANGELOG** en AGENTS.md y MEMORY.md (ya se hace, mantener)
+
+VALIDACION antes de hacer commit:
+- grep "V_ANTERIOR" panel-admin.html -> no debe haber ocurrencias operativas
+- grep "ACTUALIZAR_Y_PUBLICAR.bat" panel-admin.html -> debe dar 0
+- grep "PREPARAR_Y_PUBLICAR.bat" panel-admin.html -> debe dar 0
 
 ---
 
