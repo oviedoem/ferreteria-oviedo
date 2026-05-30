@@ -4820,7 +4820,7 @@ function adminUI_quitarDispositivo(deviceId){
 function testConexion(){
   var res = document.getElementById('urlTestResult');
   if(res) res.innerHTML='<div class="url-status url-loading">⏳ Probando catálogo...</div>';
-  var jsonUrl='https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/Datos.json?t='+Date.now();
+  var jsonUrl='https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/Datos.json?t='+Math.floor(Date.now()/86400000);
   fetch(jsonUrl).then(function(r){
     if(!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
@@ -6966,7 +6966,7 @@ function _vadmCargarStockMap(cb){
   if(_vadmStockLoading){ if(cb) setTimeout(function(){ _vadmCargarStockMap(cb); },600); return; }
   _vadmStockLoading=true;
   // Dos URLs: primero Firebase CDN, fallback ruta relativa (funciona en localhost/deploy)
-  var _ts=Date.now();
+  var _ts=Math.floor(Date.now()/86400000); // cache 24h — catálogo solo cambia 1x/día
   var _urls=[
     'https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/catalogo-dinamico.json?t='+_ts,
     '/CATALOGO%20PRODUCTOS/catalogo-dinamico.json?t='+_ts,
@@ -11576,7 +11576,7 @@ function _vadmFechaToISO(ddmmyyyy){
 var _vadmXlsmAnioCache = {};
 function _vadmCargarXlsmAnio(anio, cb){
   if(_vadmXlsmAnioCache[anio]){ cb(_vadmXlsmAnioCache[anio]); return; }
-  fetch('/data/ventas-xlsm-'+anio+'.json?t='+Math.floor(Date.now()/3600000))
+  fetch('/data/ventas-xlsm-'+anio+'.json?t='+Math.floor(Date.now()/86400000))
     .then(function(r){ if(!r.ok) throw new Error('404'); return r.json(); })
     .then(function(json){ _vadmXlsmAnioCache[anio] = json; cb(json); })
     .catch(function(){ cb(null); });
@@ -11940,7 +11940,7 @@ function vadmRenderPrecioDiff(){
     if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody></table></div>';
   }
   if(_vadmPrecioDiffData){ _render(_vadmPrecioDiffData); return; }
-  fetch('/data/precios-diff.json?t='+Math.floor(Date.now()/3600000))
+  fetch('/data/precios-diff.json?t='+Math.floor(Date.now()/86400000))
     .then(function(r){ if(!r.ok) throw new Error('404'); return r.json(); })
     .then(function(json){ _vadmPrecioDiffData = json; _render(json); })
     .catch(function(){
