@@ -220,7 +220,13 @@ function normalizeNumber(v) {
       ? cleaned.replace(/\./g, '').replace(',', '.')
       : cleaned.replace(/,/g, '');
   } else if (hasComma && !hasDot) {
-    normalized = cleaned.replace(',', '.');
+    // SheetJS devuelve miles en formato US: "4,248" o "3,814,704".
+    // Si hay exactamente 3 dígitos tras la última coma → separador de miles → quitar comas.
+    // Si hay 1 ó 2 dígitos → separador decimal (estilo europeo) → convertir a punto.
+    const lastPart = cleaned.split(',').pop();
+    normalized = lastPart.length === 3
+      ? cleaned.replace(/,/g, '')
+      : cleaned.replace(',', '.');
   }
   const n = parseFloat(normalized);
   return Number.isFinite(n) ? n : 0;
