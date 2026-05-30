@@ -2451,8 +2451,16 @@ function sortTable(tableId, colIdx) {
   rows.sort((a, b) => {
     const aRaw = a.cells[colIdx]?.textContent.trim() || '';
     const bRaw = b.cells[colIdx]?.textContent.trim() || '';
-    const aNum = parseFloat(aRaw.replace(/[^0-9,.\-]/g, '').replace(',', '.'));
-    const bNum = parseFloat(bRaw.replace(/[^0-9,.\-]/g, '').replace(',', '.'));
+    const _ps = function(raw) {
+      let s = raw.replace(/[$\s%]/g,'');
+      const segs = s.split('.');
+      // Último segmento con 3 dígitos → puntos son miles (ej: "3.814.704", "538.800")
+      if (segs.length > 1 && /^\d{3}$/.test(segs[segs.length - 1])) s = s.replace(/\./g,'');
+      if (s.includes(',')) s = s.replace(',','.');  // coma decimal → punto
+      return parseFloat(s);
+    };
+    const aNum = _ps(aRaw);
+    const bNum = _ps(bRaw);
     if (!isNaN(aNum) && !isNaN(bNum)) return dir === 'asc' ? aNum - bNum : bNum - aNum;
     return dir === 'asc' ? aRaw.localeCompare(bRaw, 'es') : bRaw.localeCompare(aRaw, 'es');
   });
