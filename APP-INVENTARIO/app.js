@@ -971,13 +971,15 @@ function renderRegistros2026() {
   if (!rows.length) { section.style.display = 'none'; return; }
   section.style.display = '';
 
-  const codQ  = (document.getElementById('reg-search-cod')?.value  || '').toLowerCase();
-  const descQ = (document.getElementById('reg-search-desc')?.value || '').toLowerCase();
-  const showDif = document.getElementById('reg-show-dif')?.checked;
+  const codQ     = (document.getElementById('reg-search-cod')?.value      || '').toLowerCase();
+  const descQ    = (document.getElementById('reg-search-desc')?.value     || '').toLowerCase();
+  const patenteQ = (document.getElementById('reg-filter-patente')?.value  || '').trim();
+  const showDif  = document.getElementById('reg-show-dif')?.checked;
 
   let filtered = rows;
-  if (codQ)  filtered = filtered.filter(r => String(r.CODIGO || r.Codigo || r.codigo || '').toLowerCase().includes(codQ));
-  if (descQ) filtered = filtered.filter(r => String(r.PRODUCTOS || r.Productos || r.productos || '').toLowerCase().includes(descQ));
+  if (codQ)     filtered = filtered.filter(r => String(r.CODIGO    || r.Codigo    || r.codigo    || '').toLowerCase().includes(codQ));
+  if (descQ)    filtered = filtered.filter(r => String(r.PRODUCTOS || r.Productos || r.productos || '').toLowerCase().includes(descQ));
+  if (patenteQ) filtered = filtered.filter(r => String(r.PATENTE   || r.Patente   || r.patente   || '') === patenteQ);
 
   // Resumen por código cuando hay búsqueda de código exacto
   const resEl = document.getElementById('reg-resumen-cod');
