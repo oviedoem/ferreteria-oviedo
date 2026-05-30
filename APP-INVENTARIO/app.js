@@ -996,6 +996,13 @@ function renderRegistros2026() {
     }
   }
 
+  // Lookup DIFERENCIA $ (dif_peso) desde TABLA_ANALISIS por código — un valor por código
+  const difMap = {};
+  for (const row of (state.data2026 || [])) {
+    const cod = String(row.codigo || '').trim().toUpperCase();
+    if (cod && !(cod in difMap)) difMap[cod] = row.dif_peso ?? 0;
+  }
+
   const cols = ['FOLIO','CODIGO','PRODUCTOS','AREA','PATENTE','CONTEO','CONTO','INVENTARIADOR','FECHA'];
   if (showDif) cols.push('DIFERENCIA $');
 
@@ -1003,11 +1010,11 @@ function renderRegistros2026() {
   const tbody = filtered.map(r => {
     const cells = cols.map(c => {
       if (c === 'DIFERENCIA $') {
-        const conteo = Number(r.CONTEO || r.Conteo || 0) || 0;
-        const conto  = Number(r.CONTO  || r.Conto  || 0) || 0;
-        const diff   = conteo - conto;
-        const cls    = diff < 0 ? 'loss-cell' : diff > 0 ? 'gain-cell' : '';
-        return `<td class="num ${cls}">${diff >= 0 ? '+' : ''}${diff}</td>`;
+        const cod = String(r.CODIGO || r.Codigo || r.codigo || '').trim().toUpperCase();
+        const dif = cod in difMap ? difMap[cod] : null;
+        if (dif === null) return `<td class="num">—</td>`;
+        const cls = dif < 0 ? 'loss-cell' : dif > 0 ? 'gain-cell' : '';
+        return `<td class="num ${cls}">${fmtMoney(dif)}</td>`;
       }
       const keys = [c, c.toLowerCase(), c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()];
       const val  = keys.reduce((v, k) => v !== undefined ? v : r[k], undefined) ?? '';
@@ -1028,10 +1035,18 @@ function exportRegistros2026Excel() {
   const cols = ['FOLIO','CODIGO','PRODUCTOS','AREA','PATENTE','CONTEO','CONTO','INVENTARIADOR','FECHA'];
   if (showDif) cols.push('DIFERENCIA $');
 
+  // Mismo lookup desde TABLA_ANALISIS para el export
+  const difMapExp = {};
+  for (const row of (state.data2026 || [])) {
+    const cod = String(row.codigo || '').trim().toUpperCase();
+    if (cod && !(cod in difMapExp)) difMapExp[cod] = row.dif_peso ?? 0;
+  }
+
   const header = cols;
   const data   = [header, ...rows.map(r => cols.map(c => {
     if (c === 'DIFERENCIA $') {
-      return (Number(r.CONTEO || 0) || 0) - (Number(r.CONTO || 0) || 0);
+      const cod = String(r.CODIGO || r.Codigo || r.codigo || '').trim().toUpperCase();
+      return cod in difMapExp ? difMapExp[cod] : '';
     }
     const keys = [c, c.toLowerCase(), c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()];
     return keys.reduce((v, k) => v !== undefined ? v : r[k], undefined) ?? '';
