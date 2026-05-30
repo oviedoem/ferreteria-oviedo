@@ -73,7 +73,40 @@ c. Verificar si el cambio ya fue aplicado en versión anterior.
 d. Si ya existe, NO volver a aplicarlo.
 e. Si hay duda, detenerse y reportar antes de continuar.
 
-### ARCHIVOS PROHIBIDOS DE REGENERAR:
+### ARCHIVOS PROHIBIDOS DE ELIMINAR (aunque se pida "regeneración completa"):
+
+- **CATALOGO PRODUCTOS\Datos.xlsx** → MASTER del catálogo. `procesar-actualizacion.py`
+  lo requiere como BASE de lectura (línea 192-193: `if not DATOSXLSX.exists(): sys.exit(1)`).
+  Si se elimina, el script falla con `KeyError: 'CODIGO'` y el pipeline se detiene.
+  NUNCA borrar este archivo. Si se corrompe o pierde, regenerar con seed:
+  ```
+  python -c "
+  import pandas as pd; from pathlib import Path
+  BASE = Path(r'D:\ferreteria-oviedo\CATALOGO PRODUCTOS')
+  h2 = pd.read_excel(BASE/'actualizar.xlsx', sheet_name='Hoja2', dtype={'COD':str})
+  h1 = pd.read_excel(BASE/'actualizar.xlsx', sheet_name='Hoja1', dtype={'COD':str})
+  col_map = {'COD':'CODIGO','DESC':'DESCRIPCION','MARCA':'MARCA','HIPER':'HIPERFAMILIA',
+             'FAM':'FAMILIA','SUB':'SUBFAMILIA','COSTO':'COSTO_PROMEDIO',
+             'PEM_DISP':'PEM_DISP','PEM_TRANS':'PEM_TRANS','PEM_BOD':'PEM_BOD',
+             'SEM_DISP':'SEM_DISP','SEM_BOD':'SEM_BOD','CEM_DISP':'CEM_DISP',
+             'CEM_BOD':'CEM_BOD','MEM_DISP':'MEM_DISP','MEM_BOD':'MEM_BOD',
+             'IEM_DISP':'IEM_DISP','IEM_TRANS':'IEM_TRANS','TEM_DISP':'TEM_DISP',
+             'TEM_TRANS':'TEM_TRANS','RCE_DISP':'RCE_DISP','CD_DISP':'CD_DISP','CD_TRANS':'CD_TRANS'}
+  df = h2.rename(columns=col_map)
+  pc = next(c for c in h1.columns if 'TOTAL' in str(c).upper())
+  h1r = h1.rename(columns={'COD':'CODIGO', pc:'PRECIO_IVA'}); h1r['SOCIO_IVA']=h1r['PRECIO_IVA']
+  df = df.merge(h1r[['CODIGO','PRECIO_IVA','SOCIO_IVA']], on='CODIGO', how='left')
+  COLS=['CODIGO','DESCRIPCION','MARCA','HIPERFAMILIA','FAMILIA','SUBFAMILIA','COSTO_PROMEDIO',
+        'PRECIO_IVA','SOCIO_IVA','PEM_DISP','PEM_TRANS','PEM_BOD','SEM_DISP','SEM_BOD',
+        'CEM_DISP','CEM_BOD','MEM_DISP','MEM_BOD','IEM_DISP','IEM_TRANS','TEM_DISP',
+        'TEM_TRANS','RCE_DISP','CD_DISP','CD_TRANS']
+  [df.__setitem__(c,0) for c in COLS if c not in df.columns]
+  df[COLS].to_excel(BASE/'Datos.xlsx', sheet_name='Sheet1', index=False)
+  print('Seed OK', len(df))
+  "
+  ```
+  Origen del error: sesión 2026-05-29 — se eliminó al pedir "regeneración completa" y pipeline
+  quedó bloqueado en `pause`. Se recuperó creando el seed desde actualizar.xlsx.
 
 - ventas-manzano.json → NECESARIO: main.py lo genera como salida principal (JSON_SALIDA).
   El panel lo usa como fallback en 4 puntos (líneas 4578, 6850, 6868, 7780).
@@ -84,12 +117,60 @@ e. Si hay duda, detenerse y reportar antes de continuar.
 - credenciales_erp.ini → NUNCA tocar ni leer en voz alta
 - D:\ferreteria-oviedo-github\ → NUNCA modificar
 
+### REGENERACIÓN COMPLETA SEGURA — qué SÍ y qué NO eliminar:
+
+Al pedir "limpiar datos y regenerar desde el ERP", eliminar SOLO:
+```
+data\ventas-manzano-YYYY-MM.json   ← mes actual
+data\ventas-manzano-YYYY.json      ← año actual
+data\ventas-manzano.json
+data\ventas-manzano-meta.json
+data\catalogo-dinamico.json
+data\xlsm-enrich.json
+data\bod-*.json
+data\despachos-*.json
+data\pedidos-*.json
+data\ventas-xlsm-*.json
+data\ranking-unidades.json
+data\precios-diff.json
+CATALOGO PRODUCTOS\Datos.csv       ← regenerado por xlsx_a_csv.py
+CATALOGO PRODUCTOS\merma.json
+```
+**NO eliminar:**
+```
+CATALOGO PRODUCTOS\Datos.xlsx      ← MASTER, requiere base existente
+CATALOGO PRODUCTOS\actualizar.xlsx ← input de procesar-actualizacion.py (si aún no corrió ERP)
+data\ventas-manzano-YYYY-MM.json   ← meses anteriores al actual (históricos)
+```
+
 ### ORDEN DE LECTURA OBLIGATORIO AL INICIO DE CADA SESIÓN:
 
 1. MEMORY.md
 2. AGENTS.md
 3. CLAUDE.md
 4. Recién después ejecutar cualquier tarea
+
+### SERVIDOR 2 — LIMITACIÓN REAL-TIME (CRÍTICO para diagnóstico):
+
+El SQL Server en 200.6.118.110 ("Servidor 2") sincroniza con el ERP JustWeb **UNA SOLA VEZ al día a las 22:00**.
+
+| Script | Fuente | Real-time |
+|--------|--------|-----------|
+| descargar_erp.py | SSRS / JustWeb HTTP | ✅ Sí |
+| descargar_ventas_erp.py | JustWeb HTTP | ✅ Sí |
+| descargar_bod.py | SQL Server (Servidor 2) | ❌ Solo tras 22:00 |
+| descargar_pedidos.py | SQL Server (Servidor 2) | ❌ Solo tras 22:00 |
+| descargar_despachos.py | SQL Server (Servidor 2) | ❌ Solo tras 22:00 |
+| leer_xlsm.py | VENTAS.xlsm (Servidor 2) | ❌ Solo tras 22:00 |
+
+**Consecuencia:** Si el usuario "rebaja" una factura o genera una guía durante el día y corre el
+pipeline antes de las 22:00, ese despacho/pedido SEGUIRÁ apareciendo en el panel hasta que se
+corra el pipeline DESPUÉS de las 22:00. NO es un bug — es la limitación de sincronización del Servidor 2.
+
+Respuesta estándar al usuario: *"Los datos de despachos/pedidos/bodegas vienen del Servidor 2
+que sincroniza a las 22:00. Corriendo el pipeline después de esa hora el movimiento desaparecerá."*
+
+Confirmado en incidente 2026-05-29: Factura 503157 rebajada intradía seguía en Despachos Pendientes.
 
 ### FLUJO DE DESCARGA — REGLA FIJA:
 
@@ -631,21 +712,18 @@ NO intentar arreglarlo.
 
 ## PIPELINE COMPLETO — ACTUALIZARTODO.bat
 
-1. descargarerp.py         → actualizar.xlsx (precios + stock SSRS 2 bloques)
-2. procesar-actualizacion.py → Datos.xlsx + escribe catalogo-dinamico.json
-3. xlsxacsv.py             → Datos.csv
-4. csvajson.py             → Datos.json
-   [PASO 1C] leerxlsm.py  → xlsm-enrich.json
-   [PASO 1D] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
-             SQL Server directo (IEM=72, RCE=55, CEM=24), sin XLSM ni macros manuales
-             NOTA: El echo del bat dice "IEM y RCE" pero la lógica ya incluye CEM desde V36.9k
-   [PASO 1E] descargar_pedidos.py → pedidos-comprometidos.json + pedidos-detalle.json
-             Totales: R_STOCK_PRODUCTOS.ST_PEDIDO (fuente oficial — IDBODEGA lookup dinámico)
-             Detalle: M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0, tipos NVM/VMN/VMP (V37.8)
-             Campos: tipoDoc, tipoDocLabel, numero, fechaEmision, fechaEntrega, atraso, cliente, rut, vendedor, cant
-   [PASO 1F] descargar_despachos.py → despachos-comprometidos.json + despachos-detalle.json  (NUEVO V37.8)
-             Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp, despachos pendientes)
-             Estructura JSON idéntica a pedidos-detalle (reutiliza modal panel)
+[PASO 1A] descargar_erp.py → actualizar.xlsx (precios + stock SSRS 8 bodegas, 2 bloques, 23 columnas)
+[PASO 1B] procesar-actualizacion.py + xlsx_a_csv.py + csv_a_json.py → Datos.json + catalogo-dinamico.json
+[PASO 1C] leerxlsm.py  → xlsm-enrich.json
+[PASO 1D] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
+          SQL Server directo (IEM=72, RCE=55, CEM=24), sin XLSM ni macros manuales
+[PASO 1E] descargar_pedidos.py → pedidos-comprometidos.json + pedidos-detalle.json
+          Totales: R_STOCK_PRODUCTOS.ST_PEDIDO (fuente oficial — IDBODEGA lookup dinámico)
+          Detalle: M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0, tipos NVM/VMN/VMP (V37.8)
+          Campos: tipoDoc, tipoDocLabel, numero, fechaEmision, fechaEntrega, atraso, cliente, rut, vendedor, cant
+[PASO 1F] descargar_despachos.py → despachos-comprometidos.json + despachos-detalle.json
+          Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp, despachos pendientes)
+          Estructura JSON idéntica a pedidos-detalle (reutiliza modal panel)
 5. main.py --sin-deploy
    PASO 1: catalogogeneradohoy? SI/NO
    PASO 2: descargarventaserp.py incremental
@@ -664,6 +742,12 @@ BATs disponibles:
 BATs archivados en _ARCHIVADOS\ (NO ejecutar — llaman scripts inexistentes):
 - 20260523_PREPARAR_Y_PUBLICAR.bat  (llamaba exportar_consulta_ventas.py y preparar_datos.py)
 - 20260523_ACTUALIZAR_AUTO.bat      (llamaba preparar_datos.py --auto)
+- 20260530_SUBIR_VENTAS_MANZANO.bat (subía ventas a Firestore — flujo pre-V36.0, reemplazado por JSON estáticos)
+
+REGLA _ARCHIVADOS\ — PERMANENTE:
+  _ARCHIVADOS\ es solo referencia histórica. NO es parte del flujo activo.
+  Si un archivo sigue siendo útil → va en la raíz del proyecto, NO en _ARCHIVADOS\.
+  Si algo en _ARCHIVADOS\ aporta valor hoy → moverlo de vuelta a raíz.
 
 ---
 
@@ -1074,6 +1158,7 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 | Assets | FONDO3.jpg, PERSONA.jpg, logo_oviedo_white.jpg, logo_oviedo.jpg |
 | Credenciales | credenciales_db.ini (NUNCA a git) |
 | BATs activos | ACTUALIZAR_TODO.bat, ACTUALIZAR_TODO_AUTO.bat, PUBLICAR.bat, ACTUALIZAR_GITHUB.bat |
+| BATs externos (fuera del proyecto) | C:\Users\Ferreteria Oviedo\Desktop\LIMPIAR_CACHE.bat |
 | Scripts activos | diagnostico_huerfanos.py, encriptar_credenciales.py |
 | MDs activos | AGENTS.md, MEMORY.md, ESTADO_PROYECTO.md |
 | Carpetas | data/ · VENTAS EL MANZANO/ · BODEGAS/ · CATALOGO PRODUCTOS/ · backups/ · .claude/ · _HISTORICO/ · logs/ |

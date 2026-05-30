@@ -1061,7 +1061,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 
           <!-- Fila 1: Actualizar + status -->
           <div class="vadm-anal-bar">
-            <button class="ven-adm-btn" onclick="vadmCargarLineas()">🔄 Actualizar</button>
+            <button class="ven-adm-btn" onclick="_vadmLineas=[]; vadmCargarLineas()">🔄 Actualizar</button>
             <select id="vadmAnioSelector"
               onchange="var v=this.value; _vadmAnioSel=v; vadmCargarLineas();"
               style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #d1d5db;
