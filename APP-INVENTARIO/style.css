@@ -1940,3 +1940,116 @@ select.embudo-select:disabled { opacity: .45; cursor: default; }
   background: #f1f5f9;
   color: #334155;
 }
+
+/* ── BOTÓN LIMPIAR APP (header nav) ──────────────────────── */
+.btn-limpiar-app {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background .2s;
+  white-space: nowrap;
+}
+.btn-limpiar-app:hover { background: #b91c1c; }
+
+/* ── DESGLOSE 2026 FULL-WIDTH ─────────────────────────────── */
+.desglose-2026-wrapper {
+  margin-top: 28px;
+}
+.desglose-2026-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.dd-filter-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  min-width: 220px;
+  flex: 1;
+  outline: none;
+  transition: border-color .2s;
+}
+.dd-filter-input:focus { border-color: #1e40af; box-shadow: 0 0 0 2px rgba(30,64,175,.15); }
+.dd-sort-btn { white-space: nowrap; }
+
+/* Encabezado azul Excel en Desglose 2026 */
+.desglose-2026-wrapper .data-table th {
+  background: #1e40af;
+  color: #fff;
+  border-color: #1e3a8a;
+}
+.desglose-2026-wrapper .data-table th:hover { background: #1d4ed8; }
+.desglose-2026-wrapper .data-table td { border: 1px solid #94a3b8; }
+
+/* ── SECCIÓN REGISTROS 2026 ───────────────────────────────── */
+.registros-section {
+  margin-top: 32px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 20px 22px;
+}
+.registros-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.registros-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+.registros-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.registros-check-lbl {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.registros-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.reg-resumen-cod {
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #1e40af;
+  font-weight: 500;
+  margin-bottom: 12px;
+  display: none;
+}
+.reg-resumen-cod.visible { display: block; }
+
+/* Encabezado azul Excel en tabla Registros */
+#registros-2026-section .data-table th {
+  background: #1e40af;
+  color: #fff;
+  border-color: #1e3a8a;
+}
+#registros-2026-section .data-table th:hover { background: #1d4ed8; }
+#registros-2026-section .data-table td { border: 1px solid #94a3b8; }

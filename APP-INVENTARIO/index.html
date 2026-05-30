@@ -28,6 +28,7 @@
     <button class="tab-btn" data-mode="2025v2">🔬 Análisis Avanzado</button>
     <button class="tab-btn" data-mode="final">📋 Análisis Final</button>
     <button class="tab-btn" data-mode="mejoras">🎯 Mejoras 2026</button>
+    <button class="btn-limpiar-app" onclick="clearAllApp()">🧹 Limpiar</button>
   </nav>
 </header>
 
@@ -204,34 +205,8 @@
               <h4>Diferencia Unidades por Marca (Top 10)</h4>
               <div class="chart-wrap"><canvas id="chart-marca-peso-2026"></canvas></div>
             </div>
-            <div class="chart-card">
-              <h4>Diferencia por Hiperfamilia</h4>
-              <div class="chart-wrap"><canvas id="chart-pie-hiper-2026"></canvas></div>
-            </div>
-            <div class="chart-card">
-              <h4>Diferencia por Marca</h4>
-              <div class="chart-wrap"><canvas id="chart-pie-marca-2026"></canvas></div>
-            </div>
           </div>
           <div class="tables-section">
-            <button class="acc-btn dd-acc-btn open">📊 Desglose interactivo por diferencias ▴</button>
-            <div class="acc-content dd-acc-content open">
-              <div id="drilldown-2026"></div>
-            </div>
-            <div class="table-block">
-              <div class="table-header">
-                <h3>Resumen por Marca</h3>
-                <button class="btn btn-xs" onclick="exportTableToExcel('resumen-marca-2026','Resumen_Marca_2026')">⬇ xlsx</button>
-              </div>
-              <div class="table-scroll"><table id="resumen-marca-2026" class="data-table"></table></div>
-            </div>
-            <div class="table-block">
-              <div class="table-header">
-                <h3>Resumen por Familia / Hiperfamilia</h3>
-                <button class="btn btn-xs" onclick="exportTableToExcel('resumen-familia-2026','Resumen_Familia_2026')">⬇ xlsx</button>
-              </div>
-              <div class="table-scroll"><table id="resumen-familia-2026" class="data-table"></table></div>
-            </div>
             <div class="table-block">
               <div class="table-header">
                 <h3>Resumen por Zona / Área</h3>
@@ -242,6 +217,41 @@
           </div>
         </div>
       </div>
+
+      <!-- ── DESGLOSE INTERACTIVO (full-width, TAREA 3) ──────────── -->
+      <div class="desglose-2026-wrapper">
+        <div class="desglose-2026-filters">
+          <input type="text" id="dd-2026-search-cod"  class="dd-filter-input" placeholder="Buscar por código (Codigo_tecnico)…"    oninput="ddFilterDrilldown('2026')">
+          <input type="text" id="dd-2026-search-desc" class="dd-filter-input" placeholder="Buscar por descripción (Descripcion)…"   oninput="ddFilterDrilldown('2026')">
+          <button class="btn btn-xs dd-sort-btn" id="dd-2026-sort-btn" onclick="ddToggleSortDif('2026')">⬆⬇ Ordenar por DIFERENCIA</button>
+        </div>
+        <button class="acc-btn dd-acc-btn open">📊 Desglose interactivo por diferencias ▴</button>
+        <div class="acc-content dd-acc-content open">
+          <div id="drilldown-2026"></div>
+        </div>
+      </div>
+
+      <!-- ── TABLA REGISTROS 2026 (TAREA 4) ──────────────────────── -->
+      <div id="registros-2026-section" class="registros-section" style="display:none">
+        <div class="registros-header">
+          <h3>📋 Registros de Conteo 2026</h3>
+          <div class="registros-actions">
+            <label class="registros-check-lbl">
+              <input type="checkbox" id="reg-show-dif" onchange="renderRegistros2026()"> Mostrar DIFERENCIA $
+            </label>
+            <button class="btn btn-xs" onclick="exportRegistros2026Excel()">↓ Exportar a Excel</button>
+          </div>
+        </div>
+        <div class="registros-filters">
+          <input type="text" id="reg-search-cod"  class="dd-filter-input" placeholder="Buscar por CODIGO…"                    oninput="renderRegistros2026()">
+          <input type="text" id="reg-search-desc" class="dd-filter-input" placeholder="Buscar por PRODUCTOS (descripción)…"   oninput="renderRegistros2026()">
+        </div>
+        <div id="reg-resumen-cod" class="reg-resumen-cod"></div>
+        <div class="table-scroll" style="max-height:520px;overflow:auto">
+          <table id="registros-2026-table" class="data-table reg-table"></table>
+        </div>
+      </div>
+
     </div><!-- /view-2026 -->
 
     <!-- ── MODO COMPARATIVO ──────────────────────────────────────── -->

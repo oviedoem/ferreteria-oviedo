@@ -313,6 +313,98 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.11 — 2026-05-30
+
+**Rediseño Análisis 2026 + Informe REGISTROS + Botón Limpiar**
+
+#### Cambios en index.html
+
+**TAREA 1 — Eliminados de view-2026:**
+- Bloque `table-block` de `resumen-marca-2026` (Resumen por Marca)
+- Bloque `table-block` de `resumen-familia-2026` (Resumen por Familia / Hiperfamilia)
+- `renderTables('2026')` sigue llamando a `renderResumen('resumen-marca-2026',...)` — devuelve silenciosamente porque `buildTable()` tiene guard `if (!table) return`.
+
+**TAREA 2 — Eliminados de view-2026:**
+- `chart-pie-hiper-2026` — donut "Diferencia por Hiperfamilia"
+- `chart-pie-marca-2026` — donut "Diferencia por Marca"
+- `makeChart()` tiene guard `if (!ctx) return` → sin errores JS al no encontrar canvas.
+- Conservados: `chart-familia-unid-2026` y `chart-marca-peso-2026` (barras).
+
+**TAREA 3 — Desglose full-width:**
+- El acordeón `📊 Desglose interactivo por diferencias` movido de dentro de `.drilldown-panel` a una nueva `.desglose-2026-wrapper` full-width DEBAJO de `.main-panels`, dentro de `#view-2026`.
+- Filtros agregados sobre el Desglose: `#dd-2026-search-cod`, `#dd-2026-search-desc`, `#dd-2026-sort-btn`.
+- Encabezado azul `#1e40af` + letras blancas en la tabla del Desglose 2026 (CSS `.desglose-2026-wrapper .data-table th`).
+
+**TAREA 4 — Tabla REGISTROS:**
+- Nueva sección `#registros-2026-section` debajo del Desglose (full-width, display:none hasta que haya datos).
+- Filtros: `#reg-search-cod`, `#reg-search-desc`.
+- Checkbox `#reg-show-dif` para columna DIFERENCIA $.
+- Botón "↓ Exportar a Excel".
+- Encabezado azul `#1e40af` + letras blancas (CSS `#registros-2026-section .data-table th`).
+
+**TAREA 5D — Botón "🧹 Limpiar":**
+- Botón `.btn-limpiar-app` en el header nav (después de "Mejoras 2026").
+- Llama `clearAllApp()`.
+
+#### Cambios en app.js
+
+**Estado global:**
+- `state.registros2026 = []` — nuevo array para rows crudos de hoja REGISTROS.
+- `state.ddFilters = { '2026': { cod:'', desc:'', sortByDif:false } }` — estado de filtros del Desglose 2026.
+
+**`buildDDGroupTable(year, groups, groupBy, groupLabel)` — modificada:**
+- Eliminada columna `% Exactitud` (no existe en TABLA_ANALISIS).
+- Columnas reordenadas a orden Excel: `groupLabel · Productos · CONTEO · VALOR CONTEO · STOCK SISTEMA · VALOR SISTEMA $ · DIFERENCIA · DIFERENCIA $`.
+- Aplica filtro `state.ddFilters[year].desc` (nombre de grupo) y sort por `adp` si `sortByDif`.
+
+**`buildDDProductTable(data, year)` — modificada:**
+- Nuevo parámetro `year` (caller `renderDrilldown` actualizado).
+- Columnas en orden Excel: `Codigo_tecnico · Descripcion · CONTEO · COSTO $ · VALOR CONTEO · STOCK SISTEMA · VALOR SISTEMA $ · DIFERENCIA · DIFERENCIA $ · FAMILIA`.
+- Aplica filtros `state.ddFilters[year].cod` (código) y `.desc` (descripción).
+
+**Funciones nuevas:**
+- `ddFilterDrilldown(year)` — lee inputs DOM, actualiza `state.ddFilters[year]`, re-renderiza Desglose.
+- `ddToggleSortDif(year)` — toggle sort por |DIFERENCIA $| DESC.
+- `renderRegistros2026()` — renderiza tabla REGISTROS con filtros; muestra resumen al buscar por código.
+- `exportRegistros2026Excel()` — exporta REGISTROS a .xlsx con xlsx-js-style (encabezado azul, bordes thin).
+- `clearAllApp()` — limpieza completa (confirm, IDB, LS, state, window globals, DOM).
+
+**`readFileData` — modificada:**
+- `let registrosRows = []` captura rows crudos de la hoja REGISTROS antes del procesamiento de patentes.
+- `resolve(...)` incluye `registros: registrosRows`.
+
+**`loadFiles` — modificada:**
+- Captura `data.registros` para `state.registros2026` cuando `year === '2026'`.
+
+**`renderMode(year)` — modificada:**
+- Al final de la función: `if (year === '2026') renderRegistros2026()`.
+
+**`clearAllData()` — modificada:**
+- Agrega `state.registros2026 = []` y oculta `#registros-2026-section`.
+
+#### Cambios en style.css
+
+- `.btn-limpiar-app` — botón rojo en header nav.
+- `.desglose-2026-wrapper`, `.desglose-2026-filters`, `.dd-filter-input`, `.dd-sort-btn` — Desglose full-width.
+- `.desglose-2026-wrapper .data-table th` — encabezado azul Desglose 2026.
+- `.registros-section`, `.registros-header`, `.registros-actions`, `.registros-check-lbl`, `.registros-filters`, `.reg-resumen-cod` — sección REGISTROS.
+- `#registros-2026-section .data-table th` — encabezado azul tabla REGISTROS.
+
+#### Funciones NO tocadas
+
+`renderMode('2025')` · `renderModeComp()` · `renderPlanos()` · `const PLANO_SHEETS` · `renderRecount()` · `renderAnalisisFinal()` · `saveDataToIDB()` · `loadDataFromIDB()` · `restoreSession()` · `initAccordions()` · `toggleAcc()` · `exportFinalExcel()` · `exportDrilldownTable()` · `venAdmParseFecha()` · `venAdmFmt()` · `getFilteredData()` · `clearFilters()` · `renderEmbudo()` · `setEmbudoLevel()` · `clearDrillevel()` · `buildEmbudoGroupTable()` · `buildEmbudoProductTable()`
+
+#### TAREA 5A — Verificación de consistencia (PENDIENTE)
+
+Requiere cargar el archivo real `ANALISIS_EL MANZANO-V2026.xlsx` y comparar manualmente 5 códigos. Pendiente de ejecución por el operador con el archivo real.
+
+Campos a verificar: `STOCK SISTEMA` · `CONTEO` · `VALOR SISTEMA $` · `DIFERENCIA` · `DIFERENCIA $`.
+
+**node --check → OK ✓**
+**const PLANO_SHEETS → 1 ocurrencia ✓**
+
+---
+
 ### V7.10 — 2026-05-29
 
 **Fix crítico — `const PLANO_SHEETS` borrado por `actualizar_planos.js`**
@@ -1236,6 +1328,7 @@ Sesión anterior quedó incompleta en el cierre (push pendiente). Auditoría con
 
 ## PENDIENTE
 
+- [ ] TAREA 5A — Verificar consistencia 5 códigos Excel↔App con archivo real `ANALISIS_EL MANZANO-V2026.xlsx` (requiere operador con el archivo)
 - [ ] Test end-to-end con archivos REALES de producción (los ejemplos son datos sintéticos)
 - [ ] Confirmar planos hardcodeados con archivo real: 465 patentes (Sala EXHIBICION=55, BODEGA SALA=211, BODEGA 2DO PISO SALA=100, PATIO CONSTRUCTOR=99)
 - [ ] Verificar embudo con datos reales (selects populados correctamente)

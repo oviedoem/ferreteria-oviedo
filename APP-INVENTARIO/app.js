@@ -9,6 +9,7 @@ const DEBUG = false;
 const state = {
   data2025: [],
   data2026: [],
+  registros2026: [],   // rows crudos de la hoja REGISTROS del Excel 2026
   charts: {},
   sortState: {},
   pendingLoad: null,
@@ -28,6 +29,10 @@ const state = {
   ddState: {
     '2025': { groupBy: 'familia', filterField: null, filterValue: null },
     '2026': { groupBy: 'familia', filterField: null, filterValue: null },
+  },
+  // Filtros de búsqueda del Desglose (solo view-2026 por ahora)
+  ddFilters: {
+    '2026': { cod: '', desc: '', sortByDif: false }
   },
   compCategoria: 'perfamilia',
   compDrill: { field: null, value: null },
@@ -615,12 +620,14 @@ async function readFileData(file) {
           // CONTEO = unidades físicas encontradas (puede ser 0 si el producto no estaba).
           // CONTO  = flag de visita del inventariador (>0 = producto fue visitado).
           // Una patente se considera "contada" cuando TODOS sus productos tienen CONTO > 0.
+          let registrosRows = [];
           const patentesCargadasSet = new Set();
           const registroSheets = ['REGISTROS'];
           for (const sName of registroSheets) {
             if (!wb.SheetNames.includes(sName)) continue;
             try {
               const rRows = XLSX.utils.sheet_to_json(wb.Sheets[sName], { defval: '', raw: false });
+              if (rRows.length) registrosRows = rRows;
               // Agrupar por patente: total de filas vs filas con CONTO > 0 (visitadas)
               const grupos = {};
               for (const r of rRows) {
@@ -695,7 +702,7 @@ async function readFileData(file) {
             catalog: Object.keys(catalogIndex).length,
             datosFaltantes: missingIndex ? Object.keys(missingIndex).length : 0,
           });
-          resolve({ headers, rows: enriched, wb, sheetName });
+          resolve({ headers, rows: enriched, wb, sheetName, registros: registrosRows });
         } catch (err) { reject(err); }
       };
       reader.readAsArrayBuffer(file);
@@ -720,6 +727,9 @@ async function loadFiles(files, year) {
     let data;
     try { data = await readFileData(file); }
     catch (e) { showToast(`Error en ${file.name}: ${e.message}`, 'error'); continue; }
+    if (year === '2026' && data.registros && data.registros.length) {
+      state.registros2026 = state.registros2026.concat(data.registros);
+    }
     if (!data.rows.length) continue;
 
     if (!sharedMapping) {
@@ -953,10 +963,108 @@ function updateSidebarStatus(year, extra) {
   info.innerHTML = lines.join('<br>');
 }
 
+// ── REGISTROS 2026 ─────────────────────────────────────────────
+function renderRegistros2026() {
+  const section = document.getElementById('registros-2026-section');
+  if (!section) return;
+  const rows = state.registros2026 || [];
+  if (!rows.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const codQ  = (document.getElementById('reg-search-cod')?.value  || '').toLowerCase();
+  const descQ = (document.getElementById('reg-search-desc')?.value || '').toLowerCase();
+  const showDif = document.getElementById('reg-show-dif')?.checked;
+
+  let filtered = rows;
+  if (codQ)  filtered = filtered.filter(r => String(r.CODIGO || r.Codigo || r.codigo || '').toLowerCase().includes(codQ));
+  if (descQ) filtered = filtered.filter(r => String(r.PRODUCTOS || r.Productos || r.productos || '').toLowerCase().includes(descQ));
+
+  // Resumen por código cuando hay búsqueda de código exacto
+  const resEl = document.getElementById('reg-resumen-cod');
+  if (resEl) {
+    if (codQ && filtered.length) {
+      const patentes = new Set(filtered.map(r => String(r.PATENTE || r.Patente || '')));
+      const areas    = new Set(filtered.map(r => String(r.AREA || r.Area || '')));
+      const totalConteo = filtered.reduce((s, r) => s + (Number(r.CONTEO || r.Conteo || 0) || 0), 0);
+      resEl.textContent = `Código "${codQ.toUpperCase()}" — contado en ${patentes.size} patentes / ${areas.size} áreas / total CONTEO = ${totalConteo} uds`;
+      resEl.classList.add('visible');
+    } else {
+      resEl.textContent = '';
+      resEl.classList.remove('visible');
+    }
+  }
+
+  const cols = ['FOLIO','CODIGO','PRODUCTOS','AREA','PATENTE','CONTEO','CONTO','INVENTARIADOR','FECHA'];
+  if (showDif) cols.push('DIFERENCIA $');
+
+  const thead = `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>`;
+  const tbody = filtered.map(r => {
+    const cells = cols.map(c => {
+      if (c === 'DIFERENCIA $') {
+        const conteo = Number(r.CONTEO || r.Conteo || 0) || 0;
+        const conto  = Number(r.CONTO  || r.Conto  || 0) || 0;
+        const diff   = conteo - conto;
+        const cls    = diff < 0 ? 'loss-cell' : diff > 0 ? 'gain-cell' : '';
+        return `<td class="num ${cls}">${diff >= 0 ? '+' : ''}${diff}</td>`;
+      }
+      const keys = [c, c.toLowerCase(), c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()];
+      const val  = keys.reduce((v, k) => v !== undefined ? v : r[k], undefined) ?? '';
+      return `<td>${val}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+
+  const table = document.getElementById('registros-2026-table');
+  if (table) table.innerHTML = thead + `<tbody>${tbody}</tbody>`;
+}
+
+function exportRegistros2026Excel() {
+  const rows = state.registros2026 || [];
+  if (!rows.length) { showToast('Sin datos de REGISTROS para exportar.', 'error'); return; }
+
+  const showDif = document.getElementById('reg-show-dif')?.checked;
+  const cols = ['FOLIO','CODIGO','PRODUCTOS','AREA','PATENTE','CONTEO','CONTO','INVENTARIADOR','FECHA'];
+  if (showDif) cols.push('DIFERENCIA $');
+
+  const header = cols;
+  const data   = [header, ...rows.map(r => cols.map(c => {
+    if (c === 'DIFERENCIA $') {
+      return (Number(r.CONTEO || 0) || 0) - (Number(r.CONTO || 0) || 0);
+    }
+    const keys = [c, c.toLowerCase(), c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()];
+    return keys.reduce((v, k) => v !== undefined ? v : r[k], undefined) ?? '';
+  }))];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const HDR = { font: { bold: true, color: { rgb: 'FFFFFFFF' } }, fill: { fgColor: { rgb: 'FF1E40AF' }, patternType: 'solid' }, alignment: { horizontal: 'center' }, border: { top:{style:'thin',color:{rgb:'FF000000'}}, bottom:{style:'thin',color:{rgb:'FF000000'}}, left:{style:'thin',color:{rgb:'FF000000'}}, right:{style:'thin',color:{rgb:'FF000000'}} } };
+  const CEL = { border: { top:{style:'thin',color:{rgb:'FF000000'}}, bottom:{style:'thin',color:{rgb:'FF000000'}}, left:{style:'thin',color:{rgb:'FF000000'}}, right:{style:'thin',color:{rgb:'FF000000'}} }, fill: { patternType:'none' } };
+  const widths = [8,12,50,8,10,10,10,20,20,14];
+  ws['!cols'] = widths.map(w => ({ wch: w }));
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const hAddr = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (ws[hAddr]) ws[hAddr].s = HDR;
+  }
+  for (let R = 1; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      if (ws[addr]) ws[addr].s = CEL;
+    }
+  }
+  ws['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 1 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'REGISTROS');
+  XLSX.writeFile(wb, 'REGISTROS_2026.xlsx');
+}
+
+// ── FIN REGISTROS 2026 ─────────────────────────────────────────
+
 function clearAllData() {
   if (!confirm('¿Limpiar todos los datos cargados?')) return;
   state.data2025 = [];
   state.data2026 = [];
+  state.registros2026 = [];
   state.sortState = {};
   state.filters['2025']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
   state.filters['2026']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
@@ -990,7 +1098,53 @@ function clearAllData() {
   localStorage.removeItem(LS_STATE_KEY);
   clearIDB().catch(()=>{});
 
+  const regSec = document.getElementById('registros-2026-section');
+  if (regSec) regSec.style.display = 'none';
+
   showWelcome();
+}
+
+function clearAllApp() {
+  if (!confirm('¿Borrar TODOS los datos cargados, caché y memoria?\n\nEsto limpia IndexedDB, localStorage y todos los datos en memoria.')) return;
+  state.data2025 = [];
+  state.data2026 = [];
+  state.registros2026 = [];
+  state.sortState = {};
+  state.filters['2025']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
+  state.filters['2026']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
+  state.filters.comparative  = { marca:'', familia:'', perfamilia:'', zona:'', area:'' };
+  state.searchText = { '2025': '', '2026': '' };
+  state.chartMode  = { '2025': 'unidades', '2026': 'unidades' };
+  state.drilldown = { '2025': { hiperfamilia:'', familia:'', marca:'' }, '2026': { hiperfamilia:'', familia:'', marca:'' } };
+  state.ddState   = { '2025': { groupBy:'familia', filterField:null, filterValue:null }, '2026': { groupBy:'familia', filterField:null, filterValue:null } };
+  state.ddFilters = { '2026': { cod:'', desc:'', sortByDif:false } };
+  state.compCategoria = 'perfamilia';
+  state.compDrill = { field:null, value:null };
+
+  Object.values(state.charts).forEach(c => c.destroy());
+  state.charts = {};
+
+  window._patentesCargadas       = new Set();
+  window._inventariadorPorPatente = new Map();
+
+  ['2025','2026'].forEach(y => {
+    const el = document.getElementById(`status-${y}`);
+    if (el) { el.textContent = 'Sin archivos'; el.className = 'upload-status'; }
+    const inp = document.getElementById(`input-${y}`);
+    if (inp) inp.value = '';
+  });
+  document.getElementById('sidebar-info').innerHTML = '';
+  const vs = document.getElementById('validation-summary');
+  if (vs) { vs.innerHTML = ''; vs.classList.add('hidden'); }
+
+  localStorage.removeItem(LS_STATE_KEY);
+  clearIDB().catch(() => {});
+
+  const regSec = document.getElementById('registros-2026-section');
+  if (regSec) regSec.style.display = 'none';
+
+  showWelcome();
+  showToast('App limpiada — recargá para empezar de cero', 'ok');
 }
 
 // ── FILTRADO ───────────────────────────────────────────────────
@@ -1810,7 +1964,7 @@ function renderDrilldown(year, data) {
         <span class="dd-crumb-current">${gLabel}: <strong>${dd.filterValue}</strong></span>
         <span class="dd-crumb-count">${sorted.length} productos</span>
       </div>`;
-    tableHtml = buildDDProductTable(sorted);
+    tableHtml = buildDDProductTable(sorted, year);
   } else {
     const gLabel  = DD_GROUPS.find(g => g.key === dd.groupBy)?.label || dd.groupBy;
     const groups  = aggregateBy(data, dd.groupBy).sort((a,b) => b.adp - a.adp);
@@ -1836,7 +1990,12 @@ function renderDrilldown(year, data) {
 
 function buildDDGroupTable(year, groups, groupBy, groupLabel) {
   if (!groups.length) return '<p class="no-data">Sin datos para mostrar.</p>';
-  const rows = groups.map(g => {
+  const df = (state.ddFilters && state.ddFilters[year]) || {};
+  const descQ = (df.desc || '').toLowerCase();
+  let filtered = groups;
+  if (descQ) filtered = filtered.filter(g => (g.fd[groupBy] || '').toLowerCase().includes(descQ));
+  if (df.sortByDif) filtered = [...filtered].sort((a, b) => b.adp - a.adp);
+  const rows = filtered.map(g => {
     const val    = g.fd[groupBy] || '(sin clasificar)';
     const valEsc = val.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const signU  = g.du >= 0 ? '+' : '';
@@ -1846,34 +2005,40 @@ function buildDDGroupTable(year, groups, groupBy, groupLabel) {
     return `<tr style="cursor:pointer" onclick="drillIntoGroup('${year}','${groupBy}','${valEsc}')">
       <td class="dd-group-name">${val}</td>
       <td class="num">${g.count}</td>
-      <td class="num">${fmt(g.us)}</td>
       <td class="num">${fmt(g.ur)}</td>
-      <td class="num ${clsU}">${signU}${fmt(g.du)}</td>
-      <td class="num">${fmtMoney(g.ps)}</td>
       <td class="num">${fmtMoney(g.pr)}</td>
+      <td class="num">${fmt(g.us)}</td>
+      <td class="num">${fmtMoney(g.ps)}</td>
+      <td class="num ${clsU}">${signU}${fmt(g.du)}</td>
       <td class="num ${clsP}">${signP}${fmtMoney(g.dp)}</td>
-      <td class="num">${fmtPct(g.exact_unid)}%</td>
     </tr>`;
   }).join('');
+  const empty = filtered.length === 0 ? '<tr><td colspan="8" class="no-data" style="text-align:center;padding:16px">Sin resultados para el filtro aplicado.</td></tr>' : '';
   return `<table class="data-table dd-table">
     <thead><tr>
       <th>${groupLabel}</th>
       <th class="num">Productos</th>
-      <th class="num">STOCK SISTEMA</th>
       <th class="num">CONTEO</th>
-      <th class="num">DIFERENCIA</th>
-      <th class="num">VALOR SISTEMA $</th>
       <th class="num">VALOR CONTEO</th>
+      <th class="num">STOCK SISTEMA</th>
+      <th class="num">VALOR SISTEMA $</th>
+      <th class="num">DIFERENCIA</th>
       <th class="num">DIFERENCIA $</th>
-      <th class="num">% Exactitud</th>
     </tr></thead>
-    <tbody>${rows}</tbody>
+    <tbody>${rows || empty}</tbody>
   </table>`;
 }
 
-function buildDDProductTable(data) {
+function buildDDProductTable(data, year) {
   if (!data.length) return '<p class="no-data">Sin productos en esta categoría.</p>';
-  const rows = data.map(r => {
+  const df = (state.ddFilters && state.ddFilters[year]) || {};
+  const codQ  = (df.cod  || '').toLowerCase();
+  const descQ = (df.desc || '').toLowerCase();
+  let filtered = data;
+  if (codQ)  filtered = filtered.filter(r => (r.codigo  || '').toLowerCase().includes(codQ));
+  if (descQ) filtered = filtered.filter(r => (r.producto || '').toLowerCase().includes(descQ));
+  if (df.sortByDif) filtered = [...filtered].sort((a, b) => b.abs_dif_peso - a.abs_dif_peso);
+  const rows = filtered.map(r => {
     const signU = r.dif_unidades >= 0 ? '+' : '';
     const signP = r.dif_peso     >= 0 ? '+' : '';
     const clsU  = r.dif_unidades < 0 ? 'loss-cell' : r.dif_unidades > 0 ? 'gain-cell' : '';
@@ -1881,26 +2046,31 @@ function buildDDProductTable(data) {
     return `<tr>
       <td class="mono-sm">${r.codigo || '—'}</td>
       <td title="${(r.producto||'').replace(/"/g,'&quot;')}">${trunc(r.producto, 45)}</td>
-      <td class="num">${fmt(r.unidades_sistema)}</td>
       <td class="num">${fmt(r.unidades_real)}</td>
-      <td class="num ${clsU}">${signU}${fmt(r.dif_unidades)}</td>
-      <td class="num">${fmtMoney(r.peso_sistema)}</td>
+      <td class="num">${r.costo > 0 ? fmtMoney(r.costo) : '—'}</td>
       <td class="num">${fmtMoney(r.peso_real)}</td>
+      <td class="num">${fmt(r.unidades_sistema)}</td>
+      <td class="num">${fmtMoney(r.peso_sistema)}</td>
+      <td class="num ${clsU}">${signU}${fmt(r.dif_unidades)}</td>
       <td class="num ${clsP}">${signP}${fmtMoney(r.dif_peso)}</td>
+      <td>${trunc(r.familia || '—', 28)}</td>
     </tr>`;
   }).join('');
+  const empty = filtered.length === 0 ? '<tr><td colspan="10" class="no-data" style="text-align:center;padding:16px">Sin resultados para el filtro aplicado.</td></tr>' : '';
   return `<table class="data-table dd-table">
     <thead><tr>
       <th>Codigo_tecnico</th>
       <th>Descripcion</th>
-      <th class="num">STOCK SISTEMA</th>
       <th class="num">CONTEO</th>
-      <th class="num">DIFERENCIA</th>
-      <th class="num">VALOR SISTEMA $</th>
+      <th class="num">COSTO $</th>
       <th class="num">VALOR CONTEO</th>
+      <th class="num">STOCK SISTEMA</th>
+      <th class="num">VALOR SISTEMA $</th>
+      <th class="num">DIFERENCIA</th>
       <th class="num">DIFERENCIA $</th>
+      <th>FAMILIA</th>
     </tr></thead>
-    <tbody>${rows}</tbody>
+    <tbody>${rows || empty}</tbody>
   </table>`;
 }
 
@@ -1919,6 +2089,22 @@ function drillIntoGroup(year, field, value) {
 function clearDrilldownFilter(year) {
   state.ddState[year].filterField = null;
   state.ddState[year].filterValue = null;
+  renderDrilldown(year, getFilteredData(year));
+}
+
+function ddFilterDrilldown(year) {
+  if (!state.ddFilters[year]) state.ddFilters[year] = { cod: '', desc: '', sortByDif: false };
+  state.ddFilters[year].cod  = document.getElementById(`dd-${year}-search-cod`)?.value  || '';
+  state.ddFilters[year].desc = document.getElementById(`dd-${year}-search-desc`)?.value || '';
+  renderDrilldown(year, getFilteredData(year));
+}
+
+function ddToggleSortDif(year) {
+  if (!state.ddFilters[year]) state.ddFilters[year] = { cod: '', desc: '', sortByDif: false };
+  state.ddFilters[year].sortByDif = !state.ddFilters[year].sortByDif;
+  const btn = document.getElementById(`dd-${year}-sort-btn`);
+  if (btn) btn.textContent = state.ddFilters[year].sortByDif
+    ? '⬇ DIFERENCIA (mayor → menor)' : '⬆⬇ Ordenar por DIFERENCIA';
   renderDrilldown(year, getFilteredData(year));
 }
 
@@ -2546,6 +2732,7 @@ function renderMode(year) {
   renderTables(year, data);
   renderChartModeBar(year);
   renderCharts(year, data);
+  if (year === '2026') renderRegistros2026();
 }
 
 function renderModeComp() {
