@@ -1,6 +1,77 @@
 ﻿# AGENTS.md — Ferretería Oviedo V37
 # Codex LEE ESTO ANTES de escribir cualquier línea de código.
-# Última actualización: 2026-05-27 (V37.4 fix RCE)
+# Última actualización: 2026-05-30 (FLUJO ERP agregado)
+
+---
+
+## ⚠️ FLUJO ERP — LEER ANTES DE CUALQUIER TAREA DE STOCK
+## Palabra clave de búsqueda: **FLUJO**
+## Ante cualquier duda sobre St_Disp / St_Bod / St_DVen / St_Ped → volver aquí primero.
+
+### Mapa de campos SSRS → Panel Admin
+
+| Campo SSRS (raw CSV) | Campo panel | Descripción |
+|---|---|---|
+| `St_Disp` | **Disp** | Stock disponible para venta (neto de compromisos) |
+| `St_Bod` | **Fís** | Stock físico real en bodega |
+| `St_DVen` | parte de **Ped** | Comprometido en despachos (BVE/FVE emitidas, no despachadas físicamente aún) |
+| `St_Ped` | parte de **Ped** | Comprometido en NVM/pedidos vigentes (cualquier sucursal) |
+| `St_Tran` | Trans | En tránsito entre bodegas |
+| `St_Cont` | — | Contable (campo contabilidad, no usado en panel comercial) |
+| `St_DCom` | — | Comprometido en órdenes de compra pendientes |
+
+**Ped en panel = St_DVen + St_Ped** (toda sucursal que use la bodega)
+**Dif en panel = Fís − Disp** (positivo = stock comprometido normal; negativo = anomalía JT)
+
+### Flujo COMPRA — efecto por documento
+
+| Documento ERP | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Tran | St_Ped |
+|---|---|---|---|---|---|---|---|
+| OC (Orden de Compra) | = | = | = | **+1** | = | **+1** | = |
+| GRC (Guía Recepción Compra) | **+1** | = | = | = | **+1** | **−1** | = |
+| FCN (Factura Compra) | = | **+1** | = | **−1** | = | = | = |
+| **Neto ciclo completo** | **+1** | **+1** | **0** | **0** | **+1** | **0** | **0** |
+
+### Flujo VENTA / DESPACHO — efecto por documento
+
+| Documento ERP | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Tran | St_Ped |
+|---|---|---|---|---|---|---|---|
+| NVM (Nota de Venta) | **−1** | = | = | = | = | = | **+1** |
+| BVE/FVE (Boleta/Factura Electrónica) | = | **−1** | = | = | = | = | **−1** |
+| GME (Guía Despacho Factura Electrónica) | = | = | = | **−1** | **−1** | = | = |
+| **Neto ciclo completo** | **−1** | **−1** | **0** | **0** | **−1** | **0** | **0** |
+
+> **Nota BVE/FVE:** al emitir la factura, JustWeb NO zeroa `CANTIDAD_PENDIENTE` automáticamente.
+> Por eso `descargar_despachos.py` usa filtro EXISTS para excluir documentos donde solo hay FLETE VENTA pendiente.
+
+### Flujo DEVOLUCIÓN — efecto por documento
+
+| Documento ERP | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Ped |
+|---|---|---|---|---|---|---|
+| GDC (Guía Devolución Cliente — vendedor) | **+1** | = | = | **+1** | = | = |
+| NCE (Nota de Crédito Electrónica — caja) | = | **+1** | = | **−1** | **+1** | = |
+| **Neto ciclo completo** | **+1** | **+1** | **0** | **0** | **+1** | **0** |
+
+### Anomalía JT — cuándo ocurre y cómo detectarla
+
+**Anomalía:** `St_Disp > St_Bod` → panel muestra **Dif < 0** (fila roja)
+
+Causas frecuentes:
+- NVM cancelada sin reversa correcta → St_Ped queda positivo, St_Disp no se restaura
+- Ajuste contable incorrecto → genera St_Disp artificialmente alto
+- Productos en CEM con stock de exhibición (EXH) mezclado
+
+Diagnóstico: consultar `data/informe-stock.json` o Existencias Clasificadas SSRS → filtrar `dif > 0` (ERP) = panel `Dif < 0` (rojo).
+
+### Regla de parseo — CSV SSRS (locale europeo)
+
+**CRÍTICO:** El CSV raw del SSRS usa **punto como separador de miles** y **coma como decimal**.
+- `1.536` = **1.536 unidades** (NO 1.536 como número decimal)
+- `0,50000` = **0.5** (NO "050000")
+- Parser correcto: `s.replace('.','').replace(',','.')` antes de `float()`
+- Error histórico 2026-05-30: `num('1.536')` → `float(1.536)` → `int` → **2** (incorrecto). Ver fix en `generar_informe_stock.py`.
+
+---
 
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
@@ -40,6 +111,9 @@ MD activos raiz:
 - Deploy V37.8: 2026-05-27 23:10 — Fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif (22 cols) + modal Dif/Ped rediseñados ✅
 - Deploy V37.9: 2026-05-28 02:09 — Sync UI: badge V37.8, bat legacy → ACTUALIZAR_TODO, tutoriales actualizados, mejoras V37.8, regla sync permanente ✅
 - Deploy V37.10: 2026-05-29 19:26 — Despachos Pendientes (panel-admin) + fix ACTUALIZAR_GITHUB.bat (firestore.indexes.json, storage.rules, update-sw-version.js, ESTADO_PROYECTO.md, V37, pull --rebase) + mover bat APP-INVENTARIO a su carpeta + encriptar_credenciales.py en lista limpieza ✅
+- Deploy V37.11: 2026-05-30 03:51 — fix despachos-comprometidos MESES_COMPROMETIDOS=3 (CANTIDAD_PENDIENTE no se zeroa en JustWeb al emitir GDE) + bat pasos 1A–1F unificados + LIMPIAR_CACHE.bat → Desktop + SUBIR_VENTAS_MANZANO.bat → _HISTORICO + regla _ARCHIVADOS permanente ✅
+- Deploy V37.12: 2026-05-30 15:42 — Informe Stock SSRS completo (generar_informe_stock.py, PASO 1G) + filtro despachos FLETE EXISTS + columnas dinámicas panel por bodega + fix parsing CSV miles (punto=miles) + FLUJO ERP en AGENTS/CLAUDE/safe-change/MEMORY + limpieza Firebase 97 versiones + descarga fresca SSRS ✅
+- Deploy cierre sesion: 2026-05-30 15:42
 
 ---
 

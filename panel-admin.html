@@ -16491,11 +16491,12 @@ function _poblarFiltros(){
   document.getElementById('isbFiltroBar').style.display='';
 }
 
-/* ── helper: 4 celdas por bodega (V37.8) — Disp / Fís / Ped / Dif ── */
+/* ── helper: 4 celdas por bodega (V37.9) — Disp / Fís / Ped / Dif ── */
 function _celdasBod(disp, fis, ped, cod, bod, ctd){
-  var dif=fis-disp;  // Dif = Fís − Disp (despachos BVE/FVE pendientes)
+  var dif=fis-disp;  // Dif = Fís − Disp
+  // Ped>0 → amber+negrita (comprometido todas las sucursales); Ped=0 → normal
   var pedCell=ped>0
-    ? '<td style="'+ctd+';cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="pedido">'+ped+'</td>'
+    ? '<td style="'+ctd+';color:#d97706;font-weight:700;cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="pedido">'+ped+'</td>'
     : '<td style="'+ctd+'">0</td>';
   var difCell=dif!==0
     ? '<td style="'+ctd+';'+_clsDifStk(dif)+';cursor:pointer;text-decoration:underline dotted" data-isb-cod="'+_esc(cod)+'" data-isb-bod="'+bod+'" data-isb-tipo="dif">'+dif+'</td>'
@@ -16506,55 +16507,101 @@ function _celdasBod(disp, fis, ped, cod, bod, ctd){
         +difCell;
 }
 
-/* ── render tabla ── */
+/* ── render tabla (V37.9) — columnas dinámicas por bodega seleccionada ── */
 function _renderTabla(){
   var tbody=document.getElementById('isbTbody');
   var tfoot=document.getElementById('isbTfoot');
   var tabla=document.getElementById('isbTabla');
+  if(!tabla) return;
   var ctd ='padding:4px 7px;border:1px solid #e2e8f0;text-align:right';
   var ctdl='padding:4px 7px;border:1px solid #e2e8f0';
 
+  // ── Bodegas visibles según checkboxes ──
+  var bP=document.getElementById('isbBodPEM').checked;
+  var bS=document.getElementById('isbBodSEM').checked;
+  var bC=document.getElementById('isbBodCEM').checked;
+  var bM=document.getElementById('isbBodMEM').checked;
+  if(!bP&&!bS&&!bC&&!bM){ bP=bS=bC=bM=true; }
+  var BOD_CFG=[
+    {k:'pem',lbl:'PEM',bg:'#dbeafe',tc:'#1e40af',cbg:'#eff6ff',vis:bP},
+    {k:'sem',lbl:'SEM',bg:'#dcfce7',tc:'#166534',cbg:'#f0fdf4',vis:bS},
+    {k:'cem',lbl:'CEM',bg:'#fef3c7',tc:'#92400e',cbg:'#fefce8',vis:bC},
+    {k:'mem',lbl:'MEM',bg:'#fce7f3',tc:'#9d174d',cbg:'#fdf2f8',vis:bM}
+  ];
+  var visibles=BOD_CFG.filter(function(b){ return b.vis; });
+  var showTotal=visibles.length>1;
+
+  var nCols=2+visibles.length*4+(showTotal?4:0);
+
   if(!_isbFiltrados.length){
-    tbody.innerHTML='<tr><td colspan="22" style="text-align:center;padding:20px;color:#9ca3af">Sin resultados para los filtros aplicados</td></tr>';
+    tbody.innerHTML='<tr><td colspan="'+nCols+'" style="text-align:center;padding:20px;color:#9ca3af">Sin resultados para los filtros aplicados</td></tr>';
     tfoot.innerHTML=''; tabla.style.display='';
     document.getElementById('isbContador').textContent='0 productos';
+    // Rebuild thead vacío
+    var thead=tabla.querySelector('thead');
+    if(thead) thead.innerHTML='';
     return;
   }
 
-  var tp={pd:0,pf:0,pp:0, sd:0,sf:0,sp:0, cd:0,cf:0,cp:0, md:0,mf:0,mp:0};
+  // ── Rebuild thead dinámico ──
+  var thS='padding:4px 6px;border:1px solid #e2e8f0';
+  var tr1='<tr style="background:#f1f5f9;text-align:center">'
+    +'<th rowspan="2" style="text-align:left;'+thS+';min-width:80px;white-space:nowrap">Código</th>'
+    +'<th rowspan="2" style="text-align:left;'+thS+';min-width:200px">Descripción</th>';
+  visibles.forEach(function(b){
+    tr1+='<th colspan="4" style="'+thS+';background:'+b.bg+';color:'+b.tc+'">'+b.lbl+'</th>';
+  });
+  if(showTotal) tr1+='<th colspan="4" style="'+thS+';background:#e9d5ff;color:#6b21a8">TOTAL</th>';
+  tr1+='</tr>';
+  var tr2='<tr style="text-align:center;font-size:11px">';
+  var allBods=visibles.concat(showTotal?[{cbg:'#faf5ff'}]:[]);
+  allBods.forEach(function(b){
+    tr2+='<th style="'+thS+';background:'+b.cbg+'">Disp</th>'
+        +'<th style="'+thS+';background:'+b.cbg+'">Fís</th>'
+        +'<th style="'+thS+';background:'+b.cbg+'">Ped</th>'
+        +'<th style="'+thS+';background:'+b.cbg+'" title="Fís − Disp">Dif</th>';
+  });
+  tr2+='</tr>';
+  var thead=tabla.querySelector('thead');
+  if(thead) thead.innerHTML=tr1+tr2;
+
+  // ── Build tbody ──
+  var tp={};
+  visibles.forEach(function(b){ tp[b.k+'_d']=0; tp[b.k+'_f']=0; tp[b.k+'_p']=0; });
   var html='';
 
   _isbFiltrados.forEach(function(r){
-    tp.pd+=r.pem_disp; tp.pf+=r.pem_fis; tp.pp+=r.pem_ped;
-    tp.sd+=r.sem_disp; tp.sf+=r.sem_fis; tp.sp+=r.sem_ped;
-    tp.cd+=r.cem_disp; tp.cf+=r.cem_fis; tp.cp+=r.cem_ped;
-    tp.md+=r.mem_disp; tp.mf+=r.mem_fis; tp.mp+=r.mem_ped;
-    html+='<tr style="border-bottom:1px solid #f1f5f9">'
+    // Anomalía JT: alguna bodega visible con Fís < Disp (dif negativo)
+    var anomalia=visibles.some(function(b){
+      return (r[b.k+'_fis']||0)-(r[b.k+'_disp']||0)<0;
+    });
+    var rowBg=anomalia?'background:#fff0f0;':'';
+    var tD=0,tF=0,tP=0;
+    var celdas='';
+    visibles.forEach(function(b){
+      var d=r[b.k+'_disp']||0, f=r[b.k+'_fis']||0, p=r[b.k+'_ped']||0;
+      tp[b.k+'_d']+=d; tp[b.k+'_f']+=f; tp[b.k+'_p']+=p;
+      tD+=d; tF+=f; tP+=p;
+      celdas+=_celdasBod(d,f,p,r.cod,b.k,ctd);
+    });
+    if(showTotal) celdas+=_celdasBod(tD,tF,tP,r.cod,'total',ctd);
+    html+='<tr style="border-bottom:1px solid #f1f5f9;'+rowBg+'">'
       +'<td style="'+ctdl+';font-weight:600">'+_esc(r.cod)+'</td>'
       +'<td style="'+ctdl+'">'+_esc(r.desc)+'</td>'
-      +_celdasBod(r.pem_disp,r.pem_fis,r.pem_ped,r.cod,'pem',ctd)
-      +_celdasBod(r.sem_disp,r.sem_fis,r.sem_ped,r.cod,'sem',ctd)
-      +_celdasBod(r.cem_disp,r.cem_fis,r.cem_ped,r.cod,'cem',ctd)
-      +_celdasBod(r.mem_disp,r.mem_fis,r.mem_ped,r.cod,'mem',ctd)
-      +_celdasBod(
-          r.pem_disp+r.sem_disp+r.cem_disp+r.mem_disp,
-          r.pem_fis+r.sem_fis+r.cem_fis+r.mem_fis,
-          r.pem_ped+r.sem_ped+r.cem_ped+r.mem_ped,
-          r.cod,'total',ctd)
+      +celdas
       +'</tr>';
   });
 
   tbody.innerHTML=html;
   tabla.style.display='';
 
-  // delegación: clicks en celdas con data-isb-cod
   tbody.onclick=function(e){
     var cell=e.target.closest('[data-isb-cod]');
     if(cell) window.isbAbrirDetalle(cell.dataset.isbCod,cell.dataset.isbBod,cell.dataset.isbTipo);
   };
 
+  // ── tfoot ──
   var cft='padding:5px 7px;border:1px solid #e2e8f0;text-align:right;font-weight:700;background:#f1f5f9';
-  // V37.8: 4 celdas en tfoot (DifLib eliminado)
   function _tpRow(d,f,p){
     var dif=f-d;
     return '<td style="'+cft+'">'+(d||0)+'</td>'
@@ -16562,48 +16609,70 @@ function _renderTabla(){
           +'<td style="'+cft+'">'+(p||0)+'</td>'
           +'<td style="'+cft+';'+_clsDifStk(dif)+'">'+dif+'</td>';
   }
-  var tD=tp.pd+tp.sd+tp.cd+tp.md, tF=tp.pf+tp.sf+tp.cf+tp.mf, tP=tp.pp+tp.sp+tp.cp+tp.mp;
-  tfoot.innerHTML='<tr>'
-    +'<td colspan="2" style="padding:5px 10px;font-weight:700;border:1px solid #e2e8f0;text-align:center;background:#f1f5f9">TOTAL ('+_isbFiltrados.length+' productos)</td>'
-    +_tpRow(tp.pd,tp.pf,tp.pp)
-    +_tpRow(tp.sd,tp.sf,tp.sp)
-    +_tpRow(tp.cd,tp.cf,tp.cp)
-    +_tpRow(tp.md,tp.mf,tp.mp)
-    +_tpRow(tD,tF,tP)
-    +'</tr>';
+  var tfHtml='<tr><td colspan="2" style="padding:5px 10px;font-weight:700;border:1px solid #e2e8f0;text-align:center;background:#f1f5f9">TOTAL ('+_isbFiltrados.length+' productos)</td>';
+  var tD2=0,tF2=0,tP2=0;
+  visibles.forEach(function(b){
+    tfHtml+=_tpRow(tp[b.k+'_d'],tp[b.k+'_f'],tp[b.k+'_p']);
+    tD2+=tp[b.k+'_d']; tF2+=tp[b.k+'_f']; tP2+=tp[b.k+'_p'];
+  });
+  if(showTotal) tfHtml+=_tpRow(tD2,tF2,tP2);
+  tfHtml+='</tr>';
+  tfoot.innerHTML=tfHtml;
 
   document.getElementById('isbContador').textContent=_isbFiltrados.length+' de '+_isbDatos.length+' productos';
 }
 
-/* ── build rows para export ── */
+/* ── build rows para export (V37.9) — solo bodegas visibles ── */
 function _buildRows(){
-  // V37.8: 22 columnas (DifLib eliminado — Dif = Fís−Disp por bodega)
-  var rows=[['Código','Descripción',
-    'PEM Disp','PEM Fís','PEM Ped','PEM Dif',
-    'SEM Disp','SEM Fís','SEM Ped','SEM Dif',
-    'CEM Disp','CEM Fís','CEM Ped','CEM Dif',
-    'MEM Disp','MEM Fís','MEM Ped','MEM Dif',
-    'TOT Disp','TOT Fís','TOT Ped','TOT Dif']];
+  var bP=document.getElementById('isbBodPEM').checked;
+  var bS=document.getElementById('isbBodSEM').checked;
+  var bC=document.getElementById('isbBodCEM').checked;
+  var bM=document.getElementById('isbBodMEM').checked;
+  if(!bP&&!bS&&!bC&&!bM){ bP=bS=bC=bM=true; }
+  var bods=[]; var BL={pem:'PEM',sem:'SEM',cem:'CEM',mem:'MEM'};
+  if(bP) bods.push('pem'); if(bS) bods.push('sem');
+  if(bC) bods.push('cem'); if(bM) bods.push('mem');
+  var showTotal=bods.length>1;
+  var header=['Código','Descripción'];
+  bods.forEach(function(b){ ['Disp','Fís','Ped','Dif'].forEach(function(c){ header.push(BL[b]+' '+c); }); });
+  if(showTotal) ['Disp','Fís','Ped','Dif'].forEach(function(c){ header.push('TOT '+c); });
+  var rows=[header];
   _isbFiltrados.forEach(function(r){
-    var tD=r.pem_disp+r.sem_disp+r.cem_disp+r.mem_disp;
-    var tF=r.pem_fis+r.sem_fis+r.cem_fis+r.mem_fis;
-    var tP=r.pem_ped+r.sem_ped+r.cem_ped+r.mem_ped;
-    rows.push([r.cod,r.desc,
-      r.pem_disp,r.pem_fis,r.pem_ped,r.pem_fis-r.pem_disp,
-      r.sem_disp,r.sem_fis,r.sem_ped,r.sem_fis-r.sem_disp,
-      r.cem_disp,r.cem_fis,r.cem_ped,r.cem_fis-r.cem_disp,
-      r.mem_disp,r.mem_fis,r.mem_ped,r.mem_fis-r.mem_disp,
-      tD,tF,tP,tF-tD]);
+    var row=[r.cod,r.desc], tD=0,tF=0,tP=0;
+    bods.forEach(function(b){
+      var d=r[b+'_disp']||0, f=r[b+'_fis']||0, p=r[b+'_ped']||0;
+      row.push(d,f,p,f-d); tD+=d; tF+=f; tP+=p;
+    });
+    if(showTotal) row.push(tD,tF,tP,tF-tD);
+    rows.push(row);
   });
   return rows;
 }
 
 /* ── API pública ── */
 window.isbGenerar = function(){
-  _status('Cargando catálogo, pedidos y despachos…','');
+  _status('Cargando catálogo y datos SSRS…','');
   var stockDone=false, pedidosDone=false;
+  var _isbRaw={};   // datos crudos de informe-stock.json
+  _isbPedidosComprometidos={};
   function tryRender(){
     if(!stockDone||!pedidosDone) return;
+    // V37.9: merge St_Bod y Ped (SSRS, todas las sucursales) en _vadmStockMap
+    if(window._vadmStockMap){
+      Object.keys(_isbRaw).forEach(function(cod){
+        var d=_isbRaw[cod];
+        if(window._vadmStockMap[cod]){
+          window._vadmStockMap[cod].pem_bod=d.pem_bod||0;
+          window._vadmStockMap[cod].sem_bod=d.sem_bod||0;
+          window._vadmStockMap[cod].cem_bod=d.cem_bod||0;
+          window._vadmStockMap[cod].mem_bod=d.mem_bod||0;
+        }
+        _isbPedidosComprometidos[cod]={
+          pem:d.pem_ped||0, sem:d.sem_ped||0,
+          cem:d.cem_ped||0, mem:d.mem_ped||0
+        };
+      });
+    }
     if(!_construirDatos()) return;
     if(!_isbDatos.length){ _status('Sin datos de stock disponibles','err'); return; }
     _poblarFiltros();
@@ -16612,13 +16681,13 @@ window.isbGenerar = function(){
   }
   window._vadmCargarStockMap(function(){ stockDone=true; tryRender(); });
   var ts='?_='+Date.now();
-  // V37.8: carga pedidos (NVM/VMN/VMP) + despachos (BVE/FVE) en paralelo
+  // V37.9: informe-stock.json (SSRS St_Bod + St_DVen+St_Ped todas las sucursales)
   Promise.all([
-    fetch('/data/pedidos-comprometidos.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
+    fetch('/data/informe-stock.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
     fetch('/data/pedidos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
     fetch('/data/despachos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; })
   ]).then(function(res){
-    _isbPedidosComprometidos=res[0]||{};
+    _isbRaw=res[0]||{};
     _isbPedidosDetalle=res[1]||{};
     _isbDespachosDetalle=res[2]||{};
     pedidosDone=true;
@@ -16689,12 +16758,11 @@ window.isbExportExcel = function(){
   var rows=_buildRows();
   var ws=XLSX.utils.aoa_to_sheet(rows);
   // V37.8: 22 columnas (2 fijas + 5 bodegas × 4 cols)
-  ws['!cols']=[{wch:13},{wch:30},
-    {wch:7},{wch:7},{wch:7},{wch:8},
-    {wch:7},{wch:7},{wch:7},{wch:8},
-    {wch:7},{wch:7},{wch:7},{wch:8},
-    {wch:7},{wch:7},{wch:7},{wch:8},
-    {wch:8},{wch:8},{wch:8},{wch:9}];
+  // V37.9: anchos dinámicos según bodegas visibles
+  var _xcols=[{wch:13},{wch:30}];
+  var _nBodCols=rows[0] ? Math.floor((rows[0].length-2)/4) : 0;
+  for(var _xi=0;_xi<_nBodCols;_xi++) _xcols.push({wch:7},{wch:7},{wch:7},{wch:8});
+  ws['!cols']=_xcols;
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Informe Stock');
   XLSX.writeFile(wb,'InformeStock_'+new Date().toISOString().slice(0,10)+'.xlsx');
