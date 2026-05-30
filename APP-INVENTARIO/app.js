@@ -1996,7 +1996,8 @@ function buildDDGroupTable(year, groups, groupBy, groupLabel) {
   const descQ = (df.desc || '').toLowerCase();
   let filtered = groups;
   if (descQ) filtered = filtered.filter(g => (g.fd[groupBy] || '').toLowerCase().includes(descQ));
-  if (df.sortByDif) filtered = [...filtered].sort((a, b) => b.adp - a.adp);
+  if (df.sortByDif === 'desc') filtered = [...filtered].sort((a, b) => b.adp - a.adp);
+  else if (df.sortByDif === 'asc') filtered = [...filtered].sort((a, b) => a.adp - b.adp);
   const rows = filtered.map(g => {
     const val    = g.fd[groupBy] || '(sin clasificar)';
     const valEsc = val.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -2039,7 +2040,8 @@ function buildDDProductTable(data, year) {
   let filtered = data;
   if (codQ)  filtered = filtered.filter(r => (r.codigo  || '').toLowerCase().includes(codQ));
   if (descQ) filtered = filtered.filter(r => (r.producto || '').toLowerCase().includes(descQ));
-  if (df.sortByDif) filtered = [...filtered].sort((a, b) => b.abs_dif_peso - a.abs_dif_peso);
+  if (df.sortByDif === 'desc') filtered = [...filtered].sort((a, b) => b.abs_dif_peso - a.abs_dif_peso);
+  else if (df.sortByDif === 'asc') filtered = [...filtered].sort((a, b) => a.abs_dif_peso - b.abs_dif_peso);
   const rows = filtered.map(r => {
     const signU = r.dif_unidades >= 0 ? '+' : '';
     const signP = r.dif_peso     >= 0 ? '+' : '';
@@ -2103,10 +2105,13 @@ function ddFilterDrilldown(year) {
 
 function ddToggleSortDif(year) {
   if (!state.ddFilters[year]) state.ddFilters[year] = { cod: '', desc: '', sortByDif: false };
-  state.ddFilters[year].sortByDif = !state.ddFilters[year].sortByDif;
+  const cur = state.ddFilters[year].sortByDif;
+  state.ddFilters[year].sortByDif = cur === false || cur === '' ? 'desc' : cur === 'desc' ? 'asc' : false;
+  const next = state.ddFilters[year].sortByDif;
   const btn = document.getElementById(`dd-${year}-sort-btn`);
-  if (btn) btn.textContent = state.ddFilters[year].sortByDif
-    ? '⬇ DIFERENCIA (mayor → menor)' : '⬆⬇ Ordenar por DIFERENCIA';
+  if (btn) btn.textContent = next === 'desc' ? '⬇ DIFERENCIA (mayor → menor)'
+                           : next === 'asc'  ? '⬆ DIFERENCIA (menor → mayor)'
+                           :                   '⬆⬇ Ordenar por DIFERENCIA';
   renderDrilldown(year, getFilteredData(year));
 }
 
