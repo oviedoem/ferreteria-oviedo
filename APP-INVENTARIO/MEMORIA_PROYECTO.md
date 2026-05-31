@@ -44,7 +44,7 @@ Antes de terminar cualquier sesión donde se hayan modificado archivos:
 2. Actualizar `MEMORIA_PROYECTO.md` con los cambios de la sesión
 3. Ejecutar el sync a GitHub:
    ```
-   D:\ferreteria-oviedo\ACTUALIZAR_GITHUB_APP_INVENTARIO.bat
+   D:\ferreteria-oviedo\APP-INVENTARIO\ACTUALIZAR_GITHUB_APP_INVENTARIO.bat
    ```
 4. Confirmar el commit exitoso antes de cerrar
 

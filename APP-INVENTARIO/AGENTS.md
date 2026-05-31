@@ -125,7 +125,7 @@ Antes de terminar cualquier sesión con cambios:
 
 2. Ejecutar sync a GitHub:
    ```
-   D:\ferreteria-oviedo\ACTUALIZAR_GITHUB_APP_INVENTARIO.bat
+   D:\ferreteria-oviedo\APP-INVENTARIO\ACTUALIZAR_GITHUB_APP_INVENTARIO.bat
    ```
 
 3. Confirmar que el commit fue exitoso (aparece hash y "subido a GitHub").
