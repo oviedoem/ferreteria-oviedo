@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Aereostar — Dashboard de Rendimiento Google Ads</title>
+  <meta name="description" content="Demo dashboard — Transfer Aeropuerto Santiago. Datos públicos y simulados.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ── DEMO BANNER ── -->
+<div class="demo-banner">
+  ⚠️ DEMO COMERCIAL — Datos públicos + simulados. No conecta a Google Ads real ni a cuentas de Aereostar.
+  &nbsp;|&nbsp; <a href="https://aereostar.cl" target="_blank" rel="noopener">Ver sitio real →</a>
+</div>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="container header-inner">
+    <a class="header-logo" href="#" aria-label="Aereostar Dashboard">
+      <div class="logo-icon">✈️</div>
+      <div class="logo-text">
+        <div class="logo-name">Aereostar</div>
+        <div class="logo-sub">Transfer Aeropuerto · Dashboard</div>
+      </div>
+    </a>
+    <div class="header-spacer"></div>
+    <div class="header-period">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      1–31 Mayo 2026
+    </div>
+    <span class="demo-pill">DEMO</span>
+    <a class="header-link" href="https://aereostar.cl" target="_blank" rel="noopener">
+      Sitio web
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </a>
+  </div>
+</header>
+
+<!-- ── TAB NAV ── -->
+<nav class="tab-nav" role="navigation" aria-label="Secciones del dashboard">
+  <div class="tab-list">
+    <button class="tab-btn active" data-tab="resumen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Resumen
+    </button>
+    <button class="tab-btn" data-tab="leads">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Leads
+    </button>
+    <button class="tab-btn" data-tab="recomendaciones">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Recomendaciones
+    </button>
+    <button class="tab-btn" data-tab="auditoria">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Auditoría
+    </button>
+    <button class="tab-btn" data-tab="como-funciona">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Cómo funcionará
+    </button>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main class="main">
+  <div class="container">
+
+    <!-- ───────────────── TAB: RESUMEN ───────────────── -->
+    <section id="tab-resumen" class="tab-section active">
+
+      <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+        <h2 class="section-title">Rendimiento Mayo 2026</h2>
+        <span style="font-size:11px; color:var(--text-sm);" id="update-ts">Actualizado hace 2 min</span>
+      </div>
+      <p class="section-sub">Métricas reales de Google Ads (clics e impresiones) + datos simulados de leads y clientes.</p>
+
+      <div id="kpi-grid" class="kpi-grid"></div>
+
+      <!-- Funnel -->
+      <div class="funnel-card">
+        <div class="funnel-header">
+          <div>
+            <h3 style="font-size:16px; font-weight:700; color:var(--text); margin-bottom:4px;">Embudo de conversión</h3>
+            <p style="font-size:12px; color:var(--text-sm);">Del anuncio en Google al cliente que paga su transfer</p>
+          </div>
+          <div class="funnel-totals">
+            <div class="funnel-total-item">
+              <span class="funnel-total-val" style="color:var(--blue)">8.76%</span>
+              <span class="funnel-total-lbl">CTR (excelente)</span>
+            </div>
+            <div class="funnel-total-item">
+              <span class="funnel-total-val" style="color:var(--green)">21.95%</span>
+              <span class="funnel-total-lbl">Tasa cierre</span>
+            </div>
+          </div>
+        </div>
+        <div id="funnel-container"></div>
+      </div>
+
+    </section>
+
+    <!-- ───────────────── TAB: LEADS ───────────────── -->
+    <section id="tab-leads" class="tab-section">
+
+      <h2 class="section-title mb-4">Gestión de Leads</h2>
+      <p class="section-sub">15 leads simulados para el período. En producción, se conectaría en tiempo real.</p>
+
+      <div class="leads-toolbar">
+        <div class="leads-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="lead-search" placeholder="Buscar por nombre, origen o destino…" autocomplete="off">
+        </div>
+        <div class="leads-filters">
+          <button class="filter-btn active" data-filter="all">Todos</button>
+          <button class="filter-btn" data-filter="nuevo">Nuevos</button>
+          <button class="filter-btn" data-filter="contactado">Contactados</button>
+          <button class="filter-btn" data-filter="cotizado">Cotizados</button>
+          <button class="filter-btn" data-filter="cliente_real">Clientes</button>
+          <button class="filter-btn" data-filter="perdido">Perdidos</button>
+        </div>
+      </div>
+
+      <div id="leads-count-pills" class="leads-counts"></div>
+
+      <div id="leads-container"></div>
+
+    </section>
+
+    <!-- ───────────────── TAB: RECOMENDACIONES ───────────────── -->
+    <section id="tab-recomendaciones" class="tab-section">
+
+      <h2 class="section-title mb-4">Recomendaciones automáticas</h2>
+      <p class="section-sub">Basadas en el análisis de tus métricas actuales de Google Ads y la auditoría del sitio web.</p>
+
+      <div id="rec-grid" class="rec-grid"></div>
+
+    </section>
+
+    <!-- ───────────────── TAB: AUDITORÍA ───────────────── -->
+    <section id="tab-auditoria" class="tab-section">
+
+      <h2 class="section-title mb-4">Auditoría visual — aereostar.cl</h2>
+      <p class="section-sub">Evaluación manual de la landing actual. Datos aproximados para fines de demostración.</p>
+
+      <div class="audit-layout">
+        <div id="audit-score-card" class="audit-score-card card"></div>
+        <div id="audit-list-card"  class="audit-list-card"></div>
+      </div>
+
+      <!-- Visual audit note -->
+      <div class="card mt-16" style="padding:20px;">
+        <h3 style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:8px;">💡 ¿Qué significa este score?</h3>
+        <p style="font-size:13px; color:var(--text-md); line-height:1.7;">
+          Un score de <strong>62/100</strong> es típico de sitios que tienen buena presencia digital pero sin optimización para publicidad pagada.
+          Con los cambios recomendados (landing dedicada, WhatsApp visible, precios transparentes y tracking instalado),
+          el score puede subir a <strong>85+</strong> y eso se traduce directamente en más leads sin aumentar el presupuesto publicitario.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- ───────────────── TAB: CÓMO FUNCIONA ───────────────── -->
+    <section id="tab-como-funciona" class="tab-section">
+
+      <h2 class="section-title mb-4">Así funcionará en real</h2>
+      <p class="section-sub">El flujo completo desde el anuncio en Google hasta el cliente que paga su transfer al aeropuerto.</p>
+
+      <div class="flow-section mb-24">
+        <div id="flow-container"></div>
+      </div>
+
+      <!-- What we will connect -->
+      <div class="card mb-16" style="padding:24px;">
+        <h3 style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:16px;">🔌 Lo que se conectará en producción</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+          <div style="padding:16px; background:var(--blue-lt); border-radius:var(--radius-sm); border:1px solid #bfdbfe;">
+            <div style="font-size:20px; margin-bottom:8px;">📊</div>
+            <div style="font-weight:700; font-size:13px; color:var(--blue); margin-bottom:4px;">Google Ads API</div>
+            <div style="font-size:12px; color:var(--text-sm);">Clics, impresiones, CTR y gasto en tiempo real. Se actualiza cada hora.</div>
+          </div>
+          <div style="padding:16px; background:var(--green-lt); border-radius:var(--radius-sm); border:1px solid #bbf7d0;">
+            <div style="font-size:20px; margin-bottom:8px;">📩</div>
+            <div style="font-weight:700; font-size:13px; color:var(--green); margin-bottom:4px;">Formulario web + Firebase</div>
+            <div style="font-size:12px; color:var(--text-sm);">Cada cotización del sitio crea un lead en tiempo real con alerta por WhatsApp.</div>
+          </div>
+          <div style="padding:16px; background:#f5f3ff; border-radius:var(--radius-sm); border:1px solid #ddd6fe;">
+            <div style="font-size:20px; margin-bottom:8px;">💬</div>
+            <div style="font-weight:700; font-size:13px; color:var(--purple); margin-bottom:4px;">WhatsApp Business API</div>
+            <div style="font-size:12px; color:var(--text-sm);">Mensajes entrantes convertidos en leads automáticamente con etiquetas.</div>
+          </div>
+          <div style="padding:16px; background:var(--amber-lt); border-radius:var(--radius-sm); border:1px solid #fde68a;">
+            <div style="font-size:20px; margin-bottom:8px;">🏆</div>
+            <div style="font-weight:700; font-size:13px; color:var(--amber); margin-bottom:4px;">CRM de clientes</div>
+            <div style="font-size:12px; color:var(--text-sm);">Historial, seguimiento, facturación y cliente recurrente gestionado desde el panel.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); padding:16px; font-size:12px; color:#92400e; line-height:1.6;">
+        <strong>⚠️ Nota sobre esta demo:</strong>
+        Los datos de clics (2.740) e impresiones (31.700) son datos reales obtenidos manualmente de Google Ads.
+        Los leads, clientes y demás métricas son simulados para ilustrar el potencial del sistema.
+        No se ha realizado ningún cambio en la cuenta publicitaria real ni en el sitio web de Aereostar.
+      </div>
+
+    </section>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="footer-brand">✈️ Aereostar — Transfer Aeropuerto Santiago</div>
+      <div class="footer-note">Demo con datos públicos y simulados · No conecta a cuentas reales</div>
+    </div>
+    <div style="text-align:right;">
+      <a class="footer-link" href="https://aereostar.cl" target="_blank" rel="noopener">aereostar.cl</a><br>
+      <span style="font-size:11px; color:#475569;">+56 9 3779 3527</span>
+    </div>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
