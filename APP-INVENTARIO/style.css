@@ -2044,6 +2044,12 @@ select.embudo-select:disabled { opacity: .45; cursor: default; }
   display: none;
 }
 .reg-resumen-cod.visible { display: block; }
+.btn-reg-limpiar {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+.btn-reg-limpiar:hover { background: #fecaca; }
 
 /* Encabezado azul Excel en tabla Registros */
 #registros-2026-section .data-table th {

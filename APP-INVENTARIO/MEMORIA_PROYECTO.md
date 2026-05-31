@@ -313,6 +313,60 @@ exportRecountExcel()               // V4.1: Excel 2 hojas: Reconteo + Ranking_$
 
 ## HISTORIAL DE CAMBIOS
 
+### V7.12 — 2026-05-30
+
+**Feature — REGISTROS 2026: consultas acumuladas + export del visible**
+
+#### Archivos tocados
+`app.js` · `index.html` · `style.css`
+
+#### Nuevo campo en `state`
+- `state.registros2026Queries: []` — array de consultas acumuladas `{ type: 'cod'|'desc', value: string, ts: number }`. Se inicializa en `state` (L12) y se limpia en `clearAllData()` y `clearAllApp()`.
+
+#### Funciones nuevas
+- `regAddQuery(type, inputEl)` — push de consulta al acumulador (moviendo duplicados al final), limpia el input, llama `renderRegistros2026()`.
+- `regLimpiarConsultas()` — vacía `state.registros2026Queries`, limpia inputs cod/desc, llama `renderRegistros2026()`.
+
+#### Funciones modificadas
+- `renderRegistros2026()` — reescrita para renderizar secciones acumuladas:
+  - Sin consultas → mensaje vacío amigable en la tabla.
+  - Con consultas → por cada query: `<thead>` + `<tbody>` filtrado. Separador visual entre secciones (`<tbody><tr><td height:18px></td></tr></tbody>`).
+  - Filtro PATENTE (`#reg-filter-patente`) sigue siendo transversal a todas las secciones.
+  - Resumen `#reg-resumen-cod` visible solo cuando hay exactamente 1 query de tipo `cod`.
+  - Botón `#reg-btn-limpiar` visible/oculto según `queries.length`.
+- `exportRegistros2026Excel()` — reescrita para exportar el visible:
+  - Guard: sin consultas → toast error y return.
+  - Aplica mismo filtro que el render (query + patente + showDif) por sección.
+  - Fila vacía `Array(cols.length).fill('')` como separador entre secciones en Excel.
+  - Sin headers repetidos en Excel (minimalista).
+- `clearAllData()` — agrega `state.registros2026Queries = [];`.
+- `clearAllApp()` — agrega `state.registros2026Queries = [];`.
+
+#### Cambios en index.html
+- `#reg-search-cod`: eliminado `oninput="renderRegistros2026()"` → agregado `onkeydown="if(event.key==='Enter') regAddQuery('cod', this)"`. Placeholder actualizado.
+- `#reg-search-desc`: mismo cambio. Placeholder actualizado.
+- Botón `#reg-btn-limpiar` agregado en `.registros-actions` (estilo rojo suave, `display:none` inicial).
+
+#### Cambios en style.css
+- `.btn-reg-limpiar` — botón rojo suave (`#fee2e2 / #b91c1c`) con hover.
+
+#### Funciones NO tocadas
+`parseFile()` · `normalizeRow()` · `state.data2026` · `state.data2025` · `state.registros2026` (forma) · `difMap` / cálculo DIFERENCIA $ · filtro PATENTE (oninput conservado) · `renderMode()` · `getFilteredData()` · `renderEmbudo()` · `renderPlanos()` · `const PLANO_SHEETS` · `applyPatenteCellStates()` · `renderPlanoZonaProgress()` · `saveDataToIDB()` · `loadDataFromIDB()` · `restoreSession()` · `exportFinalExcel()` · `exportDrilldownTable()` · `exportRecountExcel()`
+
+#### Smoke test V7.12
+```
+[✓] node --check app.js                                        → OK
+[✓] grep -c "const PLANO_SHEETS"      app.js                   → 1
+[✓] grep -c "function renderRegistros2026"   app.js            → 1
+[✓] grep -c "function exportRegistros2026Excel" app.js         → 1
+[✓] grep -c "registros2026Queries"    app.js                   → 9 (≥ 3 ✓)
+[✓] grep -c "regAddQuery"             app.js + index.html      → 1 + 2 = 3 (≥ 3 ✓)
+[✓] index.html: botón "🗑 Limpiar consultas" presente en .registros-actions
+[✓] state.data2026 / state.data2025 / state.registros2026: forma no modificada
+```
+
+---
+
 ### V7.11 — 2026-05-30
 
 **Rediseño Análisis 2026 + Informe REGISTROS + Botón Limpiar**

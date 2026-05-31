@@ -230,12 +230,13 @@
             <label class="registros-check-lbl">
               <input type="checkbox" id="reg-show-dif" onchange="renderRegistros2026()"> Mostrar DIFERENCIA $
             </label>
+            <button id="reg-btn-limpiar" class="btn btn-xs btn-reg-limpiar" style="display:none" onclick="regLimpiarConsultas()">🗑 Limpiar consultas</button>
             <button class="btn btn-xs" onclick="exportRegistros2026Excel()">↓ Exportar a Excel</button>
           </div>
         </div>
         <div class="registros-filters">
-          <input type="text" id="reg-search-cod"     class="dd-filter-input" placeholder="Buscar por CODIGO…"                    oninput="renderRegistros2026()">
-          <input type="text" id="reg-search-desc"    class="dd-filter-input" placeholder="Buscar por PRODUCTOS (descripción)…"   oninput="renderRegistros2026()">
+          <input type="text" id="reg-search-cod"     class="dd-filter-input" placeholder="Código… (Enter para agregar)"       onkeydown="if(event.key==='Enter') regAddQuery('cod', this)">
+          <input type="text" id="reg-search-desc"    class="dd-filter-input" placeholder="Descripción… (Enter para agregar)"  onkeydown="if(event.key==='Enter') regAddQuery('desc', this)">
           <input type="text" id="reg-filter-patente" class="dd-filter-input reg-patente-input" placeholder="Filtrar PATENTE (ej: 2)" oninput="renderRegistros2026()">
         </div>
         <div id="reg-resumen-cod" class="reg-resumen-cod"></div>

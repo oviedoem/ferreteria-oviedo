@@ -9,7 +9,8 @@ const DEBUG = false;
 const state = {
   data2025: [],
   data2026: [],
-  registros2026: [],   // rows crudos de la hoja REGISTROS del Excel 2026
+  registros2026: [],        // rows crudos de la hoja REGISTROS del Excel 2026
+  registros2026Queries: [], // consultas acumuladas para el render por secciones (V7.12)
   charts: {},
   sortState: {},
   pendingLoad: null,
@@ -970,6 +971,25 @@ function updateSidebarStatus(year, extra) {
 }
 
 // ── REGISTROS 2026 ─────────────────────────────────────────────
+function regAddQuery(type, inputEl) {
+  const val = (inputEl.value || '').trim();
+  if (!val) return;
+  const idx = state.registros2026Queries.findIndex(q => q.type === type && q.value === val);
+  if (idx !== -1) state.registros2026Queries.splice(idx, 1);
+  state.registros2026Queries.push({ type, value: val, ts: Date.now() });
+  inputEl.value = '';
+  renderRegistros2026();
+}
+
+function regLimpiarConsultas() {
+  state.registros2026Queries = [];
+  const cod  = document.getElementById('reg-search-cod');
+  const desc = document.getElementById('reg-search-desc');
+  if (cod)  cod.value  = '';
+  if (desc) desc.value = '';
+  renderRegistros2026();
+}
+
 function renderRegistros2026() {
   const section = document.getElementById('registros-2026-section');
   if (!section) return;
@@ -977,32 +997,15 @@ function renderRegistros2026() {
   if (!rows.length) { section.style.display = 'none'; return; }
   section.style.display = '';
 
-  const codQ     = (document.getElementById('reg-search-cod')?.value      || '').toLowerCase();
-  const descQ    = (document.getElementById('reg-search-desc')?.value     || '').toLowerCase();
-  const patenteQ = (document.getElementById('reg-filter-patente')?.value  || '').trim();
+  const queries  = state.registros2026Queries;
+  const patenteQ = (document.getElementById('reg-filter-patente')?.value || '').trim();
   const showDif  = document.getElementById('reg-show-dif')?.checked;
 
-  let filtered = rows;
-  if (codQ)     filtered = filtered.filter(r => String(r.CODIGO    || r.Codigo    || r.codigo    || '').toLowerCase().includes(codQ));
-  if (descQ)    filtered = filtered.filter(r => String(r.PRODUCTOS || r.Productos || r.productos || '').toLowerCase().includes(descQ));
-  if (patenteQ) filtered = filtered.filter(r => String(r.PATENTE   || r.Patente   || r.patente   || '') === patenteQ);
+  // Botón limpiar: visible solo cuando hay consultas acumuladas
+  const btnLimpiar = document.getElementById('reg-btn-limpiar');
+  if (btnLimpiar) btnLimpiar.style.display = queries.length > 0 ? '' : 'none';
 
-  // Resumen por código cuando hay búsqueda de código exacto
-  const resEl = document.getElementById('reg-resumen-cod');
-  if (resEl) {
-    if (codQ && filtered.length) {
-      const patentes = new Set(filtered.map(r => String(r.PATENTE || r.Patente || '')));
-      const areas    = new Set(filtered.map(r => String(r.AREA || r.Area || '')));
-      const totalConteo = filtered.reduce((s, r) => s + (Number(r.CONTEO || r.Conteo || 0) || 0), 0);
-      resEl.textContent = `Código "${codQ.toUpperCase()}" — contado en ${patentes.size} patentes / ${areas.size} áreas / total CONTEO = ${totalConteo} uds`;
-      resEl.classList.add('visible');
-    } else {
-      resEl.textContent = '';
-      resEl.classList.remove('visible');
-    }
-  }
-
-  // Lookup DIFERENCIA $ (dif_peso) desde TABLA_ANALISIS por código — un valor por código
+  // Lookup DIFERENCIA $ desde TABLA_ANALISIS
   const difMap = {};
   for (const row of (state.data2026 || [])) {
     const cod = String(row.codigo || '').trim().toUpperCase();
@@ -1011,52 +1014,115 @@ function renderRegistros2026() {
 
   const cols = ['FOLIO','CODIGO','PRODUCTOS','AREA','PATENTE','CONTEO','CONTO','INVENTARIADOR','FECHA'];
   if (showDif) cols.push('DIFERENCIA $');
-
-  const thead = `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>`;
-  const tbody = filtered.map(r => {
-    const cells = cols.map(c => {
-      if (c === 'DIFERENCIA $') {
-        const cod = String(r.CODIGO || r.Codigo || r.codigo || '').trim().toUpperCase();
-        const dif = cod in difMap ? difMap[cod] : null;
-        if (dif === null) return `<td class="num">—</td>`;
-        const cls = dif < 0 ? 'loss-cell' : dif > 0 ? 'gain-cell' : '';
-        return `<td class="num ${cls}">${fmtMoney(dif)}</td>`;
-      }
-      const keys = [c, c.toLowerCase(), c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()];
-      const val  = keys.reduce((v, k) => v !== undefined ? v : r[k], undefined) ?? '';
-      return `<td>${val}</td>`;
-    }).join('');
-    return `<tr>${cells}</tr>`;
-  }).join('');
+  const N = cols.length;
 
   const table = document.getElementById('registros-2026-table');
-  if (table) table.innerHTML = thead + `<tbody>${tbody}</tbody>`;
+  if (!table) return;
+
+  // Sin consultas → mensaje vacío
+  if (!queries.length) {
+    table.innerHTML = `<tbody><tr><td colspan="${N}" style="text-align:center;color:#64748b;padding:24px">Escribe un código o descripción y presiona Enter para agregar una consulta.</td></tr></tbody>`;
+    const resEl = document.getElementById('reg-resumen-cod');
+    if (resEl) { resEl.textContent = ''; resEl.classList.remove('visible'); }
+    return;
+  }
+
+  function _filterSection(q) {
+    let f = rows;
+    if (q.type === 'cod')  f = f.filter(r => String(r.CODIGO    || r.Codigo    || r.codigo    || '').toLowerCase().includes(q.value.toLowerCase()));
+    else                   f = f.filter(r => String(r.PRODUCTOS || r.Productos || r.productos || '').toLowerCase().includes(q.value.toLowerCase()));
+    if (patenteQ) f = f.filter(r => String(r.PATENTE || r.Patente || r.patente || '') === patenteQ);
+    return f;
+  }
+
+  function _buildRows(filtered) {
+    return filtered.map(r => {
+      const cells = cols.map(c => {
+        if (c === 'DIFERENCIA $') {
+          const cod = String(r.CODIGO || r.Codigo || r.codigo || '').trim().toUpperCase();
+          const dif = cod in difMap ? difMap[cod] : null;
+          if (dif === null) return `<td class="num">—</td>`;
+          const cls = dif < 0 ? 'loss-cell' : dif > 0 ? 'gain-cell' : '';
+          return `<td class="num ${cls}">${fmtMoney(dif)}</td>`;
+        }
+        const keys = [c, c.toLowerCase(), c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()];
+        const val  = keys.reduce((v, k) => v !== undefined ? v : r[k], undefined) ?? '';
+        return `<td>${val}</td>`;
+      }).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+  }
+
+  const theadHtml = `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>`;
+  const SEP = `<tbody><tr><td colspan="${N}" style="height:18px;border:none;background:transparent"></td></tr></tbody>`;
+
+  let html = '';
+  queries.forEach((q, qi) => {
+    if (qi > 0) html += SEP;
+    html += theadHtml + `<tbody>${_buildRows(_filterSection(q))}</tbody>`;
+  });
+  table.innerHTML = html;
+
+  // Resumen: solo cuando hay exactamente 1 query de tipo cod
+  const resEl = document.getElementById('reg-resumen-cod');
+  if (resEl) {
+    if (queries.length === 1 && queries[0].type === 'cod') {
+      const filtered = _filterSection(queries[0]);
+      if (filtered.length) {
+        const patentes    = new Set(filtered.map(r => String(r.PATENTE || r.Patente || '')));
+        const areas       = new Set(filtered.map(r => String(r.AREA    || r.Area    || '')));
+        const totalConteo = filtered.reduce((s, r) => s + (Number(r.CONTEO || r.Conteo || 0) || 0), 0);
+        resEl.textContent = `Código "${queries[0].value.toUpperCase()}" — contado en ${patentes.size} patentes / ${areas.size} áreas / total CONTEO = ${totalConteo} uds`;
+        resEl.classList.add('visible');
+      } else {
+        resEl.textContent = ''; resEl.classList.remove('visible');
+      }
+    } else {
+      resEl.textContent = ''; resEl.classList.remove('visible');
+    }
+  }
 }
 
 function exportRegistros2026Excel() {
+  const queries = state.registros2026Queries;
+  if (!queries.length) { showToast('Agrega al menos una consulta antes de exportar.', 'error'); return; }
+
   const rows = state.registros2026 || [];
   if (!rows.length) { showToast('Sin datos de REGISTROS para exportar.', 'error'); return; }
 
-  const showDif = document.getElementById('reg-show-dif')?.checked;
+  const showDif  = document.getElementById('reg-show-dif')?.checked;
+  const patenteQ = (document.getElementById('reg-filter-patente')?.value || '').trim();
   const cols = ['FOLIO','CODIGO','PRODUCTOS','AREA','PATENTE','CONTEO','CONTO','INVENTARIADOR','FECHA'];
   if (showDif) cols.push('DIFERENCIA $');
 
-  // Mismo lookup desde TABLA_ANALISIS para el export
   const difMapExp = {};
   for (const row of (state.data2026 || [])) {
     const cod = String(row.codigo || '').trim().toUpperCase();
     if (cod && !(cod in difMapExp)) difMapExp[cod] = row.dif_peso ?? 0;
   }
 
-  const header = cols;
-  const data   = [header, ...rows.map(r => cols.map(c => {
+  function _getVal(r, c) {
     if (c === 'DIFERENCIA $') {
       const cod = String(r.CODIGO || r.Codigo || r.codigo || '').trim().toUpperCase();
       return cod in difMapExp ? difMapExp[cod] : '';
     }
     const keys = [c, c.toLowerCase(), c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()];
     return keys.reduce((v, k) => v !== undefined ? v : r[k], undefined) ?? '';
-  }))];
+  }
+
+  function _filterQ(q) {
+    let f = rows;
+    if (q.type === 'cod')  f = f.filter(r => String(r.CODIGO    || r.Codigo    || r.codigo    || '').toLowerCase().includes(q.value.toLowerCase()));
+    else                   f = f.filter(r => String(r.PRODUCTOS || r.Productos || r.productos || '').toLowerCase().includes(q.value.toLowerCase()));
+    if (patenteQ) f = f.filter(r => String(r.PATENTE || r.Patente || r.patente || '') === patenteQ);
+    return f;
+  }
+
+  const data = [cols];
+  queries.forEach((q, qi) => {
+    if (qi > 0) data.push(Array(cols.length).fill(''));
+    _filterQ(q).forEach(r => data.push(cols.map(c => _getVal(r, c))));
+  });
 
   const ws = XLSX.utils.aoa_to_sheet(data);
   const HDR = { font: { bold: true, color: { rgb: 'FFFFFFFF' } }, fill: { fgColor: { rgb: 'FF1E40AF' }, patternType: 'solid' }, alignment: { horizontal: 'center' }, border: { top:{style:'thin',color:{rgb:'FF000000'}}, bottom:{style:'thin',color:{rgb:'FF000000'}}, left:{style:'thin',color:{rgb:'FF000000'}}, right:{style:'thin',color:{rgb:'FF000000'}} } };
@@ -1088,6 +1154,7 @@ function clearAllData() {
   state.data2025 = [];
   state.data2026 = [];
   state.registros2026 = [];
+  state.registros2026Queries = [];
   state.sortState = {};
   state.filters['2025']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
   state.filters['2026']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
@@ -1132,6 +1199,7 @@ function clearAllApp() {
   state.data2025 = [];
   state.data2026 = [];
   state.registros2026 = [];
+  state.registros2026Queries = [];
   state.sortState = {};
   state.filters['2025']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
   state.filters['2026']      = { bodega:'', marca:'', familia:'', perfamilia:'', zona:'', area:'', patente:'' };
