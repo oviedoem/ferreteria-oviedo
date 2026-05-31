@@ -405,6 +405,27 @@ Campos a verificar: `STOCK SISTEMA` · `CONTEO` · `VALOR SISTEMA $` · `DIFEREN
 
 ---
 
+### V7.11 — 2026-05-30
+
+**Doc — Reclasificación sección PENDIENTE según operación real**
+
+Revisión del proyecto detectó que la sección `## PENDIENTE` mezclaba deuda técnica con flujo operativo:
+
+- "Test end-to-end con archivos reales" → no es pendiente: la app **está corriendo en producción** con `state.data2026` cargado en vivo mientras el operador llena el XLSX `ANALISIS_EL MANZANO-V2026.xlsx`.
+- "Carga de 2025 + verificación de comparativa / `renderCompCategoria` / embudo con datos reales" → **diseño operativo**: 2025 entra recién cuando el XLSX 2026 cierre. No es deuda.
+- "TAREA 5A — verificar 5 códigos" → mismo motivo: espera cierre del XLSX, no falta código.
+- "Probar 📂 Actualizar Plano con XLSX real" → **ya probado en producción**, funciona. Movido a "Verificado".
+
+**Cambios en MEMORIA_PROYECTO.md:**
+- Nueva sección `## ESTADO OPERATIVO ACTUAL` documenta el caso de uso vivo (solo 2026 cargado, monitoreo de avance).
+- Sub-sección "Diseño operativo (NO es deuda técnica)" separa lo que espera al XLSX.
+- Sub-sección "Pendiente real (deuda técnica)" queda con 2 ítems: confirmar 465 patentes contra plano real cuando cierre + `exportChecklistExcel`/`exportPlanosExcel` (sub-tarea V4.0).
+- Sub-sección "Verificado en producción" registra "Actualizar Plano" + avance por patente.
+
+**NO TOCADO:** `app.js`, `style.css`, `index.html`, `AGENTS.md`, ninguna otra sección de MEMORIA.
+
+---
+
 ### V7.10 — 2026-05-29
 
 **Fix crítico — `const PLANO_SHEETS` borrado por `actualizar_planos.js`**
@@ -1326,14 +1347,30 @@ Sesión anterior quedó incompleta en el cierre (push pendiente). Auditoría con
 
 ---
 
-## PENDIENTE
+## ESTADO OPERATIVO ACTUAL (2026-05-30)
 
-- [ ] TAREA 5A — Verificar consistencia 5 códigos Excel↔App con archivo real `ANALISIS_EL MANZANO-V2026.xlsx` (requiere operador con el archivo)
-- [ ] Test end-to-end con archivos REALES de producción (los ejemplos son datos sintéticos)
-- [ ] Confirmar planos hardcodeados con archivo real: 465 patentes (Sala EXHIBICION=55, BODEGA SALA=211, BODEGA 2DO PISO SALA=100, PATIO CONSTRUCTOR=99)
-- [ ] Verificar embudo con datos reales (selects populados correctamente)
-- [ ] Verificar renderCompCategoria con datos reales (delta colors)
-- [ ] Probar botón "📂 Actualizar Plano" con archivo Excel 2027 real cuando esté disponible
+**Inventario 2026 EN CURSO — XLSX en llenado por el operador.**
+
+La app se usa hoy en producción para **monitorear el avance del conteo 2026**:
+- Solo `state.data2026` está cargado (decisión deliberada del operador).
+- `state.data2025` se carga **recién cuando el XLSX 2026 esté completo** → habilita comparativa y reportes finales.
+- La vista de progreso por patente / hoja / cobertura es el caso de uso activo.
+
+### Diseño operativo (NO es deuda técnica — esperan cierre del XLSX 2026)
+
+- Carga de `data2025` y vista comparativa 2025 vs 2026.
+- TAREA 5A — Verificación de 5 códigos Excel↔App (`STOCK SISTEMA`, `CONTEO`, `VALOR SISTEMA $`, `DIFERENCIA`, `DIFERENCIA $`).
+- Validación end-to-end con dataset 2025+2026 completo (embudo, `renderCompCategoria`, delta colors, drill comparativo).
+
+### Pendiente real (deuda técnica)
+
+- [ ] Confirmar planos hardcodeados contra el plano del XLSX 2026 cuando cierre: 465 patentes (Sala EXHIBICION=55, BODEGA SALA=211, BODEGA 2DO PISO SALA=100, PATIO CONSTRUCTOR=99).
+- [ ] `exportChecklistExcel` / `exportPlanosExcel` con formato espejo del Excel modelo (sub-tarea V4.0 sin terminar).
+
+### Verificado en producción
+
+- ✅ **"📂 Actualizar Plano"** probado con XLSX real — funciona.
+- ✅ Avance por patente operativo con `state.data2026` cargado en vivo.
 
 **Estado funcional confirmado (V6.0 — 2026-05-29):**
 - ✅ Cargar 2025/2026: status verde + gráficos + KPIs + banner EN CURSO
