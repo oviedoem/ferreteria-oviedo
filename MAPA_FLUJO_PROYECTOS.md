@@ -1,5 +1,6 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + dependencias C: · 2026-06-02
+# Última actualización: 2026-06-02 — Mapa 8 agregado (seguridad GitHub)
 
 ---
 
@@ -332,6 +333,47 @@ Operador (contador de inventario)
 
 ---
 
+## MAPA 8 — FLUJO GIT-SYNC: LO QUE VA A GITHUB vs LO QUE QUEDA LOCAL
+
+```
+E:\ferreteria-oviedo\  (proyecto completo — con datos reales)
+         │
+         │  ACTUALIZAR_GITHUB.bat
+         │  robocopy — copia solo archivos permitidos
+         ▼
+E:\git-sync\  (espejo sanitizado para GitHub)
+         │
+         │  Archivos que SÍ pasan:
+         │  ├── panel-admin.html, panel-cliente.html, index.html
+         │  ├── firebase.json, firestore.rules, storage.rules
+         │  ├── sw.js, update-sw-version.js, firebase-config.js
+         │  ├── manifest*.json
+         │  └── AGENTS.md*, MEMORY.md*, ESTADO_PROYECTO.md*
+         │      MAPA_FLUJO_PROYECTOS.md*, RESUMEN_TECNICO_MIGRACION_E.md
+         │      (* IPs/tokens reemplazados por placeholders al publicar)
+         │
+         │  Archivos que NO pasan (.gitignore los bloquea):
+         │  ├── VENTAS EL MANZANO/  ← xTokens ERP en scripts .py
+         │  ├── CATALOGO PRODUCTOS/ ← IPs y tokens ERP
+         │  ├── FLUJOS/             ← docs históricos con credenciales
+         │  ├── .claude/            ← archivos internos Claude
+         │  ├── *.py  *.bat  *.ini  ← scripts y credenciales
+         │  └── data/*.json         ← datos de ventas/stock
+         │
+         │  git add + commit + push
+         ▼
+github.com/oviedoem/ferreteria-oviedo  (PÚBLICO — 25 archivos limpios)
+         │
+         │  1 commit en historial (reseteado 2026-06-02)
+         │  Ninguna IP real, ningún token, ningún script Python
+         ▼
+         Backup historial viejo (solo local, nunca en GitHub):
+         E:\git-sync-historial-backup-20260602\
+         ferreteria-oviedo-git-history.git  (16.9 MB, bare clone)
+```
+
+---
+
 ## RESUMEN DE RUTAS CLAVE
 
 ```
@@ -349,7 +391,8 @@ HERRAMIENTAS (E:):
   E:\omnara\                      IDE Omnara completo
   E:\npm-global\                  Firebase CLI + node_modules
   E:\config\gcm-store\            Credenciales git
-  E:\git-sync\                    Copia solo-git del proyecto
+  E:\git-sync\                    Copia sanitizada para GitHub
+  E:\git-sync-historial-backup-20260602\  Historial viejo (solo backup)
 
 HERRAMIENTAS (C: — dependencias críticas):
   C:\Python314\                   Intérprete + packages

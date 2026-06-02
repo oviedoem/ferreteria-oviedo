@@ -1,6 +1,6 @@
 # RESUMEN TÉCNICO — MIGRACIÓN A DISCO E:
 # Ferretería Oviedo · Sistema completo
-# Fecha: 2026-06-02
+# Fecha: 2026-06-02 · Última actualización: 2026-06-02 (seguridad GitHub)
 
 ---
 
@@ -47,6 +47,10 @@
 | Historial Claude (D: proyecto) | `C:\..\.claude\projects\D--ferreteria-oviedo\` | Eliminado | 2026-06-02 |
 | Temp safe-change (D: artifact) | `C:\...\Temp\claude\D--...` | Eliminado | 2026-06-02 |
 | daemon.json | Tenía entrada D:\ferreteria-oviedo | Solo E:\ferreteria-oviedo | 2026-06-02 |
+| GitHub — historial comprometido | Repo público con xTokens ERP e IPs expuestos | Historial reseteado (rama huérfana) + force push | 2026-06-02 |
+| GitHub — IPs y tokens en docs | AGENTS.md, MEMORY.md, FLUJOS/, VENTAS EL MANZANO/ | Sanitizados con placeholders en repo público | 2026-06-02 |
+| GitHub — archivos sensibles tracked | FLUJOS/, CATALOGO PRODUCTOS/, .claude/, descargar_ventas_erp.py | Eliminados del repo, .gitignore reforzado | 2026-06-02 |
+| Historial git viejo (backup) | E:\git-sync historial comprometido | Backup en `E:\git-sync-historial-backup-20260602\` | 2026-06-02 |
 
 ### ⚠️ Pendiente / Inconcluso
 
@@ -141,7 +145,54 @@
 
 ---
 
-## 5. RECOMENDACIONES PARA COMPLETAR LA MIGRACIÓN
+## 5. SEGURIDAD GITHUB — ESTADO ACTUAL (2026-06-02)
+
+### Repo público: github.com/oviedoem/ferreteria-oviedo
+
+| Elemento | Estado antes | Estado ahora |
+|---|---|---|
+| xTokens ERP (`9ca90ab1...`, `943679d1...`, `b91f9f93...`) | Expuestos en FLUJOS/ y .py | Eliminados — no existen en ningún archivo |
+| IP SQL Server (`[SQL-SERVER-IP]`) | En AGENTS.md, MEMORY.md, ESTADO_PROYECTO.md | Reemplazada por `[SQL-SERVER-IP]` |
+| IP ERP JustWeb (`[ERP-SERVER-IP]`) | En FLUJOS/, CATALOGO PRODUCTOS/ | Eliminado (carpetas fuera del repo) |
+| Script descargar_ventas_erp.py | Tracked con tokens hardcoded | Removido del repo |
+| Carpeta FLUJOS/ | Tracked (docs con credenciales históricas) | Bloqueada en .gitignore |
+| Carpeta CATALOGO PRODUCTOS/ | Tracked (scripts con IPs y tokens) | Bloqueada en .gitignore |
+| Carpeta .claude/ | Tracked (archivos internos Claude) | Bloqueada en .gitignore |
+| Historial git | 127 commits con credenciales expuestas | Reseteado — 1 commit limpio (rama huérfana) |
+
+### Qué está en GitHub ahora (25 archivos, sin datos sensibles)
+```
+Panel:    panel-admin.html  panel-cliente.html  index.html
+Firebase: firebase.json  firestore.rules  firestore.indexes.json
+          storage.rules  firebase-config.js  sw.js  update-sw-version.js
+Manifests: manifest.json  manifest-admin.json  manifest-cliente.json
+Docs:     AGENTS.md*  MEMORY.md*  ESTADO_PROYECTO.md*
+          MAPA_FLUJO_PROYECTOS.md*  RESUMEN_TECNICO_MIGRACION_E.md
+Imágenes: FONDO3.jpg  PERSONA.jpg  logo_oviedo.jpg  logo_oviedo_white.jpg
+Config:   .gitignore  .firebaseignore  .firebaserc
+```
+(*) IPs y tokens reemplazados por placeholders `[SQL-SERVER-IP]`, `[ERP-SERVER-IP]`, `[TOKEN-ERP]`
+
+### Backup del historial viejo
+- Ubicación: `E:\git-sync-historial-backup-20260602\ferreteria-oviedo-git-history.git`
+- Tamaño: 16.9 MB (bare clone — solo objetos git, sin working tree)
+- Uso: `git clone E:\git-sync-historial-backup-20260602\ferreteria-oviedo-git-history.git` si se necesita recuperar algo
+
+### .gitignore reforzado — directorios bloqueados permanentemente
+```
+FLUJOS/            ← docs históricos con credenciales
+VENTAS EL MANZANO/ ← scripts Python con xTokens
+CATALOGO PRODUCTOS/ ← scripts con IPs y tokens ERP
+.claude/           ← archivos internos Claude Code
+PANEL ADMIN COMPRAS/ ← proyecto separado
+aereostar-demo/    ← demo sin relación
+docs/              ← históricos
+_HISTORICO*/       ← históricos
+```
+
+---
+
+## 6. RECOMENDACIONES PARA COMPLETAR LA MIGRACIÓN
 
 ### Prioridad alta
 
@@ -180,13 +231,20 @@
 
 ---
 
-## 6. RESUMEN EJECUTIVO
+## 7. RESUMEN EJECUTIVO
 
 ```
-ESTADO ACTUAL:
+ESTADO ACTUAL (2026-06-02):
   E: contiene → 100% del código y datos del proyecto
   E: contiene → Omnara (IDE) + npm global + credenciales git
+  E: contiene → Backup historial git comprometido (solo archivo, no activo)
   C: contiene → Python (crítico) + Node.js (crítico) + Git + Claude Code config
+
+GITHUB (repo público):
+  - Historial limpio: 1 commit sin credenciales ni IPs reales
+  - 25 archivos públicos — ninguno con datos sensibles
+  - IPs y tokens en docs reemplazados por placeholders
+  - .gitignore bloquea permanentemente carpetas con scripts internos
 
 RIESGO PRINCIPAL:
   Si C: falla o se reinstala Windows →
@@ -196,8 +254,10 @@ RIESGO PRINCIPAL:
 
 PROYECTO FUNCIONAL: SÍ — con E: disponible y C: con Python/Node intactos
 RESPALDO SEGURO: E: tiene todos los datos; C: tiene las herramientas de ejecución
+SEGURIDAD GITHUB: ✅ Limpio — ninguna credencial ni IP real expuesta públicamente
 ```
 
 ---
 
-*Generado 2026-06-02 · Actualizar cuando se complete la migración de Python/Node a E:*
+*Generado 2026-06-02 · Actualizado 2026-06-02 tras limpieza de seguridad GitHub*
+*Próxima actualización: cuando se complete migración Python/Node a E:*
