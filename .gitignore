@@ -1,0 +1,39 @@
+# Credenciales y configuracion sensible — NUNCA AL REPO
+*.ini
+*.env
+credenciales*
+SEGURIDAD_CREDENCIALES*
+users_export.json
+serviceAccountKey.json
+serviceAccountKey*.json
+
+# Scripts internos
+*.py
+*.bat
+*.sh
+*.sql
+
+# Datos internos — demasiado grandes y sensibles
+data/*.json
+*.xlsm
+*.xlsb
+*.xlsx
+*.xltm
+*.pptx
+*.mp4
+*.exe
+*.pdf
+
+# Directorios internos — NUNCA AL REPO
+VENTAS EL MANZANO/
+backups/
+.claude/
+_ARCHIVO/
+FLUJOS .MD/
+FLUJOS/
+node_modules/
+CATALOGO PRODUCTOS/
+aereostar-demo/
+docs/
+_HISTORICO*/
+PANEL ADMIN COMPRAS/
