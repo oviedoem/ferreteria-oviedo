@@ -76,27 +76,27 @@ Diagnóstico: consultar `data/informe-stock.json` o Existencias Clasificadas SSR
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
 ```
-Proyecto activo:   D:\ferreteria-oviedo\
-Git sync (solo):   D:\git-sync\  (NO es el proyecto — solo copia para git. D:\ferreteria-oviedo-github NO EXISTE)
-Archivados:        D:\ferreteria-oviedo\_ARCHIVADOS\  (scripts obsoletos con prefijo YYYYMMDD_)
-Historico MD:      D:\ferreteria-oviedo\_HISTORICO\   (MDs anteriores archivados)
-Bodegas XLSM:      D:\ferreteria-oviedo\BODEGAS\
-Memory Claude:     C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\
-MEMORY.md index:   C:\Users\Ferreteria Oviedo\.claude\projects\C--Users-Ferreteria-Oviedo\memory\MEMORY.md
+Proyecto activo:   E:\ferreteria-oviedo\
+Git sync (solo):   E:\git-sync\  (NO es el proyecto — solo copia para git. D:\ferreteria-oviedo-github NO EXISTE)
+Archivados:        E:\ferreteria-oviedo\_ARCHIVADOS\  (scripts obsoletos con prefijo YYYYMMDD_)
+Historico MD:      E:\ferreteria-oviedo\_HISTORICO\   (MDs anteriores archivados)
+Bodegas XLSM:      E:\ferreteria-oviedo\BODEGAS\
+Memory Claude:     C:\Users\Ferreteria Oviedo\.claude\projects\E--ferreteria-oviedo\memory\
+MEMORY.md index:   C:\Users\Ferreteria Oviedo\.claude\projects\E--ferreteria-oviedo\memory\MEMORY.md
 CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
 
 MD activos raiz:
-  AGENTS.md:          D:\ferreteria-oviedo\AGENTS.md         (instrucciones agente + historial)
-  MEMORY.md:          D:\ferreteria-oviedo\MEMORY.md         (referencia consolidada)
-  ESTADO_PROYECTO.md: D:\ferreteria-oviedo\ESTADO_PROYECTO.md (snapshot estado actual)
-  _HISTORICO/:        D:\ferreteria-oviedo\_HISTORICO\       (MDs anteriores — no depender de ellos)
+  AGENTS.md:          E:\ferreteria-oviedo\AGENTS.md         (instrucciones agente + historial)
+  MEMORY.md:          E:\ferreteria-oviedo\MEMORY.md         (referencia consolidada)
+  ESTADO_PROYECTO.md: E:\ferreteria-oviedo\ESTADO_PROYECTO.md (snapshot estado actual)
+  _HISTORICO/:        E:\ferreteria-oviedo\_HISTORICO\       (MDs anteriores — no depender de ellos)
 ```
 
 ---
 
 ## PROYECTO
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
-- Directorio activo: D:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
+- Directorio activo: E:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
 - Versión activa: V37
 - Deploy V36.9k: 2026-05-26 13:47 — Fix login Google + botón ✉️ reenviar acceso + reglas Firestore notificaciones + recuperación 5 usuarios huérfanos ✅
 - Deploy V37: 2026-05-26 16:58 — campana notificaciones + señales alerta + vvsstock eliminado ✅
@@ -159,7 +159,7 @@ e. Si hay duda, detenerse y reportar antes de continuar.
   ```
   python -c "
   import pandas as pd; from pathlib import Path
-  BASE = Path(r'D:\ferreteria-oviedo\CATALOGO PRODUCTOS')
+  BASE = Path(r'E:\ferreteria-oviedo\CATALOGO PRODUCTOS')
   h2 = pd.read_excel(BASE/'actualizar.xlsx', sheet_name='Hoja2', dtype={'COD':str})
   h1 = pd.read_excel(BASE/'actualizar.xlsx', sheet_name='Hoja1', dtype={'COD':str})
   col_map = {'COD':'CODIGO','DESC':'DESCRIPCION','MARCA':'MARCA','HIPER':'HIPERFAMILIA',
@@ -229,7 +229,7 @@ data\ventas-manzano-YYYY-MM.json   ← meses anteriores al actual (históricos)
 
 ### SERVIDOR 2 — LIMITACIÓN REAL-TIME (CRÍTICO para diagnóstico):
 
-El SQL Server en [SQL-SERVER-IP] ("Servidor 2") sincroniza con el ERP JustWeb **UNA SOLA VEZ al día a las 22:00**.
+El SQL Server en 200.6.118.110 ("Servidor 2") sincroniza con el ERP JustWeb **UNA SOLA VEZ al día a las 22:00**.
 
 | Script | Fuente | Real-time |
 |--------|--------|-----------|
@@ -268,7 +268,7 @@ Antes de terminar cualquier sesión donde se hayan modificado archivos, Claude D
    - HTMLs: panel-admin.html, panel-cliente.html, index.html
    - JS: firebase-config.js, sw.js
    - JSONs: data/*.json
-3. Si algún archivo es más nuevo → ejecutar `firebase deploy --only hosting` desde D:\ferreteria-oviedo\
+3. Si algún archivo es más nuevo → ejecutar `firebase deploy --only hosting` desde E:\ferreteria-oviedo\
 4. Actualizar línea "Deploy cierre sesión" en AGENTS.md con la nueva fecha/hora
 5. Ejecutar ACTUALIZAR_GITHUB.bat con descripción del cierre
 
@@ -278,11 +278,11 @@ Patrón correcto: modificar → commit github → verificar mtime → deploy si 
 ### Cómo verificar en PowerShell:
 ```powershell
 $ultimoDeploy = [datetime]"YYYY-MM-DD HH:MM:00"
-Get-ChildItem 'D:\ferreteria-oviedo\' -Filter '*.html' -File |
+Get-ChildItem 'E:\ferreteria-oviedo\' -Filter '*.html' -File |
     Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
-Get-ChildItem 'D:\ferreteria-oviedo\' -Filter '*.js' -File |
+Get-ChildItem 'E:\ferreteria-oviedo\' -Filter '*.js' -File |
     Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
-Get-ChildItem 'D:\ferreteria-oviedo\data\' -Filter '*.json' -File |
+Get-ChildItem 'E:\ferreteria-oviedo\data\' -Filter '*.json' -File |
     Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
 ```
 
@@ -292,7 +292,7 @@ Get-ChildItem 'D:\ferreteria-oviedo\data\' -Filter '*.json' -File |
 
 Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde PowerShell:
 
-  "V36.X desc breve sin tildes" | cmd /c "D:\ferreteria-oviedo\ACTUALIZAR_GITHUB.bat"
+  "V36.X desc breve sin tildes" | cmd /c "E:\ferreteria-oviedo\ACTUALIZAR_GITHUB.bat"
 
 - El bat sincroniza con robocopy los archivos permitidos y hace git add/commit/push.
 - La descripción va por stdin (máximo 5 palabras, minúsculas, sin tildes).
@@ -345,7 +345,7 @@ VALIDACION antes de hacer commit:
 
 **Scripts pipeline — fix rutas D: → E: (migración completada)**
 
-Causa: 5 scripts Python del pipeline tenían `BASE_DIR = Path(r"D:\ferreteria-oviedo")` hardcodeado. Al correr el pipeline con la migración a E:, todos fallaban con "No existe D:\ferreteria-oviedo\credenciales_db.ini" o no encontraban los CSVs raw.
+Causa: 5 scripts Python del pipeline tenían `BASE_DIR = Path(r"D:\ferreteria-oviedo")` hardcodeado. Al correr el pipeline con la migración a E:, todos fallaban con "No existe E:\ferreteria-oviedo\credenciales_db.ini" o no encontraban los CSVs raw.
 
 Archivos corregidos (una constante cada uno):
 - `BODEGAS/descargar_bod.py` línea 29: D: → E:
@@ -374,7 +374,7 @@ Cambios:
 - `venAdmCargar()` fetch `.then()`: agregado `vadmReRenderTabActivo()` tras `_mostrar()` (línea 8016).
 - `vadmReRenderTabActivo()` caso árbol: si `varbolInitBar` ya está oculto (árbol ya inicializado) → llama `vadmRenderArbol()` directo; si no → llama `vadmIniciarArbol()`. Evita reset de selectores de período en cada cambio de filtro.
 - `varbolInitBar` mensaje: actualizado — ya no dice "ve a Análisis primero" (los datos cargan automáticos).
-- Tutoriales (×4): rutas `D:\ferreteria-oviedo\` → `E:\ferreteria-oviedo\` (migración completada 2026-06-02).
+- Tutoriales (×4): rutas `E:\ferreteria-oviedo\` → `E:\ferreteria-oviedo\` (migración completada 2026-06-02).
 
 NO TOCADO: `vadmRenderArbol`, `_arPoblarFiltros`, `_arFiltrar`, `vadmRenderArbolTabla`, `vadmRenderArbolHeat`, `vadmIniciarArbol` (lógica interna), `vadmSubTab` (lógica interna).
 
@@ -543,11 +543,11 @@ Fix en `_calcular_delta()`:
 - Log: `logs\auto_YYYYMMDD_HH00.log`
 - Mismos pasos que ACTUALIZAR_TODO: ERP → XLSM → bodegas → ventas → precios → deploy
 
-**Tarea Programada Windows: FerreteriOviedo-Auto18**
+**Tarea Programada Windows: FerreteriOviedo-Auto18 — ELIMINADA (2026-06-02)**
 
-- Ejecuta `ACTUALIZAR_TODO_AUTO.bat` todos los días a las 18:00
-- `StartWhenAvailable=true` — si el equipo estaba apagado, corre al encenderse
-- Primera ejecución: 27-05-2026 18:00
+- ~~Ejecuta `ACTUALIZAR_TODO_AUTO.bat` todos los días a las 18:00~~
+- Estado: ELIMINADA del Task Scheduler (era dependencia de C:/registro de Windows)
+- Reemplazo portable: `E:\EJECUTAR_AUTO.bat` (ejecutar manualmente o re-registrar con `ACTIVAR_EN_ESTE_EQUIPO.bat` al configurar un equipo nuevo)
 
 **Reparación ventas 22-26 mayo**
 
@@ -601,7 +601,7 @@ Patrón de riesgo: documentado en CLAUDE.md pero el código no lo hace.
 ## REGLA ARCHIVO — revisar antes de crear
 
 Antes de escribir cualquier script, HTML, BAT o función nueva:
-- Verificar si existe algo en D:\ferreteria-oviedo\ARCHIVO que sirva.
+- Verificar si existe algo en E:\ferreteria-oviedo\ARCHIVO que sirva.
 - Si existe → moverlo de vuelta (Move-Item), no copiar ni duplicar.
 - Ver memoria project-archivo para el mapa completo.
 
@@ -998,7 +998,7 @@ Verificado 2026-05-25: código 4422 IEM pasó de 931 días a 10 días con el fix
 - diasAntiguedad calculado en Python desde col G (datetime) — NO depende de col I (DATEDIF) ni J (NOW)
 - codigoTecnico forzado a str (mixed int/str en col D)
 - Salida: data/bod-{nombre_bod.lower()}-registros.json
-- Para ampliar a RCE: procesar_bod(r"D:\ferreteria-oviedo\BODEGAS\BOD_RCE.xlsm", 'RCE')
+- Para ampliar a RCE: procesar_bod(r"E:\ferreteria-oviedo\BODEGAS\BOD_RCE.xlsm", 'RCE')
 - BOD_FEM_XLSM = ruta al XLSM físico (nombre interno del archivo, no nombre de negocio)
 
 ### Panel análisis bodegas
@@ -1132,8 +1132,8 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 - ACTUALIZAR_TODO.bat: PASO 1C agregado entre XLSM (1B) y Ventas (2)
 
 ### descargar_bod.py
-- Lee credenciales desde D:\ferreteria-oviedo\credenciales_db.ini sección [DB]
-- Conecta SQL Server [SQL-SERVER-IP], base Foviedo, vía pyodbc
+- Lee credenciales desde E:\ferreteria-oviedo\credenciales_db.ini sección [DB]
+- Conecta SQL Server 200.6.118.110, base Foviedo, vía pyodbc
 - Ejecuta la misma query del VBA de BOD_RCE.xlsm, parametrizada por IDBODEGA
 - IEM (IDBODEGA=72): genera data/bod-iem-registros.json (19 registros)
 - RCE (IDBODEGA=55): genera data/bod-rce-registros.json (12 registros)
@@ -1256,13 +1256,13 @@ ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
 
 ### Deploy
 - bod-cem-registros.json generado localmente el 2026-05-26 00:58 — PENDIENTE publicar a Firebase
-- Para publicar: ejecutar PUBLICAR.bat o firebase deploy --only hosting desde D:\ferreteria-oviedo\
+- Para publicar: ejecutar PUBLICAR.bat o firebase deploy --only hosting desde E:\ferreteria-oviedo\
 
 ---
 
 ## REGLA DE LIMPIEZA — CARPETA RAÍZ
 
-**Solo deben existir en `D:\ferreteria-oviedo\` los siguientes archivos:**
+**Solo deben existir en `E:\ferreteria-oviedo\` los siguientes archivos:**
 
 | Categoría | Archivos |
 |---|---|
@@ -1284,7 +1284,7 @@ Aplica a: scripts diagnóstico, exports Excel/JSON ad-hoc, outputs debug .txt, H
 
 ## SQL SERVER — SCHEMA TABLAS VENTAS (referencia para diagnóstico directo)
 
-Conexión: `credenciales_db.ini` sección [DB] · servidor [SQL-SERVER-IP] · base Foviedo · pyodbc
+Conexión: `credenciales_db.ini` sección [DB] · servidor 200.6.118.110 · base Foviedo · pyodbc
 
 | Tabla | Columnas clave |
 |---|---|
@@ -1321,3 +1321,88 @@ Si el cliente ERP Justime muestra popups de error al abrir:
 2. Clic derecho → **Ejecutar como administrador**
 3. El bat crea junction `C:\Program Files\Justime` y registra DLLs COM con regsvr32 de 32-bit
 4. Algunos errores individuales son normales (DLLs no-COM) — el resultado importante es que Justime abra sin popups
+
+---
+
+## REGLA ANTI-RETROCESO — PERMANENTE (2026-06-02)
+
+Creada tras migración D: → E:. NUNCA revertir sin instrucción explícita del usuario.
+
+### Rutas — no volver atrás
+- Todo está en `E:\ferreteria-oviedo\` y `E:\git-sync\` (migración 2026-06-02, definitiva)
+- Si un script tiene `D:\ferreteria-oviedo\` → BUG, corregir a `E:\` antes de continuar
+- `D:\ferreteria-oviedo-github\` NO EXISTE — no crear, no referenciar
+- npm global/cache: solo `E:\npm-global` y `E:\npm-cache` — nunca C: ni D:
+- Credenciales GCM: `E:\config\gcm-store` — nunca C:\Users\...\AppData
+
+### Código — no revertir features verificadas
+- No eliminar ni reducir el objeto BODCORTA (8 claves: PEM SEM CEM MEM RCE TEM IEM CD)
+- No reintroducir línea que forzaba bodegas fijas en dropdown
+- No reintroducir `actualizarxlsxeshoy()` (eliminada V36.5)
+- No usar `MAX(IDDOCUMENTO)` como criterio de último movimiento SQL
+- No usar "FEM" en JSONs, menús ni labels (renombrado a IEM el 2026-05-24)
+- Tabs listados en TABS VERIFICADOS deben seguir funcionando tras cualquier cambio
+
+### Safe-change activo
+- Hook PreToolUse activo: antes de Edit/Write → backup en `E:\ferreteria-oviedo\backups\safe-change\`
+- Script: `E:\claude-tools\safe-change-hook.ps1`
+- Para revertir: buscar `ARCHIVO_YYYYMMDD_HHMMSS` en esa carpeta
+
+### Portabilidad E: — estado (actualizar al completar pasos)
+- PASO 0: ✅ Auto18 eliminada del Task Scheduler · `E:\EJECUTAR_AUTO.bat` creado (2026-06-02)
+- PASO 1: ✅ Python 3.11.9 portable en `E:\python-portable\` (2026-06-02)
+- PASO 2: ✅ Node.js v24.15.0 portable en `E:\nodejs-portable\` (2026-06-02)
+- PASO 3: ✅ Git 2.47.1 portable en `E:\git-portable\` (2026-06-02)
+- PASO 4: ✅ BATs actualizados con bloque HERRAMIENTAS PORTABLES (ACTUALIZAR_TODO, ACTUALIZAR_TODO_AUTO, PUBLICAR, ACTUALIZAR_GITHUB) (2026-06-02)
+- PASO 5: ✅ BATs creados (`E:\ABRIR_PANEL_ADMIN.bat`, `E:\ABRIR_PANEL_CLIENTE.bat`, `E:\ABRIR_PANEL_VENDEDOR.bat`) · `E:\navegadores-portables\` existe con instrucciones de descarga — falta descargar Chromium/Firefox portable manualmente (ver DESCARGAR_NAVEGADORES.txt)
+- PASO 6: ⚠️ Junction `.claude` DESCARTADA (limitación USB — ver REGLA ANTI-RETROCESO) · `E:\claude-config\` tiene backup 243 MB · `.claude` queda en C: funcionando normal
+- PASO 7: ⏳ Windows To Go — instrucciones en `E:\PASO7_WINDOWS_TO_GO.txt` · Rufus e ISO requieren descarga manual · espacio libre en E: 1.7 TB (suficiente)
+- PASO 8: ✅ `E:\ACTIVAR_EN_ESTE_EQUIPO.bat` creado (2026-06-02)
+
+---
+
+## REGLA RESGUARDO ANTE FALLO DE DISCO — PERMANENTE (2026-06-03)
+
+Creada tras pérdida parcial de archivos portables (node.exe, git-portable) durante
+recuperación de disco. La recuperación manual de D: → E: dejó carpetas incompletas.
+
+### Archivos críticos NO recuperables de git (nunca van al repo)
+
+Estos archivos deben existir en E: Y tener copia de seguridad externa o conocida:
+
+| Archivo | Ruta en E: | Copia de seguridad |
+|---|---|---|
+| credenciales_db.ini | E:\ferreteria-oviedo\ | Papel / celular / correo |
+| credenciales_db.enc | E:\ferreteria-oviedo\ | Igual — sin .enc no hay acceso SQL |
+| credenciales_erp.ini | E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\ | Papel / celular |
+| credenciales_erp.ini | E:\ferreteria-oviedo\VENTAS EL MANZANO\ | Papel / celular |
+
+### Qué NUNCA hacer antes de confirmar que E: está sano
+
+- NUNCA formatear ni reparticionar el disco E: sin antes verificar que git-sync tiene el último commit
+- NUNCA mover archivos de E: en bulk sin listar primero qué se mueve
+- Si el disco da errores → DETENER inmediatamente y hacer backup con robocopy antes de cualquier reparación
+- NUNCA confiar en que "ya está en git" para credenciales — el .gitignore las bloquea
+
+### Verificación mínima antes de cerrar sesión (30 segundos)
+
+```powershell
+# Pegar en PowerShell antes de desconectar el disco
+if (Test-Path "E:\git-portable\bin\git.exe") { Write-Host "[OK] git-portable" } else { Write-Host "[FALTA] git-portable" -ForegroundColor Red }
+if (Test-Path "E:\nodejs-portable\node.exe") { Write-Host "[OK] node.exe" } else { Write-Host "[FALTA] node.exe" -ForegroundColor Red }
+if (Test-Path "E:\ferreteria-oviedo\credenciales_db.ini") { Write-Host "[OK] credenciales_db" } else { Write-Host "[FALTA] credenciales_db" -ForegroundColor Red }
+if (Test-Path "E:\herramientas\firebase") { Write-Host "[OK] firebase CLI" } else { Write-Host "[FALTA] firebase CLI" -ForegroundColor Red }
+```
+
+### Firebase CLI — ubicación real (2026-06-03)
+
+Firebase CLI está en `E:\herramientas\firebase` (no en E:\npm-global\bin\ como decía el plan original).
+Los BATs deben buscar firebase en este orden:
+1. `E:\herramientas\firebase.cmd`
+2. `E:\npm-global\bin\firebase` (fallback)
+
+### Estado portabilidad tras recuperación 2026-06-03
+
+- PASO 2 (Node.js): ⚠️ node.exe FALTA — E:\nodejs-portable\ tiene npm.cmd pero no node.exe — pendiente descarga
+- PASO 3 (Git): ⚠️ E:\git-portable\ FALTA — copiando desde D:\RECU2\Root\git-portable\ (2026-06-03)
+- git-sync: ⚠️ E:\git-sync\ falta — restaurar desde E:\git-sync-historial-backup-20260602\

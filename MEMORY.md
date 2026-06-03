@@ -195,7 +195,7 @@ Antes tenia solo 5. Corregido V36.6. No revertir.
 
 | Campo | Valor |
 |---|---|
-| IP | [SQL-SERVER-IP] |
+| IP | 200.6.118.110 |
 | Base de datos | Foviedo |
 | Driver | pyodbc |
 | Credenciales | E:\ferreteria-oviedo\credenciales_db.ini seccion [DB] |
