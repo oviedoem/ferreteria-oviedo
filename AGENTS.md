@@ -94,6 +94,45 @@ MD activos raiz:
 
 ---
 
+## EMERGENCIA DISCO E: — RECUPERACIÓN RÁPIDA
+
+**Causa raíz confirmada (2026-06-04):** FortiClient Zero Trust retiene un handle sobre el volumen USB y bloquea el montaje. Síntomas: "dispositivo no listo", volumen no aparece en diskpart, chkdsk no puede abrir volumen.
+
+### Opción A — Sin scripts (30 seg)
+1. Abrir Explorador de Windows
+2. Clic derecho disco E: → **Expulsar**
+3. Si aparece error "disco en uso" → Aceptar (es normal)
+4. Windows fuerza a FortiClient a soltar el handle → E: se remonta limpio
+
+### Opción B — Script desde W: (sin tocar E:)
+```
+W:\herramientas\seguridad\REMONTAR_DISCO_E.ps1
+```
+Usa `Disable-PnpDevice` / `Enable-PnpDevice` sobre el dispositivo TOSHIBA USB.
+Re-enumera el hardware sin expulsar. Requiere ejecutar como Administrador (el script se eleva solo).
+
+### Abrir Claude Code cuando E: falla
+```
+W:\herramientas\seguridad\ABRIR_CLAUDE.bat
+```
+Verifica E:, ejecuta REMONTAR si no responde, luego lanza `claude` en `E:\ferreteria-oviedo`.
+
+### Herramientas de seguridad — espejo en W:
+Las herramientas de disco/USB están duplicadas en `W:\herramientas\seguridad\` para funcionar cuando E: no está accesible:
+- `REMONTAR_DISCO_E.ps1` — remontaje por PnP (nuevo, sin expulsar)
+- `EXPULSAR_DISCO_E.ps1` — expulsión segura cerrando procesos
+- `MONITOREO_DISCO.ps1` — salud del disco (log → `W:\herramientas\seguridad\disco-log.txt`)
+- `VERIFICAR_ANTES_DE_TRABAJAR.bat` — wrapper del monitoreo
+- `USBDeview\` — herramienta USB
+- `ABRIR_CLAUDE.bat` — launcher con recuperación automática
+
+**Historial ocurrencias:** 2026-06-03, 2026-06-04 noche, 2026-06-04 tarde (3 veces confirmadas).
+**NO es necesario:** TestDisk, recuperación de archivos, diskpart, deshabilitar servicios, reiniciar PC.
+
+**Respaldo activo:** .zip subido a Google Drive (alejandrog45@gmail.com / PROYECTO AG) el 2026-06-04.
+
+---
+
 ## PROYECTO
 - Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: E:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
