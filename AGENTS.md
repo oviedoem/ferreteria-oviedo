@@ -115,7 +115,7 @@ MD activos raiz:
 - Deploy V37.12: 2026-05-30 15:42 — Informe Stock SSRS completo (generar_informe_stock.py, PASO 1G) + filtro despachos FLETE EXISTS + columnas dinámicas panel por bodega + fix parsing CSV miles (punto=miles) + FLUJO ERP en AGENTS/CLAUDE/safe-change/MEMORY + limpieza Firebase 97 versiones + descarga fresca SSRS ✅
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
 - Deploy V37.14: 2026-06-02 04:22 — fix D:→E: en 5 scripts pipeline + precios arg + XDG_CONFIG_HOME ✅
-- Deploy cierre sesion: 2026-06-02 04:22
+- Deploy cierre sesion: 2026-06-04 00:21
 - APP-INVENTARIO migrado: 2026-06-01 — repo propio github.com/oviedoem/APP-INVENTARIO · Pages: https://oviedoem.github.io/APP-INVENTARIO/ · Working: D:\APP-INVENTARIO\ (ya no es subcarpeta de este repo)
 
 ---
@@ -1394,12 +1394,17 @@ if (Test-Path "E:\ferreteria-oviedo\credenciales_db.ini") { Write-Host "[OK] cre
 if (Test-Path "E:\herramientas\firebase") { Write-Host "[OK] firebase CLI" } else { Write-Host "[FALTA] firebase CLI" -ForegroundColor Red }
 ```
 
-### Firebase CLI — ubicación real (2026-06-03)
+### Firebase CLI — ubicación real (verificado 2026-06-04)
 
-Firebase CLI está en `E:\herramientas\firebase` (no en E:\npm-global\bin\ como decía el plan original).
-Los BATs deben buscar firebase en este orden:
-1. `E:\herramientas\firebase.cmd`
-2. `E:\npm-global\bin\firebase` (fallback)
+Firebase CLI está en `E:\npm-global\firebase.cmd` (confirmado funcionando 2026-06-04).
+Los BATs ya buscan en ese orden correctamente — no modificar.
+
+Token Firebase: guardado en `E:\config\configstore\firebase-tools.json`.
+Backup encriptado DPAPI: `E:\config\firebase-token.enc` (solo descifrable en esta máquina/usuario).
+Cuenta: ferreteriaoviedo.elmanzano@gmail.com
+
+EXIST_TOKEN descargar_erp.py: actualizado 2026-06-04 (ver descargar_erp.py línea 35 — NO subir al repo).
+Si el token expira → obtener nueva URL de VisorRS con xToken actualizado y editar descargar_erp.py línea 35.
 
 ### Estado portabilidad tras recuperación 2026-06-03
 
