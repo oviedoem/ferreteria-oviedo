@@ -81,9 +81,12 @@ Git sync (solo):   E:\git-sync\  (NO es el proyecto — solo copia para git. D:\
 Archivados:        E:\ferreteria-oviedo\_ARCHIVADOS\  (scripts obsoletos con prefijo YYYYMMDD_)
 Historico MD:      E:\ferreteria-oviedo\_HISTORICO\   (MDs anteriores archivados)
 Bodegas XLSM:      E:\ferreteria-oviedo\BODEGAS\
-Memory Claude:     C:\Users\Ferreteria Oviedo\.claude\projects\E--ferreteria-oviedo\memory\
-MEMORY.md index:   C:\Users\Ferreteria Oviedo\.claude\projects\E--ferreteria-oviedo\memory\MEMORY.md
-CLAUDE.md global:  C:\Users\Ferreteria Oviedo\.claude\CLAUDE.md
+Memory Claude:     W:\claude-config\projects\E--ferreteria-oviedo\memory\  (real — W: es la ubicación física)
+                   C:\Users\Ferreteria Oviedo\.claude\projects\... (junction → W:, acceso transparente)
+MEMORY.md index:   W:\claude-config\projects\E--ferreteria-oviedo\memory\MEMORY.md
+CLAUDE.md global:  W:\claude-config\CLAUDE.md  (real en W:)
+Git config:        E:\config\gitconfig  (GIT_CONFIG_GLOBAL apunta aquí)
+Docs backup W:     W:\proyecto-docs\  (AGENTS.md, MEMORY.md, ESTADO_PROYECTO.md — copia de emergencia)
 
 MD activos raiz:
   AGENTS.md:          E:\ferreteria-oviedo\AGENTS.md         (instrucciones agente + historial)
