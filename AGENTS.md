@@ -1,176 +1,214 @@
-﻿# AGENTS.md — Ferretería Oviedo V37
-# Codex LEE ESTO ANTES de escribir cualquier línea de código.
-# Última actualización: 2026-05-30 (FLUJO ERP agregado)
+# AGENTS.md — Ferretería Oviedo El Manzano
+# Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
+# Versión activa: V37.14 · Última actualización: 2026-06-05
 
 ---
 
 ## ⚠️ FLUJO ERP — LEER ANTES DE CUALQUIER TAREA DE STOCK
-## Palabra clave de búsqueda: **FLUJO**
-## Ante cualquier duda sobre St_Disp / St_Bod / St_DVen / St_Ped → volver aquí primero.
+## Palabra clave: **FLUJO** — ante cualquier duda sobre Disp/Fís/Ped/Dif → volver aquí primero
 
-### Mapa de campos SSRS → Panel Admin
+### Campos SSRS → Panel Admin
 
-| Campo SSRS (raw CSV) | Campo panel | Descripción |
+| Campo SSRS (raw CSV) | Panel | Descripción |
 |---|---|---|
-| `St_Disp` | **Disp** | Stock disponible para venta (neto de compromisos) |
-| `St_Bod` | **Fís** | Stock físico real en bodega |
-| `St_DVen` | parte de **Ped** | Comprometido en despachos (BVE/FVE emitidas, no despachadas físicamente aún) |
-| `St_Ped` | parte de **Ped** | Comprometido en NVM/pedidos vigentes (cualquier sucursal) |
+| `St_Disp` | Disp | Stock disponible neto (Fís − compromisos) |
+| `St_Bod` | Fís | Stock físico real en bodega |
+| `St_DVen + St_Ped` | Ped | Comprometido total (despachos + NVMs de todas las sucursales) |
 | `St_Tran` | Trans | En tránsito entre bodegas |
-| `St_Cont` | — | Contable (campo contabilidad, no usado en panel comercial) |
+| `St_Cont` | — | Contable (no usado en panel comercial) |
 | `St_DCom` | — | Comprometido en órdenes de compra pendientes |
 
-**Ped en panel = St_DVen + St_Ped** (toda sucursal que use la bodega)
-**Dif en panel = Fís − Disp** (positivo = stock comprometido normal; negativo = anomalía JT)
+**Ped en panel = St_DVen + St_Ped**
+**Dif en panel = Fís − Disp** → positivo = compromiso normal · negativo (rojo) = anomalía JT
 
-### Flujo COMPRA — efecto por documento
-
-| Documento ERP | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Tran | St_Ped |
+### Flujo COMPRA
+| Documento | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Tran | St_Ped |
 |---|---|---|---|---|---|---|---|
-| OC (Orden de Compra) | = | = | = | **+1** | = | **+1** | = |
-| GRC (Guía Recepción Compra) | **+1** | = | = | = | **+1** | **−1** | = |
-| FCN (Factura Compra) | = | **+1** | = | **−1** | = | = | = |
-| **Neto ciclo completo** | **+1** | **+1** | **0** | **0** | **+1** | **0** | **0** |
+| OC (Orden de Compra) | = | = | = | +1 | = | +1 | = |
+| GRC (Guía Recepción Compra) | +1 | = | = | = | +1 | −1 | = |
+| FCN (Factura Compra) | = | +1 | = | −1 | = | = | = |
+| **Neto ciclo completo** | +1 | +1 | 0 | 0 | +1 | 0 | 0 |
 
-### Flujo VENTA / DESPACHO — efecto por documento
-
-| Documento ERP | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Tran | St_Ped |
+### Flujo VENTA / DESPACHO
+| Documento | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Tran | St_Ped |
 |---|---|---|---|---|---|---|---|
-| NVM (Nota de Venta) | **−1** | = | = | = | = | = | **+1** |
-| BVE/FVE (Boleta/Factura Electrónica) | = | **−1** | = | = | = | = | **−1** |
-| GME (Guía Despacho Factura Electrónica) | = | = | = | **−1** | **−1** | = | = |
-| **Neto ciclo completo** | **−1** | **−1** | **0** | **0** | **−1** | **0** | **0** |
+| NVM (Nota de Venta) | −1 | = | = | = | = | = | +1 |
+| BVE/FVE (Boleta/Factura Electrónica) | = | −1 | = | = | = | = | −1 |
+| GME (Guía Despacho) | = | = | = | −1 | −1 | = | = |
+| **Neto ciclo completo** | −1 | −1 | 0 | 0 | −1 | 0 | 0 |
 
-> **Nota BVE/FVE:** al emitir la factura, JustWeb NO zeroa `CANTIDAD_PENDIENTE` automáticamente.
-> Por eso `descargar_despachos.py` usa filtro EXISTS para excluir documentos donde solo hay FLETE VENTA pendiente.
+> ⚠️ BVE/FVE NO zeroa CANTIDAD_PENDIENTE en JustWeb → filtro EXISTS en descargar_despachos.py
 
-### Flujo DEVOLUCIÓN — efecto por documento
-
-| Documento ERP | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Ped |
+### Flujo DEVOLUCIÓN
+| Documento | St_Disp | St_Cont | St_DVen | St_DCom | St_Bod | St_Ped |
 |---|---|---|---|---|---|---|
-| GDC (Guía Devolución Cliente — vendedor) | **+1** | = | = | **+1** | = | = |
-| NCE (Nota de Crédito Electrónica — caja) | = | **+1** | = | **−1** | **+1** | = |
-| **Neto ciclo completo** | **+1** | **+1** | **0** | **0** | **+1** | **0** |
+| GDC (Guía Devolución Cliente) | +1 | = | = | +1 | = | = |
+| NCE (Nota de Crédito Electrónica) | = | +1 | = | −1 | +1 | = |
+| **Neto ciclo completo** | +1 | +1 | 0 | 0 | +1 | 0 |
 
-### Anomalía JT — cuándo ocurre y cómo detectarla
+### Anomalía JT
+**Disp > Fís → Dif < 0 → fila roja en Informe Stock**
+Causas: NVM cancelada sin reversa · ajuste contable incorrecto · EXH mezclado en CEM.
 
-**Anomalía:** `St_Disp > St_Bod` → panel muestra **Dif < 0** (fila roja)
+### Parseo CSV SSRS — CRÍTICO
+**Punto = miles · Coma = decimal** → `s.replace('.','').replace(',','.')`
+`1.536` = 1536 unidades (NO 1.536). Error histórico 2026-05-30 en generar_informe_stock.py.
 
-Causas frecuentes:
-- NVM cancelada sin reversa correcta → St_Ped queda positivo, St_Disp no se restaura
-- Ajuste contable incorrecto → genera St_Disp artificialmente alto
-- Productos en CEM con stock de exhibición (EXH) mezclado
+### Servidor 2 — Limitación Real-time
+SQL Server 200.6.118.110 sincroniza con JustWeb **una sola vez al día a las 22:00**.
+- descargar_erp.py / descargar_ventas_erp.py → Real-time (HTTP/SSRS)
+- descargar_bod.py / descargar_pedidos.py / descargar_despachos.py / leer_xlsm.py → Solo tras 22:00
 
-Diagnóstico: consultar `data/informe-stock.json` o Existencias Clasificadas SSRS → filtrar `dif > 0` (ERP) = panel `Dif < 0` (rojo).
+**Respuesta estándar:** "Los datos de despachos/pedidos/bodegas vienen del Servidor 2 que sincroniza a las 22:00."
 
-### Regla de parseo — CSV SSRS (locale europeo)
+---
 
-**CRÍTICO:** El CSV raw del SSRS usa **punto como separador de miles** y **coma como decimal**.
-- `1.536` = **1.536 unidades** (NO 1.536 como número decimal)
-- `0,50000` = **0.5** (NO "050000")
-- Parser correcto: `s.replace('.','').replace(',','.')` antes de `float()`
-- Error histórico 2026-05-30: `num('1.536')` → `float(1.536)` → `int` → **2** (incorrecto). Ver fix en `generar_informe_stock.py`.
+## SAFE CHANGE PROTOCOL — OBLIGATORIO ANTES DE CUALQUIER CAMBIO
+
+**Un prompt = una función tocada.** Si el fix requiere 2 funciones → dos prompts separados.
+Si el agente dice "también modifiqué X para que funcione" sin pedírselo → DETENER y revisar X.
+
+### Cuándo aplicar SIEMPRE
+- Modificar cualquier función en `panel-admin.html`, `firebase-config.js`, `main.py`, `leer_xlsm.py`
+- Agregar o modificar tab, sub-tab, botón o menú del panel admin
+- Cambiar cualquier función que empiece con `vadm`, `venAdm`, `_vadm`
+- Modificar cualquier función del pipeline Python que produzca un JSON de `data/`
+
+### PASO 1 — Leer antes de escribir
+1. Leer la función completa que se va a modificar
+2. Identificar todas las funciones que la invocan (LLAMADA POR)
+3. Identificar todas las funciones que ella invoca (LLAMA A)
+4. Identificar variables JS globales o Python que lee o escribe
+5. Identificar qué tabs/secciones HTML o scripts consumen el output
+
+### PASO 2 — Declaración de alcance (formato obligatorio)
+```
+TOCO:        [nombre exacto de la función o bloque HTML]
+ARCHIVO:     [panel-admin.html | main.py | leer_xlsm.py | otro]
+RAZÓN:       [una línea — qué se cambia y por qué]
+LLAMADA POR: [lista de funciones que invocan la tocada]
+LLAMA A:     [lista de funciones que la tocada invoca]
+VARIABLES:   [variables JS globales o Python que lee o escribe]
+TABS:        [vsec-* o sidebar items que usan esta función]
+NO TOCO:     [lista explícita con razón de cada una]
+```
+
+### PASO 3 — Checklist post-cambio
+```
+[ ] La función sigue recibiendo los mismos parámetros
+[ ] Las variables globales siguen con el mismo nombre
+[ ] El tab que la invoca sigue en vadmReRenderTabActivo
+[ ] El filtro _vadmBodSel sigue afectando el resultado
+[ ] No se hardcodeó ningún valor que venga de datos reales
+[ ] No se renombró ninguna función pública
+[ ] window._mostrarPrecio = false sigue siendo default en panel-cliente.html
+[ ] xlsm-enrich.json sigue siendo generado por leer_xlsm.py (no por main.py)
+[ ] _catalogo_generado_hoy() no fue revertida a _actualizar_xlsx_es_hoy()
+[ ] ventas-manzano.json sigue siendo generado por guardar_json() en main.py
+[ ] Subquery ULT en descargar_bod.py tiene WHERE IDBODEGA=? antes del GROUP BY
+```
 
 ---
 
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
 ```
-Proyecto activo:   E:\ferreteria-oviedo\
-Git sync (solo):   E:\git-sync\  (NO es el proyecto — solo copia para git. D:\ferreteria-oviedo-github NO EXISTE)
-Archivados:        E:\ferreteria-oviedo\_ARCHIVADOS\  (scripts obsoletos con prefijo YYYYMMDD_)
-Historico MD:      E:\ferreteria-oviedo\_HISTORICO\   (MDs anteriores archivados)
-Bodegas XLSM:      E:\ferreteria-oviedo\BODEGAS\
-Memory Claude:     W:\claude-config\projects\E--ferreteria-oviedo\memory\  (real — W: es la ubicación física)
-                   C:\Users\Ferreteria Oviedo\.claude\projects\... (junction → W:, acceso transparente)
-MEMORY.md index:   W:\claude-config\projects\E--ferreteria-oviedo\memory\MEMORY.md
-CLAUDE.md global:  W:\claude-config\CLAUDE.md  (real en W:)
-Git config:        E:\config\gitconfig  (GIT_CONFIG_GLOBAL apunta aquí)
-Docs backup W:     W:\proyecto-docs\  (AGENTS.md, MEMORY.md, ESTADO_PROYECTO.md — copia de emergencia)
+Proyecto activo:     E:\ferreteria-oviedo\
+Git sync (solo):     E:\git-sync\        (NO es el proyecto — solo copia para git)
+Archivados:          E:\ferreteria-oviedo\_HISTORICO\
+Bodegas XLSM:        E:\ferreteria-oviedo\BODEGAS\
+Memory Claude:       W:\claude-config\projects\E--ferreteria-oviedo\memory\
+                     (acceso via junction C:\Users\Ferreteria Oviedo\.claude → W:\claude-config\)
+CLAUDE.md global:    W:\claude-config\CLAUDE.md
+Git config:          E:\config\gitconfig  (GIT_CONFIG_GLOBAL apunta aquí)
+Tokens GitHub:       E:\config\gcm-store  (DPAPI cifrado, transparente via GCM)
+Herramientas W:      W:\herramientas\seguridad\
+Docs backup W:       W:\proyecto-docs\   (AGENTS.md, MEMORY.md — copia de emergencia)
+Backup .claude orig: C:\Users\Ferreteria Oviedo\.claude-bak-20260604  (NO borrar)
 
-MD activos raiz:
-  AGENTS.md:          E:\ferreteria-oviedo\AGENTS.md         (instrucciones agente + historial)
-  MEMORY.md:          E:\ferreteria-oviedo\MEMORY.md         (referencia consolidada)
-  ESTADO_PROYECTO.md: E:\ferreteria-oviedo\ESTADO_PROYECTO.md (snapshot estado actual)
-  _HISTORICO/:        E:\ferreteria-oviedo\_HISTORICO\       (MDs anteriores — no depender de ellos)
+MD activos raíz:
+  AGENTS.md:               E:\ferreteria-oviedo\AGENTS.md         (este archivo)
+  MEMORY.md:               E:\ferreteria-oviedo\MEMORY.md
+  MAPA_FLUJO_PROYECTOS.md: E:\ferreteria-oviedo\MAPA_FLUJO_PROYECTOS.md
+  _HISTORICO/:             E:\ferreteria-oviedo\_HISTORICO\       (MDs históricos)
 ```
 
 ---
 
-## EMERGENCIA DISCO E: — RECUPERACIÓN RÁPIDA
+## ARQUITECTURA DE DISCOS
 
-**Causa raíz confirmada (2026-06-04):** FortiClient Zero Trust retiene un handle sobre el volumen USB y bloquea el montaje. Síntomas: "dispositivo no listo", volumen no aparece en diskpart, chkdsk no puede abrir volumen.
+| Disco | Tipo | Contenido |
+|---|---|---|
+| Disk 0 — NVMe 256GB | C: (121GB) | Windows + Python + Node.js + Git for Windows |
+| Disk 1 — TOSHIBA USB 1.8TB | W: (128GB) | Claude config + herramientas seguridad |
+| Disk 1 — TOSHIBA USB 1.8TB | E: (1.7TB) | Proyecto + herramientas portables |
+
+**W: y E: son el mismo disco físico USB.** La partición W: es más estable (menos actividad).
+
+### Junction Claude Code
+```
+C:\Users\Ferreteria Oviedo\.claude  ──junction──►  W:\claude-config\
+```
+Claude busca su config en C:, Windows redirige a W: transparentemente.
+**Backup de rollback:** `C:\Users\Ferreteria Oviedo\.claude-bak-20260604` (NO borrar).
+
+### Variables de entorno (HKCU)
+```
+GIT_CONFIG_GLOBAL    = E:\config\gitconfig
+NPM_CONFIG_PREFIX    = E:\npm-global
+NPM_CONFIG_CACHE     = E:\npm-cache
+NPM_CONFIG_USERCONFIG= E:\config\.npmrc
+XDG_CONFIG_HOME      = E:\config
+GH_CONFIG_DIR        = E:\config\gh
+PIP_CACHE_DIR        = E:\pip-cache
+```
+
+---
+
+## EMERGENCIA DISCO E: / W:
+
+**Causa raíz confirmada:** FortiClient Zero Trust retiene handle sobre el volumen USB. Historial: 3 ocurrencias (2026-06-03, 2026-06-04 tarde, 2026-06-04 noche).
 
 ### Opción A — Sin scripts (30 seg)
-1. Abrir Explorador de Windows
-2. Clic derecho disco E: → **Expulsar**
-3. Si aparece error "disco en uso" → Aceptar (es normal)
-4. Windows fuerza a FortiClient a soltar el handle → E: se remonta limpio
+1. Explorador de Windows → clic derecho disco E: → Expulsar
+2. Si aparece error "disco en uso" → Aceptar (es normal)
+3. Windows fuerza a FortiClient a soltar el handle → E: se remonta limpio
 
-### Opción B — Script desde W: (sin tocar E:)
+### Opción B — Script desde W:
 ```
-W:\herramientas\seguridad\REMONTAR_DISCO_E.ps1
+W:\herramientas\seguridad\REMONTAR_DISCO_E.ps1   ← remonta sin expulsar (PnP)
+W:\herramientas\seguridad\ABRIR_CLAUDE.bat        ← abre Claude verificando E: primero
 ```
-Usa `Disable-PnpDevice` / `Enable-PnpDevice` sobre el dispositivo TOSHIBA USB.
-Re-enumera el hardware sin expulsar. Requiere ejecutar como Administrador (el script se eleva solo).
 
-### Abrir Claude Code cuando E: falla
+### Rollback de junction si W: falla
+```powershell
+cmd /c "rd ""C:\Users\Ferreteria Oviedo\.claude"""
+Rename-Item "C:\Users\Ferreteria Oviedo\.claude-bak-20260604" ".claude"
 ```
-W:\herramientas\seguridad\ABRIR_CLAUDE.bat
-```
-Verifica E:, ejecuta REMONTAR si no responde, luego lanza `claude` en `E:\ferreteria-oviedo`.
 
-### Herramientas de seguridad — espejo en W:
-Las herramientas de disco/USB están duplicadas en `W:\herramientas\seguridad\` para funcionar cuando E: no está accesible:
-- `REMONTAR_DISCO_E.ps1` — remontaje por PnP (nuevo, sin expulsar)
-- `EXPULSAR_DISCO_E.ps1` — expulsión segura cerrando procesos
-- `MONITOREO_DISCO.ps1` — salud del disco (log → `W:\herramientas\seguridad\disco-log.txt`)
-- `VERIFICAR_ANTES_DE_TRABAJAR.bat` — wrapper del monitoreo
-- `USBDeview\` — herramienta USB
-- `ABRIR_CLAUDE.bat` — launcher con recuperación automática
-
-**Historial ocurrencias:** 2026-06-03, 2026-06-04 noche, 2026-06-04 tarde (3 veces confirmadas).
-**NO es necesario:** TestDisk, recuperación de archivos, diskpart, deshabilitar servicios, reiniciar PC.
-
-**Respaldo activo:** .zip subido a Google Drive (alejandrog45@gmail.com / PROYECTO AG) el 2026-06-04.
+### GitHub como respaldo final
+Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
+`https://github.com/oviedoem/ferreteria-oviedo/blob/main/AGENTS.md`
 
 ---
 
 ## PROYECTO
-- Stack: HTML/CSS/JS Vanilla (panel-admin.html) + Firebase Hosting (JSON estáticos) + Python pipeline ERP
-- Directorio activo: E:\ferreteria-oviedo — NO trabajar en D:\ferreteria-oviedo-github
-- Versión activa: V37
-- Deploy V36.9k: 2026-05-26 13:47 — Fix login Google + botón ✉️ reenviar acceso + reglas Firestore notificaciones + recuperación 5 usuarios huérfanos ✅
-- Deploy V37: 2026-05-26 16:58 — campana notificaciones + señales alerta + vvsstock eliminado ✅
-- Deploy V37.1: 2026-05-26 17:53 — Consulta de Stock (tab + búsqueda + ficha ERP-style 8 bodegas) ✅
-- Deploy V37.2: 2026-05-26 18:29 — fix ventas días incompletos + tarea auto 18:00 + ventas reparadas 22-26 mayo ✅
-- Deploy V37.3: 2026-05-27 09:51 — Informe Stock Bodegas (nuevo módulo TSV + filtros + CSV + Excel) ✅
-- Deploy V37.4: 2026-05-27 11:05 — fix disp CEM: ST_DISPONIBLE → ST_FISICO−ST_PEDIDO en descargar_bod.py ✅
-- Deploy V37.5a: 2026-05-27 15:12 — fix diasAntiguedad RCE: GRC ausente del filtro DOC IN + dedup por codigoTecnico min(dias) ✅
-- Deploy V37.5b: 2026-05-27 15:28 — auditoria DOC IN: GII+GTS agregados a whitelist + comentario clasificacion ✅
-- Deploy V37.6: 2026-05-27 16:39 — fix Informe Stock Fís todo cero: pem_bod/sem_bod/cem_bod/mem_bod en pipeline + panel ✅
-- Deploy V37.7: 2026-05-27 17:09 — MEM + Pedido + DifStk/DifLib + drill-down + PASO 1E descargar_pedidos.py ✅
-- Deploy V37.8: 2026-05-27 23:10 — Fix pedidos-detalle + nuevo descargar_despachos.py + DifLib→Dif (22 cols) + modal Dif/Ped rediseñados ✅
-- Deploy V37.9: 2026-05-28 02:09 — Sync UI: badge V37.8, bat legacy → ACTUALIZAR_TODO, tutoriales actualizados, mejoras V37.8, regla sync permanente ✅
-- Deploy V37.10: 2026-05-29 19:26 — Despachos Pendientes (panel-admin) + fix ACTUALIZAR_GITHUB.bat (firestore.indexes.json, storage.rules, update-sw-version.js, ESTADO_PROYECTO.md, V37, pull --rebase) + mover bat APP-INVENTARIO a su carpeta + encriptar_credenciales.py en lista limpieza ✅
-- Deploy V37.11: 2026-05-30 03:51 — fix despachos-comprometidos MESES_COMPROMETIDOS=3 (CANTIDAD_PENDIENTE no se zeroa en JustWeb al emitir GDE) + bat pasos 1A–1F unificados + LIMPIAR_CACHE.bat → Desktop + SUBIR_VENTAS_MANZANO.bat → _HISTORICO + regla _ARCHIVADOS permanente ✅
-- Deploy V37.12: 2026-05-30 15:42 — Informe Stock SSRS completo (generar_informe_stock.py, PASO 1G) + filtro despachos FLETE EXISTS + columnas dinámicas panel por bodega + fix parsing CSV miles (punto=miles) + FLUJO ERP en AGENTS/CLAUDE/safe-change/MEMORY + limpieza Firebase 97 versiones + descarga fresca SSRS ✅
+
+- Stack: HTML/CSS/JS Vanilla + Firebase Hosting (JSON estáticos) + Python pipeline ERP
+- Directorio activo: `E:\ferreteria-oviedo\` — NO trabajar en D:\ ni en E:\git-sync\
+- Versión activa: V37.14
+
+### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
 - Deploy V37.14: 2026-06-02 04:22 — fix D:→E: en 5 scripts pipeline + precios arg + XDG_CONFIG_HOME ✅
-- Deploy cierre sesion: 2026-06-04 00:21
-- APP-INVENTARIO migrado: 2026-06-01 — repo propio github.com/oviedoem/APP-INVENTARIO · Pages: https://oviedoem.github.io/APP-INVENTARIO/ · Working: D:\APP-INVENTARIO\ (ya no es subcarpeta de este repo)
+- Deploy cierre sesión: 2026-06-04 00:21
 
----
+*Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
-## SAFE CHANGE PROTOCOL — OBLIGATORIO ANTES DE CUALQUIER CAMBIO
-
-Antes de escribir código, declarar en texto:
-
-Regla: Un prompt = una función tocada.
-Si el fix requiere 2 funciones → dos prompts separados, en orden.
-Si Codex propone tocar algo fuera del alcance declarado → DETENER y preguntar.
-SEÑAL DE ALERTA: Si Codex dice "también modifiqué X para que funcione"
-sin que se lo pidiera → revisar X antes de aceptar el cambio.
+### APP-INVENTARIO (proyecto separado)
+- Repo: github.com/oviedoem/APP-INVENTARIO
+- Pages: https://oviedoem.github.io/APP-INVENTARIO/
+- Working: E:\APP-INVENTARIO\
 
 ---
 
@@ -192,139 +230,53 @@ c. Verificar si el cambio ya fue aplicado en versión anterior.
 d. Si ya existe, NO volver a aplicarlo.
 e. Si hay duda, detenerse y reportar antes de continuar.
 
-### ARCHIVOS PROHIBIDOS DE ELIMINAR (aunque se pida "regeneración completa"):
-
-- **CATALOGO PRODUCTOS\Datos.xlsx** → MASTER del catálogo. `procesar-actualizacion.py`
-  lo requiere como BASE de lectura (línea 192-193: `if not DATOSXLSX.exists(): sys.exit(1)`).
-  Si se elimina, el script falla con `KeyError: 'CODIGO'` y el pipeline se detiene.
-  NUNCA borrar este archivo. Si se corrompe o pierde, regenerar con seed:
-  ```
-  python -c "
-  import pandas as pd; from pathlib import Path
-  BASE = Path(r'E:\ferreteria-oviedo\CATALOGO PRODUCTOS')
-  h2 = pd.read_excel(BASE/'actualizar.xlsx', sheet_name='Hoja2', dtype={'COD':str})
-  h1 = pd.read_excel(BASE/'actualizar.xlsx', sheet_name='Hoja1', dtype={'COD':str})
-  col_map = {'COD':'CODIGO','DESC':'DESCRIPCION','MARCA':'MARCA','HIPER':'HIPERFAMILIA',
-             'FAM':'FAMILIA','SUB':'SUBFAMILIA','COSTO':'COSTO_PROMEDIO',
-             'PEM_DISP':'PEM_DISP','PEM_TRANS':'PEM_TRANS','PEM_BOD':'PEM_BOD',
-             'SEM_DISP':'SEM_DISP','SEM_BOD':'SEM_BOD','CEM_DISP':'CEM_DISP',
-             'CEM_BOD':'CEM_BOD','MEM_DISP':'MEM_DISP','MEM_BOD':'MEM_BOD',
-             'IEM_DISP':'IEM_DISP','IEM_TRANS':'IEM_TRANS','TEM_DISP':'TEM_DISP',
-             'TEM_TRANS':'TEM_TRANS','RCE_DISP':'RCE_DISP','CD_DISP':'CD_DISP','CD_TRANS':'CD_TRANS'}
-  df = h2.rename(columns=col_map)
-  pc = next(c for c in h1.columns if 'TOTAL' in str(c).upper())
-  h1r = h1.rename(columns={'COD':'CODIGO', pc:'PRECIO_IVA'}); h1r['SOCIO_IVA']=h1r['PRECIO_IVA']
-  df = df.merge(h1r[['CODIGO','PRECIO_IVA','SOCIO_IVA']], on='CODIGO', how='left')
-  COLS=['CODIGO','DESCRIPCION','MARCA','HIPERFAMILIA','FAMILIA','SUBFAMILIA','COSTO_PROMEDIO',
-        'PRECIO_IVA','SOCIO_IVA','PEM_DISP','PEM_TRANS','PEM_BOD','SEM_DISP','SEM_BOD',
-        'CEM_DISP','CEM_BOD','MEM_DISP','MEM_BOD','IEM_DISP','IEM_TRANS','TEM_DISP',
-        'TEM_TRANS','RCE_DISP','CD_DISP','CD_TRANS']
-  [df.__setitem__(c,0) for c in COLS if c not in df.columns]
-  df[COLS].to_excel(BASE/'Datos.xlsx', sheet_name='Sheet1', index=False)
-  print('Seed OK', len(df))
-  "
-  ```
-  Origen del error: sesión 2026-05-29 — se eliminó al pedir "regeneración completa" y pipeline
-  quedó bloqueado en `pause`. Se recuperó creando el seed desde actualizar.xlsx.
-
-- ventas-manzano.json → NECESARIO: main.py lo genera como salida principal (JSON_SALIDA).
-  El panel lo usa como fallback en 4 puntos (líneas 4578, 6850, 6868, 7780).
-  NO eliminar ni bloquear su generación. La decisión V36.9d de "eliminarlo" fue incorrecta —
-  el código nunca dejó de generarlo y el panel depende de él.
-- PREPARAR_Y_PUBLICAR.bat → ARCHIVADO en _ARCHIVADOS\
-- ACTUALIZAR_AUTO.bat → ARCHIVADO en _ARCHIVADOS\
-- credenciales_erp.ini → NUNCA tocar ni leer en voz alta
-- D:\ferreteria-oviedo-github\ → NUNCA modificar
-
-### REGENERACIÓN COMPLETA SEGURA — qué SÍ y qué NO eliminar:
-
-Al pedir "limpiar datos y regenerar desde el ERP", eliminar SOLO:
-```
-data\ventas-manzano-YYYY-MM.json   ← mes actual
-data\ventas-manzano-YYYY.json      ← año actual
-data\ventas-manzano.json
-data\ventas-manzano-meta.json
-data\catalogo-dinamico.json
-data\xlsm-enrich.json
-data\bod-*.json
-data\despachos-*.json
-data\pedidos-*.json
-data\ventas-xlsm-*.json
-data\ranking-unidades.json
-data\precios-diff.json
-CATALOGO PRODUCTOS\Datos.csv       ← regenerado por xlsx_a_csv.py
-CATALOGO PRODUCTOS\merma.json
-```
-**NO eliminar:**
-```
-CATALOGO PRODUCTOS\Datos.xlsx      ← MASTER, requiere base existente
-CATALOGO PRODUCTOS\actualizar.xlsx ← input de procesar-actualizacion.py (si aún no corrió ERP)
-data\ventas-manzano-YYYY-MM.json   ← meses anteriores al actual (históricos)
-```
-
 ### ORDEN DE LECTURA OBLIGATORIO AL INICIO DE CADA SESIÓN:
-
 1. MEMORY.md
 2. AGENTS.md
-3. CLAUDE.md
+3. CLAUDE.md (en W:\claude-config\CLAUDE.md)
 4. Recién después ejecutar cualquier tarea
 
-### SERVIDOR 2 — LIMITACIÓN REAL-TIME (CRÍTICO para diagnóstico):
+---
 
-El SQL Server en 200.6.118.110 ("Servidor 2") sincroniza con el ERP JustWeb **UNA SOLA VEZ al día a las 22:00**.
+## ARCHIVOS PROHIBIDOS DE ELIMINAR
 
-| Script | Fuente | Real-time |
-|--------|--------|-----------|
-| descargar_erp.py | SSRS / JustWeb HTTP | ✅ Sí |
-| descargar_ventas_erp.py | JustWeb HTTP | ✅ Sí |
-| descargar_bod.py | SQL Server (Servidor 2) | ❌ Solo tras 22:00 |
-| descargar_pedidos.py | SQL Server (Servidor 2) | ❌ Solo tras 22:00 |
-| descargar_despachos.py | SQL Server (Servidor 2) | ❌ Solo tras 22:00 |
-| leer_xlsm.py | VENTAS.xlsm (Servidor 2) | ❌ Solo tras 22:00 |
+- **CATALOGO PRODUCTOS\Datos.xlsx** → MASTER del catálogo. Si se corrompe, regenerar con seed (ver _HISTORICO\20260604_AGENTS_completo.md → sección REGENERACIÓN COMPLETA SEGURA).
+- **ventas-manzano.json** → NECESARIO: el panel lo usa como fallback en 4 puntos. NO eliminar.
+- **credenciales_db.ini** → NUNCA tocar ni leer en voz alta
+- **credenciales_erp.ini** → NUNCA tocar ni leer en voz alta
+- **E:\git-sync\** → NUNCA modificar directamente
 
-**Consecuencia:** Si el usuario "rebaja" una factura o genera una guía durante el día y corre el
-pipeline antes de las 22:00, ese despacho/pedido SEGUIRÁ apareciendo en el panel hasta que se
-corra el pipeline DESPUÉS de las 22:00. NO es un bug — es la limitación de sincronización del Servidor 2.
+### REGENERACIÓN COMPLETA SEGURA — qué SÍ y qué NO eliminar:
+```
+SÍ eliminar (se regeneran solos):
+  data\ventas-manzano-YYYY-MM.json   data\ventas-manzano-YYYY.json
+  data\ventas-manzano.json           data\ventas-manzano-meta.json
+  data\catalogo-dinamico.json        data\xlsm-enrich.json
+  data\bod-*.json                    data\despachos-*.json
+  data\pedidos-*.json                data\ventas-xlsm-*.json
+  data\ranking-unidades.json         data\precios-diff.json
+  CATALOGO PRODUCTOS\Datos.csv       CATALOGO PRODUCTOS\merma.json
 
-Respuesta estándar al usuario: *"Los datos de despachos/pedidos/bodegas vienen del Servidor 2
-que sincroniza a las 22:00. Corriendo el pipeline después de esa hora el movimiento desaparecerá."*
-
-Confirmado en incidente 2026-05-29: Factura 503157 rebajada intradía seguía en Despachos Pendientes.
-
-### FLUJO DE DESCARGA — REGLA FIJA:
-
-- ventas-manzano.json → salida principal de main.py (JSON_SALIDA). NECESARIO como fallback del panel.
-- ventas-manzano-2026.json → split anual generado por guardar_json() dentro de main.py
-- ventas-manzano-2026-05.json → split mensual generado por guardar_json()
-- descargar_erp.py descarga stock y precios — NO duplicar
-- descargar_ventas_erp.py descarga ventas — NO duplicar salidas
+NO eliminar (son base/histórico):
+  CATALOGO PRODUCTOS\Datos.xlsx
+  CATALOGO PRODUCTOS\actualizar.xlsx
+  data\ventas-manzano-YYYY-MM.json   (meses ANTERIORES al actual)
+```
 
 ---
 
 ## REGLA DE CIERRE DE SESIÓN — DEPLOY PENDIENTE
 
-Antes de terminar cualquier sesión donde se hayan modificado archivos, Claude DEBE:
+Antes de terminar cualquier sesión donde se hayan modificado archivos:
+1. Comparar mtime de archivos desplegables (HTML, JS, JSON) vs último deploy
+2. Si algún archivo es más nuevo → ejecutar `firebase deploy --only hosting`
+3. Actualizar línea "Deploy cierre sesión" en este archivo
+4. Ejecutar `ACTUALIZAR_GITHUB.bat`
 
-1. Registrar timestamp del último deploy conocido (ver sección PROYECTO → "Deploy cierre sesión")
-2. Comparar mtime de archivos desplegables vs ese timestamp:
-   - HTMLs: panel-admin.html, panel-cliente.html, index.html
-   - JS: firebase-config.js, sw.js
-   - JSONs: data/*.json
-3. Si algún archivo es más nuevo → ejecutar `firebase deploy --only hosting` desde E:\ferreteria-oviedo\
-4. Actualizar línea "Deploy cierre sesión" en AGENTS.md con la nueva fecha/hora
-5. Ejecutar ACTUALIZAR_GITHUB.bat con descripción del cierre
-
-Patrón de riesgo: modificación de archivo → commit github → sesión continúa → deploy se olvida.
-Patrón correcto: modificar → commit github → verificar mtime → deploy si hay cambios → actualizar AGENTS.md.
-
-### Cómo verificar en PowerShell:
+### Verificación en PowerShell:
 ```powershell
-$ultimoDeploy = [datetime]"YYYY-MM-DD HH:MM:00"
+$ultimoDeploy = [datetime]"2026-06-04 00:21:00"
 Get-ChildItem 'E:\ferreteria-oviedo\' -Filter '*.html' -File |
-    Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
-Get-ChildItem 'E:\ferreteria-oviedo\' -Filter '*.js' -File |
-    Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
-Get-ChildItem 'E:\ferreteria-oviedo\data\' -Filter '*.json' -File |
     Where-Object { $_.LastWriteTime -gt $ultimoDeploy } | Select-Object Name, LastWriteTime
 ```
 
@@ -332,1124 +284,345 @@ Get-ChildItem 'E:\ferreteria-oviedo\data\' -Filter '*.json' -File |
 
 ## REGLA COMMIT OBLIGATORIO
 
-Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN desde PowerShell:
-
-  "V36.X desc breve sin tildes" | cmd /c "E:\ferreteria-oviedo\ACTUALIZAR_GITHUB.bat"
-
-- El bat sincroniza con robocopy los archivos permitidos y hace git add/commit/push.
-- La descripción va por stdin (máximo 5 palabras, minúsculas, sin tildes).
-  Ejemplo: fix bodega dropdown panel
-- No preguntar al usuario. No esperar confirmación.
-- Ejecutar siempre como último paso.
-- Si BLOQUEADO: revisar archivo sensible en repo antes de reintentar.
-- Si falla por red: reportar el error pero NO omitir el intento.
+Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN:
+```
+"V37.X desc breve sin tildes" | cmd /c "E:\ferreteria-oviedo\ACTUALIZAR_GITHUB.bat"
+```
+- Descripción: máximo 5 palabras, minúsculas, sin tildes
+- Si falla por red: reportar el error pero NO omitir el intento
 
 ---
 
-## REGLA: Sincronizacion de UI con cada deploy
+## REGLA: Sincronización de UI con cada deploy
 
-Cada vez que se hace un deploy de nueva version (V37.X.Y),
-OBLIGATORIO actualizar EN EL MISMO COMMIT:
+Con cada deploy V37.X.Y, actualizar EN EL MISMO COMMIT:
+1. Version Badge en panel-admin.html (~L3043): número + fecha
+2. Version Badge en panel-cliente.html (si lo tiene)
+3. Tutoriales (~L2086-2204): si cambiaron flujos o scripts
+4. Mejoras planificadas (~L2206-2330): marcar completadas
 
-1. **Version Badge** en panel-admin.html linea ~3043:
-   - Numero de version (ej: V37.8)
-   - Fecha (formato DD-MM-YYYY)
-
-2. **Version Badge** en panel-cliente.html (si lo tiene)
-
-3. **Tutoriales** (panel-admin.html ~L2086-2204):
-   - Si la version cambio nombres de archivos, scripts o flujos: actualizar
-   - Si introduce funcionalidad nueva visible al usuario: agregar tutorial
-
-4. **Mejoras planificadas** (panel-admin.html ~L2206-2330):
-   - Eliminar/marcar como completadas las mejoras que esta version entrega
-   - Agregar entrada en mejorasItems (JS array ~L5540) con resumen V37.X.Y
-
-5. **Mensajes de error** que mencionan el .bat:
-   - Si dicen ACTUALIZAR_Y_PUBLICAR.bat -> corregir a ACTUALIZAR_TODO.bat
-   - Si mencionan rutas o scripts viejos -> actualizar
-
-6. **_HISTORICO/MANUAL_MAESTRO.md**:
-   - Actualizar referencias operativas (bats, scripts, rutas)
-
-7. **CHANGELOG** en AGENTS.md y MEMORY.md (ya se hace, mantener)
-
-VALIDACION antes de hacer commit:
-- grep "V_ANTERIOR" panel-admin.html -> no debe haber ocurrencias operativas
-- grep "ACTUALIZAR_Y_PUBLICAR.bat" panel-admin.html -> debe dar 0
-- grep "PREPARAR_Y_PUBLICAR.bat" panel-admin.html -> debe dar 0
+**VALIDACIÓN antes de commit:**
+```
+grep "ACTUALIZAR_Y_PUBLICAR.bat" panel-admin.html → debe dar 0
+grep "D:\\ferreteria-oviedo" panel-admin.html → debe dar 0
+```
 
 ---
 
-## CHANGELOG
-
-### V37.14 — 2026-06-02
-
-**Scripts pipeline — fix rutas D: → E: (migración completada)**
-
-Causa: 5 scripts Python del pipeline tenían `BASE_DIR = Path(r"D:\ferreteria-oviedo")` hardcodeado. Al correr el pipeline con la migración a E:, todos fallaban con "No existe E:\ferreteria-oviedo\credenciales_db.ini" o no encontraban los CSVs raw.
-
-Archivos corregidos (una constante cada uno):
-- `BODEGAS/descargar_bod.py` línea 29: D: → E:
-- `BODEGAS/descargar_pedidos.py` línea 31: D: → E:
-- `BODEGAS/descargar_despachos.py` línea 34: D: → E:
-- `BODEGAS/generar_informe_stock.py` línea 25: D: → E:
-- `VENTAS EL MANZANO/leer_xlsm.py` líneas 83-90: 4 rutas D: → E:
-
-**Scripts no tocados (no en pipeline activo):** `BODEGAS/vba_manipulation.py`, `setup_vba.py`, `diagnostico_vba.py`, `debug_4422.py`, `diagnostico_huerfanos.py`, `encriptar_credenciales.py`, `_HISTORICO/*.py`, `subir_ventas_manzano.py`.
-
-**ACTUALIZAR_TODO.bat + ACTUALIZAR_TODO_AUTO.bat — fix argumento precios**
-
-`actualizar_config_precios.py` espera `true|false` como argumento posicional. Los BATs llamaban con `--precio visible/oculto`. Corregido: `true` (visible) y `false` (oculto).
-
-**CATALOGO PRODUCTOS/scripts/actualizar_config_precios.py — fix XDG_CONFIG_HOME**
-
-`CONFIGSTORE_PATH` usaba `Path.home() / ".config"` ignorando `XDG_CONFIG_HOME`. Al migrar el configstore de Firebase a `E:\config\`, el script no encontraba el token. Fix: usa `os.environ.get("XDG_CONFIG_HOME")` con fallback a `.config`.
-
-### V37.13 — 2026-06-02
-
-**panel-admin.html — fix árbol auto-init en primera carga**
-
-Causa raíz: `venAdmCargar()` cargaba datos vía fetch async pero su callback `.then()` nunca llamaba `vadmReRenderTabActivo()`. Al navegar directo al sidebar "Árbol Retail" por primera vez, los datos llegaban pero el árbol quedaba en init-bar porque nadie disparaba el auto-render post-carga.
-
-Cambios:
-- `venAdmCargar()` fetch `.then()`: agregado `vadmReRenderTabActivo()` tras `_mostrar()` (línea 8016).
-- `vadmReRenderTabActivo()` caso árbol: si `varbolInitBar` ya está oculto (árbol ya inicializado) → llama `vadmRenderArbol()` directo; si no → llama `vadmIniciarArbol()`. Evita reset de selectores de período en cada cambio de filtro.
-- `varbolInitBar` mensaje: actualizado — ya no dice "ve a Análisis primero" (los datos cargan automáticos).
-- Tutoriales (×4): rutas `E:\ferreteria-oviedo\` → `E:\ferreteria-oviedo\` (migración completada 2026-06-02).
-
-NO TOCADO: `vadmRenderArbol`, `_arPoblarFiltros`, `_arFiltrar`, `vadmRenderArbolTabla`, `vadmRenderArbolHeat`, `vadmIniciarArbol` (lógica interna), `vadmSubTab` (lógica interna).
-
-### V37.10 — 2026-05-29
-
-**panel-admin.html — Nuevo módulo Despachos Pendientes (grupo Inventario)**
-- Subtab 'despachos' con tabla agrupada por documento (folio, doc, fecha emisión,
-  vendedor, cliente, observación derivada, fecha despacho, N° ítems).
-- Fuente única: /data/despachos-detalle.json (PASO 1F del pipeline, sin nuevas descargas).
-- Observación derivada por fechas: Entrega de empaque / Por despachar / Sin fecha.
-- Detalle al clic: código, descripción (_vadmStockMap), cantidad, bodega.
-- Filtros adicionales: FLETE VENTA excluido, email, Excel exportable.
-- Variables/funciones nuevas: _dpDetalleRaw, _dpDocs, dpRenderPendientes,
-  dpToggleDoc, dpFiltrar. Registro en vadmReRenderTabActivo.
-
-**ACTUALIZAR_GITHUB.bat — fixes y completitud del sync**
-- Typo firestore_indexes.json → firestore.indexes.json (no se subía desde su creación).
-- Agregados: storage.rules, update-sw-version.js, ESTADO_PROYECTO.md.
-- Etiqueta commit V36 → V37.
-- git pull --rebase antes del push (consistencia con ACTUALIZAR_GITHUB_APP_INVENTARIO.bat).
-
-**Limpieza raíz**
-- ACTUALIZAR_GITHUB_APP_INVENTARIO.bat movido a APP-INVENTARIO/ (corresponde a esa carpeta).
-- encriptar_credenciales.py agregado a "Scripts activos" en regla de limpieza
-  (lo usan descargar_bod.py y descargar_despachos.py vía credenciales_db.enc).
-
-### V37.7 — 2026-05-27
-
-**Informe Stock Bodegas — MEM + Pedido real + drill-down + DifStk/DifLib**
-
-Causa: módulo Informe Stock mostraba solo PEM/SEM/CEM sin visibilidad de pedidos
-comprometidos ni stock MEM. Sin forma de ver qué documentos abiertos reducen
-el disponible.
-
-**Backend (V37.7):**
-- `BODEGAS/descargar_pedidos.py` (NUEVO): descarga `ST_PEDIDO` de `R_STOCK_PRODUCTOS`.
-  Genera `pedidos-comprometidos.json` (totales) y `pedidos-detalle.json` (documentos).
-
-**Backend (V37.8 — fix + nuevo):**
-- `BODEGAS/descargar_pedidos.py` reescrito: elimina JOIN `P_VENDEDORES` (tabla inexistente).
-  Usa `CANTIDAD_PENDIENTE` (no CANTIDAD), CTE para deduplicar líneas múltiples del mismo SKU.
-  DOC_TIPOS_PEDIDO corregido: NVM / VMN / VMP (solo NVs reales — VME/CVN/OVC eliminados).
-  Vendedor = `M_DOCUMENTOS_ENCABEZADO.IDVENDEDOR` (string, ej: 'alexis'). Sin fallback.
-  Cliente = `M_ENTIDADES.RAZON_SOCIAL` vía `ent.IDENTIDAD = CAST(enc.IDENTIDAD AS NVARCHAR(20))`.
-  FECHA_ENTREGA: año ≤ 1900 → vacío. `atraso` = días desde F.Entrega hasta hoy (si vencida).
-  Salida JSON nueva: tipoDoc / tipoDocLabel / numero / fechaEmision / fechaEntrega / atraso /
-                     tipoOrden / cliente / rut / vendedor / cant / idDocReal / urlERP.
-- `BODEGAS/descargar_despachos.py` (NUEVO): descarga BVE/FVE con `CANTIDAD_PENDIENTE > 0`.
-  Genera `data/despachos-comprometidos.json` y `data/despachos-detalle.json`.
-  Estructura idéntica a pedidos-detalle para reutilizar el modal del panel.
-  MESES_HISTORICO = 12 meses para despachos.
-- `ACTUALIZAR_TODO.bat`: PASO 1F agregado (después de 1E), llama `descargar_despachos.py`.
-
-**Frontend (V37.7 — base):**
-- Tabla: de 17 cols → 27 cols (PEM/SEM/CEM/MEM/TOTAL × Disp/Fís/Ped/DifStk/DifLib)
-- DifStk = Fís − Disp. DifLib = Fís − Disp − Ped.
-
-**Frontend (V37.8 — cambios):**
-- DifLib ELIMINADO: 27 → 22 columnas (4 cols/bodega × 5 bodegas + 2 fijas)
-- DifStk renombrado a Dif (fórmula: Fís − Disp, igual que antes)
-- Dif = 0: verde, clic inactivo. Dif ≠ 0: naranja, clicable → modal despachos BVE/FVE.
-- Modal Dif: muestra despachos-detalle.json — folio, tipo, F.Emisión, F.Entrega, badge atraso, cliente, cant.
-- Modal Ped (rediseñado): usa nueva estructura pedidos-detalle — Documento/Número/F.Emisión/F.Entrega/cliente/vendedor/cant.
-- `isbGenerar` carga 3 JSONs: pedidos-comprometidos + pedidos-detalle + despachos-detalle.
-- Filtro "Solo negativos": antes usaba DifLib < 0, ahora usa Dif < 0 (Disp > Fís = error stock).
-- Export CSV/Excel: 22 cols (DifLib eliminado de cabeceras y datos).
-- Filtro "Solo negativos" ahora mira DifLib < 0 (antes miraba DifStk)
-- Modal ESC + click-overlay para cerrar
-
-**Variables JS nuevas:** `_isbPedidosComprometidos`, `_isbPedidosDetalle`
-**Funciones JS nuevas:** `isbAbrirDetalle`, `isbCerrarDetalle`
-
-**NO TOCADO:** `_vadmCargarStockMap`, módulos Quiebre, Sobrestock, BajaRot,
-Análisis Bodegas (V37.5), Consulta Stock (V37.1).
-
-### V37.6 — 2026-05-27
-
-**Informe Stock Bodegas — fix bug "Fís todo en cero"**
-
-Causa raíz: `normalizar_existencias()` generaba PEM_BOD/SEM_BOD/CEM_BOD desde V37.3 pero faltaban en `cols_actualizar` y `COLS_NUM` de `procesar-actualizacion.py`, así que el merge no los transfería. Además faltaba `MEM_BOD` en toda la cadena.
-
-Archivos tocados:
-- `CATALOGO PRODUCTOS/scripts/descargar_erp.py`: MEM añadido al loop St_Bod + MEM_BOD en all_cols
-- `CATALOGO PRODUCTOS/scripts/procesar-actualizacion.py`: MEM_BOD en COLS_ORDEN, MAPA_HOJA2, COLS_OPCIONALES, COLS_NUMERICAS, cols_actualizar, COLS_NUM, cols_h2 (6 lugares)
-- `CATALOGO PRODUCTOS/scripts/xlsx_a_csv.py`: MEM_BOD en numeric cols
-- `CATALOGO PRODUCTOS/scripts/csv_a_json.py`: MEM_BOD -> mem_bod en mapa
-- `panel-admin.html`: mem_bod añadido a _vadmCargarStockMap(); mem_fis:p.mem_bod añadido a _construirDatos()
-- `CATALOGO PRODUCTOS/Datos.json`: regenerado (pem_bod:741 / sem_bod:2764 / cem_bod:34 / mem_bod:127)
-
-Verificación: Datos.json tiene pem_bod>0 en 741 productos (ej. cod 10187: pem_disp=104 pem_fis=115 Dif=11) ✅
-Deploy: 2026-05-27 16:39
-
-### V37.5 — 2026-05-27
-
-**BODEGAS/descargar_bod.py — fix diasAntiguedad RCE: GRC ausente + dedup min(dias)**
-
-Causa raíz: `GRC` (Guía Recepción de Compra) no estaba en el filtro `DOC IN` del CTE ENTRADAS.
-Para cod 15476 RCE, el único doc que pasaba el filtro era `GRT/67950/2024-03-08` (810 días).
-El doc real más reciente `GRC/1056331/2026-05-25` (2 días) era invisible para la query.
-
-**Cambios aplicados:**
-- CTE ENTRADAS: `'GRC'` agregado al inicio de la lista `DOC IN`
-  - Antes: `('GRT','GME','GIB','Gdc','GBR','GRP','GRI','GRN','GIN','GDC','GDV')`
-  - Ahora:  `('GRC','GRT','GME','GIB','Gdc','GBR','GRP','GRI','GRN','GIN','GDC','GDV')`
-- `_deduplicar_y_acumular()`: PASO 3 agregado después de la acumulación
-  - La acumulación puede incluir docs viejos Y nuevos para el mismo producto
-  - PASO 3 conserva solo el de menor `diasAntiguedad` (más reciente) por `codigoTecnico`
-  - No-op si el producto ya tiene un solo doc (IEM/CEM no afectados)
-
-**Verificación post-fix:**
-- RCE cod 15476: `GRC/1056331/25-05-2026/Dias=2` ✅ (era 810)
-- RCE AMES0096: Dias=5 ✅ (sin regresión)
-- IEM: 33 registros ✅ (sin cambio)
-- CEM: 35 registros ✅ (sin cambio)
-- Deploy: 2026-05-27 15:12
-
-**Auditoría DOC IN — 2026-05-27 15:28**
-
-Query contra `M_DOCUMENTOS_DETALLE` (2025-01-01+, IDBODEGA IN 55/72/24, CANTIDAD>0)
-cruzada con `M_DOCUMENTOS` (TIPOSTOCK, ESDESPACHO, ESDEVOLUCION).
-
-Tipos candidatos encontrados fuera de la whitelist (32 tipos en total):
-
-| Tipo | TIPOSTOCK | Decisión | Razón |
-|------|-----------|----------|-------|
-| GII | St_Contable | **AGREGAR** | Bodega Guia Ingreso Inventario — ajuste alza confirmado |
-| GTS | St_Contable | **AGREGAR** | Guia Traslados Entre Sucursales — entrada confirmada IDSUCURSAL=04 |
-| FCN | St_Contable | NO APLICA | Compra Factura — 0 registros en IDSUCURSAL=04 (sucursal=01 solo) |
-| GEI | St_Contable | EXCLUIR | Bodega Guia Egreso Inventario — SALIDA |
-| GST | No_Stock | EXCLUIR | Solicitud de Traslado — no afecta stock |
-| NVM,CVN,BVE,VMN,FVE | St_Pedido/St_Contable | EXCLUIR | Ventas — SALIDA |
-| NCE,NVC,OCN,GPF,GPE,GCE,GEE | varios | EXCLUIR | Créditos/devoluciones a proveedor o SALIDA |
-
-Whitelist final: `'GRC','GRT','GME','GIB','Gdc','GBR','GRP','GRI','GRN','GIN','GDC','GDV','GII','GTS'`
-
-Comentario de clasificación agregado al SQL arriba de la cláusula DOC IN.
-
-Impacto en conteos: **0 productos cambian diasAntiguedad** (GII/GTS no son el doc más reciente para ningún producto con stock actual — futura cobertura).
-
-Conteos antes/después: IEM=33/33 · RCE=25/25 · CEM=35/35 (sin cambio)
-Deploy: 2026-05-27 15:28
-
-**Verificación PASO 3 dedup (2026-05-27):**
-- Simulado PASO1+2 sin PASO3 para RCE: 25 registros = mismos 25 que con PASO3
-- Conclusión: PASO 3 es no-op para RCE en el estado actual (cada producto acumula exactamente 1 doc)
-- PASO 3 está diseñado para el caso donde `fisico > cantidad_del_doc_mas_reciente` y se agregan docs más antiguos — no ocurre hoy en RCE pero puede ocurrir mañana con productos de alto stock
-- Nota: la caída de RCE de 311→476 líneas SQL fue por GRC incorporado; la caída de productos 24→25 fue por un producto nuevo (GRC/1056331 ahora visible)
-- El "RCE=25/35" en el resumen de chat anterior fue un typo: 35 es CEM, RCE siempre fue 25/25
-
-### V37.2 — 2026-05-26
-
-**descargar_ventas_erp.py — fix días incompletos (mid-day run)**
-
-Problema: correr el pipeline a mitad del día marcaba hoy como "al día". Segunda corrida ignoraba las ventas de la tarde.
-
-Fix en `_calcular_delta()`:
-- Antes: `if max_f >= f_fin` → skip siempre
-- Ahora: `if max_f >= f_fin and f_fin < hoy` → solo skip si el día ya terminó
-- Si `max_f >= hoy` → `cur = hoy` (re-descarga desde hoy, dedup `(Numero,Codigo)` evita duplicados)
-- Log: `"Hoy (DD/MM/YYYY) ya descargado — re-descarga por ventas nuevas del dia"`
-
-**ACTUALIZAR_TODO_AUTO.bat — nuevo (no interactivo)**
-
-- Sin `pause` ni `choice` — apto para Tarea Programada
-- Precios: ocultos por defecto (seguro)
-- Log: `logs\auto_YYYYMMDD_HH00.log`
-- Mismos pasos que ACTUALIZAR_TODO: ERP → XLSM → bodegas → ventas → precios → deploy
-
-**Tarea Programada Windows: FerreteriOviedo-Auto18 — ELIMINADA (2026-06-02)**
-
-- ~~Ejecuta `ACTUALIZAR_TODO_AUTO.bat` todos los días a las 18:00~~
-- Estado: ELIMINADA del Task Scheduler (era dependencia de C:/registro de Windows)
-- Reemplazo portable: `E:\EJECUTAR_AUTO.bat` (ejecutar manualmente o re-registrar con `ACTIVAR_EN_ESTE_EQUIPO.bat` al configurar un equipo nuevo)
-
-**Reparación ventas 22-26 mayo**
-
-- xlsx incompletos (22-05 10:07, 23-05 12:39) eliminados
-- Re-descarga completa 22-05 → 26-05: 1.451 registros nuevos, 5 dups eliminados
-- 39.638 registros totales, 34.375 enriquecidos con XLSM
-- Deploy: 2026-05-26 18:29
-
-### V37.1 — 2026-05-26
-
-**panel-admin.html — Consulta de Stock (nuevo módulo)**
-
-- Sidebar Catálogo: botón "🔍 Consulta de Stock" → `showTab('stockconsulta')`
-- `tab-stockconsulta`: buscador (código o descripción, mín 2 chars), tabla resultados (50 max, orden stock DESC), ficha detalle al hacer clic
-- Ficha detalle: info producto (Cod/Desc/HiperFam/Fam/Sub/Marca) + precios (Costo/Precio c/IVA/Markup con colores) + tabla 8 bodegas (PEM/SEM/CEM/MEM/IEM/TEM/RCE/CD) con Disp/Tránsito/Físico/Valor Stock/Estado (●verde/●naranja/●gris)
-- `vadmBuscarStock()`: filtra `_vadmStockMap` en memoria, sin fetch extra
-- `vadmRenderStockConsulta(cod)`: render ficha, usa `data-cod` en onclick (no JSON.stringify)
-- `vadmReRenderTabActivo`: stub vacío agregado para `stockconsulta`
-- Fuente de datos: `_vadmStockMap` (ya cacheado en sesión, sin costo Firestore)
-- CEM en selector `bfFuente` ya estaba desde V36.9k — confirmado ✅
-- Deploy: 2026-05-26 17:53 — commit 30fce20
-
-### V37 — 2026-05-26
-
-**panel-admin.html — P-2: eliminar restos Venta vs Stock (removido V35.0)**
-- `vadmRenderVvsStock()` eliminada — vsec-vvsstock no existe, no estaba en vadmReRenderTabActivo
-- `_vadmHtmlEmailVvsStock()` eliminada — no referenciada en _vadmDespacharHtmlEmail
-- `vvsstock` eliminado de mapas `_vadmHtmlEmailNoDisponible` y `tabLabels`
-
-**panel-cliente.html + panel-admin.html — P-4: señales de alerta funciones críticas**
-- `⚠️` agregado antes de: `doLoginGoogleCli`, `doLoginAuth`, `doRegistroCli`, `adminReenviarAcceso`
-- Comentario incluye: invariantes clave, última modificación, referencia a CLAUDE.md
-
-**Criterio código muerto revisado (aprendizaje de sesión)**
-- NO eliminar funciones por ausencia de llamada directa
-- Solo eliminar si la feature fue explícitamente removida del panel (changelog)
-- Funciones Firestore helpers se mantienen aunque el panel llame directo — soportan el flujo
-
----
-
-## REGLA SEÑALES DE DISEÑO — verificar implementación completa
-
-Cuando CLAUDE.md dice "el script Y escribe el archivo X":
-1. Hacer grep inmediato para confirmar que el código existe.
-2. Si no hay json.dump / open(X, 'w') → implementación incompleta.
-3. Completar antes de cerrar la sesión.
-Patrón de riesgo: documentado en CLAUDE.md pero el código no lo hace.
-
----
-
-## REGLA ARCHIVO — revisar antes de crear
-
-Antes de escribir cualquier script, HTML, BAT o función nueva:
-- Verificar si existe algo en E:\ferreteria-oviedo\ARCHIVO que sirva.
-- Si existe → moverlo de vuelta (Move-Item), no copiar ni duplicar.
-- Ver memoria project-archivo para el mapa completo.
-
----
-
-## REGLAS DE EJECUCIÓN
-
-- No usar cmd /c bat > NUL desde bash — abre shell interactivo.
-- Usar PowerShell step-by-step o correr scripts Python directamente.
-- No subir datos de ejemplo — solo datos reales actualizados.
-- XLSMs (VENTAS, RANKING, PRECIOS) están en ARCHIVO\05-TUTORIALES-XLSM-ERP.
-- No agregar dependencias sin autorización.
-- No reescribir lo que ya funciona.
-- No pedir confirmación antes de ejecutar scripts/BATs si el usuario dijo "ejecuta".
+## PIPELINE COMPLETO — ACTUALIZAR_TODO.bat
+
+```
+[PASO 1A] descargar_erp.py → actualizar.xlsx (precios + stock SSRS 8 bodegas, 2 bloques, 23 cols)
+[PASO 1B] procesar-actualizacion.py + xlsx_a_csv.py + csv_a_json.py → Datos.json + catalogo-dinamico.json
+[PASO 1C] leer_xlsm.py → xlsm-enrich.json
+[PASO 1D] descargar_bod.py (BODEGAS/) → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
+          SQL Server directo — IEM=72, RCE=55, CEM=24
+[PASO 1E] descargar_pedidos.py (BODEGAS/) → pedidos-comprometidos.json + pedidos-detalle.json
+          Fuente: R_STOCK_PRODUCTOS.ST_PEDIDO · Tipos: NVM/VMN/VMP
+[PASO 1F] descargar_despachos.py (BODEGAS/) → despachos-comprometidos.json + despachos-detalle.json
+          Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0
+[PASO 2]  main.py --sin-deploy
+          PASO 1: _catalogo_generado_hoy()? SI → leer_bodegas_desde_actualizar (3s) / NO → HTTP (~70s)
+          PASO 2: descargar_ventas_erp.py incremental (dedup por Numero+Codigo)
+          PASO 3: consolidar() — JOIN catálogo + ventas + mapa_cliente
+          PASO 3.5: enriquecer_desde_xlsm() — agrega rut, sector, bodegaCorta, hora, razonSocial
+          PASO 4: guardar_json() → ventas-manzano*.json
+[PASO 3]  Pregunta visibilidad precios (10s timeout, default N=ocultos)
+[PASO 4]  firebase deploy --only hosting
+```
+
+**SEÑAL ANTI-DOBLE-DESCARGA:** `procesar-actualizacion.py` escribe `catalogo-dinamico.json`.
+`main.py` lo lee: si es de hoy → usa datos ya descargados (3s) · si no → descarga HTTP (~70s extra).
+NO modificar esta lógica. NO eliminar ni mover `catalogo-dinamico.json`.
+
+BATs disponibles:
+```
+ACTUALIZAR_TODO.bat           → pipeline completo (único punto de entrada)
+PUBLICAR.bat                  → solo firebase deploy
+ACTUALIZAR_GITHUB.bat         → sync github
+ACTUALIZAR_TODO_AUTO.bat      → sin interacción (para ejecutar manualmente o tarea programada)
+VENTAS EL MANZANO\ACTUALIZAR_VENTAS.bat → solo ventas
+```
+
+BATs archivados en `_HISTORICO\` — NO ejecutar:
+`20260523_PREPARAR_Y_PUBLICAR.bat` · `20260523_ACTUALIZAR_AUTO.bat` · `20260530_SUBIR_VENTAS_MANZANO.bat`
 
 ---
 
 ## ZONAS ABSOLUTAMENTE INTOCABLES
 
-- firebase-config.js — no modificar nunca desde panel HTML
-- window.mostrarPrecio — default SIEMPRE false en panel-cliente.html
-- credencialeserp.ini — nunca tocar, nunca subir
-- D:\ferreteria-oviedo-github — nunca trabajar aquí
-- venAdmParseFecha — utility global, no cambiar firma ni comportamiento
-- venAdmFmt — utility global, no cambiar firma
+```
+firebase-config.js             — no modificar nunca desde panel HTML
+window._mostrarPrecio          — default SIEMPRE false en panel-cliente.html
+credenciales_erp.ini           — nunca tocar, nunca subir a git
+credenciales_db.ini            — nunca tocar, nunca subir a git
+E:\git-sync\                   — nunca trabajar aquí directamente
+venAdmParseFecha()             — no cambiar firma ni comportamiento
+venAdmFmt()                    — no cambiar firma
+_actualizar_xlsx_es_hoy()      — ELIMINADA en V36.5, no restaurar
+xlsm-enrich.json               — solo leer_xlsm.py lo genera, nadie más
+```
+
+---
+
+## REGLAS DE EJECUCIÓN
+
+- No usar cmd /c bat > NUL desde bash — abre shell interactivo → usar PowerShell
+- No subir datos de ejemplo — solo datos reales actualizados
+- No agregar dependencias sin autorización
+- No reescribir lo que ya funciona
+- No pedir confirmación antes de ejecutar si el usuario dijo "ejecuta"
+- Python: sin tildes, sin emojis, solo ASCII cp1252
+- BATs: guardar en ANSI cp1252
 
 ---
 
 ## MAPA DE DEPENDENCIAS CRÍTICAS
 
+```
 Si tocas...              Debes verificar también...
 ------------------------------------------------------------
 vadmSubTab(id)           Que id esté en vadmReRenderTabActivo.
-                         Si no está, el tab no se actualiza al cambiar filtros.
-vadmRenderSobreStock     vadmSSProds lo usan email, Excel y Outlook.
-                         Si cambia la estructura del objeto, rompe los 3 exports.
-vadmRenderBajaRot        vadmBRDatos — mismo caso que SSProds.
-                         Depende de vadmLineas cubriendo el rango de fechas.
-vadmRenderQuiebre        vadmStockMap debe estar cargado primero.
-                         Si no, llamar vadmCargarStockMap(cb) antes.
-vadmCargarStockMap       Cacheada en sesión. NO llamar si ya existe con datos.
-vadmSSMarcaClick(el)     Usa data-marca del HTML.
-                         NUNCA pasar nombre como string en onclick.
-Sidebar HTML             Verificar que grupos siguen colapsando correctamente.
-Cualquier onclick        NUNCA usar JSON.stringify — se rompe con comillas
-                         en nombres de marca/producto.
-venAdmParseFecha         Utility global usada en TODOS los tabs de ventas.
-                         No modificar firma ni comportamiento.
-venAdmFmt                Utility global de formato CLP. No modificar.
+vadmRenderSobreStock     _vadmSSProds — lo usan email, Excel y Outlook.
+vadmRenderBajaRot        _vadmBRDatos + _vadmLineas cubre el rango de fechas.
+vadmRenderQuiebre        _vadmStockMap debe estar cargado primero.
+_vadmCargarStockMap      Cacheada. NO llamar si ya existe con datos.
+vadmSSMarcaClick(el)     Usa data-marca del HTML. NUNCA string en onclick.
+Sidebar HTML             Que grupos siguen colapsando correctamente.
+onclick=""               NUNCA usar JSON.stringify — rompe con comillas.
+venAdmParseFecha         Utility global en TODOS los tabs. No modificar firma.
+leer_xlsm.py             Debe seguir generando xlsm-enrich.json al final.
+enriquecer_desde_xlsm() Debe correr DESPUÉS de consolidar() y ANTES de guardar_json().
+_catalogo_generado_hoy() Verifica catalogo-dinamico.json mtime — no revertir.
+descargar_bod.py         Subquery ULT: WHERE IDBODEGA=? ANTES del GROUP BY.
+```
 
 ---
 
 ## VARIABLES JS GLOBALES CLAVE — no renombrar
 
-vadmLineas        Array registros de ventas {codigo, fecha, valorNeto,
-                  cantidad, marca, periodo, bodegaCorta}
-vadmStockMap      Mapa cod → {pem, sem, cem, mem, stock, marca, desc,
-                  costo, precio, pemtrans, cd, cdtrans, rce, tem, iem, iemtrans}
-vadmBodSel        Array de bodegas seleccionadas
-vadmVendSel       Array de vendedores seleccionados
-vadmSSProds       Cache último render sobre-stock — usan email, Excel, Outlook
-vadmBRDatos       Cache último render baja rotación — idem
-vadmAnioSel       Año seleccionado (mes actual por defecto)
-vadmSSMesesMin    Cobertura mínima para sobre-stock (default 12)
+```
+_vadmLineas       Array registros ventas {codigo, fecha, valorNeto, cantidad, marca, periodo, bodegaCorta}
+_vadmStockMap     Mapa cod → {pem, sem, cem, mem, stock, marca, desc, costo, precio, pem_trans, ...}
+_vadmBodSel       Array de bodegas seleccionadas ([] = todas)
+_vadmVendSel      Array de vendedores seleccionados
+_vadmSSProds      Cache último render sobre-stock — usan email, Excel, Outlook
+_vadmBRDatos      Cache último render baja rotación — idem
+_vadmAnioSel      Año seleccionado ('' = mes actual)
+_vadmSSMesesMin   Cobertura mínima para sobre-stock (default 12)
+```
 
 ---
 
 ## FUNCIONES JS CLAVE — no renombrar ni cambiar firma
 
-vadmCargarLineas          Carga ventas JSON según vadmAnioSel
-vadmCargarStockMap(cb)    Carga Datos.json → vadmStockMap, cachea en sesión
-vadmRenderSobreStock      Render sobre-stock, cobertura en meses
-vadmSSMarcaClick(el)      Toggle filtro marca — usa data-marca, NO string
-vadmRenderBajaRot         Render baja rotación, auto-reload si rango > datos
-vadmFiltrarBajaRot        Re-filtra vadmBRDatos sin recomputar ABC
-vadmRenderQuiebre         Render stock quiebre con ABC + Rot.30/60/90d
-vadmRenderImpacto         Volumen vs Precio — compara dos períodos P1/P2 por vendedor (V36.9i)
-                          Fuente: _vadmLineas. Clave vendedor: r.gmailUser||r.vendedorErp
-                          Filtros: _vadmBodSel + _vadmVendSel + _vadmDocSel
-                          NO aplica _vadmPeriodoSel (pill selector bloquearía meses distintos)
-                          Métricas: suma(cantidad) + valorNeto/cantidad por vendedor
-                          Genera reseña dinámica en lenguaje simple al pie de la tabla
-vadmRenderNC              NC por vendedor — usa _vadmLineas (ERP, TODOS los vendedores)
-                          Detecta NC por r.documento (contiene "nota" o "cred")
-                          Agrupa 2 pasos: (vendedor|numero) → neto acumulado → por vendedor
-                          NO usa ventas-xlsm-YYYY.json (V36.7 bug: solo mostraba 2 vendedores)
-venAdmParseFecha          Parsea fecha DD/MM/YYYY → timestamp ms
-venAdmFmt(n)              Formatea número como X.XXX CLP
+```
+vadmCargarLineas()          Carga ventas JSON según _vadmAnioSel
+_vadmCargarStockMap(cb)     Carga Datos.json → _vadmStockMap; cachea en sesión — NO llamar si ya existe
+vadmRenderSobreStock()      Render sobre-stock, cobertura en meses
+vadmSSMarcaClick(el)        Toggle filtro marca — usa data-marca, NUNCA string en onclick
+vadmRenderBajaRot()         Render baja rotación + auto-reload si rango > datos cargados
+vadmFiltrarBajaRot()        Re-filtra _vadmBRDatos sin recomputar ABC
+vadmRenderQuiebre()         Render stock quiebre con ABC + Rot.30/60/90d
+vadmRenderImpacto()         Volumen vs Precio: Q y precio prom por vendedor en 2 períodos
+vadmRenderNC()              NC por vendedor desde _vadmLineas
+vadmBuscarStock()           Filtra _vadmStockMap en memoria para Consulta de Stock
+vadmRenderStockConsulta(cod) Ficha detalle de un producto (8 bodegas)
+venAdmParseFecha(s)         Parsea fecha DD/MM/YYYY → timestamp ms — NO cambiar firma
+venAdmFmt(n)                Formatea número como X.XXX CLP — NO cambiar firma
+vadmDatosFiltrados()        Filtrado central — todas las funciones render deben usarla
+```
 
 ---
 
-## BODSTOCK — 8 BODEGAS, NO REDUCIR
+## BODEGAS — BODSTOCK 8 BODEGAS, NO REDUCIR
 
+```javascript
 var BODSTOCK = {
   PEM:'pem', SEM:'sem', CEM:'cem', RCE:'rce',
   MEM:'mem', TEM:'tem', IEM:'iem', CD:'cd'
 }
+```
 
-Antes tenía solo 5 (faltaban RCE, TEM, IEM). Corregido en V36.6.
-No revertir. No reducir.
+**Comerciales** (ventas + NC + stock): PEM · SEM · CEM · MEM
+**Auxiliares/logísticas** (solo stock): IEM · RCE · TEM · CD
+**Eliminadas:** CAL
 
----
+**SSRS — 2 bloques:**
+- BLOQUE 1 (solo DISP): SEM CEM RCE MEM
+- BLOQUE 2 (DISP+TRANS): PEM TEM CD IEM
 
-## FLUJO STOCK ERP — TABLA DE TIPOS DE DOCUMENTO (V37.8)
+**IDBODEGA SQL confirmados:** IEM=72 · RCE=55 · CEM=24 (de P_BODEGAS · 2026-05-25)
 
-Validado desde ID_DOC_OVIEDO_EM.xlsx (2026-05-27). IDDOCUMENTOs confirmados.
+**bodegaCorta=PEM** hardcodeada en descargar_ventas_erp.py (L179, L222) — no es bug, NO arreglar.
+**BOD_RCE.xlsm** (nombre físico) contiene bodega IEM (col A) → JSON: `bod-iem-registros.json`
 
-| Efecto en stock        | Doc  | IDDOCUMENTO | Descripción                              |
-|------------------------|------|-------------|------------------------------------------|
-| ↑ Pedido (reserva)     | NVM  | 205         | Nota de Venta Mesón                      |
-| ↑ Pedido (reserva)     | VMP  | 210         | Venta Mesón Público                      |
-| ↑ Pedido (reserva)     | VMN  | 336         | Venta Mesón Nueva                        |
-| ↓ Pedido, Fís−Disp↑    | BVE  | 316 / 605   | Boleta Venta Electrónica (despacho pend) |
-| ↓ Pedido, Fís−Disp↑    | FVE  | 301         | Factura Venta Electrónica (despacho pend)|
-| ↓ Físico (despacho)    | GME  | 308         | Guía de Despacho Mesón                   |
-| ↓ Físico (despacho)    | GCE  | 305         | Guía de Despacho Cliente                 |
-| Reversión              | GRC  | 15          | Guía Retorno Compra                      |
-| Ingresos varios        | GII  | 33          | Guía Ingreso Interno                     |
-| Ingreso en bodega      | GEI  | 34          | Guía Egreso/Ingreso                      |
-| Traslado               | GIB  | 709         | Guía Ingreso Bodega                      |
-| Traslado               | GTS  | 711         | Guía Traslado Salida                     |
-| Traslado               | GST  | 702         | Guía Salida Traslado                     |
-| Traslado               | Gdc  | 79          | Guía de Cargo                            |
-| Nota crédito           | NCE  | 304         | Nota Crédito Electrónica                 |
-
-**REGLA CLAVE:**
-- Ped = ST_PEDIDO de R_STOCK_PRODUCTOS (fuente oficial, sin ambigüedad)
-- Dif = Fís − Disp = BVE/FVE emitidos, aún sin despacho físico (GME/GCE pendiente)
-- CANTIDAD_PENDIENTE > 0 en BVE/FVE = despachos no ejecutados
-
-## TIPOS DE DOC COMPROMISO (Pedido) — V37.8 CORREGIDO
-
-Documentos del ERP que **reservan** stock (aumentan ST_PEDIDO) sin generar salida física.
-Aparecen en `data/pedidos-comprometidos.json` y `data/pedidos-detalle.json`.
-
-**Fuente principal (totales):** `R_STOCK_PRODUCTOS.ST_PEDIDO` — campo oficial del ERP.
-**Fuente de detalle:** `M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0`, filtrado por DOC IN.
-
-INCLUIDOS (aumentan ST_PEDIDO en R_STOCK_PRODUCTOS):
-- NVM — Nota de Venta Mesón (IDDOCUMENTO=205)
-- VMN — Venta Mesón Nueva (IDDOCUMENTO=336)
-- VMP — Venta Mesón Público (IDDOCUMENTO=210)
-
-ELIMINADOS DE LA LISTA (V37.8 — eran incorrectos):
-- VME — no existe en ID_DOC_OVIEDO_EM.xlsx como tipo que reserva Pedido
-- CVN — no confirmado
-- OVC — no confirmado
-
-EXCLUIDOS (reducen Pedido o generan salida física):
-- BVE/FVE — reducen Pedido (cliente pagó) pero no Físico todavía → van a despachos
-- GME/GCE — generan salida física (reducen Físico)
-- NCV, NCE — notas de crédito (reversión)
-
-REGLA: si aparece un nuevo TIPO_DOC que reserva stock sin despacho, agregarlo
-a `DOC_TIPOS_PEDIDO` en `BODEGAS/descargar_pedidos.py` y documentarlo aquí.
-
-## TIPOS DE DOC DESPACHO (Dif) — NUEVO V37.8
-
-Documentos del ERP que **están cobrados pero pendientes de despacho físico**.
-Aparecen en `data/despachos-comprometidos.json` y `data/despachos-detalle.json`.
-Generados por `BODEGAS/descargar_despachos.py`.
-
-**Fuente:** `M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0` para BVE/FVE.
-**Validación:** SUM(CANTIDAD_PENDIENTE de BVE/FVE) ≈ ST_FISICO − ST_DISPONIBLE por producto/bodega.
-
-INCLUIDOS:
-- BVE — Boleta Venta Electrónica (IDDOCUMENTO=316/605)
-- FVE — Factura Venta Electrónica (IDDOCUMENTO=301)
+### Regla crítica subquery ULT en descargar_bod.py
+- Debe incluir `WHERE IDBODEGA=?` ANTES del `GROUP BY`
+- JOIN debe usar `FECHA_EMISION=ULT.ULTIMA_FECHA`, NO `IDDOCUMENTO`
+- `IDDOCUMENTO` = tipo de documento (ej. GRT=17), NO ID único de movimiento
+- Verificado 2026-05-25: código 4422 IEM pasó de 931 días a 10 días con el fix
 
 ---
 
-## BODEGAS — clasificación oficial
+## TIPOS DE DOCUMENTO — tabla completa V37.8
 
-Comerciales (visibles en cálculos de stock): PEM SEM CEM MEM
-Auxiliares/logísticas (NO en cálculos comerciales): IEM TEM RCE CD
-Eliminadas: CAL
+| Efecto | Doc | IDDOCUMENTO | Descripción |
+|---|---|---|---|
+| ↑ Pedido (reserva) | NVM | 205 | Nota de Venta Mesón |
+| ↑ Pedido (reserva) | VMP | 210 | Venta Mesón Público |
+| ↑ Pedido (reserva) | VMN | 336 | Venta Mesón Nueva |
+| ↓ Pedido, Fís−Disp↑ | BVE | 316/605 | Boleta Venta Electrónica |
+| ↓ Pedido, Fís−Disp↑ | FVE | 301 | Factura Venta Electrónica |
+| ↓ Físico | GME | 308 | Guía Despacho Mesón |
+| ↓ Físico | GCE | 305 | Guía Despacho Cliente |
+| Ingreso compra | GRC | 15 | Guía Retorno/Recepción Compra |
+| Ajuste ingreso | GII | 33 | Guía Ingreso Interno |
+| Traslado | GIB | 709 | Guía Ingreso Bodega |
+| Traslado | GTS | 711 | Guía Traslado Salida |
+| Nota crédito | NCE | 304 | Nota Crédito Electrónica |
 
-Bodegas SSRS — 2 bloques desde V36.3:
-BLOQUE 1 (solo DISP): SEM CEM RCE MEM
-BLOQUE 2 (DISP+TRANS): PEM TEM CD IEM
-
----
-
-## FLUJO ANTI-DOBLE-DESCARGA — V36.6 FIX CRÍTICO
-
-procesar-actualizacion.py escribe data/catalogo-dinamico.json como señal.
-main.py PASO 1:
-  - catalogogeneradohoy()? SI → leerbodegasdesdeactualizar (3 seg)
-  - catalogogeneradohoy()? NO → descargarbodegas.py HTTP (70 seg)
-
-Quién escribe la señal: procesar-actualizacion.py (PASO 2 del bat).
-NO modificar esta lógica sin entender la señal.
-actualizarxlsxeshoy() ELIMINADA en V36.5 — no reintroducir.
-
----
-
-## FILTRO EXH — leerxlsm.py INTOCABLE
-
-BODCORTA incluye: EXH → None
-Si bodcorta is None: continue
-Evita contaminación del dropdown de bodegas con entradas de exhibición.
-No revertir ni eliminar este filtro.
-
----
-
-## DROPDOWN DE BODEGAS — solo bodegas reales
-
-Eliminada la línea que forzaba CEM,MEM,SEM,CD aunque no tuvieran ventas.
-Dropdown muestra solo bodegas presentes en vadmLineas.
-No reintroducir la línea eliminada.
-
----
-
-## bodegaCorta PEM — HARDCODEADO INTENCIONALMENTE
-
-descargarventaserp.py líneas 179 y 222.
-El reporte ERP (LstTipo2 y LstTipo4) no incluye columna bodega por fila.
-No hay forma de obtenerla. Decisión documentada 21-05-2026.
-NO intentar arreglarlo.
-
----
-
-## PIPELINE COMPLETO — ACTUALIZARTODO.bat
-
-[PASO 1A] descargar_erp.py → actualizar.xlsx (precios + stock SSRS 8 bodegas, 2 bloques, 23 columnas)
-[PASO 1B] procesar-actualizacion.py + xlsx_a_csv.py + csv_a_json.py → Datos.json + catalogo-dinamico.json
-[PASO 1C] leerxlsm.py  → xlsm-enrich.json
-[PASO 1D] descargar_bod.py → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
-          SQL Server directo (IEM=72, RCE=55, CEM=24), sin XLSM ni macros manuales
-[PASO 1E] descargar_pedidos.py → pedidos-comprometidos.json + pedidos-detalle.json
-          Totales: R_STOCK_PRODUCTOS.ST_PEDIDO (fuente oficial — IDBODEGA lookup dinámico)
-          Detalle: M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0, tipos NVM/VMN/VMP (V37.8)
-          Campos: tipoDoc, tipoDocLabel, numero, fechaEmision, fechaEntrega, atraso, cliente, rut, vendedor, cant
-[PASO 1F] descargar_despachos.py → despachos-comprometidos.json + despachos-detalle.json
-          Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp, despachos pendientes)
-          Estructura JSON idéntica a pedidos-detalle (reutiliza modal panel)
-5. main.py --sin-deploy
-   PASO 1: catalogogeneradohoy? SI/NO
-   PASO 2: descargarventaserp.py incremental
-   PASO 3: consolidar JOIN catálogo + ventas + mapacliente
-   PASO 3.5: enriquecerdesdexlsm → rut, sector, bodegaCorta
-   PASO 4: guardarjson ventas-manzano-*.json
-6. Pregunta visibilidad precios (30 seg timeout, default N=ocultos)
-7. firebase deploy
-
-BATs disponibles:
-- ACTUALIZARTODO.bat   → pipeline completo (único punto de entrada)
-- PUBLICAR.bat         → solo firebase deploy
-- ACTUALIZARGITHUB.bat → sync github
-- ACTUALIZARVENTAS.bat → solo ventas (llama main.py)
-
-BATs archivados en _ARCHIVADOS\ (NO ejecutar — llaman scripts inexistentes):
-- 20260523_PREPARAR_Y_PUBLICAR.bat  (llamaba exportar_consulta_ventas.py y preparar_datos.py)
-- 20260523_ACTUALIZAR_AUTO.bat      (llamaba preparar_datos.py --auto)
-- 20260530_SUBIR_VENTAS_MANZANO.bat (subía ventas a Firestore — flujo pre-V36.0, reemplazado por JSON estáticos)
-
-REGLA _ARCHIVADOS\ — PERMANENTE:
-  _ARCHIVADOS\ es solo referencia histórica. NO es parte del flujo activo.
-  Si un archivo sigue siendo útil → va en la raíz del proyecto, NO en _ARCHIVADOS\.
-  Si algo en _ARCHIVADOS\ aporta valor hoy → moverlo de vuelta a raíz.
-
----
-
-## CARGA DE DATOS — PERFORMANCE PANEL
-
-- ventas-manzano-YYYY-MM.json  → mes actual, liviano ~200KB (default)
-- ventas-manzano-YYYY.json     → año completo, 2-18MB (al seleccionar año)
-- ventas-manzano.json          → fallback último recurso (panel lo usa si el anual falla)
-- Datos.json                   → 3.5MB en CATALOGO PRODUCTOS/, cargado una vez, cacheado
-- catalogo-dinamico.json       → DOBLE ROL:
-    (1) Señal Python: procesar-actualizacion.py la escribe en data/ — leída por main.py
-    (2) Panel: busca en /CATALOGO%20PRODUCTOS/catalogo-dinamico.json → SIEMPRE 404 (no está ahí)
-        → fallback automático a CATALOGO PRODUCTOS/Datos.json (comportamiento correcto por diseño)
-    NO intentar mover catalogo-dinamico.json a CATALOGO PRODUCTOS/ — no es necesario
-- vadmStockMap cacheado en sesión — NO refetch por tab
-- Baja Rotación: auto-fetch año completo si rango > datos cargados
-
----
-
-## REGLAS ERP / DATOS
-
-- Nunca hardcodear familias, marcas, bodegas, columnas ni IDs nuevos.
-  Siempre detectar/normalizar/mapear.
-- Nunca mostrar datos hardcodeados, estimados o de ejemplo.
-- Si panel muestra qty=0 pero ERP tiene ventas → BUG CRÍTICO, corregir de inmediato.
-- Filtro de bodega vadmBodSel debe impactar simultáneamente:
-  stock por producto, ventas contadas, KPIs y totales, Enviar Informe Excel/Outlook.
-- Si un código aparece en inventario NO debe aparecer en ventas del mismo período.
+Whitelist DOC IN (descargar_bod.py): `GRC,GRT,GME,GIB,Gdc,GBR,GRP,GRI,GRN,GIN,GDC,GDV,GII,GTS`
 
 ---
 
 ## TABS VERIFICADOS — deben seguir funcionando tras cualquier cambio
 
-ERP: hora topMarcas comparativa vendrank marcavend clientes tipodoc
-     facturacion quiebre sobrestock transito merma rankingmarca
-     estaciones bajrot pagoanalisis pagorankings pagotemporal
-     entrefechas arbol arboltabla arbolheat
-ERP (migrado V36.9): sector
-XLSM: nc marcavend2 preciodiff mem
-Stubs: impacto
+```
+ERP:    hora · topMarcas · comparativa · vendrank · marcavend · clientes
+        tipodoc · facturacion · quiebre · sobrestock · transito · merma
+        rankingmarca · estaciones · bajrot · pagoanalisis · pagorankings
+        pagotemporal · entrefechas · arbol · arboltabla · arbolheat · sector
+        stockconsulta (V37.1)
+XLSM:   nc · marcavend2 · preciodiff · mem
+Stubs:  impacto
+Análisis bodegas: analisis (IEM/RCE/CEM con selector bfFuente)
+```
+
+TABS ELIMINADOS (no recrear): `vvsstock` (eliminado V35.0)
+NAVEGACIÓN REAL: `showTab` → `vadmGrupo` → `vadmSubTab`. NO existe `adminShowTab()`.
 
 ---
 
-## NAVEGACIÓN — estructura real, no inventar variantes
+## CARGA DE DATOS — PERFORMANCE PANEL
 
-- showTab('ventas')        → abre panel ventas
-- vadmGrupo('inventario') → activa grupo
-- vadmSubTab('quiebre')   → muestra sub-tab
-- NO existe adminShowTab(). No crearla ni usarla.
-
----
-
-## SEGURIDAD FIREBASE — estado V36.2
-
-Hosting headers (firebase.json):
-- X-Frame-Options: DENY
-- X-Content-Type-Options: nosniff
-- Referrer-Policy: strict-origin-when-cross-origin
-- Permissions-Policy: camera, microphone, geolocation
-- Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
-
-Firestore rules:
-- cotizaciones: cliente lee solo las suyas (clienteUid = uid)
-- users: solo admin o self puede leer
-- config: lectura pública, escritura solo admin
-- sesionesactivas: solo admin o mismo UID
-- notificaciones: autenticados leen, admin/vendedor escriben
-- productos, solicitudescupon: bloqueados (default deny)
-
-Hosting ignore — directorios bloqueados:
-VENTAS EL MANZANO, backups, .claude, .ini, .xlsm, .mp4
+```
+ventas-manzano-YYYY-MM.json → mes actual, ~200KB (default)
+ventas-manzano-YYYY.json    → año completo, 2-18MB (al seleccionar año)
+ventas-manzano.json         → FALLBACK (panel depende de él en 4 puntos — NO eliminar)
+Datos.json                  → 3.5MB en CATALOGO PRODUCTOS/, cargado una vez, cacheado
+catalogo-dinamico.json      → DOBLE ROL: señal Python + 404 en panel (correcto — fallback a Datos.json)
+```
+NO intentar mover `catalogo-dinamico.json` a `CATALOGO PRODUCTOS/` — el 404 es comportamiento correcto por diseño.
 
 ---
 
-## CHECKLIST POST-CAMBIO — verificar antes de entregar
+## SEGURIDAD FIREBASE
 
+### Headers Hosting (firebase.json)
+```
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
+```
+
+### Roles de usuario
+| Rol | Panel Admin | Panel Vendedor | Panel Cliente |
+|---|---|---|---|
+| admin | Completo | Completo | Completo |
+| cooperador | Solo lectura operacional | Completo | Completo |
+| vendedor | NO | Completo | Completo |
+| cliente | NO | NO | Completo |
+
+### Hosting ignore — bloqueados
+`VENTAS EL MANZANO/` · `backups/` · `.claude/` · `*.ini` · `*.xlsm` · `*.mp4`
+
+### GitHub — estado actual (post-limpieza 2026-06-02)
+- 1 commit limpio, sin credenciales ni IPs reales
+- IPs/tokens reemplazados por placeholders: `[SQL-SERVER-IP]` · `[ERP-SERVER-IP]` · `[TOKEN-ERP]`
+- .gitignore bloquea: `FLUJOS/` · `VENTAS EL MANZANO/` · `CATALOGO PRODUCTOS/` · `.claude/`
+
+---
+
+## FLUJO LOGIN — INVARIANTES CRÍTICOS (V36.9k)
+
+| Situación | Comportamiento correcto |
+|---|---|
+| Usuario Google nuevo (!snap.exists) | Crear doc /users con creadoPor:'google' — NUNCA signOut sin crear |
+| Usuario pendiente (registroAprobado=false) | code:'pendiente' — NUNCA code:'noregistrado' |
+| Registro deshabilitado | Bloquear, code:'noregistrado' — único caso válido |
+| Usuario bloqueado (estado='bloqueado') | signOut + mensaje claro |
+
+---
+
+## CHECKLIST POST-CAMBIO
+
+```
 [ ] Función modificada recibe los mismos parámetros de entrada
 [ ] Variables globales que usaba siguen existiendo con el mismo nombre
-[ ] El tab que la invoca sigue funcionando (vsec- / vadmReRenderTabActivo)
-[ ] Filtro de bodega vadmBodSel sigue afectando el resultado
+[ ] El tab que la invoca sigue en vadmReRenderTabActivo
+[ ] Filtro _vadmBodSel sigue afectando el resultado (stock Y ventas)
 [ ] No se hardcodeó ningún valor que debe venir de datos reales
 [ ] No se renombró ninguna función pública
-[ ] window.mostrarPrecio default false en panel-cliente.html
-
----
-
-## CLASIFICACION REAL DE BODEGAS EL MANZANO
-
-### Comerciales - ventas + NC + stock visible
-- PEM (Patio El Manzano): ventas y NC. bodegaCorta HARDCODEADA en ERP
-- SEM (Sala El Manzano): ventas y NC
-- CEM (Calzada El Manzano): ventas y NC
-
-### Auxiliares Logisticas - stock visible NO en calculos de ventas
-- MEM (Mermas El Manzano): productos con detalles quebrados doblados
-- RCE (Recepcion El Manzano): uso interno doble filtro proveedor
-- TEM (Transito El Manzano): DISP llega de proveedor / TRANS va a llegar
-- CD (Centro de Distribucion): DISP disponible para abastecer / TRANS llegara
-- IEM (Ingreso El Manzano): DISP llega de proveedor o sucursal pasa a PEM/SEM/CEM / TRANS va a llegar
-
-### Regla critica del filtro
-- vadmBodSel afecta simultaneamente ventas Y stock
-- Las 8 bodegas deben estar SIEMPRE visibles en el dropdown
-- PEM/SEM/CEM tienen ventas reales
-- MEM/RCE/TEM/CD/IEM solo tienen movimiento de stock
-
-### Limitacion documentada NO es bug
-- descargarventaserp.py lineas 179 y 222 bodegaCorta=PEM hardcodeado
-- Reporte ERP no expone bodega por fila. Decision 21-05-2026 no arreglar
-- Solo leerxlsm.py tiene bodegaCorta real desde VENTAS.xlsm columna BODEGA
-
----
-
-## REGLA CRITICA — subquery ULT en descargar_bod.py
-
-El subquery ULT en `descargar_bod.py` DEBE incluir `WHERE IDBODEGA=?` antes del `GROUP BY`.
-`IDDOCUMENTO` es tipo de documento (ej. GRT=17), NO un ID único de movimiento.
-El JOIN debe usar `FECHA_EMISION=ULT.ULTIMA_FECHA`, NO `IDDOCUMENTO`.
-NO volver a usar `MAX(IDDOCUMENTO)` como criterio de último movimiento.
-Verificado 2026-05-25: código 4422 IEM pasó de 931 días a 10 días con el fix.
-
----
-
-## HISTORIAL V36.9e — 2026-05-24 (análisis bodegas IEM / RCE)
-
-### Archivos tocados
-- leer_xlsm.py: constante BOD_FEM_XLSM + función procesar_bod(path_xlsm, nombre_bod)
-- panel-admin.html: sidebar grupo Análisis + tab-analisis + vadmRenderBodFem() + vadmFiltrarBodFem()
-- data/bod-iem-registros.json: generado (19 registros reales IEM)
-- data/bod-fem-registros.json: ELIMINADO (nombre incorrecto)
-
-### Función procesar_bod() — leer_xlsm.py
-- Genérica para cualquier XLSM de bodega con hoja REGISTROS y columnas A:H
-- diasAntiguedad calculado en Python desde col G (datetime) — NO depende de col I (DATEDIF) ni J (NOW)
-- codigoTecnico forzado a str (mixed int/str en col D)
-- Salida: data/bod-{nombre_bod.lower()}-registros.json
-- Para ampliar a RCE: procesar_bod(r"E:\ferreteria-oviedo\BODEGAS\BOD_RCE.xlsm", 'RCE')
-- BOD_FEM_XLSM = ruta al XLSM físico (nombre interno del archivo, no nombre de negocio)
-
-### Panel análisis bodegas
-- Sidebar grupo: Análisis → Bodegas IEM / RCE (showTab('analisis'))
-- Tab: tab-analisis (independiente de tab-ventas)
-- Filtros: buscar por código/descripción, bodega dropdown, rango días mín/máx
-- Tabla 9 cols: Bodega · Tipo Doc · Folio · Código · Descripción · Cant · Fecha · Días · Obs
-- Orden: diasAntiguedad DESC (más antiguo primero)
-- Colores: rojo ≥90d · naranja ≥30d
-- Fetch: /data/bod-iem-registros.json
-- Stub en vadmReRenderTabActivo: no usa filtros globales
-
-### Regla de nombre — CRÍTICA
-- El archivo físico se llamaba BOD_FEM.xlsm → renombrado a BOD_RCE.xlsm el 2026-05-24
-- PERO el contenido (col A) tiene bodega IEM, no RCE
-- Constante en leer_xlsm.py: BOD_IEM_XLSM = BOD_RCE.xlsm (nombre físico actual)
-- JSON de salida: bod-iem-registros.json (basado en contenido real, no en nombre del archivo)
-- REGLA FIJA: nombre del JSON = bodega real en col A, NO nombre del archivo XLSM
-- "FEM" no debe aparecer en menús, labels, JSONs ni comentarios visibles
-- Si en el futuro col A cambia a RCE → entonces y solo entonces usar bod-rce-registros.json
-
-### Deploy y commits
-- a94fb5d — add procesar_bod bod_fem_xlsm (leer_xlsm.py)
-- 224764f — add analisis bodegas fem menu panel (panel-admin.html)
-- c26d5d3 — fix fem a iem nombre json y menu
-- 4b4a369 — cierre sesion v369e docs agents claude
-- d2870c2 — fix constante bod iem xlsm ruta rce (leer_xlsm.py local, no en GitHub — .py bloqueado)
-- Deploy: 2026-05-24 02:37
-
-## HISTORIAL V36.9b — 2026-05-23 (sector tab acordeón + NC)
-
-vadmRenderSector — 6 cambios coordinados:
-- Columnas NC y NC% eliminadas de tabla y footer
-- Dropdown TIPO DOC: eliminada opción "Solo NC" (solo Todos/Factura/Boleta)
-- NC excluidas siempre del cálculo: if(_esNC(r)) return false — primer filtro
-- Columna Vis. renombrada a DESP
-- Nuevo sector RETIRO CLIENTE: registros sin r.sector agrupados con clave 'RETIRO CLIENTE'
-  aparece al final en azul/itálica, fondo #f0f4ff
-- Acordeón inline: clic en fila de sector despliega fila de detalle (se-detail-row)
-  con tabla docs (N° Doc / Fecha / Tipo / Cliente / RUT / Vendedor / Neto)
-  pre-renderizada al momento del Analizar, oculta con style="display:none"
-  solo un sector abierto a la vez, flecha ▶/▼, scroll suave
-
-vadmSEToggleDetalle(tr) — nueva función:
-- Toggle del se-detail-row siguiente al tr clickeado
-- Cierra todos los demás detalles y resetea flechas antes de abrir
-
-Tabla: 8 columnas (#, Sector, Neto, Participación, DESP, Vendedor top, Cliente top, RUT)
-Footer: colspan ajustado a 8 (eliminados totalNC y ncPct)
-vadmSEDetalle() — conservada como código muerto inofensivo (no tiene trigger)
-
-Deploy: 2026-05-23 11:00
-
-## HISTORIAL V36.9 — 2026-05-23
-
-vadmRenderSector — migrado de ventas-xlsm-sector.json a _vadmLineas:
-- Fix: filtro vendedor funcionaba solo para Rafaela (XLSM vendedor=ERP code vs gmailUser)
-- Ahora: _vadmLineas tiene r.vendedor=gmailUser → filtro funciona para todos
-- Default fechas: 2026-01-01 a hoy (antes: mes actual)
-- Auto-load: si rango > _vadmLineas cargado → fetch ventas-manzano-YYYY.json
-- Columnas nuevas: Cliente top (razonSocial con mayor neto) + RUT
-- Filtro hora: select AM/PM en barra de filtros
-- Grafico: Chart.js barra (docs por hora) + linea (neto) debajo de tabla
-- Sin _vadmSectorData — cache eliminado, usa _vadmLineas directamente
-
-leer_xlsm.py — xlsm-enrich.json fix:
-- Antes: sector=raw obsImp (no normalizado), faltaban hora y razonSocial
-- Ahora: sector=_extraer_sector()->_SECTOR_DISPLAY (normalizado), +hora, +razonSocial
-- 12092 documentos indexados
-
-main.py — enriquecer_desde_xlsm:
-- Agrega hora y razonSocial a registros de _vadmLineas
-- 34375/38297 registros actualizados en el pipeline
-
-Split JSONs actualizado: ventas-manzano-2026.json + mensuales 2026-01 a 2026-05
-con campos hora y razonSocial. Deploy: 2026-05-23.
-
-## HISTORIAL V36.9c — 2026-05-23 (limpieza pipeline)
-
-ARCHIVADOS (movidos a _ARCHIVADOS\, no eliminados):
-- VENTAS EL MANZANO LOCAL\PREPARAR_Y_PUBLICAR.bat → 20260523_PREPARAR_Y_PUBLICAR.bat
-  Motivo: llamaba exportar_consulta_ventas.py y preparar_datos.py (no existen)
-- VENTAS EL MANZANO LOCAL\ACTUALIZAR_AUTO.bat → 20260523_ACTUALIZAR_AUTO.bat
-  Motivo: llamaba preparar_datos.py --auto (no existe); era tarea 7PM obsoleta
-
-csv_a_json.py — 2 bugs corregidos (P3 + P4):
-- P3: pd.read_excel(Datos.xlsx) → pd.read_csv(Datos.csv, encoding=utf-8-sig)
-  xlsx_a_csv.py generaba Datos.csv que nunca se usaba. Ahora el pipeline es coherente.
-- P4: "TEM_TRANS": "tem_trans" agregado al mapa de columnas
-  tem_trans ausente de Datos.json a pesar de estar en la conversión numérica.
-  Regenerado Datos.json: 6011 productos con tem_trans incluido.
-
-panel-admin.html — _vadmCargarStockMap: tem_trans agregado al mapa de stock
-- Antes: tem_trans ausente del objeto _vadmStockMap → reqStockPrellenar() calculaba
-  transito como (p.pem_trans||0)+(p.tem_trans||0) pero p.tem_trans era undefined → 0
-- Ahora: tem_trans:Number(p.tem_trans||p.TEM_TRANS||0) entre campos tem y rce
-- Impacto: tránsito TEM ahora se suma correctamente en Solicitud Semanal de Stock
-- Riesgo: NULO — campo aditivo, no modifica firma ni lógica existente
-
-Pipeline timing log creado: logs/20260523_pipeline.log
-- 7 pasos ejecutados: descargar_erp(102s) + procesar-actualizacion(11s) +
-  xlsx_a_csv(4s) + csv_a_json(2s) + leer_xlsm(9s) + descargar_ventas_erp(73s) +
-  actualizar_config_precios(2s) = 203s total (~3m 23s, sin alerta 5min)
-- 0 errores, datos actualizados a 2026-05-23 19:07
-
-ACTUALIZARTODO.bat confirmado como único punto de entrada del pipeline.
-
-## HISTORIAL V36.9g — 2026-05-24 (fix diasAntiguedad último movimiento SQL)
-
-### Archivos tocados
-- BODEGAS/descargar_bod.py: SQL reemplazado — subquery ULT con MAX(FECHA_EMISION) y MAX(IDDOCUMENTO) para traer último movimiento real por producto/bodega/sucursal. Deduplicación en Python: solo registro con menor diasAntiguedad por codigoTecnico.
-
-### Problema resuelto
-- Antes: diasAntiguedad calculaba desde FECHA_EMISION del documento origen (ej. GRT 2024 → 759 días)
-- Ahora: diasAntiguedad calcula desde último movimiento real en SQL (ej. AMES0096 RCE → 2 días, alineado con tarjeta ERP)
-
-### Resultado
-- IEM: 19 registros (sin cambio en cantidad)
-- RCE: 10 registros (antes 12 con duplicados, ahora deduplicado por codigoTecnico)
-- AMES0096 RCE verificado: 22/05/2026 → 2 días ✅
-
-### Deploy
-- Commit: V36.9g fix diasAntiguedad ultimo mov SQL
-- Deploy: 2026-05-24 13:32 — ferreteria-oviedo.web.app
-
-## HISTORIAL V36.9f — 2026-05-24 (automatización bodegas IEM/RCE vía SQL Server)
-
-### Archivos tocados
-- BODEGAS/descargar_bod.py: NUEVO — descarga IEM y RCE directo desde SQL Server
-- panel-admin.html: selector Fuente (Ambas/IEM/RCE) + vadmRenderBodFem() con Promise.all
-- ACTUALIZAR_TODO.bat: PASO 1C agregado entre XLSM (1B) y Ventas (2)
-
-### descargar_bod.py
-- Lee credenciales desde E:\ferreteria-oviedo\credenciales_db.ini sección [DB]
-- Conecta SQL Server 200.6.118.110, base Foviedo, vía pyodbc
-- Ejecuta la misma query del VBA de BOD_RCE.xlsm, parametrizada por IDBODEGA
-- IEM (IDBODEGA=72): genera data/bod-iem-registros.json (19 registros)
-- RCE (IDBODEGA=55): genera data/bod-rce-registros.json (12 registros)
-- campo fuente='SQL Server directo' (reemplaza 'procesar_bod desde XLSM')
-- Sin dependencia de openpyxl, macros ni pasos manuales
-
-### Panel análisis bodegas — cambio selector Fuente
-- Nuevo selector: id="bfFuente" (Ambas / IEM / RCE), onchange llama vadmRenderBodFem()
-- vadmRenderBodFem() usa Promise.all: carga uno o ambos JSONs según fuente seleccionada
-- Al seleccionar Ambas: fusiona 31 registros (19 IEM + 12 RCE), ordena diasAntiguedad DESC
-- vadmFiltrarBodFem() sin cambios (opera sobre _bfDatos ya fusionados)
-
-### REGLA SQL Server bodegas — CRÍTICA
-- IDBODEGA IEM=72, RCE=55 — confirmados desde P_BODEGAS en DB viva
-- IDBODEGA CEM=24 — confirmado desde P_BODEGAS 2026-05-25. CEM es bodega comercial, no aparece en BOD_RCE.xlsm.
-- credenciales_db.ini sección [DB]: NUNCA mostrar contenido, nunca subir a git
-- Query = VBA extraído de BOD_RCE.xlsm, sin modificación de lógica
-- Si en el futuro se agregan bodegas → añadir entrada en lista BODEGAS de descargar_bod.py
-
-### Deploy
-- Deploy: 2026-05-24 03:02 — 8 archivos nuevos subidos
-- bod-rce-registros.json: primer deploy (archivo nuevo)
-
-## HISTORIAL V36.9h — 2026-05-24 (tab Impacto: rediseño inicial Volumen vs Precio)
-
-### Archivos tocados
-- panel-admin.html: vadmRenderImpacto reescrita desde cero
-
-### Cambios aplicados
-- Fuente migrada de ventas-xlsm-YYYY.json → _vadmLineas (ERP completo)
-- Métrica Q: de contar líneas → suma(cantidad) (unidades reales)
-- Nueva métrica: precio promedio = valorNeto/cantidad por vendedor y período
-- Filtros: bodega y vendedor vía vadmDatosFiltrados() (primer intento — luego corregido en V36.9i)
-- Título tab: "Impacto Precio: Q vs $" → "Volumen vs Precio"
-- Encabezados: P1/P2 Unidades · P1/P2 Precio prom. · Var. Unidades · Var. Precio prom.
-- Commits: 0ff118b
-
-### Deploy
-- Deploy: 2026-05-24 22:37 (junto con V36.9i)
-
-## HISTORIAL V36.9i — 2026-05-24 (tab Impacto: fix vendedor + periodoSel + encabezados + reseña)
-
-### Archivos tocados
-- panel-admin.html: vadmRenderImpacto — 3 bugs corregidos + 2 mejoras
-
-### Bugs corregidos
-1. Clave agrupación: r.vendedor||'?' → r.gmailUser||r.vendedor||r.vendedorErp||'?'
-   Causa: _vadmAplicarDatos renombra JSON.vendedor → objeto.gmailUser. r.vendedor era undefined → todos colapsaban en '?'
-2. Filtro _vadmPeriodoSel: reemplazado vadmDatosFiltrados() por filtro manual sin _vadmPeriodoSel
-   Causa: el pill de período activo bloqueaba registros de meses distintos al cargado → P1 = 0 siempre
-3. Nombre display: _nombre(vk, rNom) ahora usa r.nombre del acumulador como primera opción
-
-### Mejoras
-- Encabezados completos: "Período 1 — Unidades" · "Período 2 — Precio prom." · "Variación Unidades" (con white-space:nowrap)
-- Reseña dinámica: bloque azul claro con frases en lenguaje simple (5 escenarios TOTAL + 3 patrones vendedores extremos)
-  Se actualiza en cada ejecución. Sin jerga: "cosas" = unidades, "plata" = monto
-
-### Verificación
-- Simulación Node: Ricardo con P1(enero)=8 uds $5.375pp / P2(mayo)=4 uds $7.000pp → ▼50% uds ▲30.2% precio ✓
-- preview_eval con _vadmPeriodoSel='2026-05': datos enero NO bloqueados ✓
-- 2 vendedores aparecen correctamente (antes: solo '?') ✓
-
-### Deploy
-- Commit: d003042
-- Deploy: 2026-05-24 22:37 — ferreteria-oviedo.web.app
-
-## HISTORIAL V36.9i — 2026-05-24 (fix registro y badges)
-
-### Archivos tocados
-- firestore.rules: separar create (self) de update/delete (admin) en /users/{userId}
-- index.html: doRegistroVend sin pass.trim + manejo permission-denied y operation-not-allowed
-- panel-cliente.html: doRegistroCli sin pass.trim + mismos mensajes de error
-- index.html, panel-cliente.html, panel-admin.html: badges V36.3 21-05-2026 → V36.9i 24-05-2026
-
-### Causa raiz del bug de registro
-- firestore.rules tenia `allow write: if esAdmin()` en /users/{userId}
-- El nuevo usuario (no admin) llama a db.collection('users').doc(uid).set() tras crear su cuenta Auth
-- Firestore denegaba con PERMISSION_DENIED → la cuenta Auth quedaba creada pero sin doc de perfil
-- El usuario no podia volver a registrarse (auth/email-already-in-use) ni ingresar (sin doc en users)
-
-### Fix aplicado
-- allow create: if request.auth.uid == userId && data.uid == userId && role in ['cliente','vendedor']
-- allow update, delete: if esAdmin()
-- Validacion de role impide auto-escalada a admin via registro
-- Los mensajes de error en JS ahora distinguen permission-denied y operation-not-allowed
-
-## HISTORIAL V36.9j — 2026-05-25 (fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT)
-
-### Archivos tocados
-- BODEGAS/descargar_bod.py: SQL corregido — subquery ULT ahora incluye `WHERE IDBODEGA=?` antes del `GROUP BY`, JOIN usa `FECHA_EMISION=ULT.ULTIMA_FECHA` en vez de `IDDOCUMENTO`. `cursor.execute` recibe `(idbodega, idbodega)`: primer parámetro para el WHERE en ULT, segundo para el WHERE principal.
-
-### Problema resuelto
-- IDDOCUMENTO en la tabla de movimientos es tipo de documento (ej. GRT=17), no un ID único.
-- MAX(IDDOCUMENTO) devolvía el tipo de documento más alto, no el último movimiento real.
-- Sin WHERE IDBODEGA=? en el subquery, ULT mezclaba movimientos de otras bodegas para el mismo artículo.
-- Fix: WHERE IDBODEGA=? en subquery ULT + JOIN por FECHA_EMISION elimina la ambigüedad.
-
-### Resultado
-- Código 4422 IEM: diasAntiguedad pasó de 931 días a 10 días ✅
-- RCE: no tocada (fix aplica a la lógica SQL compartida, sin regresión en RCE)
-
-### Deploy
-- 2026-05-25 fix diasAntiguedad IEM subquery WHERE IDBODEGA en ULT
-
-## HISTORIAL V36.9k — 2026-05-25 (add bodega CEM al análisis bodegas)
-
-### Archivos tocados
-- BODEGAS/descargar_bod.py: CEM (IDBODEGA=24) agregado a lista BODEGAS → genera data/bod-cem-registros.json. Usa exacta misma lógica SQL V36.9j (WHERE IDBODEGA=? en subquery ULT, JOIN por FECHA_EMISION, cursor.execute con dos parámetros, deduplicación Python por menor diasAntiguedad).
-- panel-admin.html: selector bfFuente actualizado (Ambas → Todas, + opción CEM). vadmRenderBodFem() agrega fetch bod-cem-registros.json cuando fuente==='cem'||fuente==='ambas'. Título card y botón sidebar actualizados a "IEM / RCE / CEM".
-- AGENTS.md: IDBODEGA CEM=24 documentado en REGLA SQL Server bodegas. PASO 1C actualizado.
-
-### NO TOCADO
-- Lógica IEM ni RCE: sin cambios
-- vadmFiltrarBodFem(): sin cambios
-- SQL del script: sin cambios (solo nueva entrada en lista BODEGAS)
-
-### IDBODEGA confirmados
-- IEM=72, RCE=55, CEM=24 — todos desde P_BODEGAS DB viva
-- CEM es bodega comercial (Calzada El Manzano). No aparece en BOD_RCE.xlsm (que era IEM).
-
-### Deploy
-- bod-cem-registros.json generado localmente el 2026-05-26 00:58 — PENDIENTE publicar a Firebase
-- Para publicar: ejecutar PUBLICAR.bat o firebase deploy --only hosting desde E:\ferreteria-oviedo\
-
----
-
-## REGLA DE LIMPIEZA — CARPETA RAÍZ
-
-**Solo deben existir en `E:\ferreteria-oviedo\` los siguientes archivos:**
-
-| Categoría | Archivos |
-|---|---|
-| HTML | panel-admin.html, panel-cliente.html, index.html |
-| Firebase | firebase-config.js, firebase.json, firestore.rules, firestore.indexes.json, storage.rules, .firebaseignore, .firebaserc |
-| PWA | manifest.json, manifest-cliente.json, manifest-admin.json, sw.js, update-sw-version.js |
-| Assets | FONDO3.jpg, PERSONA.jpg, logo_oviedo_white.jpg, logo_oviedo.jpg |
-| Credenciales | credenciales_db.ini (NUNCA a git) |
-| BATs activos | ACTUALIZAR_TODO.bat, ACTUALIZAR_TODO_AUTO.bat, PUBLICAR.bat, ACTUALIZAR_GITHUB.bat |
-| BATs externos (fuera del proyecto) | C:\Users\Ferreteria Oviedo\Desktop\LIMPIAR_CACHE.bat |
-| Scripts activos | diagnostico_huerfanos.py, encriptar_credenciales.py |
-| MDs activos | AGENTS.md, MEMORY.md, ESTADO_PROYECTO.md |
-| Carpetas | data/ · VENTAS EL MANZANO/ · BODEGAS/ · CATALOGO PRODUCTOS/ · backups/ · .claude/ · _HISTORICO/ · logs/ |
-
-**REGLA:** Todo archivo que NO esté en esta lista debe moverse a `_HISTORICO/` antes de cerrar la sesión en que fue creado.
-Aplica a: scripts diagnóstico, exports Excel/JSON ad-hoc, outputs debug .txt, HTMLs ERP guardados, bats de fix one-time, accesos directos .lnk, logs de sesiones anteriores.
-
----
-
-## SQL SERVER — SCHEMA TABLAS VENTAS (referencia para diagnóstico directo)
-
-Conexión: `credenciales_db.ini` sección [DB] · servidor 200.6.118.110 · base Foviedo · pyodbc
-
-| Tabla | Columnas clave |
-|---|---|
-| M_DOCUMENTOS_ENCABEZADO | IDDOCUMENTO, IDSUCURSAL, NUMERO, FECHA_EMISION, IDVENDEDOR, ESTADO |
-| M_DOCUMENTOS_DETALLE | IDDOCUMENTO, IDSUCURSAL, IDBODEGA, VALOR_NETO |
-| P_BODEGAS | IDBODEGA, SIMBOLO_BODEGA ('PEM','SEM','CEM'...) |
-| P_DOCUMENTOS | IDDOCUMENTO, DOCUMENTO (texto: 'Venta  Factura  Electronica','BOLETA ELECTRONICA') |
-| R_STOCK_PRODUCTOS | IDARTICULO, IDBODEGA, IDSUCURSAL, CODIGO_TECNICO, ST_FISICO |
-
-JOIN ventas:
-```sql
-M_DOCUMENTOS_DETALLE d
-JOIN M_DOCUMENTOS_ENCABEZADO e ON d.IDDOCUMENTO=e.IDDOCUMENTO AND d.IDSUCURSAL=e.IDSUCURSAL
-JOIN P_BODEGAS b ON d.IDBODEGA=b.IDBODEGA
-JOIN P_DOCUMENTOS p ON e.IDDOCUMENTO=p.IDDOCUMENTO
-WHERE e.ESTADO <> 'N'   -- excluye anulados
-  AND p.DOCUMENTO IN ('Venta  Factura  Electronica','BOLETA ELECTRONICA')
+[ ] window._mostrarPrecio = false en panel-cliente.html
+[ ] xlsm-enrich.json sigue siendo generado por leer_xlsm.py (no main.py)
+[ ] _catalogo_generado_hoy() no fue revertida
+[ ] ventas-manzano.json sigue siendo generado por guardar_json() en main.py
+[ ] Subquery ULT en descargar_bod.py tiene WHERE IDBODEGA=? antes del GROUP BY
+[ ] Deploy ejecutado y "Deploy cierre sesión" en AGENTS.md actualizado
+[ ] ACTUALIZAR_GITHUB.bat ejecutado con descripción del cambio
 ```
 
-**TRAMPA CRÍTICA:** `IDDOCUMENTO` en tablas de movimiento = tipo de documento (GRT=17, GRC=15…), NO un ID único de fila.
-Para obtener el último movimiento real por bodega, usar `MAX(FECHA_EMISION)` con `WHERE IDBODEGA=?` en subquery — ver lógica en `BODEGAS/descargar_bod.py`.
-
-Scripts de diagnóstico archivados en `_HISTORICO/` (para reutilizar si se necesitan):
-- `explorar_db.py`: query ventas PEM/SEM/CEM con JOIN completo
-- `ver_columnas.py`: introspección columnas C_SUCURSALES y stock por IDBODEGA
-
 ---
 
-## TROUBLESHOOTING ENTORNO LOCAL
+## PENDIENTES CONOCIDOS (desde 2026-06-01)
 
-### Justime DLL — Error 0x80004005 (COM DllRegisterServer)
-Si el cliente ERP Justime muestra popups de error al abrir:
-1. Ir a `_HISTORICO\FIX_JUSTIME_DLL.bat`
-2. Clic derecho → **Ejecutar como administrador**
-3. El bat crea junction `C:\Program Files\Justime` y registra DLLs COM con regsvr32 de 32-bit
-4. Algunos errores individuales son normales (DLLs no-COM) — el resultado importante es que Justime abra sin popups
+### ACCIÓN 7 — Botón ♻️ Refrescar catálogo (MEDIA)
+`_vadmCargarStockMap()` tiene guard: si `_vadmStockMap` existe, retorna sin fetch.
+Si el pipeline actualiza Datos.json con el panel abierto, el catálogo queda viejo hasta F5.
+Fix propuesto — agregar botón junto al "🔄 Actualizar":
+```html
+<button onclick="_vadmStockMap=null; _vadmCargarStockMap(vadmReRenderTabActivo)"
+        title="Recargar catálogo de productos">♻️ Refrescar catálogo</button>
+```
+Safe Change: solo agregar el botón HTML. NO tocar `_vadmCargarStockMap()` por dentro.
 
----
-
-## REGLA ANTI-RETROCESO — PERMANENTE (2026-06-02)
-
-Creada tras migración D: → E:. NUNCA revertir sin instrucción explícita del usuario.
-
-### Rutas — no volver atrás
-- Todo está en `E:\ferreteria-oviedo\` y `E:\git-sync\` (migración 2026-06-02, definitiva)
-- Si un script tiene `D:\ferreteria-oviedo\` → BUG, corregir a `E:\` antes de continuar
-- `D:\ferreteria-oviedo-github\` NO EXISTE — no crear, no referenciar
-- npm global/cache: solo `E:\npm-global` y `E:\npm-cache` — nunca C: ni D:
-- Credenciales GCM: `E:\config\gcm-store` — nunca C:\Users\...\AppData
-
-### Código — no revertir features verificadas
-- No eliminar ni reducir el objeto BODCORTA (8 claves: PEM SEM CEM MEM RCE TEM IEM CD)
-- No reintroducir línea que forzaba bodegas fijas en dropdown
-- No reintroducir `actualizarxlsxeshoy()` (eliminada V36.5)
-- No usar `MAX(IDDOCUMENTO)` como criterio de último movimiento SQL
-- No usar "FEM" en JSONs, menús ni labels (renombrado a IEM el 2026-05-24)
-- Tabs listados en TABS VERIFICADOS deben seguir funcionando tras cualquier cambio
-
-### Safe-change activo
-- Hook PreToolUse activo: antes de Edit/Write → backup en `E:\ferreteria-oviedo\backups\safe-change\`
-- Script: `E:\claude-tools\safe-change-hook.ps1`
-- Para revertir: buscar `ARCHIVO_YYYYMMDD_HHMMSS` en esa carpeta
-
-### Portabilidad E: — estado (actualizar al completar pasos)
-- PASO 0: ✅ Auto18 eliminada del Task Scheduler · `E:\EJECUTAR_AUTO.bat` creado (2026-06-02)
-- PASO 1: ✅ Python 3.11.9 portable en `E:\python-portable\` (2026-06-02)
-- PASO 2: ✅ Node.js v24.15.0 portable en `E:\nodejs-portable\` (2026-06-02)
-- PASO 3: ✅ Git 2.47.1 portable en `E:\git-portable\` (2026-06-02)
-- PASO 4: ✅ BATs actualizados con bloque HERRAMIENTAS PORTABLES (ACTUALIZAR_TODO, ACTUALIZAR_TODO_AUTO, PUBLICAR, ACTUALIZAR_GITHUB) (2026-06-02)
-- PASO 5: ✅ BATs creados (`E:\ABRIR_PANEL_ADMIN.bat`, `E:\ABRIR_PANEL_CLIENTE.bat`, `E:\ABRIR_PANEL_VENDEDOR.bat`) · `E:\navegadores-portables\` existe con instrucciones de descarga — falta descargar Chromium/Firefox portable manualmente (ver DESCARGAR_NAVEGADORES.txt)
-- PASO 6: ⚠️ Junction `.claude` DESCARTADA (limitación USB — ver REGLA ANTI-RETROCESO) · `E:\claude-config\` tiene backup 243 MB · `.claude` queda en C: funcionando normal
-- PASO 7: ⏳ Windows To Go — instrucciones en `E:\PASO7_WINDOWS_TO_GO.txt` · Rufus e ISO requieren descarga manual · espacio libre en E: 1.7 TB (suficiente)
-- PASO 8: ✅ `E:\ACTIVAR_EN_ESTE_EQUIPO.bat` creado (2026-06-02)
-
----
-
-## REGLA RESGUARDO ANTE FALLO DE DISCO — PERMANENTE (2026-06-03)
-
-Creada tras pérdida parcial de archivos portables (node.exe, git-portable) durante
-recuperación de disco. La recuperación manual de D: → E: dejó carpetas incompletas.
-
-### Archivos críticos NO recuperables de git (nunca van al repo)
-
-Estos archivos deben existir en E: Y tener copia de seguridad externa o conocida:
-
-| Archivo | Ruta en E: | Copia de seguridad |
-|---|---|---|
-| credenciales_db.ini | E:\ferreteria-oviedo\ | Papel / celular / correo |
-| credenciales_db.enc | E:\ferreteria-oviedo\ | Igual — sin .enc no hay acceso SQL |
-| credenciales_erp.ini | E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\ | Papel / celular |
-| credenciales_erp.ini | E:\ferreteria-oviedo\VENTAS EL MANZANO\ | Papel / celular |
-
-### Qué NUNCA hacer antes de confirmar que E: está sano
-
-- NUNCA formatear ni reparticionar el disco E: sin antes verificar que git-sync tiene el último commit
-- NUNCA mover archivos de E: en bulk sin listar primero qué se mueve
-- Si el disco da errores → DETENER inmediatamente y hacer backup con robocopy antes de cualquier reparación
-- NUNCA confiar en que "ya está en git" para credenciales — el .gitignore las bloquea
-
-### Verificación mínima antes de cerrar sesión (30 segundos)
-
+### Tareas obsoletas Task Scheduler (apuntaban a D:)
 ```powershell
-# Pegar en PowerShell antes de desconectar el disco
-if (Test-Path "E:\git-portable\bin\git.exe") { Write-Host "[OK] git-portable" } else { Write-Host "[FALTA] git-portable" -ForegroundColor Red }
-if (Test-Path "E:\nodejs-portable\node.exe") { Write-Host "[OK] node.exe" } else { Write-Host "[FALTA] node.exe" -ForegroundColor Red }
-if (Test-Path "E:\ferreteria-oviedo\credenciales_db.ini") { Write-Host "[OK] credenciales_db" } else { Write-Host "[FALTA] credenciales_db" -ForegroundColor Red }
-if (Test-Path "E:\herramientas\firebase") { Write-Host "[OK] firebase CLI" } else { Write-Host "[FALTA] firebase CLI" -ForegroundColor Red }
+Unregister-ScheduledTask -TaskName "Ferreteria Oviedo - Backup Diario" -Confirm:$false
+Unregister-ScheduledTask -TaskName "Ferreteria Oviedo Ventas 7PM" -Confirm:$false
 ```
 
-### Firebase CLI — ubicación real (verificado 2026-06-04)
+---
 
-Firebase CLI está en `E:\npm-global\firebase.cmd` (confirmado funcionando 2026-06-04).
-Los BATs ya buscan en ese orden correctamente — no modificar.
+## CÁLCULOS — METODOLOGÍA
 
-Token Firebase: guardado en `E:\config\configstore\firebase-tools.json`.
-Backup encriptado DPAPI: `E:\config\firebase-token.enc` (solo descifrable en esta máquina/usuario).
-Cuenta: ferreteriaoviedo.elmanzano@gmail.com
+### Velocidad de venta
+```
+velocidad_dh = unidades_vendidas_periodo / dias_habiles_periodo
+cobertura_dh = stock_actual / velocidad_dh
+```
+Días hábiles: Lun-Sab que NO sean feriados chilenos. `_vadmDiasHabiles()` nunca retorna 0.
 
-EXIST_TOKEN descargar_erp.py: actualizado 2026-06-04 (ver descargar_erp.py línea 35 — NO subir al repo).
-Si el token expira → obtener nueva URL de VisorRS con xToken actualizado y editar descargar_erp.py línea 35.
+### Semáforos de stock
+| Estado | Cobertura | Color |
+|---|---|---|
+| Quiebre | stock = 0 | rojo |
+| Crítico | < 30 dh | rojo |
+| Alerta | 30-90 dh | amarillo |
+| OK | > 90 dh | verde |
+| Sin datos | sin ventas | negro |
 
-### Estado portabilidad tras recuperación 2026-06-03
+### ABC Pareto
+- A: top 80% del valor de ventas · B: 81-95% · C: 96-100% · D: sin ventas
 
-- PASO 2 (Node.js): ⚠️ node.exe FALTA — E:\nodejs-portable\ tiene npm.cmd pero no node.exe — pendiente descarga
-- PASO 3 (Git): ⚠️ E:\git-portable\ FALTA — copiando desde D:\RECU2\Root\git-portable\ (2026-06-03)
-- git-sync: ⚠️ E:\git-sync\ falta — restaurar desde E:\git-sync-historial-backup-20260602\
+### Feriados Chile (calculados)
+Fijos: 1-ene, 1-may, 21-may, 20-jun, 16-jul, 15-ago, 18-sep, 19-sep, 12-oct, 1-nov, 2-nov, 8-dic, 25-dic.
+Móviles: Viernes Santo (Pascua-2), Sábado Santo (Pascua-1) — algoritmo Butcher.
+
+---
+
+*AGENTS.md consolidado 2026-06-05*
+*Historial completo pre-junio: _HISTORICO\20260604_AGENTS_completo.md*
+*Para actualizar: editar directamente este archivo al cierre de cada sesión.*

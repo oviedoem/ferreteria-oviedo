@@ -1,6 +1,6 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
-# Arquitectura completa · Disco E: + dependencias C: · 2026-06-02
-# Última actualización: 2026-06-02 — Mapa 8 agregado (seguridad GitHub)
+# Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
+# Última actualización: 2026-06-05
 
 ---
 
@@ -8,39 +8,46 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════╗
-║                     DISCO E:  (datos + código)                          ║
+║              DISCO 1 — TOSHIBA USB 1.8TB  (W: + E:)                    ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║                                                                          ║
 ║   ┌─────────────────────────────┐   ┌──────────────────────────────┐    ║
-║   │   ferreteria-oviedo\        │   │   APP-INVENTARIO\            │    ║
-║   │   Panel Web Oviedo          │   │   App Inventario Diferencias │    ║
+║   │   W:\claude-config\         │   │   E:\ferreteria-oviedo\      │    ║
+║   │   Claude Code config        │   │   Panel Web Oviedo           │    ║
+║   │   ← junction desde C:\.claude   │   (proyecto principal)       │    ║
 ║   └─────────────────────────────┘   └──────────────────────────────┘    ║
 ║                                                                          ║
-║   ┌──────────┐  ┌─────────────┐  ┌──────────┐  ┌───────────────────┐   ║
-║   │ omnara\  │  │ npm-global\ │  │ git-sync\│  │ config\           │   ║
-║   │ (IDE)    │  │ firebase CLI│  │ (push)   │  │ gcm-store (creds) │   ║
-║   └──────────┘  └─────────────┘  └──────────┘  └───────────────────┘   ║
+║   ┌──────────────────────────────────────────────────────────────────┐  ║
+║   │  W:\herramientas\seguridad\    E:\APP-INVENTARIO\               │  ║
+║   │  REMONTAR_DISCO_E.ps1          E:\omnara\  (IDE)                │  ║
+║   │  EXPULSAR_DISCO_E.ps1          E:\npm-global\  (firebase CLI)   │  ║
+║   │  ABRIR_CLAUDE.bat              E:\git-sync\  (push GitHub)      │  ║
+║   │  W:\proyecto-docs\  (backup MDs)  E:\config\  (git/npm/tokens)  │  ║
+║   └──────────────────────────────────────────────────────────────────┘  ║
 ║                                                                          ║
 ╠══════════════════════════════════════════════════════════════════════════╣
-║                     DISCO C:  (Windows + herramientas)                  ║
+║              DISCO 0 — NVMe 256GB interno  (C:)                         ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║                                                                          ║
 ║   ┌──────────────┐  ┌────────────────────┐  ┌──────────────────────┐   ║
-║   │ Python 3.14  │  │ Node.js             │  │ Git for Windows      │   ║
+║   │ Python 3.x   │  │ Node.js             │  │ Git for Windows      │   ║
 ║   │ + pyodbc     │  │ C:\Program Files\  │  │ C:\Program Files\    │   ║
 ║   │ + openpyxl   │  │ (runtime firebase) │  │ (runtime git)        │   ║
 ║   │ + requests   │  └────────────────────┘  └──────────────────────┘   ║
 ║   └──────────────┘                                                       ║
 ║                                                                          ║
-║   ┌──────────────────────────┐  ┌───────────────────────────────────┐   ║
-║   │ .claude\                 │  │ Task Scheduler (registro Windows) │   ║
-║   │ (Claude Code config)     │  │ Tarea Auto18 → llama E:\...bat    │   ║
-║   └──────────────────────────┘  └───────────────────────────────────┘   ║
+║   ┌──────────────────────────────────────────────────────────────┐      ║
+║   │ C:\Users\Ferreteria Oviedo\.claude  ──junction──► W:\claude-config ║
+║   │ (solo un puntero — datos reales en W:)                       │      ║
+║   │ Backup: C:\Users\..\.claude-bak-20260604  (NO borrar)        │      ║
+║   └──────────────────────────────────────────────────────────────┘      ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
-         ⚠ ZONA DE RIESGO: si C: falla → Python + Node + Git caen
-              Proyecto en E: sobrevive pero no puede ejecutarse
+    ⚠ ZONA DE RIESGO W:/E:: FortiClient puede bloquear el USB
+        Solución: Explorador → clic derecho disco → Expulsar
+    ⚠ ZONA DE RIESGO C: si falla → Python + Node + Git caen
+        Proyecto en E: sobrevive pero no puede ejecutarse
 ```
 
 ---
@@ -51,13 +58,13 @@
 FUENTES DE DATOS (externas)
 ─────────────────────────────────────────────────────────────────────────
   ┌────────────────────┐        ┌────────────────────────────────────┐
-  │ ERP (VisorRS/SSRS) │        │ SQL Server  [SQL-SERVER-IP]/Foviedo  │
+  │ ERP (VisorRS/SSRS) │        │ SQL Server  [SQL-SERVER-IP]/Foviedo│
   │ Precios + Stock    │        │ Tablas: R_STOCK, M_DOCUMENTOS,     │
   │ (HTTP + credenciales│        │         BVE/FVE, P_BODEGAS        │
   │  credenciales_db.ini│        │         (credenciales_db.ini)      │
   └────────┬───────────┘        └──────────────┬─────────────────────┘
            │                                    │
-           │ PASO 1                             │ PASO 1D/1E/1F
+           │ PASO 1A                            │ PASO 1D/1E/1F
            ▼                                    ▼
   ┌──────────────────────┐       ┌──────────────────────────────────┐
   │ descargar_erp.py     │       │ descargar_bod.py                 │
@@ -66,7 +73,7 @@ FUENTES DE DATOS (externas)
   │     2 bloques SSRS)  │       │  → bod-cem-registros.json        │
   └──────────┬───────────┘       │                                  │
              │                   │ descargar_pedidos.py             │
-             │ PASO 1A           │  → pedidos-comprometidos.json    │
+             │ PASO 1B           │  → pedidos-comprometidos.json    │
              ▼                   │  → pedidos-detalle.json          │
   ┌──────────────────────┐       │                                  │
   │procesar-actualizacion│       │ descargar_despachos.py           │
@@ -75,7 +82,7 @@ FUENTES DE DATOS (externas)
   │    dinamico.json ●── │──────►│  (señal anti-doble-descarga)     │
   └──────────┬───────────┘       └──────────────────────────────────┘
              │                                    │
-             │ PASO 1B                            │
+             │ PASO 1B (cont.)                    │
              ▼                                    │
   ┌──────────────────────┐                        │
   │ xlsx_a_csv.py        │                        │
@@ -104,7 +111,7 @@ FUENTES DE DATOS (externas)
   │     Si NO → descargar bodegas HTTP (~70s extra)                  │
   │  2. descargar_ventas_erp.py  → ventas_erp_producto_YYYYMMDD.xlsx │
   │     (incremental, dedup por Numero+Codigo)                       │
-  │  3. consolidar() → JOIN catalogo + ventas + mapa_cliente         │
+  │  3. consolidar() → JOIN catálogo + ventas + mapa_cliente         │
   │  4. enriquecer_desde_xlsm() ← usa xlsm-enrich.json              │
   │  5. guardar_json() →                                             │
   │       ventas-manzano.json          (fallback — NUNCA eliminar)   │
@@ -124,11 +131,10 @@ FUENTES DE DATOS (externas)
 
 ACTIVADORES DEL PIPELINE:
   ┌─────────────────────────────────────────────────────────────────┐
-  │  Manual:     ACTUALIZAR_TODO.bat          (prompt precios)      │
-  │  Automático: ACTUALIZAR_TODO_AUTO.bat     (sin prompt, 18:00)   │
-  │              ↑ Task Scheduler de Windows (registro en C:)       │
+  │  Manual:     ACTUALIZAR_TODO.bat           (prompt precios)     │
+  │  Manual:     ACTUALIZAR_TODO_AUTO.bat      (sin prompt)         │
   │  Solo deploy: PUBLICAR.bat                                      │
-  │  Solo GitHub: ACTUALIZAR_GITHUB.bat       (Git de C: requerido) │
+  │  Solo GitHub: ACTUALIZAR_GITHUB.bat        (Git de C: requerido)│
   └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -149,13 +155,13 @@ Firebase Hosting (ferreteria-oviedo.web.app)
   │ data/pedidos-*.json          (comprometidos)        │
   │ data/despachos-*.json        (pendientes despacho)  │
   └────────────────────┬────────────────────────────────┘
-                       │  (cada panel carga sus JSON al abrir)
+                       │
           ┌────────────┼─────────────┐
           ▼            ▼             ▼
   ┌──────────────┐ ┌──────────┐ ┌──────────────────────┐
-  │panel-admin   │ │panel-    │ │panel-cliente.html     │
-  │.html         │ │vendedor  │ │(clientes B2B)         │
-  │(admin/coop)  │ │.html     │ │_mostrarPrecio=false   │
+  │panel-admin   │ │index.html│ │panel-cliente.html     │
+  │.html         │ │(vendedor)│ │(clientes B2B)         │
+  │(admin/coop)  │ │          │ │_mostrarPrecio=false   │
   └──────┬───────┘ └──────────┘ └──────────────────────┘
          │
          ├── Tabs ERP: hora·topMarcas·comparativa·vendrank
@@ -164,11 +170,11 @@ Firebase Hosting (ferreteria-oviedo.web.app)
          │            rankingmarca·estaciones·bajrot
          │            pagoanalisis·pagorankings·pagotemporal
          │            entrefechas·arbol·arboltabla·arbolheat
-         │            sector·stockconsulta
+         │            sector·stockconsulta (V37.1)
          │
          ├── Tabs XLSM: nc·marcavend2·preciodiff·mem
          │
-         └── Analisis bodegas: IEM/RCE/CEM con selector
+         └── Análisis bodegas: IEM/RCE/CEM con selector bfFuente
 
   Firestore (datos dinámicos — autenticación y config):
   ┌────────────────────────────────────────────────────────┐
@@ -192,143 +198,104 @@ Operador (contador de inventario)
 │  (SPA Vanilla JS — sin servidor)                        │
 │                                                         │
 │  Fuentes de datos (solo carga local — nada online):     │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ XLSX 2025: inventario conteo año anterior        │   │
-│  │ XLSX 2026: inventario conteo año actual          │   │
-│  │ (archivos cargados por drag&drop o selector)     │   │
-│  └─────────────────────────────────────────────────┘   │
+│  ├── XLSX 2025: inventario conteo año anterior          │
+│  └── XLSX 2026: inventario conteo año actual            │
 │                                                         │
 │  Procesamiento (todo en browser):                       │
-│  SheetJS → parseo xlsx                                  │
-│  PapaParse → parseo csv                                 │
+│  SheetJS → parseo xlsx · PapaParse → parseo csv         │
 │  Chart.js → gráficos                                    │
-│                                                         │
-│  Vistas:                                                │
-│  ├── Planos (465 patentes: Sala/Bodega/2do/Patio)       │
-│  ├── Centro Reconteo                                    │
-│  ├── Análisis 2025 / Análisis 2026                      │
-│  ├── Comparativo 2025 vs 2026                           │
-│  ├── Avanzado · Final · Mejoras                         │
-│  └── Avance por patente (modo "en curso")               │
 └─────────────────────────┬───────────────────────────────┘
                           │
-                          │ git push (ACTUALIZAR_GITHUB_APP_INVENTARIO.bat)
-                          │ (Git de C: requerido)
+                          │ ACTUALIZAR_GITHUB.bat (en E:\APP-INVENTARIO\)
                           ▼
               GitHub Pages (oviedoem.github.io/APP-INVENTARIO)
-              (accesible desde cualquier navegador — sin autenticación)
 ```
 
 ---
 
-## MAPA 5 — OMNARA (IDE de trabajo) — DISCO E: vs C:
+## MAPA 5 — CLAUDE CODE (config y memoria)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  OMNARA — distribuido entre E: y C:                                 │
+│  CLAUDE CODE — arquitectura post-migración 2026-06-04               │
 │                                                                     │
-│  E:\omnara\home\          CLI daemon + sesiones + versiones         │
-│  E:\omnara\bin\           Wrappers .cmd (omnara.cmd, omnara-claude) │
-│  E:\omnara\desktop-app\   Omnara.exe (Electron app)                │
-│  E:\omnara\desktop-data\  auth-tokens · DB · preferences           │
-│  E:\omnara\desktop-updater\ cache del updater (puede volver a C:)  │
+│  Datos reales (en W:):                                              │
+│  W:\claude-config\           ← config, skills, memory              │
+│  W:\claude-config\projects\E--ferreteria-oviedo\memory\            │
+│  W:\claude-config\CLAUDE.md  ← instrucciones globales              │
+│  W:\proyecto-docs\           ← backup MDs del proyecto             │
 │                                                                     │
-│  C:\Users\...\Desktop\Omnara.lnk  ──► apunta a E:\omnara\...       │
-│  C:\...\Start Menu\Omnara.lnk     ──► apunta a E:\omnara\...       │
+│  Acceso vía junction (en C:):                                       │
+│  C:\Users\Ferreteria Oviedo\.claude  ──► W:\claude-config\         │
+│  Claude busca en C:, Windows redirige a W: transparentemente       │
 │                                                                     │
-│  ⚠ ATENCIÓN: cada actualización automática de Omnara               │
-│    reinstala en C:\...\AppData\Local\Programs\omnara-desktop\       │
-│    Acción post-update: mover de vuelta a E:\omnara\desktop-app\     │
+│  Backup rollback (en C:):                                           │
+│  C:\Users\Ferreteria Oviedo\.claude-bak-20260604  ← NO borrar      │
 │                                                                     │
-│  OMNARA_HOME = E:\omnara\home  (variable de entorno de usuario)     │
-│  PATH += E:\omnara\bin\bin                                          │
-│                                                                     │
-│  Proyecto activo configurado en daemon.json:                        │
-│    E:\ferreteria-oviedo  ← único directorio activo                 │
+│  Claude ejecutable (en C:):                                         │
+│  C:\Users\Ferreteria Oviedo\AppData\Roaming\Claude\  ← Electron    │
+│  C:\Users\Ferreteria Oviedo\AppData\Roaming\Claude\claude-code\... │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## MAPA 6 — ZONA DE CONFLICTO: LO QUE SIEMPRE VIVE EN C:
+## MAPA 6 — DEPENDENCIAS DE C: (irremovibles)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
-║   DEPENDENCIAS IRREMOVIBLES DE C:   (buscar soluciones aquí)        ║
+║   DEPENDENCIAS EN C:   (si C: falla → estas cosas caen)             ║
 ╠══════════════════════════════════════════════════════════════════════╣
 ║                                                                      ║
-║  1. PYTHON — C:\Python314\                                           ║
-║     ├── python.exe  (intérprete)                                     ║
+║  1. PYTHON — C:\Python3x\                                            ║
+║     ├── python.exe  (intérprete de todo el pipeline)                 ║
 ║     ├── pyodbc      (SQL Server → descargar_bod/pedidos/despachos)   ║
 ║     ├── openpyxl    (XLSX → descargar_erp, procesar-actualizacion)   ║
 ║     └── requests    (HTTP → descargar_erp SSRS)                      ║
-║     SOLUCIÓN: Reinstalar Python en E:\Python\                        ║
-║     COMANDO:  setx PYTHONPATH E:\Python\ + pip install en E:\        ║
 ║                                                                      ║
 ║  2. NODE.JS — C:\Program Files\nodejs\                               ║
 ║     ├── node.exe  (runtime)                                          ║
-║     └── npm       (pero los paquetes ya están en E:\npm-global\)     ║
-║     SOLUCIÓN: Instalar nvm-windows → apuntar a E:\nodejs\            ║
-║     O bien: descargar Node.js portable → E:\nodejs\                  ║
+║     └── usado por: firebase deploy (PUBLICAR.bat, ACTUALIZAR_TODO)   ║
+║     Los paquetes npm ya están en E:\npm-global\                      ║
 ║                                                                      ║
 ║  3. GIT FOR WINDOWS — C:\Program Files\Git\                          ║
 ║     └── usado por ACTUALIZAR_GITHUB.bat y Omnara internamente        ║
-║     SOLUCIÓN: Git portable en E:\git-portable\                       ║
-║     Descarga: git-scm.com → PortableGit-x64.7z → E:\git-portable\   ║
 ║                                                                      ║
-║  4. CLAUDE CODE CONFIG — C:\Users\Ferreteria Oviedo\.claude\         ║
-║     ├── settings.json  (permisos, hooks)                             ║
-║     ├── keybindings.json                                             ║
-║     └── projects\E--ferreteria-oviedo\memory\ (notas del proyecto)  ║
-║     SOLUCIÓN: NO hay solución limpia — Claude Code siempre usa        ║
-║     el perfil del usuario en C:. Hacer backup de .claude\ a E:       ║
-║                                                                      ║
-║  5. TASK SCHEDULER — Registro de Windows (siempre en C:)            ║
-║     └── Tarea Auto18 → llama E:\...\ACTUALIZAR_TODO_AUTO.bat         ║
-║     SOLUCIÓN: No aplica — el scheduler siempre es de Windows.        ║
-║     El bat SÍ está en E:, solo el trigger está en C:.                ║
-║                                                                      ║
-║  6. TAREAS OBSOLETAS APUNTANDO A D: (pendiente eliminar)            ║
-║     ├── "Ferreteria Oviedo - Backup Diario" → D:\...\BACKUP.bat      ║
-║     └── "Ferreteria Oviedo Ventas 7PM"      → D:\...\ACTUALIZAR.bat  ║
-║     SOLUCIÓN: Eliminar ambas tareas (son duplicados obsoletos)       ║
+║  4. CLAUDE CODE CONFIG — C:\..\.claude\  (junction → W:\)           ║
+║     Los datos reales están en W:\claude-config\                      ║
+║     Si la junction falla → rollback en C:\.claude-bak-20260604       ║
 ║                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════╝
 ```
 
 ---
 
-## MAPA 7 — FLUJO SI E: NO ESTÁ DISPONIBLE
+## MAPA 7 — FLUJO SI E:/W: NO ESTÁ DISPONIBLE
 
 ```
-                   E: DESCONECTADO O FALLA
-                           │
-          ┌────────────────┼──────────────────┐
-          ▼                ▼                  ▼
-   ACTUALIZAR_TODO    Tarea Auto18       Omnara Desktop
-   no encuentra       falla a las        no puede abrir
-   los scripts        18:00 sin aviso    el proyecto
-          │
-          ▼
-   Todo el pipeline cae:
-   - No se actualizan precios
-   - No se descargan bodegas
-   - No se generan JSONs de ventas
-   - No se hace firebase deploy
-   - Panel web muestra datos del último deploy anterior
-          │
-          ▼
-   Panel web en ferreteria-oviedo.web.app SIGUE FUNCIONANDO
-   (Firebase Hosting sirve los JSONs del último deploy exitoso)
-   PERO con datos del día anterior o más
+                   E:/W: DESCONECTADO (FortiClient o falla USB)
+                                  │
+           ┌──────────────────────┼───────────────────────┐
+           ▼                      ▼                       ▼
+  ACTUALIZAR_TODO            Claude Code            Omnara Desktop
+  no encuentra               no puede leer          no puede abrir
+  los scripts                su memoria             el proyecto
+           │
+           ▼
+  Pipeline completo cae — datos del último deploy siguen en Firebase CDN
 
-   ─────────────────────────────────────────────────────
-   LO ÚNICO QUE SIGUE FUNCIONANDO SIN E::
-   - Panel web (datos viejos, desde Firebase CDN)
-   - Firestore (auth, usuarios, cotizaciones)
-   - APP-INVENTARIO en GitHub Pages (datos viejos)
-   - Claude Code (desde C:) para trabajar en otras cosas
-   ─────────────────────────────────────────────────────
+  ─────────────────────────────────────────────────────────────────
+  LO QUE SIGUE FUNCIONANDO SIN E:/W::
+  - Panel web (datos viejos, desde Firebase CDN)
+  - Firestore (auth, usuarios, cotizaciones)
+  - APP-INVENTARIO en GitHub Pages (datos viejos)
+  - Claude Code (ejecutable en C:) — pero sin memoria de proyecto
+
+  RECUPERACIÓN:
+  Opción A: Explorador → clic derecho USB → Expulsar → esperar remontaje
+  Opción B: W:\herramientas\seguridad\REMONTAR_DISCO_E.ps1 (admin)
+  Opción C (Claude sin memoria): compartir AGENTS.md desde GitHub
+  ─────────────────────────────────────────────────────────────────
 ```
 
 ---
@@ -347,27 +314,25 @@ E:\git-sync\  (espejo sanitizado para GitHub)
          │  ├── panel-admin.html, panel-cliente.html, index.html
          │  ├── firebase.json, firestore.rules, storage.rules
          │  ├── sw.js, update-sw-version.js, firebase-config.js
-         │  ├── manifest*.json
-         │  └── AGENTS.md*, MEMORY.md*, ESTADO_PROYECTO.md*
-         │      MAPA_FLUJO_PROYECTOS.md*, RESUMEN_TECNICO_MIGRACION_E.md
-         │      (* IPs/tokens reemplazados por placeholders al publicar)
+         │  ├── manifest*.json, *.jpg
+         │  └── AGENTS.md*, MEMORY.md*, MAPA_FLUJO_PROYECTOS.md*
+         │      (* IPs/tokens reemplazados por placeholders)
          │
          │  Archivos que NO pasan (.gitignore los bloquea):
-         │  ├── VENTAS EL MANZANO/  ← xTokens ERP en scripts .py
-         │  ├── CATALOGO PRODUCTOS/ ← IPs y tokens ERP
-         │  ├── FLUJOS/             ← docs históricos con credenciales
+         │  ├── VENTAS EL MANZANO/  ← scripts con xTokens ERP
+         │  ├── CATALOGO PRODUCTOS/ ← scripts con IPs y tokens
          │  ├── .claude/            ← archivos internos Claude
          │  ├── *.py  *.bat  *.ini  ← scripts y credenciales
          │  └── data/*.json         ← datos de ventas/stock
          │
          │  git add + commit + push
          ▼
-github.com/oviedoem/ferreteria-oviedo  (PÚBLICO — 25 archivos limpios)
+github.com/oviedoem/ferreteria-oviedo  (PÚBLICO — ~25 archivos limpios)
          │
-         │  1 commit en historial (reseteado 2026-06-02)
+         │  1 commit limpio (historial reseteado 2026-06-02)
          │  Ninguna IP real, ningún token, ningún script Python
          ▼
-         Backup historial viejo (solo local, nunca en GitHub):
+         Backup historial viejo:
          E:\git-sync-historial-backup-20260602\
          ferreteria-oviedo-git-history.git  (16.9 MB, bare clone)
 ```
@@ -378,35 +343,47 @@ github.com/oviedoem/ferreteria-oviedo  (PÚBLICO — 25 archivos limpios)
 
 ```
 PROYECTO PRINCIPAL:
-  E:\ferreteria-oviedo\           Raíz del proyecto
-  E:\ferreteria-oviedo\BODEGAS\   Scripts SQL Server + XLSM
-  E:\ferreteria-oviedo\VENTAS EL MANZANO\  Pipeline ventas
-  E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\  ERP scripts
-  E:\ferreteria-oviedo\data\      JSONs generados (hosting)
+  E:\ferreteria-oviedo\                        Raíz del proyecto
+  E:\ferreteria-oviedo\BODEGAS\                Scripts SQL Server + XLSM
+  E:\ferreteria-oviedo\VENTAS EL MANZANO\      Pipeline ventas
+  E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\  Scripts ERP
+  E:\ferreteria-oviedo\data\                   JSONs generados (hosting)
+  E:\ferreteria-oviedo\_HISTORICO\             MDs y scripts históricos
 
 APP INVENTARIO:
-  E:\APP-INVENTARIO\              Raíz — SPA independiente
+  E:\APP-INVENTARIO\                           Raíz — SPA independiente
+
+CLAUDE CODE:
+  W:\claude-config\                            Config y memoria Claude (físico)
+  W:\claude-config\projects\E--ferreteria-oviedo\memory\  Memoria proyecto
+  W:\proyecto-docs\                            Backup MDs del proyecto
+  C:\Users\Ferreteria Oviedo\.claude\          Junction → W:\claude-config\
+  C:\Users\Ferreteria Oviedo\.claude-bak-20260604\  Rollback (NO borrar)
 
 HERRAMIENTAS (E:):
   E:\omnara\                      IDE Omnara completo
   E:\npm-global\                  Firebase CLI + node_modules
-  E:\config\gcm-store\            Credenciales git
+  E:\config\gitconfig             Git config (GIT_CONFIG_GLOBAL)
+  E:\config\gcm-store\            Credenciales git (DPAPI)
   E:\git-sync\                    Copia sanitizada para GitHub
-  E:\git-sync-historial-backup-20260602\  Historial viejo (solo backup)
 
-HERRAMIENTAS (C: — dependencias críticas):
-  C:\Python314\                   Intérprete + packages
-  C:\Program Files\nodejs\        Node.js runtime
+HERRAMIENTAS (W:):
+  W:\herramientas\seguridad\      Scripts emergencia USB/Claude
+
+DEPENDENCIAS CRÍTICAS (C:):
+  C:\Python3x\                    Intérprete + packages (pipeline)
+  C:\Program Files\nodejs\        Node.js runtime (firebase deploy)
   C:\Program Files\Git\           Git for Windows
-  C:\Users\Ferreteria Oviedo\.claude\  Config Claude Code
 
 DEPLOY DESTINOS:
-  ferreteria-oviedo.web.app       Panel principal (Firebase)
+  ferreteria-oviedo.web.app                   Panel principal (Firebase)
   ferreteria-oviedo.web.app/panel-cliente
   ferreteria-oviedo.web.app/panel-admin
-  oviedoem.github.io/APP-INVENTARIO  App inventario (GitHub Pages)
+  oviedoem.github.io/APP-INVENTARIO           App inventario (GitHub Pages)
 ```
 
 ---
 
-*Generado 2026-06-02 · Para actualizar el mapa cuando se migren Python/Node a E:*
+*MAPA_FLUJO_PROYECTOS.md consolidado 2026-06-05*
+*Mapas previos en _HISTORICO\20260602_MAPA_FLUJO_PROYECTOS.md*
+*Para actualizar cuando se migren Python/Node a E:*
