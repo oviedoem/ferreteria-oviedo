@@ -4,7 +4,7 @@
 // BUILD_DATE se actualiza automáticamente al hacer deploy
 // ============================================================
 
-var BUILD_DATE = '2026-06-04 00:20:46'; // ← actualizado por update-sw-version.js
+var BUILD_DATE = '2026-06-05 22:30:56'; // ← actualizado por update-sw-version.js
 var CACHE_NAME = 'oviedo-' + BUILD_DATE.replace(/[^0-9]/g,'').slice(0,12);
 
 // Assets estáticos que se cachean en instalación (NO incluir HTML)
