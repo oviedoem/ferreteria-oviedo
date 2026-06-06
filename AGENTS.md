@@ -201,7 +201,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 ### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
 - Deploy V37.14: 2026-06-02 04:22 — fix D:→E: en 5 scripts pipeline + precios arg + XDG_CONFIG_HOME ✅
-- Deploy cierre sesión: 2026-06-04 00:21
+- Deploy cierre sesión: 2026-06-05 15:45
 
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
