@@ -212,7 +212,12 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
 - Deploy V37.14: 2026-06-02 04:22 — fix D:→E: en 5 scripts pipeline + precios arg + XDG_CONFIG_HOME ✅
 - Deploy cierre sesión: 2026-06-05 22:31 — fix badge V37.13→V37.14
-- Sesion auditoria 2026-06-06: 15 archivos corregidos. Puntos 1-6 auditoria completados. Pendiente pipeline test con VPN activa + deploy post-verificacion.
+- Sesion auditoria 2026-06-06: 15 archivos corregidos. Puntos 1-6 auditoria completados. Pipeline test con VPN activa OK. Deploy post-verificacion OK. Commit b98eacb.
+- Sesion 2026-06-06 mejoras adicionales:
+  launch.json creado para Claude Code.
+  LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
+  Justime Regsvr32 fix — /s agregado en 12 archivos bat (System32 + SysWOW64).
+  Backups .bak-20260606 generados. Dialogos al abrir Claude eliminados.
 
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
@@ -595,10 +600,9 @@ Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
 ## PENDIENTES CONOCIDOS (desde 2026-06-01)
 
 ### COMPLETADO 2026-06-06 — Firebase Console verificado
-Retención configurada a 3 versiones previas — Firebase eliminará automáticamente
-todos los releases históricos anteriores al 6/6/26.
+Releases anteriores a 2026-06-06 eliminados desde Firebase Console.
 credenciales_db.enc bloqueado en firebase.json + .firebaseignore desde 2026-06-06.
-Riesgo histórico eliminado.
+Riesgo historico eliminado.
 
 ### COMPLETADO 2026-06-06 — Pipeline test post-auditoria OK
 Deploy exitoso. Xlsx corrupto limpiado (FortiClient #4).
