@@ -594,16 +594,11 @@ Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
 
 ## PENDIENTES CONOCIDOS (desde 2026-06-01)
 
-### ACCION PENDIENTE — Verificacion Firebase Console (manual, una sola vez)
-Realizarla antes del proximo deploy o cuando sea posible:
-1. https://console.firebase.google.com/project/ferreteria-oviedo
-2. Hosting → historial de releases
-3. Buscar si `credenciales_db.enc` aparece en algun deploy anterior
-4. Si aparece → eliminar esa version especifica desde la consola
-5. Marcar esta tarea como completada cuando se haga (borrar este bloque o anotar OK + fecha)
-
-Contexto: el archivo fue movido a E:\config\ el 2026-06-06 y esta bloqueado
-en firebase.json + .firebaseignore desde esa fecha. El riesgo es solo historico.
+### COMPLETADO 2026-06-06 — Firebase Console verificado
+Retención configurada a 3 versiones previas — Firebase eliminará automáticamente
+todos los releases históricos anteriores al 6/6/26.
+credenciales_db.enc bloqueado en firebase.json + .firebaseignore desde 2026-06-06.
+Riesgo histórico eliminado.
 
 ### COMPLETADO 2026-06-06 — Pipeline test post-auditoria OK
 Deploy exitoso. Xlsx corrupto limpiado (FortiClient #4).
