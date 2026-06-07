@@ -1,10 +1,12 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.14 · Última actualización: 2026-06-06
+# Versión activa: V37.14 · Última actualización: 2026-06-07
 
 ---
 
 ## ⚠️ FLUJO ERP — LEER ANTES DE CUALQUIER TAREA DE STOCK
+## Fuente de verdad: E:\ferreteria-oviedo\BODEGAS\Copia de Movimiento Stock.xlsx (hoja FLUJO ERP)
+## Usar este archivo ante cualquier duda de movimiento, nuevo menú de stock o revisión de consistencia
 ## Palabra clave: **FLUJO** — ante cualquier duda sobre Disp/Fís/Ped/Dif → volver aquí primero
 
 ### Campos SSRS → Panel Admin
@@ -213,6 +215,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.14: 2026-06-02 04:22 — fix D:→E: en 5 scripts pipeline + precios arg + XDG_CONFIG_HOME ✅
 - Deploy cierre sesión: 2026-06-05 22:31 — fix badge V37.13→V37.14
 - Sesion auditoria 2026-06-06: 15 archivos corregidos. Puntos 1-6 auditoria completados. Pipeline test con VPN activa OK. Deploy post-verificacion OK. Commit b98eacb.
+- Sesion 2026-06-07: _BOD_CORTA en leer_xlsm.py: CAL→None, SAL→None, EXH→'EXH' (activa pero sin uso aun). MEMORY.md correcciones: deploy date, PASO 1C ruta, bodegas EXH/SAL documentadas.
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
@@ -466,13 +469,42 @@ var BODSTOCK = {
 
 **Comerciales** (ventas + NC + stock): PEM · SEM · CEM · MEM
 **Auxiliares/logísticas** (solo stock): IEM · RCE · TEM · CD
-**Eliminadas:** CAL
+**Eliminadas del ERP:** CAL
+**Alias ERP excluidos** (→None en _BOD_CORTA): CAL · SAL (no son bodegas reales del BODSTOCK)
+**EXH:** activa en _BOD_CORTA desde 2026-06-07 — entra a ventas-xlsm pero NO usada aún en pipeline ni panel
 
 **SSRS — 2 bloques:**
 - BLOQUE 1 (solo DISP): SEM CEM RCE MEM
 - BLOQUE 2 (DISP+TRANS): PEM TEM CD IEM
 
-**IDBODEGA SQL confirmados:** IEM=72 · RCE=55 · CEM=24 (de P_BODEGAS · 2026-05-25)
+**IDBODEGA por sistema** — verificado 2026-06-07 contra P_BODEGAS y descargar_erp.py:
+
+Bodegas IDSUCURSAL='04' (El Manzano):
+| Bodega | Nombre completo | SQL (P_BODEGAS) | ERP URL (VisorRS) |
+|--------|----------------|-----------------|-------------------|
+| PEM | Patio El Manzano | 22 | 22 |
+| SEM | Sala El Manzano | 13 | 13 |
+| CEM | Calzada El Manzano | 24 | 393 |
+| IEM | Ingreso El Manzano | 72 | 72 |
+| RCE | Recepcion El Manzano | 55 | 55 |
+| TEM | Transito El Manzano | 46 | — |
+| GEM | Gestion El Manzano | 28 | — |
+| RWE | Retiro Web El Manzano | 49 | — |
+| EEM | Exhibicion El Manzano | 83 | — |
+
+Bodegas IDSUCURSAL='08' (otra sucursal, usadas como auxiliares):
+| Bodega | Nombre completo | SQL (P_BODEGAS) | ERP URL (VisorRS) |
+|--------|----------------|-----------------|-------------------|
+| MEM | Mermas El Manzano | 29 | 29 |
+| CD | Centro de Distribucion | 23 | — |
+
+EEM (IDBODEGA=83) = lo que en _BOD_CORTA se llama 'EXH'. Activa en ERP pero aún sin uso en pipeline.
+CAL = nombre antiguo ERP para CEM (misma bodega física). Excluida desde 2026-06-07.
+URL_CEM=393 definida en descargar_erp.py pero sin uso activo.
+NOTA CRÍTICA: Los scripts usan MD.DOC string ('BVE','FVE','NVM'...) — NO IDDOCUMENTO numérico.
+Los IDDOCUMENTO abajo son referencia documental únicamente.
+
+**Consistencia ERP vs SQL verificada 2026-06-07**: stock IEM (5 productos) = 100% coincidente entre bod-iem-registros.json (SQL) y R_STOCK_PRODUCTOS. CEM XX84502: ERP=40, SQL IDBODEGA=24=40.
 
 **bodegaCorta=PEM** hardcodeada en descargar_ventas_erp.py (L179, L222) — no es bug, NO arreglar.
 **BOD_RCE.xlsm** (nombre físico) contiene bodega IEM (col A) → JSON: `bod-iem-registros.json`
@@ -485,24 +517,44 @@ var BODSTOCK = {
 
 ---
 
-## TIPOS DE DOCUMENTO — tabla completa V37.8
+## TIPOS DE DOCUMENTO — tabla completa verificada 2026-06-07
+## Fuente negocio: E:\ferreteria-oviedo\_HISTORICO\ID DOC OVIEDO EM.xlsx
 
-| Efecto | Doc | IDDOCUMENTO | Descripción |
-|---|---|---|---|
-| ↑ Pedido (reserva) | NVM | 205 | Nota de Venta Mesón |
-| ↑ Pedido (reserva) | VMP | 210 | Venta Mesón Público |
-| ↑ Pedido (reserva) | VMN | 336 | Venta Mesón Nueva |
-| ↓ Pedido, Fís−Disp↑ | BVE | 316/605 | Boleta Venta Electrónica |
-| ↓ Pedido, Fís−Disp↑ | FVE | 301 | Factura Venta Electrónica |
-| ↓ Físico | GME | 308 | Guía Despacho Mesón |
-| ↓ Físico | GCE | 305 | Guía Despacho Cliente |
-| Ingreso compra | GRC | 15 | Guía Retorno/Recepción Compra |
-| Ajuste ingreso | GII | 33 | Guía Ingreso Interno |
-| Traslado | GIB | 709 | Guía Ingreso Bodega |
-| Traslado | GTS | 711 | Guía Traslado Salida |
-| Nota crédito | NCE | 304 | Nota Crédito Electrónica |
+Scripts usan MD.DOC string, NO IDDOCUMENTO numerico. Cada DOC puede tener multiples IDs.
 
-Whitelist DOC IN (descargar_bod.py): `GRC,GRT,GME,GIB,Gdc,GBR,GRP,GRI,GRN,GIN,GDC,GDV,GII,GTS`
+| Efecto stock | Doc | IDDOCUMENTO (todos) | Notas negocio (de ID DOC OVIEDO EM.xlsx) | Movs 6m |
+|---|---|---|---|---|
+| Pedido UP (Disp DN) | NVM | 205/213 | Saca del Disponible, queda en Fisico. Suma col Pedido. NO se elimina automatico | 850 |
+| Pedido UP (Disp DN) | VMP | 210 | Mismo caso NVM. **SIN USO** — reemplazado por VMN (336) | ~0 |
+| Pedido UP (Disp DN) | VMN | 336 | Mismo caso VMP. **ESTA ES LA ACTIVA** | 46655 |
+| Pedido DN + FisDisp UP | BVE | 316/605 | Llama a NVM/VMP creada. Cliente paga. Sale de col Pedido. 605=WEB | 30431 |
+| Pedido DN + FisDisp UP | FVE | 35/301/335/601 | Mismo caso BVE (factura). 4 variantes: Exenta/Electr/ExentaElectr/WEB | 17465 |
+| Fisico DN + Disp DN | GME | 308 | Despacha pendientes de entrega (retiro cliente o despacho camion) | 47962 |
+| Fisico DN + Disp DN | GCE | 305 | Se usa en casa matriz. Saca de Disponible y Fisico | 1 |
+| Disp UP (espera NCE) | Gdc | 79 | Cliente devuelve. Suma al Disponible, espera NCE para sumar al Fisico | 518 |
+| Fisico UP | NCE | 304/603 | Llama a Gdc (79). Suma stock al Fisico. 603=WEB | 514 |
+| Ingreso compra | GRC | 15/86 | Activo cuando llega producto de proveedor | 2200 |
+| Traslado recepcion | GRT | 17/307/701/712/713 | 17=menu antiguo (revisar). 307=hijo entre bodegas/sucursales. 712/713=hijos | 8529 |
+| Traslado entre bodegas | GIB | 709 | Entre bodegas misma tienda. No tributario SII. Mueve Disp y Fisico | 6710 |
+| Traslado entre sucursales | GTS | 711 | Entre tiendas Chile. Tributario. Mueve Disp y Fisico. Llama a GST | 611 |
+| Solo solicitud (no mueve) | GST | 702/718 | NO mueve stock. Solicita producto a otra tienda. Lo llama GIB o GTS | 537 |
+| Ajuste ingreso | GII | 33/606 | Ingresa directo a Disp y Fisico | 41 |
+| Ajuste egreso | GEI | 34/710 | 34=Saca de Disp y Fisico. 710=Guia Merma-Gestion (bodega GEM) | 279 |
+| Traslado salida | GET | 18/700 | Guia Envio Traslado. 700=doc antiguo, revisar | — |
+| Sin efecto stock | CVI | 703 | No toma stock. Solo cotizacion cliente | 14021 |
+| Sin efecto stock | CVN | 7 | Cotizacion cliente. No toma stock | 480 |
+| Venta Calzada | NVC | 203 | Productos que no vendemos o sin stock | 1 |
+| Menu antiguo | GCG | 98 | Mismo caso Gdc (79). Revisar cual esta activa | — |
+| Menu antiguo | GRT | 17 | Considerar revisar si tiene movimientos reales | — |
+
+**Whitelist DOC IN en descargar_bod.py:**
+`GRC,GRT,GME,GIB,Gdc,GBR,GRP,GRI,GRN,GIN,GDC,GDV,GII,GTS`
+NOT IN: `CVI` (excluida por diseno)
+
+**GBR, GIN, GRN, GRP**: en whitelist pero NO existen en M_DOCUMENTOS (0 movimientos). Entradas muertas.
+**GCE 315** vs **Gdc 79**: ambos son devolucion cliente. Segun Excel: "revisar cual esta activa". 315 tiene 0 movs, 79 tiene 518.
+**VMP 210**: SIN USO confirmado. VMN 336 es el activo segun nota del Excel.
+**GST**: no mueve stock — excluir de calculos de stock, solo de analisis de traslados.
 
 ---
 
@@ -653,6 +705,30 @@ Móviles: Viernes Santo (Pascua-2), Sábado Santo (Pascua-1) — algoritmo Butch
 
 ---
 
-*AGENTS.md consolidado 2026-06-05*
+---
+
+## HISTORIAL SESIÓN 2026-06-07
+
+### Cambios realizados
+- `leer_xlsm.py` `_BOD_CORTA`: CAL→None, SAL→None, EXH→'EXH' (activa, sin uso en pipeline aún)
+- `VENTAS EL MANZANO\CLAVES DE PRECIO Y RANKING.txt` creado con mapeo completo de columnas XLSM
+- `panel-admin.html` L2217: `vadmSubTab('vsec-quiebre')` → `vadmSubTab('quiebre')` (fix nav tutorial card)
+
+### Investigaciones completadas
+- **P_BODEGAS verificado con VPN**: 9 bodegas SUC='04' + MEM(29)/CD(23) en SUC='08'
+  - Nuevas documentadas: GEM=28, RWE=49, EEM=83 (Exhibicion = EXH en _BOD_CORTA)
+- **M_DOCUMENTOS consultado**: 195 tipos. Todos los DOCs del pipeline verificados.
+  - Fuente de negocio: `_HISTORICO\ID DOC OVIEDO EM.xlsx` — notas propias del equipo
+  - GBR/GIN/GRN/GRP en whitelist descargar_bod.py = entradas muertas (0 movimientos, no existen en M_DOCUMENTOS)
+  - VMP(210) confirmado SIN USO — VMN(336) es el activo
+  - Gdc(79) flow: suma Disp primero, espera NCE para sumar Fisico
+- **Consistencia ERP ↔ SQL verificada**: IEM 5 productos + CEM XX84502 → 100% coincidente
+- **Auditoría panel-admin.html**: 33 tabs revisados, solo 1 bug funcional (corregido arriba)
+
+### Documentación actualizada
+- `AGENTS.md`: tabla IDBODEGA completa con SUC='04' y SUC='08'; tabla tipos de documento con notas de negocio; referencias a fuentes de verdad
+- `MEMORY.md`: §7 bodegas completo verificado; §7b fuentes de verdad (2 archivos); §7c tabla documentos con movimientos reales; encabezados actualizados
+
+*AGENTS.md consolidado 2026-06-07*
 *Historial completo pre-junio: _HISTORICO\20260604_AGENTS_completo.md*
 *Para actualizar: editar directamente este archivo al cierre de cada sesión.*

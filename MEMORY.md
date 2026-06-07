@@ -1,6 +1,6 @@
 # MEMORY.md — Ferretería Oviedo El Manzano
 # Referencia consolidada · Desde 2026-06-01
-# Última actualización: 2026-06-06 · Versión activa: V37.14
+# Última actualización: 2026-06-07 · Versión activa: V37.14
 
 ---
 
@@ -9,9 +9,9 @@
 | Campo | Valor |
 |---|---|
 | Versión | V37.14 |
-| Fecha último deploy | 2026-06-04 00:21 |
-| Último cambio | V37.14 + sesion 2026-06-06 completa: auditoria 6 puntos + xlsx corrupto + FortiClient #4 + Regsvr32 Justime fix + Firebase releases historicos eliminados. Commits b98eacb + f4e0e61. |
-| Deploy cierre sesión | 2026-06-06 21:58 — auditoria 6 puntos completa en produccion. Commit b98eacb. Xlsx corrupto limpiado. FortiClient ocurrencia #4 documentada. Regsvr32 Justime fix completo. |
+| Fecha último deploy | 2026-06-06 21:58 |
+| Último cambio | V37.14 + sesion 2026-06-07: verificacion IDs bodegas+documentos SQL, consistencia ERP↔SQL, fix nav panel-admin, documentacion completa _BOD_CORTA/M_DOCUMENTOS/P_BODEGAS |
+| Deploy cierre sesión | 2026-06-06 21:58 — auditoria 6 puntos. Sesion 2026-06-07: sin deploy (cambios solo en panel-admin.html L2217 + docs). |
 
 Historial reciente (desde 2026-06-01):
 - V37.14 (2026-06-02): fix D:→E: en 5 scripts + precios arg + XDG_CONFIG_HOME
@@ -74,9 +74,11 @@ PASO 1B  procesar-actualizacion.py → Datos.xlsx
          csv_a_json.py → Datos.json (~3.5MB, 6011 productos)
          CRÍTICO: procesar-actualizacion.py escribe data/catalogo-dinamico.json (señal para main.py)
 
-PASO 1C  leer_xlsm.py (lee BODEGAS/*.xlsm)
+PASO 1C  leer_xlsm.py (lee VENTAS EL MANZANO/VENTAS.xlsm + RANKING.xlsm + PRECIOS.xlsm)
          → xlsm-enrich.json (rut, sector, bodegaCorta, hora, razonSocial)
-         REGLA: solo leer_xlsm.py genera este archivo — main.py lo consume, no lo genera
+         → ventas-xlsm-YYYY.json · ventas-xlsm-sector.json · ranking-unidades.json · precios-diff.json
+         REGLA: solo leer_xlsm.py genera estos archivos — main.py consume xlsm-enrich.json, no lo genera
+         NOTA: NO lee BODEGAS/ — eso es exclusivo de descargar_bod.py (PASO 1D)
 
 PASO 1D  descargar_bod.py (BODEGAS/)
          → data/bod-iem-registros.json (IEM=72)
@@ -147,26 +149,44 @@ FerreteriOviedo-Auto18 eliminada del Task Scheduler (era dependencia del registr
 
 ---
 
-## 7. BODEGAS EL MANZANO — IDs SQL Y CLASIFICACIÓN
+## 7. BODEGAS EL MANZANO — IDs SQL Y CLASIFICACIÓN (verificado 2026-06-07)
 
-### Comerciales (ventas + NC + stock visible en cálculos)
-| Bodega | Nombre | IDBODEGA SQL |
-|---|---|---|
-| PEM | Patio El Manzano | — (bodegaCorta hardcodeada en ERP — no bug) |
-| SEM | Sala El Manzano | — |
-| CEM | Calzada El Manzano | 24 |
-| MEM | Mermas El Manzano | — |
+### IDSUCURSAL='04' (El Manzano) — P_BODEGAS confirmado con VPN 2026-06-07
+| Bodega | Nombre completo | IDBODEGA SQL | IdBodega ERP (VisorRS) |
+|--------|----------------|--------------|------------------------|
+| PEM | Patio El Manzano | 22 | 22 |
+| SEM | Sala El Manzano | 13 | 13 |
+| CEM | Calzada El Manzano | 24 | 393 |
+| IEM | Ingreso El Manzano | 72 | 72 |
+| RCE | Recepcion El Manzano | 55 | 55 |
+| TEM | Transito El Manzano | 46 | — |
+| GEM | Gestion El Manzano | 28 | — |
+| RWE | Retiro Web El Manzano | 49 | — |
+| EEM | Exhibicion El Manzano | 83 | — |
 
-### Auxiliares / Logísticas (stock visible, NO en cálculos de ventas)
-| Bodega | Nombre | IDBODEGA SQL |
-|---|---|---|
-| IEM | Ingreso El Manzano | 72 |
-| RCE | Recepción El Manzano | 55 |
-| TEM | Tránsito El Manzano | — |
-| CD | Centro de Distribución | — |
+### IDSUCURSAL='08' (otra sucursal — usadas como auxiliares El Manzano)
+| Bodega | Nombre completo | IDBODEGA SQL | IdBodega ERP (VisorRS) |
+|--------|----------------|--------------|------------------------|
+| MEM | Mermas El Manzano | 29 | 29 |
+| CD | Centro de Distribucion | 23 | — |
 
-IDBODEGA confirmados desde P_BODEGAS DB viva (2026-05-25): IEM=72, RCE=55, CEM=24.
-Bodegas ELIMINADAS: CAL.
+**Notas clave:**
+- EEM (83) = bodega Exhibicion = lo que en _BOD_CORTA se llama 'EXH'. Sin uso en pipeline aún.
+- GEM (28) y RWE (49) son bodegas activas en SUC='04' no usadas en pipeline ni panel.
+- CEM=24 (SQL) y CEM=393 (VisorRS) son AMBOS correctos — sistemas distintos, misma bodega.
+- CAL = nombre antiguo ERP para CEM. CAL→None en _BOD_CORTA desde 2026-06-07.
+- MEM y CD tienen IDSUCURSAL='08', NO '04' — pero se usan en SSRS y cálculos de informe-stock.json.
+- URL_CEM=393 definida en descargar_erp.py pero sin invocación activa.
+
+**Consistencia ERP ↔ SQL verificada 2026-06-07:**
+IEM (IDBODEGA=72): 5 productos comparados entre bod-iem-registros.json y R_STOCK_PRODUCTOS → 100% coincidente.
+CEM XX84502: ERP JSON=40, SQL IDBODEGA=24=40. Consistentes.
+
+NOTA: Los scripts usan MD.DOC string ('BVE','FVE','NVM'...) — NO IDDOCUMENTO numérico.
+Los IDDOCUMENTO en AGENTS.md son referencia documental, no se usan en código.
+Bodegas ELIMINADAS del ERP: CAL (nombre antiguo de Calzada — reemplazado por CEM).
+Alias ERP excluidos en _BOD_CORTA (leer_xlsm.py): CAL→None · SAL→None.
+EXH: activa en _BOD_CORTA ('EXH') desde 2026-06-07 (= EEM IDBODEGA=83) — NO se usa aún en pipeline ni panel.
 
 ### BODSTOCK — 8 bodegas, no reducir
 ```javascript
@@ -179,6 +199,56 @@ var BODSTOCK = {
 ### SSRS — bloques de descarga
 - BLOQUE 1 (solo DISP): SEM, CEM, RCE, MEM
 - BLOQUE 2 (DISP+TRANS): PEM, TEM, CD, IEM
+
+---
+
+## 7b. ARCHIVOS DE REFERENCIA — FUENTES DE VERDAD
+
+```
+E:\ferreteria-oviedo\BODEGAS\Copia de Movimiento Stock.xlsx
+```
+
+```
+E:\ferreteria-oviedo\BODEGAS\Copia de Movimiento Stock.xlsx
+```
+Hoja activa: **FLUJO ERP** — tabla SUMA/RESTA por documento y campo de stock.
+Es fuente de verdad de las tablas Flujo COMPRA/VENTA/DEVOLUCION en AGENTS.md §FLUJO ERP.
+Hoja **SOLO EJEMPLO NO TOMAR EN CUENTA** → ignorar.
+Usar ante cualquier duda sobre Disp/Fis/Ped/Dif o nuevo menu de stock.
+
+```
+E:\ferreteria-oviedo\_HISTORICO\ID DOC OVIEDO EM.xlsx
+```
+Notas de negocio por IDDOCUMENTO y DOC — quien usa cada documento, si esta activo, flujo real.
+Fuente definitiva para interpretar documentos del ERP. Ver §7c para resumen.
+Usar ante cualquier duda sobre un tipo de documento (activo/obsoleto, efecto en stock).
+
+---
+
+## 7c. TIPOS DE DOCUMENTO — verificado 2026-06-07
+Fuentes: M_DOCUMENTOS (SQL) + _HISTORICO\ID DOC OVIEDO EM.xlsx (notas negocio)
+Scripts filtran por MD.DOC string, NO por IDDOCUMENTO numerico.
+
+| Doc | IDDOCUMENTO | Efecto stock | Nota clave |
+|-----|-------------|-------------|------------|
+| VMN | 336 | Pedido UP (Disp DN) | ACTIVO. Reemplaza VMP (210) |
+| VMP | 210 | Pedido UP | SIN USO — reemplazado por VMN |
+| NVM | 205/213 | Pedido UP | Nota de Venta clasica |
+| BVE | 316/605 | Pedido DN + FisDip UP | Pago cliente. 605=WEB |
+| FVE | 35/301/335/601 | Pedido DN + FisDisp UP | Factura. 4 variantes |
+| GME | 308 | Fisico DN + Disp DN | Despacha pendientes |
+| Gdc | 79 | Disp UP (espera NCE) | Devolucion cliente → espera NCE para Fisico |
+| NCE | 304/603 | Fisico UP | Llama a Gdc. Suma al Fisico |
+| GRC | 15/86 | Fisico UP | Llegada de proveedor |
+| GRT | 17/307/701/712/713 | Fisico UP | Traslado recepcion. 17=menu antiguo |
+| GIB | 709 | Fisico UP | Entre bodegas misma tienda |
+| GTS | 711 | Fisico DN | Entre sucursales. Llama a GST |
+| GST | 702/718 | Sin efecto | Solo solicitud. NO mueve stock |
+| GII | 33/606 | Fisico+Disp UP | Ingresa directo |
+| GEI | 34/710 | Fisico+Disp DN | 710=Merma-Gestion (bodega GEM) |
+
+Pipeline pedidos: NVM/VMN/VMP | Pipeline despachos: BVE/FVE
+GBR/GIN/GRN/GRP: en whitelist descargar_bod.py pero NO existen en M_DOCUMENTOS
 
 ---
 
