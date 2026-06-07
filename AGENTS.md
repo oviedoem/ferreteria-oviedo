@@ -168,7 +168,12 @@ PIP_CACHE_DIR        = E:\pip-cache
 
 ## EMERGENCIA DISCO E: / W:
 
-**Causa raíz confirmada:** FortiClient Zero Trust retiene handle sobre el volumen USB. Historial: 3 ocurrencias (2026-06-03, 2026-06-04 tarde, 2026-06-04 noche).
+**Causa raíz confirmada:** FortiClient Zero Trust retiene handle sobre el volumen USB. Historial: 4 ocurrencias (2026-06-03, 2026-06-04 tarde, 2026-06-04 noche, 2026-06-06).
+
+- 2026-06-06: ocurrencia #4 — pipeline test post-auditoria.
+  Code perdio acceso a W:\claude-appdata\ccd-environment-config.json.
+  Xlsx ventas quedo en 0 bytes. Eliminado y regenerado.
+  Recuperado con USBDeview Disable+Enable.
 
 ### Opción A — Sin scripts (30 seg)
 1. Explorador de Windows → clic derecho disco E: → Expulsar
@@ -180,6 +185,10 @@ PIP_CACHE_DIR        = E:\pip-cache
 W:\herramientas\seguridad\REMONTAR_DISCO_E.ps1   ← remonta sin expulsar (PnP)
 W:\herramientas\seguridad\ABRIR_CLAUDE.bat        ← abre Claude verificando E: primero
 ```
+Copia de emergencia: D:\REMONTAR_DISCO_E.ps1
+(usar cuando W: no este accesible)
+REGLA: W:\ y D:\ deben mantenerse sincronizadas.
+Script busca USBDeview en: D:\ → E:\herramientas\ → W:\
 
 ### Rollback de junction si W: falla
 ```powershell
@@ -596,12 +605,9 @@ Realizarla antes del proximo deploy o cuando sea posible:
 Contexto: el archivo fue movido a E:\config\ el 2026-06-06 y esta bloqueado
 en firebase.json + .firebaseignore desde esa fecha. El riesgo es solo historico.
 
-### ACCION PENDIENTE — Pipeline test post-auditoria (requiere VPN)
-1. ACTUALIZAR_TODO_AUTO.bat → verificar 4x [OK] en el log:
-   [OK] descargar_bod.py · descargar_despachos.py · descargar_pedidos.py · generar_informe_stock.py
-2. Si OK → ACTUALIZAR_GITHUB.bat con mensaje:
-   "fix: logs ignore + enc doble bloqueo + rutas enc portables + bat autonomo + señal pipeline + docs MEMORY actualizados"
-3. Solo despues → PUBLICAR.bat
+### COMPLETADO 2026-06-06 — Pipeline test post-auditoria OK
+Deploy exitoso. Xlsx corrupto limpiado (FortiClient #4).
+Commit b98eacb. Auditoria 6 puntos en produccion.
 
 ### ACCIÓN 7 — Botón ♻️ Refrescar catálogo (MEDIA)
 `_vadmCargarStockMap()` tiene guard: si `_vadmStockMap` existe, retorna sin fetch.

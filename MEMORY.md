@@ -11,7 +11,7 @@
 | Versión | V37.14 |
 | Fecha último deploy | 2026-06-04 00:21 |
 | Último cambio | V37.14 + auditoria 2026-06-06: logs ignore + enc doble bloqueo + rutas enc portables + bat autonomo + señal pipeline + docs MEMORY actualizados. 15 archivos tocados. |
-| Deploy cierre sesión | Pendiente — esperando VPN para pipeline test. Secuencia: 1) ACTUALIZAR_TODO_AUTO.bat → 4x [OK] bodegas · 2) ACTUALIZAR_GITHUB.bat → msg fix auditoria · 3) PUBLICAR.bat |
+| Deploy cierre sesión | 2026-06-06 21:58 — auditoria 6 puntos completa en produccion. Commit b98eacb. Xlsx corrupto limpiado. FortiClient ocurrencia #4 documentada. |
 
 Historial reciente (desde 2026-06-01):
 - V37.14 (2026-06-02): fix D:→E: en 5 scripts + precios arg + XDG_CONFIG_HOME
