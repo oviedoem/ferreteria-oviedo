@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.14 · Última actualización: 2026-06-05
+# Versión activa: V37.14 · Última actualización: 2026-06-06
 
 ---
 
@@ -110,6 +110,7 @@ NO TOCO:     [lista explícita con razón de cada una]
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §3 — esta copia puede quedar desactualizada -->
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
 ```
@@ -202,6 +203,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
 - Deploy V37.14: 2026-06-02 04:22 — fix D:→E: en 5 scripts pipeline + precios arg + XDG_CONFIG_HOME ✅
 - Deploy cierre sesión: 2026-06-05 22:31 — fix badge V37.13→V37.14
+- Sesion auditoria 2026-06-06: 15 archivos corregidos. Puntos 1-6 auditoria completados. Pendiente pipeline test con VPN activa + deploy post-verificacion.
 
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
@@ -309,6 +311,7 @@ grep "D:\\ferreteria-oviedo" panel-admin.html → debe dar 0
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §4 — esta copia puede quedar desactualizada -->
 ## PIPELINE COMPLETO — ACTUALIZAR_TODO.bat
 
 ```
@@ -399,6 +402,7 @@ descargar_bod.py         Subquery ULT: WHERE IDBODEGA=? ANTES del GROUP BY.
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §11 — esta copia puede quedar desactualizada -->
 ## VARIABLES JS GLOBALES CLAVE — no renombrar
 
 ```
@@ -414,6 +418,7 @@ _vadmSSMesesMin   Cobertura mínima para sobre-stock (default 12)
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §12 — esta copia puede quedar desactualizada -->
 ## FUNCIONES JS CLAVE — no renombrar ni cambiar firma
 
 ```
@@ -435,6 +440,7 @@ vadmDatosFiltrados()        Filtrado central — todas las funciones render debe
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §7 — esta copia puede quedar desactualizada -->
 ## BODEGAS — BODSTOCK 8 BODEGAS, NO REDUCIR
 
 ```javascript
@@ -556,6 +562,7 @@ Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §19 — esta copia puede quedar desactualizada -->
 ## CHECKLIST POST-CAMBIO
 
 ```
@@ -577,6 +584,24 @@ Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
 ---
 
 ## PENDIENTES CONOCIDOS (desde 2026-06-01)
+
+### ACCION PENDIENTE — Verificacion Firebase Console (manual, una sola vez)
+Realizarla antes del proximo deploy o cuando sea posible:
+1. https://console.firebase.google.com/project/ferreteria-oviedo
+2. Hosting → historial de releases
+3. Buscar si `credenciales_db.enc` aparece en algun deploy anterior
+4. Si aparece → eliminar esa version especifica desde la consola
+5. Marcar esta tarea como completada cuando se haga (borrar este bloque o anotar OK + fecha)
+
+Contexto: el archivo fue movido a E:\config\ el 2026-06-06 y esta bloqueado
+en firebase.json + .firebaseignore desde esa fecha. El riesgo es solo historico.
+
+### ACCION PENDIENTE — Pipeline test post-auditoria (requiere VPN)
+1. ACTUALIZAR_TODO_AUTO.bat → verificar 4x [OK] en el log:
+   [OK] descargar_bod.py · descargar_despachos.py · descargar_pedidos.py · generar_informe_stock.py
+2. Si OK → ACTUALIZAR_GITHUB.bat con mensaje:
+   "fix: logs ignore + enc doble bloqueo + rutas enc portables + bat autonomo + señal pipeline + docs MEMORY actualizados"
+3. Solo despues → PUBLICAR.bat
 
 ### ACCIÓN 7 — Botón ♻️ Refrescar catálogo (MEDIA)
 `_vadmCargarStockMap()` tiene guard: si `_vadmStockMap` existe, retorna sin fetch.

@@ -1,6 +1,6 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
-# Última actualización: 2026-06-05
+# Última actualización: 2026-06-06
 
 ---
 
@@ -52,6 +52,7 @@
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §4 — esta copia puede quedar desactualizada -->
 ## MAPA 2 — PIPELINE FERRETERÍA OVIEDO (flujo completo de datos)
 
 ```
@@ -339,6 +340,7 @@ github.com/oviedoem/ferreteria-oviedo  (PÚBLICO — ~25 archivos limpios)
 
 ---
 
+<!-- Fuente de verdad: MEMORY.md §3 — esta copia puede quedar desactualizada -->
 ## RESUMEN DE RUTAS CLAVE
 
 ```

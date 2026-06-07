@@ -1,6 +1,6 @@
 # MEMORY.md — Ferretería Oviedo El Manzano
 # Referencia consolidada · Desde 2026-06-01
-# Última actualización: 2026-06-05 · Versión activa: V37.14
+# Última actualización: 2026-06-06 · Versión activa: V37.14
 
 ---
 
@@ -10,8 +10,8 @@
 |---|---|
 | Versión | V37.14 |
 | Fecha último deploy | 2026-06-04 00:21 |
-| Último cambio | V37.14: fix D:→E: en 5 scripts pipeline + precios arg + XDG_CONFIG_HOME |
-| Deploy cierre sesión | 2026-06-04 00:21 — todo publicado, sin pendientes |
+| Último cambio | V37.14 + auditoria 2026-06-06: logs ignore + enc doble bloqueo + rutas enc portables + bat autonomo + señal pipeline + docs MEMORY actualizados. 15 archivos tocados. |
+| Deploy cierre sesión | Pendiente — esperando VPN para pipeline test. Secuencia: 1) ACTUALIZAR_TODO_AUTO.bat → 4x [OK] bodegas · 2) ACTUALIZAR_GITHUB.bat → msg fix auditoria · 3) PUBLICAR.bat |
 
 Historial reciente (desde 2026-06-01):
 - V37.14 (2026-06-02): fix D:→E: en 5 scripts + precios arg + XDG_CONFIG_HOME
@@ -94,6 +94,15 @@ PASO 1F  descargar_despachos.py (BODEGAS/)  [V37.8]
          Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp)
          → data/despachos-comprometidos.json
          → data/despachos-detalle.json
+
+PASO 1G  generar_informe_stock.py (BODEGAS/)
+         Fuente: raw_bloque1/2_*.csv en CATALOGO PRODUCTOS/backups/ (escritos por descargar_erp.py)
+         → data/informe-stock.json
+           { cod: { pem_bod, sem_bod, cem_bod, mem_bod,
+                    pem_ped, sem_ped, cem_ped, mem_ped } }
+         pem_ped = St_DVen + St_Ped de TODAS las sucursales (mas completo que pedidos-comprometidos.json)
+         CRITICO parseo CSV: punto=miles, coma=decimal — igual que regla SSRS en AGENTS.md
+         Si no encuentra ningun CSV: sys.exit(1). BAT captura el error y continua con [AVISO].
 
 PASO 2   main.py --sin-deploy
          PASO 1: _catalogo_generado_hoy()? SI → leer_bodegas_desde_actualizar (3s)
@@ -204,6 +213,7 @@ REGLA CRÍTICA subquery ULT:
 | descargar_bod.py | BODEGAS\ | bod-iem/rce/cem-registros.json | SQL Server directo |
 | descargar_pedidos.py | BODEGAS\ | pedidos-comprometidos.json + pedidos-detalle.json | R_STOCK_PRODUCTOS.ST_PEDIDO |
 | descargar_despachos.py | BODEGAS\ | despachos-comprometidos.json + despachos-detalle.json | BVE/FVE pendientes |
+| generar_informe_stock.py | BODEGAS\ | data/informe-stock.json | Stock fisico + comprometido todas sucursales. Fuente: raw_bloque1/2_*.csv (backups/). pem/sem/cem/mem_bod + _ped |
 | main.py | VENTAS EL MANZANO\ | ventas-manzano*.json | Pipeline ventas completo |
 | descargar_ventas_erp.py | VENTAS EL MANZANO\ | ventas_erp_producto_YYYYMMDD.xlsx | Incremental; dedup por (Numero, Codigo) |
 | encriptar_credenciales.py | raíz | credenciales_db.enc | Usado por descargar_bod, descargar_despachos |

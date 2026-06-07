@@ -29,6 +29,8 @@
       "SOLO EJEMPLO/**",
       "FLUJOS .MD/**",
       "backups/**",
+      "logs/**",
+      "**/*.enc",
       "users_export.json"
     ],
     "rewrites": [
