@@ -13273,6 +13273,12 @@ function _vadmDespacharHtmlEmail(datos, perStr, tab){
   if(tab==='despachos') return window._vadmHtmlEmailDespachos ? window._vadmHtmlEmailDespachos() : _vadmHtmlEmailNoDisponible(tab);
   if(tab==='informe-stock'||tab==='analisis'||tab==='stockconsulta'||tab==='adquisiciones')
     return _vadmHtmlEmailNoDisponible(tab);
+  // Tabs XLSM — datos no disponibles en _vadmLineas
+  if(tab==='nc'||tab==='marcavend2'||tab==='preciodiff'||tab==='mem')
+    return _vadmHtmlEmailNoDisponible(tab);
+  // Stubs no implementados
+  if(tab==='impacto')
+    return _vadmHtmlEmailNoDisponible(tab);
   // Detalle y cualquier tab de ventas no listado → resumen de ventas
   return _vadmHtmlEmailDetalle(datos, perStr, tab);
 }
@@ -13281,7 +13287,10 @@ function _vadmDespacharHtmlEmail(datos, perStr, tab){
 function _vadmHtmlEmailNoDisponible(tab){
   var nombres={quiebre:'Stock & Quiebre',sobrestock:'Sobre-stock',transito:'Tránsito PEM',
     merma:'Merma / Remate',arbol:'Árbol de Descomposición',
-    arboltabla:'Tabla KPIs',arbolheat:'Mapa de Calor'};
+    arboltabla:'Tabla KPIs',arbolheat:'Mapa de Calor',
+    mem:'MEM Merma (XLSM)',nc:'NC Vendedor (XLSM)',
+    marcavend2:'Vend × Marca (XLSM)',preciodiff:'Diff Precios (XLSM)',
+    impacto:'Q vs $ (no implementado)'};
   var n=nombres[tab]||tab;
   return '<div style="max-width:640px;margin:0 auto;font-family:Arial,sans-serif;padding:48px 24px;text-align:center">'+
     '<div style="font-size:48px;margin-bottom:16px">📦</div>'+
@@ -14284,7 +14293,7 @@ function _vadmComputeInventarioData(tab){
 function vadmAbrirEmailModal(){
   var tabId = _vadmTabActiva();
   // Tabs que tienen su propio reporte y no dependen de _vadmLineas
-  var _tabsSinVentas = ['despachos','informe-stock','analisis','stockconsulta','adquisiciones'];
+  var _tabsSinVentas = ['despachos','informe-stock','stockconsulta','adquisiciones'];
   if(_tabsSinVentas.indexOf(tabId) >= 0){
     // Redirigir al handler propio si existe
     if(tabId==='despachos' && window.dpEnviarEmail){ window.dpEnviarEmail(); return; }
@@ -14355,15 +14364,17 @@ function vadmAbrirEmailModal(){
     c.style.wordBreak = 'break-word';
     c.style.boxSizing = 'border-box';
   });
+  // Envolver en tabla exterior de ancho fijo para que Outlook respete el layout
+  var _outerHtml = '<table width="680" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr><td>' + prev.innerHTML + '</td></tr></table>';
   // Textarea recibe el DOM corregido, no el html crudo
-  document.getElementById('vadmEmailHtmlArea').value = _vadmEmailFullDoc(prev.innerHTML);
+  document.getElementById('vadmEmailHtmlArea').value = _vadmEmailFullDoc(_outerHtml);
   document.getElementById('vadmEmailFeedback').textContent='';
   vadmCambiarTabEmail('vista');
   document.getElementById('vadmEmailModal').style.display='flex';
   // Auto-copiar como rich HTML al abrir (mismo patrón que Adquisiciones)
   var _plainText = asunto+'\n\nGenerado desde panel.ferreteria-oviedo.web.app';
   if(window.ClipboardItem){
-    var _richBlob = new Blob([prev.innerHTML], {type:'text/html'});
+    var _richBlob = new Blob([_outerHtml], {type:'text/html'});
     var _textBlob = new Blob([_plainText], {type:'text/plain'});
     navigator.clipboard.write([new ClipboardItem({'text/html':_richBlob,'text/plain':_textBlob})])
       .then(function(){
@@ -14383,9 +14394,11 @@ function vadmCerrarEmailModal(){
 
 function vadmCambiarTabEmail(tab){
   document.getElementById('vadmEmailVistaDiv').style.display = tab==='vista'?'':'none';
-  document.getElementById('vadmEmailHtmlDiv').style.display  = tab==='html' ?'':'none';
+  var htmlDiv = document.getElementById('vadmEmailHtmlDiv');
+  if(htmlDiv) htmlDiv.style.display = tab==='html'?'':'none';
   document.getElementById('vetab-vista').classList.toggle('active', tab==='vista');
-  document.getElementById('vetab-html').classList.toggle('active',  tab==='html');
+  var htmlBtn = document.getElementById('vetab-html');
+  if(htmlBtn) htmlBtn.classList.toggle('active', tab==='html');
 }
 
 function vadmEnviarOutlook(){
@@ -14486,14 +14499,31 @@ function vadmEnviarOutlook(){
 }
 
 function vadmCopiarHtml(){
-  var html = document.getElementById('vadmEmailHtmlArea').value;
-  navigator.clipboard.writeText(html).then(function(){
-    document.getElementById('vadmEmailFeedback').textContent='✅ HTML copiado — pégalo en Gmail (vista HTML) o Outlook (Insertar > HTML)';
-  }).catch(function(){
-    document.getElementById('vadmEmailHtmlArea').select();
-    try{ document.execCommand('copy'); document.getElementById('vadmEmailFeedback').textContent='✅ HTML copiado'; }
-    catch(e){ document.getElementById('vadmEmailFeedback').textContent='⚠️ Usa Ctrl+A / Ctrl+C en el área de código'; }
-  });
+  var prev = document.getElementById('vadmEmailPreview');
+  var fb   = document.getElementById('vadmEmailFeedback');
+  var innerHtml = prev ? prev.innerHTML : document.getElementById('vadmEmailHtmlArea').value;
+  var outerHtml = '<table width="680" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr><td>' + innerHtml + '</td></tr></table>';
+  if(window.ClipboardItem){
+    try{
+      navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html':  new Blob([outerHtml],  {type:'text/html'}),
+          'text/plain': new Blob([innerHtml],  {type:'text/plain'})
+        })
+      ]).then(function(){
+        if(fb) fb.textContent='✅ HTML copiado — pegá con Ctrl+V en Outlook o Gmail';
+      }).catch(function(){
+        navigator.clipboard.writeText(outerHtml).then(function(){
+          if(fb) fb.textContent='📋 Copiado — pegá en tu cliente de correo';
+        });
+      });
+    }catch(e){
+      if(fb) fb.textContent='⚠️ Usa Ctrl+A / Ctrl+C en el área de código';
+    }
+  } else {
+    var area = document.getElementById('vadmEmailHtmlArea');
+    if(area){ area.select(); try{ document.execCommand('copy'); if(fb) fb.textContent='✅ Copiado'; }catch(e){} }
+  }
 }
 
 function vadmDescargarHtml(){
@@ -16315,8 +16345,6 @@ Te respondemos a la brevedad.</div>
         <div style="display:flex;gap:6px">
           <button onclick="vadmCambiarTabEmail('vista')" id="vetab-vista"
             class="vadm-stab active" style="padding:4px 10px;font-size:11px">👁️ Vista previa</button>
-          <button onclick="vadmCambiarTabEmail('html')" id="vetab-html"
-            class="vadm-stab" style="padding:4px 10px;font-size:11px">🖥️ Código HTML</button>
         </div>
       </div>
       <div id="vadmEmailVistaDiv" style="padding:16px 20px">
@@ -16330,11 +16358,6 @@ Te respondemos a la brevedad.</div>
 
     <!-- Footer acciones -->
     <div style="padding:12px 20px;border-top:1px solid #e5e7eb;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fafafa;border-radius:0 0 16px 16px">
-      <button onclick="vadmEnviarOutlook()"
-        style="display:flex;align-items:center;gap:6px;padding:9px 16px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"
-        title="Abre tu cliente de correo con el resumen en el cuerpo">
-        📧 Enviar por correo
-      </button>
       <button onclick="vadmCopiarHtml()"
         style="display:flex;align-items:center;gap:6px;padding:9px 14px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit"
         title="Copia el HTML para pegar en Gmail o cualquier cliente de correo">
