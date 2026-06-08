@@ -15554,7 +15554,7 @@ function reqStockEnviarEmail(){
     rowsHtml +=
       '<tr style="background:'+bg+'">'+
         '<td style="'+sCd+';font-family:monospace;font-size:11px;white-space:nowrap">'+cod+'</td>'+
-        '<td style="'+sCd+';max-width:175px">'+dotHtml+'<strong>'+prod+'</strong></td>'+
+        '<td style="'+sCd+';width:200px;max-width:200px;word-break:break-word;overflow-wrap:break-word">'+dotHtml+'<strong>'+prod+'</strong></td>'+
         '<td style="'+sCdR+'">'+vta+'</td>'+
         '<td style="'+sCdR+'">'+minAct+'</td>'+
         '<td style="'+sCdR+';background:#fef3c7;font-weight:700">'+repAct+'</td>'+
@@ -15589,8 +15589,8 @@ function reqStockEnviarEmail(){
       '<table style="border-collapse:collapse;width:100%;margin-bottom:14px">'+
         '<thead>'+
           '<tr>'+
-            '<th style="'+sTh+'left;width:88px">Código</th>'+
-            '<th style="'+sTh+'left;min-width:155px">Producto</th>'+
+            '<th style="'+sTh+'left;width:70px">Código</th>'+
+            '<th style="'+sTh+'left;width:200px;max-width:200px">Producto</th>'+
             '<th style="'+sTh+'right;width:58px">Vta<br>2 meses</th>'+
             '<th style="'+sTh+'right;width:62px">Mínimo<br>actual</th>'+
             '<th style="'+sTh+'right;width:68px;background:#92400e">Repos.<br>actual</th>'+
