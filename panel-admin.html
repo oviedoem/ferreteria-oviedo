@@ -15571,22 +15571,21 @@ function reqStockEnviarEmail(){
 
   // ── HTML del correo ──
   var htmlEmail =
-    '<div style="font-family:Calibri,Arial,sans-serif;font-size:13px;color:#1f2937;max-width:780px;margin:0 auto">'+
-
-    '<div style="background:#1e3a5f;color:white;padding:16px 22px;border-radius:6px 6px 0 0">'+
+    '<table width="760" cellpadding="0" cellspacing="0" style="font-family:Calibri,Arial,sans-serif;font-size:13px;color:#1f2937;border-collapse:collapse">'+
+    '<tr><td style="background:#1e3a5f;color:white;padding:16px 22px;border-radius:6px 6px 0 0">'+
       '<div style="font-size:16px;font-weight:700;letter-spacing:.3px">Ferretería Oviedo — El Manzano</div>'+
       '<div style="font-size:11px;opacity:.75;margin-top:3px">Solicitud de Reposición de Stock · '+hoy+'</div>'+
-    '</div>'+
+    '</td></tr>'+
 
-    '<div style="padding:18px 22px 22px;background:#f9fafb;border:1px solid #e5e7eb;border-top:none">'+
+    '<tr><td style="padding:18px 22px 22px;background:#f9fafb;border:1px solid #e5e7eb;border-top:none">'+
       '<p style="margin:0 0 8px;font-size:13px">Estimado Francisco,</p>'+
       '<p style="margin:0 0 18px;font-size:13px">Le envío el listado de reposición de stock para sucursal <strong>El Manzano</strong>, correspondiente al '+diaHoy+' <strong>'+hoy+'</strong>.</p>'+
 
-      '<div style="background:#374151;color:white;padding:7px 12px;font-weight:700;font-size:11px;letter-spacing:.6px;margin-bottom:0">'+
+      '<table width="714" cellpadding="0" cellspacing="0" style="background:#374151;color:white;font-weight:700;font-size:11px;letter-spacing:.6px;margin-bottom:0"><tr><td style="padding:7px 12px">'+
         'DETALLE DE PRODUCTOS — TOP '+nItems+' ALTA ROTACIÓN'+
-      '</div>'+
+      '</td></tr></table>'+
 
-      '<table style="border-collapse:collapse;width:100%;table-layout:fixed;margin-bottom:14px">'+
+      '<table style="border-collapse:collapse;width:714px;table-layout:fixed;margin-bottom:14px">'+
         '<thead>'+
           '<tr>'+
             '<th style="'+sTh+'left;width:70px">Código</th>'+
@@ -15603,7 +15602,7 @@ function reqStockEnviarEmail(){
         '<tbody>'+rowsHtml+'</tbody>'+
       '</table>'+
 
-      '<div style="background:#eff6ff;border-left:3px solid #3b82f6;padding:8px 12px;font-size:11px;color:#1e40af;margin-bottom:14px">'+
+      '<div style="background:#eff6ff;border-left:3px solid #3b82f6;padding:8px 12px;font-size:11px;color:#1e40af;margin-bottom:14px;width:690px">'+
         '&#9679; Cobertura calculada: <strong>'+dias+' días</strong> &nbsp;|&nbsp; '+
         'Período analizado: <strong>'+desde+'</strong> al <strong>'+hasta+'</strong><br>'+
         '&#9679; Repos. actual = Mínimo &minus; Stock actual &minus; Tránsito en curso'+
@@ -15614,8 +15613,8 @@ function reqStockEnviarEmail(){
         '<strong style="font-size:13px">Alejandro González</strong><br>'+
         '<span style="color:#6b7280">Ferretería Oviedo — El Manzano</span>'+
       '</p>'+
-    '</div>'+
-  '</div>';
+    '</td></tr>'+
+  '</table>';
 
   // ── Texto plano ──
   _reqEmailPlain =
