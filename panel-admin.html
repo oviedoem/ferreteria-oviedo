@@ -2952,8 +2952,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
               <th style="padding:8px 14px;text-align:left">Bodega</th>
               <th style="padding:8px 14px;text-align:left">Tipo</th>
               <th style="padding:8px 14px;text-align:right">Disp.</th>
-              <th style="padding:8px 14px;text-align:right">Tránsito</th>
               <th style="padding:8px 14px;text-align:right">Físico</th>
+              <th style="padding:8px 14px;text-align:right">Tránsito</th>
+              <th style="padding:8px 14px;text-align:right">Pedido</th>
               <th style="padding:8px 14px;text-align:right">Valor Stock</th>
               <th style="padding:8px 14px;text-align:center">Estado</th>
             </tr>
@@ -3034,6 +3035,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       <span class="vadm-filter-tag">📅 Stock del momento: datos AYER</span>
     </div>
 
+    <!-- Advertencia cobertura de datos -->
+    <div id="reqRangoWarn" style="display:none;margin-bottom:8px;padding:9px 13px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;font-size:12px;color:#92400e;line-height:1.5"></div>
+
     <!-- Tabla -->
     <div class="ven-adm-table-wrap">
       <table class="vadm-rank-table" id="reqStockTable" style="width:100%">
@@ -3106,7 +3110,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.14<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">02-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.15<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">08-06-2026</span></div>
 
 <script>
 
@@ -15389,6 +15393,28 @@ function reqStockPrellenar(){
   var hastaTs   = new Date(hasta).getTime() + 86399999;
   var diasRango = Math.max(1, Math.round((hastaTs - desdeTs) / 86400000));
 
+  // ── Verificar cobertura real de _vadmLineas vs rango pedido ──
+  var warnEl = document.getElementById('reqRangoWarn');
+  if(warnEl){
+    var tsArr = _vadmLineas.map(function(r){ return venAdmParseFecha(r.fecha); }).filter(Boolean);
+    var datosMin = tsArr.length ? Math.min.apply(null, tsArr) : null;
+    var datosMax = tsArr.length ? Math.max.apply(null, tsArr) : null;
+    var diasConDatos = datosMin && datosMax ? Math.round((Math.min(hastaTs,datosMax) - Math.max(desdeTs,datosMin)) / 86400000) + 1 : 0;
+    diasConDatos = Math.max(0, diasConDatos);
+    if(datosMin && desdeTs < datosMin - 86400000){
+      var fmtMin = datosMin ? new Date(datosMin).toLocaleDateString('es-CL') : '?';
+      var fmtMax = datosMax ? new Date(datosMax).toLocaleDateString('es-CL') : '?';
+      warnEl.style.display = 'block';
+      warnEl.innerHTML =
+        '<strong>⚠️ Cobertura incompleta:</strong> los datos cargados van desde <strong>'+fmtMin+'</strong> al <strong>'+fmtMax+'</strong> '+
+        '('+diasConDatos+' días con datos de '+diasRango+' días pedidos).<br>'+
+        'Las ventas mostradas son <strong>parciales</strong> — el rango seleccionado no está cubierto por completo. '+
+        'Para ver el período completo, selecciona el año en el selector de la sección Ventas y vuelve a Pre-llenar.';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+
   // ── 1. Acumular qty y neto en el rango (sin filtro de marca, para ABC global) ──
   var qtyMap = {}, netoMap = {};
   _vadmLineas.forEach(function(r){
@@ -15893,25 +15919,31 @@ function vadmRenderStockConsulta(cod){
   markupEl.textContent = markupVal > 0 ? markupVal.toFixed(2) + 'x' : '—';
   markupEl.style.color = markupVal > 5 ? '#dc2626' : markupVal > 3 ? '#d97706' : '#374151';
 
-  var totalDisp = 0, totalTrans = 0;
+  var totalDisp = 0, totalFis = 0, totalTrans = 0, totalPed = 0;
+  var pedMap = _isbPedidosComprometidos[cod] || {};  // best-effort: poblado si Informe Stock fue cargado
   var rows = _csBodegas.map(function(b, idx){
     var disp   = p[b.key]  || 0;
+    var fis    = p[b.key+'_bod'] || (disp + (b.trans ? (p[b.trans]||0) : 0));  // St_Bod si disponible
     var trans  = b.trans ? (p[b.trans] || 0) : 0;
-    var fisico = disp + trans;
+    var ped    = pedMap[b.key] || 0;
     totalDisp  += disp;
+    totalFis   += fis;
     totalTrans += trans;
+    totalPed   += ped;
     var bg         = idx % 2 === 0 ? '' : 'background:#f9fafb';
-    var dot        = disp > 0 ? '<span style="color:#059669">●</span>' : (fisico > 0 ? '<span style="color:#d97706">●</span>' : '<span style="color:#d1d5db">●</span>');
+    var dot        = disp > 0 ? '<span style="color:#059669">●</span>' : (fis > 0 ? '<span style="color:#d97706">●</span>' : '<span style="color:#d1d5db">●</span>');
     var dispStyle  = disp  > 0 ? 'font-weight:700;color:#1a1d3a' : 'color:#9ca3af';
     var transStyle = trans > 0 ? 'font-weight:600;color:#1d4ed8' : 'color:#9ca3af';
+    var pedStyle   = ped   > 0 ? 'font-weight:700;color:#d97706' : 'color:#9ca3af';
     var tipoColor  = b.tipo === 'Comercial' ? '#059669' : '#6b7280';
     var valorStock = disp * (p.costo || 0);
     return '<tr style="'+bg+'">' +
       '<td style="padding:7px 14px;font-weight:600">'+b.label+'</td>'+
       '<td style="padding:7px 14px;font-size:11px;font-weight:600;color:'+tipoColor+'">'+b.tipo+'</td>'+
       '<td style="padding:7px 14px;text-align:right;'+dispStyle+'">'+disp+'</td>'+
+      '<td style="padding:7px 14px;text-align:right">'+fis+'</td>'+
       '<td style="padding:7px 14px;text-align:right;'+transStyle+'">'+trans+'</td>'+
-      '<td style="padding:7px 14px;text-align:right">'+fisico+'</td>'+
+      '<td style="padding:7px 14px;text-align:right;'+pedStyle+'">'+ped+'</td>'+
       '<td style="padding:7px 14px;text-align:right">'+(valorStock > 0 ? venAdmFmt(valorStock) : '—')+'</td>'+
       '<td style="padding:7px 14px;text-align:center;font-size:16px">'+dot+'</td>'+
     '</tr>';
@@ -15919,14 +15951,14 @@ function vadmRenderStockConsulta(cod){
 
   document.getElementById('csBodTbody').innerHTML = rows.join('');
 
-  var totalFisico = totalDisp + totalTrans;
-  var totalValor  = totalDisp * (p.costo || 0);
+  var totalValor = totalDisp * (p.costo || 0);
   document.getElementById('csBodTfoot').innerHTML =
     '<tr style="background:#1a1d3a;color:white;font-weight:700">' +
     '<td colspan="2" style="padding:8px 14px">TOTAL</td>'+
     '<td style="padding:8px 14px;text-align:right">'+totalDisp+'</td>'+
+    '<td style="padding:8px 14px;text-align:right">'+totalFis+'</td>'+
     '<td style="padding:8px 14px;text-align:right">'+totalTrans+'</td>'+
-    '<td style="padding:8px 14px;text-align:right">'+totalFisico+'</td>'+
+    '<td style="padding:8px 14px;text-align:right">'+totalPed+'</td>'+
     '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalValor)+'</td>'+
     '<td></td></tr>';
 
@@ -16813,8 +16845,24 @@ window.isbAbrirDetalle = function(cod, bod, tipo){
     tit.textContent=tituloDesp+(despDocs.length?' ('+despDocs.length+' docs)':'');
 
     if(!despDocs.length){
+      // Dif puede venir de St_Ped (NVM) cuando no hay BVE/FVE — buscar en pedidos
+      var pedDocs=(bod==='total')
+        ? ['pem','sem','cem','mem'].reduce(function(acc,b){
+            return acc.concat(
+              ((_isbPedidosDetalle[cod]||{})[b]||[]).map(function(d){ return Object.assign({},d,{_bod:b}); })
+            );
+          },[])
+        : (_isbPedidosDetalle[cod]||{})[bod]||[];
+      if(pedDocs.length){
+        // redirigir al modal de pedidos con nota
+        window.isbAbrirDetalle(cod, bod, 'pedido');
+        return;
+      }
+      var pedVal=((_isbPedidosComprometidos[cod]||{})[bod])||0;
       body.innerHTML='<p style="color:#6b7280;margin:0">No hay despachos pendientes (BVE/FVE) en los últimos 12 meses.</p>'
-        +'<p style="color:#9ca3af;margin:8px 0 0;font-size:12px">Si Dif ≠ 0 viene de documentos anteriores — ejecute ACTUALIZAR_TODO.bat para refrescar.</p>';
+        +(pedVal>0
+          ?'<p style="color:#9ca3af;margin:8px 0 0;font-size:12px">ST_PEDIDO = '+pedVal+' en ERP. Sin documentos NVM/VMN/VMP con cantidad pendiente. Si el dato es reciente, ejecute ACTUALIZAR_TODO.bat para regenerar.</p>'
+          :'<p style="color:#9ca3af;margin:8px 0 0;font-size:12px">Si Dif ≠ 0 viene de documentos anteriores — ejecute ACTUALIZAR_TODO.bat para refrescar.</p>');
       m.style.display='block'; return;
     }
 
@@ -16885,7 +16933,8 @@ window.isbAbrirDetalle = function(cod, bod, tipo){
     var pedVal=((_isbPedidosComprometidos[cod]||{})[bod])||0;
     body.innerHTML='<p style="color:#6b7280;margin:0">'
       +(pedVal>0
-        ?'ST_PEDIDO = '+pedVal+'. Detalle no disponible — ejecute ACTUALIZAR_TODO.bat para generarlo.'
+        ?'ST_PEDIDO = '+pedVal+' en ERP. Sin documentos NVM/VMN/VMP con cantidad pendiente en esta bodega. '
+         +'Si el dato es reciente, ejecute ACTUALIZAR_TODO.bat para regenerar el detalle.'
         :'Sin pedidos comprometidos para esta bodega.')
       +'</p>';
     m.style.display='block'; return;

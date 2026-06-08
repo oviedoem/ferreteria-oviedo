@@ -216,6 +216,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy cierre sesión: 2026-06-05 22:31 — fix badge V37.13→V37.14
 - Sesion auditoria 2026-06-06: 15 archivos corregidos. Puntos 1-6 auditoria completados. Pipeline test con VPN activa OK. Deploy post-verificacion OK. Commit b98eacb.
 - Sesion 2026-06-07: _BOD_CORTA en leer_xlsm.py: CAL→None, SAL→None, EXH→'EXH' (activa pero sin uso aun). MEMORY.md correcciones: deploy date, PASO 1C ruta, bodegas EXH/SAL documentadas.
+- Deploy V37.15: 2026-06-08 — fix reqStockPrellenar: advertencia cobertura datos cuando _vadmLineas no cubre rango pedido
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
