@@ -15553,15 +15553,15 @@ function reqStockEnviarEmail(){
     var dotHtml = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+dc+';margin-right:6px;vertical-align:middle"></span>';
     rowsHtml +=
       '<tr style="background:'+bg+'">'+
-        '<td style="'+sCd+';font-family:monospace;font-size:11px;white-space:nowrap">'+cod+'</td>'+
-        '<td style="'+sCd+';width:200px;max-width:200px;word-break:break-word;overflow-wrap:break-word">'+dotHtml+'<strong>'+prod+'</strong></td>'+
-        '<td style="'+sCdR+'">'+vta+'</td>'+
-        '<td style="'+sCdR+'">'+minAct+'</td>'+
-        '<td style="'+sCdR+';background:#fef3c7;font-weight:700">'+repAct+'</td>'+
-        '<td style="'+sCdR+'">'+trans+'</td>'+
-        '<td style="'+sCdR+'">'+stAct+'</td>'+
-        '<td style="'+sCdR+'">'+minSol+'</td>'+
-        '<td style="'+sCdR+';background:#d1fae5;font-weight:700">'+repSol+'</td>'+
+        '<td style="'+sCd+';width:70px;font-family:monospace;font-size:11px;white-space:nowrap;overflow:hidden">'+cod+'</td>'+
+        '<td style="'+sCd+';width:200px;max-width:200px;word-break:break-word;overflow-wrap:break-word;overflow:hidden">'+dotHtml+'<strong>'+prod+'</strong></td>'+
+        '<td style="'+sCdR+';width:58px;overflow:hidden">'+vta+'</td>'+
+        '<td style="'+sCdR+';width:62px;overflow:hidden">'+minAct+'</td>'+
+        '<td style="'+sCdR+';width:68px;overflow:hidden;background:#fef3c7;font-weight:700">'+repAct+'</td>'+
+        '<td style="'+sCdR+';width:58px;overflow:hidden">'+trans+'</td>'+
+        '<td style="'+sCdR+';width:58px;overflow:hidden">'+stAct+'</td>'+
+        '<td style="'+sCdR+';width:68px;overflow:hidden">'+minSol+'</td>'+
+        '<td style="'+sCdR+';width:72px;overflow:hidden;background:#d1fae5;font-weight:700">'+repSol+'</td>'+
       '</tr>';
     plainLineas.push(idx+'. ['+abc+'] '+cod+' — '+prod+
       '\n   Vta 2m: '+vta+' | Min.actual: '+minAct+' | Repos.actual: '+repAct+
@@ -15586,7 +15586,7 @@ function reqStockEnviarEmail(){
         'DETALLE DE PRODUCTOS — TOP '+nItems+' ALTA ROTACIÓN'+
       '</div>'+
 
-      '<table style="border-collapse:collapse;width:100%;margin-bottom:14px">'+
+      '<table style="border-collapse:collapse;width:100%;table-layout:fixed;margin-bottom:14px">'+
         '<thead>'+
           '<tr>'+
             '<th style="'+sTh+'left;width:70px">Código</th>'+
