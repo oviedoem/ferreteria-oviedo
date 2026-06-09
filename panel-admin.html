@@ -4568,7 +4568,7 @@ function adminReenviarAcceso(email){
   if(!window.auth){ toast('Sin conexión','err'); return; }
   if(!confirm('Enviar correo de acceso a ' + email + '?')) return;
   window.auth.sendPasswordResetEmail(email)
-    .then(function(){ toast('Correo enviado a ' + email + ' ✓','ok'); })
+    .then(function(){ _logAuditAdmin('REENVIO_ACCESO', email, ''); toast('Correo enviado a ' + email + ' ✓','ok'); })
     .catch(function(e){ toast('Error: ' + (e.code === 'auth/user-not-found' ? 'No existe cuenta Auth para este correo.' : e.message),'err'); });
 }
 
@@ -4580,8 +4580,8 @@ function _logAuditAdmin(accion, targetId, detalle){
       detalle: detalle||'',
       adminUid: window.auth.currentUser.uid,
       ts: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(function(){});
-  }catch(e){}
+    }).catch(function(err){ console.warn('[auditLog] No se pudo registrar la accion:', err); });
+  }catch(e){ console.warn('[auditLog] Error inesperado:', e); }
 }
 
 function adminAprobarFS(docId){
@@ -4861,7 +4861,7 @@ function testVentasManzano(){
     .then(function(json){
       var n=(json.registros||[]).length;
       var gen=json.generado?json.generado.slice(0,10):'—';
-      if(res) res.innerHTML='<div class="url-status url-ok">✅ Ventas activas — '+n+' registros · generado '+gen+'</div>';
+      if(res) res.innerHTML='<div class="url-status url-ok">✅ Ventas activas — '+venAdmEsc(String(n))+' registros · generado '+venAdmEsc(gen)+'</div>';
     }).catch(function(e){
       if(res) res.innerHTML='<div class="url-status url-err">❌ Sin conexión a ventas — '+venAdmEsc(e.message||'')+'</div>';
     });
@@ -12445,7 +12445,7 @@ function venAdmLimpiarSummary(){
   ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.textContent='—'; });
 }
 
-function venAdmEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function venAdmEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ══  ÁRBOL RETAIL — Módulo completo  ══════════════════════════════════════════

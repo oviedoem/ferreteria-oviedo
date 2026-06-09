@@ -70,9 +70,10 @@ service cloud.firestore {
     }
 
     // ── AUDIT LOG ─────────────────────────────────────────────
+    // solo admins crean registros — evita que usuarios inyecten logs falsos
     match /auditLog/{docId} {
       allow read: if esAdmin();
-      allow create: if estaAutenticado();
+      allow create: if esAdmin();
     }
 
     // ── PROMOS ────────────────────────────────────────────────

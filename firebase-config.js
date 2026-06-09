@@ -445,8 +445,8 @@ function apiGet(params, cb) {
       .then(function(snap){ var r=[]; snap.forEach(function(d){ r.push(d.data()); }); cb(null,r); })
       .catch(function(e){ cb(e,null); });
   } else if (action === 'getCotizaciones') {
-    var lim = parseInt(params.limit) || 100;
-    if (isNaN(lim) || lim < 1 || lim > 1000) lim = 100;
+    var parsed = parseInt(params.limit, 10);
+    var lim = (isNaN(parsed) || parsed < 1 || parsed > 1000) ? 100 : parsed;
     db.collection('cotizaciones').orderBy('ts','desc').limit(lim).get()
       .then(function(snap){ var r=[]; snap.forEach(function(d){ r.push(d.data()); }); cb(null,r); })
       .catch(function(e){ cb(e,null); });

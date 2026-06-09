@@ -1893,7 +1893,7 @@ function renderProductos(){
     return;
   }
   list.innerHTML = filtrados.slice(0,40).map(function(p){
-    var safeCod = _cliEsc(p.Codigo).replace(/&#39;/g,"'").replace(/'/g,"&#39;");
+    var safeCod = _cliEsc(p.Codigo);
     var sk = p.Stock||0;
     var stockHtml = sk>10
       ? '<span class="stock-badge stock-ok">🟢 STOCK: '+sk+'</span>'
@@ -1917,7 +1917,7 @@ function renderProductos(){
         '<div class="prod-actions">'+
           '<div class="qty-wrap">'+
             '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',-1)">−</button>'+
-            '<span class="qty-val" id="qty_'+_cliEsc(p.Codigo)+'">1</span>'+
+            '<span class="qty-val" id="qty_'+safeCod+'">1</span>'+
             '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',1)">+</button>'+
           '</div>'+
           '<button class="btn-add" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
@@ -2306,8 +2306,8 @@ function renderCart(){
                              '<span style="font-size:11px;font-weight:800;color:#dc2626">🔴 SIN STOCK</span>';
     return '<div class="cart-item">'+
       '<div class="cart-item-info">'+
-        '<div class="cart-item-name">'+item.Descripcion+'</div>'+
-        '<div class="cart-item-codigo">'+item.Codigo+'</div>'+
+        '<div class="cart-item-name">'+_cliEsc(item.Descripcion)+'</div>'+
+        '<div class="cart-item-codigo">'+_cliEsc(item.Codigo)+'</div>'+
         (mostrar
           ? '<div class="cart-item-qty">'+item.qty+' × '+fmt(item.PrecioIVA)+'</div>'
           : '<div class="cart-item-qty" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
