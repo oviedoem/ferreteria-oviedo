@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.18 · Última actualización: 2026-06-08
+# Versión activa: V37.19 · Última actualización: 2026-06-09
 
 ---
 
@@ -221,6 +221,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.17: 2026-06-08 — fix tab 'sector': _vadmDatosEmailFiltrados usa vadmSEdesde/hasta, _vadmHtmlEmailSector creada, dispatcher+tabLabels actualizados ✅
 - V37.18: 2026-06-08 — integración open-code-review: OCR_REVIEW.bat, .opencodereview/rule.json (14 reglas), .claude/commands/, .gitignore actualizado ✅
 - Post V37.18 2026-06-09: OCR operativo. Junction C:\Users\..\.opencodereview -> E:\config\opencodereview\ (igual que .claude->W:). Config+token en E:, cero bytes en C: fisico. auth_header=x-api-key requerido (Bearer da 401). ocr llm test OK.
+- Deploy V37.19: 2026-06-09 09:59 — auditoria seguridad: XSS fixes (venAdmEsc/\_cliEsc), CSP sin unsafe-eval, sesionesLog update rule, \_logAuditAdmin(), limit clamp getCotizaciones. fix rule.json OCR formato {rules:[]} ✅
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
