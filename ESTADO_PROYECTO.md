@@ -1,6 +1,6 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.10
-# Fecha: 2026-05-29
+# Version activa: V37.18
+# Fecha: 2026-06-08
 # Versiones anteriores disponibles en _HISTORICO/
 
 ---
@@ -9,9 +9,9 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.10 |
-| Fecha | 2026-05-29 |
-| Deploy | 2026-05-29 19:26 |
+| Version | V37.18 |
+| Fecha | 2026-06-08 |
+| Deploy | 2026-06-08 23:12 |
 | Sin pendientes | SI — todo publicado al cierre de sesion |
 
 ---
