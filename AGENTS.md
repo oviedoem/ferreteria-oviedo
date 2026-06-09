@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.14 · Última actualización: 2026-06-07
+# Versión activa: V37.17 · Última actualización: 2026-06-08
 
 ---
 
@@ -707,6 +707,20 @@ Fijos: 1-ene, 1-may, 21-may, 20-jun, 16-jul, 15-ago, 18-sep, 19-sep, 12-oct, 1-n
 Móviles: Viernes Santo (Pascua-2), Sábado Santo (Pascua-1) — algoritmo Butcher.
 
 ---
+
+---
+
+## HISTORIAL SESIÓN 2026-06-08 — Auditoría seguridad + README
+
+### Problemas → Soluciones
+- IP real SQL Server en AGENTS.md → reemplazada por `[SQL-SERVER-IP]` (commit 989c28c)
+- `storage.rules` permisivo → deny-all; Firebase Storage nunca fue activado en el proyecto (commit f038a4d)
+- API key Firebase sin restricciones → restringida a 2 dominios + 25 APIs vía Google Cloud Console
+- Repo sin README → creado con flujo completo del proyecto (commit 40fa876)
+
+### Pruebas realizadas
+- 3 paneles verificados visualmente: Vendedor, Admin, Cliente cargan sin errores
+- Flujo registro confirmado: solo usa Firestore, Storage no involucrado
 
 ---
 
