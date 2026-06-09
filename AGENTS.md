@@ -323,10 +323,14 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN:
 ## REGLA: Sincronización de UI con cada deploy
 
 Con cada deploy V37.X.Y, actualizar EN EL MISMO COMMIT:
-1. Version Badge en panel-admin.html (~L3043): número + fecha
-2. Version Badge en panel-cliente.html (si lo tiene)
-3. Tutoriales (~L2086-2204): si cambiaron flujos o scripts
-4. Mejoras planificadas (~L2206-2330): marcar completadas
+1. Version Badge en panel-admin.html (~L3113): número + fecha
+2. Version Badge en panel-cliente.html (~L3300): número + fecha
+3. Version Badge en index.html (~L2125): número + fecha
+4. Tutoriales (~L2086-2204): si cambiaron flujos o scripts
+5. Mejoras planificadas (~L2206-2330): marcar completadas
+
+**REGLA BADGE OBLIGATORIA:** Los 3 paneles deben mostrar siempre la misma versión y fecha.
+Si el agente hace un deploy sin actualizar los 3 badges → ERROR de protocolo.
 
 **VALIDACIÓN antes de commit:**
 ```
