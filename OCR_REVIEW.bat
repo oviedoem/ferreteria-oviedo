@@ -17,7 +17,7 @@ set OCR_EXE=ocr
 set OCR_NO_UPDATE=1
 
 if exist "E:\nodejs-portable\node.exe" (
-    set PATH=E:\nodejs-portable;E:\npm-global;%PATH%
+    set "PATH=E:\nodejs-portable;E:\npm-global;%PATH%"
 )
 
 :: -- Verificar config OCR -----------------------------------------------

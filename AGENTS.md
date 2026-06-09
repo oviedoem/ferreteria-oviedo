@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.21 · Última actualización: 2026-06-09
+# Versión activa: V37.22 · Última actualización: 2026-06-09
 
 ---
 
@@ -50,7 +50,16 @@
 
 ### Anomalía JT
 **Disp > Fís → Dif < 0 → fila roja en Informe Stock**
-Causas: NVM cancelada sin reversa · ajuste contable incorrecto · EXH mezclado en CEM.
+
+**Causa principal: GRT/GIB pendiente de segundo paso manual (Editar+Grabar)**
+- Paso 1 (emisión): St_Disp +1, St_Cont +1 → sistema registra disponibilidad
+- Paso 2 (Editar+Grabar en JustWeb): St_Bod +1 → físico confirmado
+- Entre paso 1 y 2: Dif = Fís − Disp = −1 → fila ROJA en Informe Stock
+- Documentos involucrados: GRT (Guía Recepción Traslado) y GIB (traslado entre bodegas)
+- Fix: JustWeb → Movimiento de Bodegas → Mantención de despachos → Por recepcionar → seleccionar → Editar → Grabar → ACTUALIZAR_TODO.bat
+- Panel admin V37.22+: tab "Por Recepcionar" muestra estos docs en tiempo real (recepciones-pendientes.json vía Playwright)
+
+Otras causas posibles: NVM cancelada sin reversa · ajuste contable incorrecto · EXH mezclado en CEM.
 
 ### Parseo CSV SSRS — CRÍTICO
 **Punto = miles · Coma = decimal** → `s.replace('.','').replace(',','.')`
@@ -224,6 +233,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.19: 2026-06-09 09:59 — auditoria seguridad: XSS fixes (venAdmEsc/\_cliEsc), CSP sin unsafe-eval, sesionesLog update rule, \_logAuditAdmin(), limit clamp getCotizaciones. fix rule.json OCR formato {rules:[]} ✅
 - Deploy V37.20: 2026-06-09 10:07 — fixes OCR post-auditoria: venAdmEsc escapa comillas, auditLog solo admins, XSS renderCart, safeCod/id consistencia, XSS testVentasManzano, isNaN dead code, REENVIO\_ACCESO log, auditLog console.warn ✅
 - Deploy V37.21: 2026-06-09 10:22 — fixes OCR segunda ronda: safeCod correcto (rawCod/jsCod/safeCod separados), id usa rawCod, onclick usa jsCod, .replace redundante removido de venAdmEsc ✅
+- Deploy V37.22: 2026-06-09 — tab "Por Recepcionar" en panel admin (GRT/GIB pendientes Editar+Grabar); PASO 1H descargar_recepciones_pendientes.py Playwright→Blazor Intranet; documentado flujo GRT/GIB dos pasos en AGENTS.md ✅
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.

@@ -750,6 +750,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')">🔖 Liquidación</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('informe-stock')">📊 Informe Stock</button>
         <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('despachos')">🚚 Despachos Pendientes</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('recepciones')">📥 Por Recepcionar</button>
       </div>
     </div>
     <div class="sidebar-group">
@@ -931,6 +932,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <button class="vadm-stab vadm-stab-inv"        id="vstab-mem"        onclick="vadmSubTab('mem')">🔧 MEM Merma</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-informe-stock" onclick="vadmSubTab('informe-stock')">📊 Informe Stock</button>
           <button class="vadm-stab vadm-stab-inv"        id="vstab-despachos"     onclick="vadmSubTab('despachos')">🚚 Despachos</button>
+          <button class="vadm-stab vadm-stab-inv"        id="vstab-recepciones"   onclick="vadmSubTab('recepciones')">📥 Por Recepcionar</button>
         </div>
         <!-- ÁRBOL RETAIL -->
         <div class="vadm-subtabs" id="vstabs-arbol" style="display:none">
@@ -1717,6 +1719,41 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             </table>
           </div>
         </div><!-- /vsec-despachos -->
+
+        <!-- ── POR RECEPCIONAR ── -->
+        <div class="vadm-section" id="vsec-recepciones">
+          <div class="vadm-anal-bar" style="flex-wrap:wrap;gap:10px;align-items:center">
+            <span class="vadm-filter-tag" style="background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe">📥 Por Recepcionar — GRT / GIB pendientes Editar+Grabar en JustWeb</span>
+            <button class="ven-adm-btn" onclick="rpRenderPendientes()">🔄 Actualizar</button>
+          </div>
+          <div class="vadm-anal-bar" style="flex-wrap:wrap;gap:8px;align-items:center;padding-top:6px">
+            <input type="text" id="rpBuscar" placeholder="Tipo doc, N°, sucursal, responsable o bodega…" oninput="rpFiltrar()"
+              style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;min-width:220px">
+          </div>
+          <div style="padding:6px 16px 2px">
+            <span style="font-size:11px;color:#6b7280">Fix: JustWeb → Movimiento de Bodegas → Mantención de despachos → <strong>Por recepcionar</strong> → seleccionar → Editar → Grabar → ACTUALIZAR_TODO.bat</span>
+          </div>
+          <div id="rpKpi" style="padding:8px 16px 4px"></div>
+          <div id="rpStatus" style="font-size:12px;color:#9ca3af;padding:2px 16px 6px"></div>
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px">
+            <table id="rpTabla" style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="background:#f1f5f9;font-size:11px">
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0">Documento</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px">Número</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:120px">Sucursal</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:160px">Responsable</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;white-space:nowrap">Emisión</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0">Bodega</th>
+                  <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;white-space:nowrap">F. Entrega</th>
+                </tr>
+              </thead>
+              <tbody id="rpTbody">
+                <tr><td colspan="7" style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Haga clic en 🔄 Actualizar para cargar</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div><!-- /vsec-recepciones -->
 
         <!-- ══════════════════════════════════════════════════
              ÁRBOL RETAIL — secciones
@@ -3110,7 +3147,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.21<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">09-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.22<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">09-06-2026</span></div>
 
 <script>
 
@@ -11198,6 +11235,7 @@ function vadmReRenderTabActivo(){
   else if(id==='stockconsulta'){}   // stub — búsqueda directa, no usa filtros globales
   else if(id==='informe-stock'){}   // stub — datos cargados por TSV, no usa filtros globales
   else if(id==='despachos')     dpRenderPendientes();
+  else if(id==='recepciones')   (_rpDatos !== null ? rpFiltrar() : (!window._rpCargando && rpRenderPendientes()));
 }
 
 // ── Helper: comprueba si un registro XLSM pasa el filtro global _vadmVendSel ──
@@ -17216,6 +17254,74 @@ window.dpToggleDoc = function(tr){
     var arrow = tr.querySelector('.dp-arrow');
     if(arrow) arrow.textContent = '▼';
   }
+};
+
+// ── POR RECEPCIONAR ──────────────────────────────────────────────────────────
+var _rpDatos = null;
+
+function _rpStatus(msg){
+  var el = document.getElementById('rpStatus'); if(el) el.textContent = msg;
+}
+
+function _rpRenderTabla(list){
+  var tbody = document.getElementById('rpTbody'); if(!tbody) return;
+  var kpi   = document.getElementById('rpKpi');
+  var total = list.length;
+  if(kpi) kpi.innerHTML = '<span style="font-size:15px;font-weight:700;color:#6d28d9">'+total+'</span>'
+    + ' <span style="font-size:12px;color:#6b7280">documento'+(total!==1?'s':'')+' por recepcionar</span>';
+  if(!total){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#9ca3af;font-size:13px">Sin documentos Por Recepcionar</td></tr>';
+    return;
+  }
+  var tdS = 'border:1px solid #e2e8f0;padding:5px 8px;font-size:12px;vertical-align:middle';
+  var rows = '';
+  list.forEach(function(doc){
+    rows += '<tr>'
+      + '<td style="'+tdS+';font-weight:700;color:#6d28d9">'+_esc(doc.tipoDoc||'—')+'</td>'
+      + '<td style="'+tdS+';font-family:monospace;font-weight:700;color:#1e3a8a">'+_esc(doc.numero||'—')+'</td>'
+      + '<td style="'+tdS+'">'+_esc(doc.sucursal||'—')+'</td>'
+      + '<td style="'+tdS+';color:#374151">'+_esc(doc.responsable||'—')+'</td>'
+      + '<td style="'+tdS+';white-space:nowrap">'+_esc(doc.emision||'—')+'</td>'
+      + '<td style="'+tdS+';font-weight:700">'+_esc(doc.bodega||'—')+'</td>'
+      + '<td style="'+tdS+';white-space:nowrap">'+_esc(doc.fechaEntrega||'—')+'</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = rows;
+}
+
+window.rpRenderPendientes = function(){
+  if(window._rpCargando) return;
+  window._rpCargando = true;
+  _rpStatus('Cargando…');
+  fetch('/data/recepciones-pendientes.json?_='+Date.now())
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    })
+    .then(function(data){
+      _rpDatos = Array.isArray(data) ? data : [];
+      _rpStatus('');
+      rpFiltrar();
+    })
+    .catch(function(err){
+      _rpStatus('Error al cargar: '+(err&&err.message||'sin conexión'));
+      window._rpCargando = false;
+    })
+    .then(function(){ window._rpCargando = false; });
+};
+
+window.rpFiltrar = function(){
+  if(!_rpDatos) return;
+  var bus = ((document.getElementById('rpBuscar')||{}).value||'').toLowerCase();
+  var list = _rpDatos.filter(function(doc){
+    if(!bus) return true;
+    return (doc.tipoDoc||'').toLowerCase().indexOf(bus)>=0
+        || (doc.numero||'').toLowerCase().indexOf(bus)>=0
+        || (doc.sucursal||'').toLowerCase().indexOf(bus)>=0
+        || (doc.responsable||'').toLowerCase().indexOf(bus)>=0
+        || (doc.bodega||'').toLowerCase().indexOf(bus)>=0;
+  });
+  _rpRenderTabla(list);
 };
 
 /* ── HTML para email ── */
