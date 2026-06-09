@@ -220,6 +220,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.16: 2026-06-08 — vadmDescargarExcel: tab-aware (1-4 hojas según vista activa), estilos profesionales sin colores ABC, Calibri 10pt, alternado gris claro ✅
 - Deploy V37.17: 2026-06-08 — fix tab 'sector': _vadmDatosEmailFiltrados usa vadmSEdesde/hasta, _vadmHtmlEmailSector creada, dispatcher+tabLabels actualizados ✅
 - V37.18: 2026-06-08 — integración open-code-review: OCR_REVIEW.bat, .opencodereview/rule.json (14 reglas), .claude/commands/, .gitignore actualizado ✅
+- Post V37.18 2026-06-09: OCR operativo. Junction C:\Users\..\.opencodereview -> E:\config\opencodereview\ (igual que .claude->W:). Config+token en E:, cero bytes en C: fisico. auth_header=x-api-key requerido (Bearer da 401). ocr llm test OK.
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
@@ -761,15 +762,24 @@ REM Opción 4 — desde Claude Code (slash command)
 | FO-013 | *.py | ERROR | Token/password logueado en print() |
 | FO-014 | sw.js | WARNING | Estrategia de cache del Service Worker |
 
-### Configurar auth token (REQUERIDO — hacer 1 vez)
-```batch
-REM Ejecutar con tu ANTHROPIC_API_KEY real:
-ocr config set llm.auth_token sk-ant-XXXXXXXXXX
-
-REM Verificar conexión:
-ocr llm test
+### Arquitectura de config (sin rastro en C:)
 ```
-Nota: `use_anthropic=true` ya configurado. La key NO se sube a git (.opencodereview/config.json gitignored).
+C:\Users\Ferreteria Oviedo\.opencodereview\  ──junction──►  E:\config\opencodereview\
+```
+El binario lee `~/.opencodereview/config.json` → Windows redirige a `E:\config\opencodereview\config.json`.
+Igual al patrón .claude → W:\claude-config\.
+
+Claves importantes:
+- `llm.auth_header = x-api-key`  (Anthropic requiere esto, NO Authorization: Bearer)
+- `llm.use_anthropic = true`
+- `llm.auth_token` = API key real (en E: físico, nunca en C:)
+- Los wrappers `ocr.cmd/ps1/sh` solo setean `OCR_NO_UPDATE=1`
+
+### Verificar funcionamiento
+```batch
+ocr llm test
+REM Debe mostrar: Source: OCR config file / URL: .../v1/messages / Model: claude-sonnet-4-6
+```
 
 ---
 
