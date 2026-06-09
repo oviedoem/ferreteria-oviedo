@@ -57,7 +57,7 @@ Causas: NVM cancelada sin reversa · ajuste contable incorrecto · EXH mezclado 
 `1.536` = 1536 unidades (NO 1.536). Error histórico 2026-05-30 en generar_informe_stock.py.
 
 ### Servidor 2 — Limitación Real-time
-SQL Server 200.6.118.110 sincroniza con JustWeb **una sola vez al día a las 22:00**.
+SQL Server [SQL-SERVER-IP] sincroniza con JustWeb **una sola vez al día a las 22:00**.
 - descargar_erp.py / descargar_ventas_erp.py → Real-time (HTTP/SSRS)
 - descargar_bod.py / descargar_pedidos.py / descargar_despachos.py / leer_xlsm.py → Solo tras 22:00
 
