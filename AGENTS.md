@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.17 · Última actualización: 2026-06-08
+# Versión activa: V37.18 · Última actualización: 2026-06-08
 
 ---
 
@@ -208,7 +208,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 
 - Stack: HTML/CSS/JS Vanilla + Firebase Hosting (JSON estáticos) + Python pipeline ERP
 - Directorio activo: `E:\ferreteria-oviedo\` — NO trabajar en D:\ ni en E:\git-sync\
-- Versión activa: V37.14
+- Versión activa: V37.18
 
 ### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
@@ -219,6 +219,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.15: 2026-06-08 15:xx — fix reqStockPrellenar: advertencia cobertura datos cuando _vadmLineas no cubre rango pedido ✅
 - Deploy V37.16: 2026-06-08 — vadmDescargarExcel: tab-aware (1-4 hojas según vista activa), estilos profesionales sin colores ABC, Calibri 10pt, alternado gris claro ✅
 - Deploy V37.17: 2026-06-08 — fix tab 'sector': _vadmDatosEmailFiltrados usa vadmSEdesde/hasta, _vadmHtmlEmailSector creada, dispatcher+tabLabels actualizados ✅
+- V37.18: 2026-06-08 — integración open-code-review: OCR_REVIEW.bat, .opencodereview/rule.json (14 reglas), .claude/commands/, .gitignore actualizado ✅
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
@@ -365,6 +366,7 @@ PUBLICAR.bat                  → solo firebase deploy
 ACTUALIZAR_GITHUB.bat         → sync github
 ACTUALIZAR_TODO_AUTO.bat      → sin interacción (para ejecutar manualmente o tarea programada)
 VENTAS EL MANZANO\ACTUALIZAR_VENTAS.bat → solo ventas
+OCR_REVIEW.bat                → revision de codigo IA antes del deploy (ver seccion OCR abajo)
 ```
 
 BATs archivados en `_HISTORICO\` — NO ejecutar:
@@ -707,6 +709,67 @@ Fijos: 1-ene, 1-may, 21-may, 20-jun, 16-jul, 15-ago, 18-sep, 19-sep, 12-oct, 1-n
 Móviles: Viernes Santo (Pascua-2), Sábado Santo (Pascua-1) — algoritmo Butcher.
 
 ---
+
+---
+
+---
+
+## OPEN CODE REVIEW (OCR) — Revisión de código IA (V37.18)
+
+Herramienta: `@alibaba-group/open-code-review` v1.2.6
+Instalado en: `E:\npm-global\` (global, NO como dependencia del proyecto)
+Config global: `C:\Users\Ferreteria Oviedo\.opencodereview\config.json` (NO subir a git — gitignored)
+Reglas proyecto: `E:\ferreteria-oviedo\.opencodereview\rule.json` (SÍ está en git)
+Comando slash: `.claude\commands\open-code-review.md` (local, NO en git por .claude/ gitignore)
+
+### Cuándo usar OCR_REVIEW.bat
+- Antes de cualquier deploy importante (V37.X)
+- Cuando se modifica panel-admin.html, panel-cliente.html, firestore.rules, o sw.js
+- Cuando se agrega lógica nueva de autenticación o manejo de credenciales
+- Cuando se modifica el pipeline Python (main.py, descargar_*.py, leer_xlsm.py)
+
+### Uso desde terminal
+```batch
+REM Opción 1 — BAT integrado (revisa + pregunta si hacer deploy)
+E:\ferreteria-oviedo\OCR_REVIEW.bat
+
+REM Opción 2 — solo revisión sin deploy
+ocr review --from main --to HEAD --audience human
+
+REM Opción 3 — solo cambios staged
+ocr review --audience human
+
+REM Opción 4 — desde Claude Code (slash command)
+/open-code-review
+```
+
+### Reglas activas (rule.json)
+| ID | Archivo | Severidad | Descripción |
+|----|---------|-----------|-------------|
+| FO-001 | firebase-config.js, credenciales*.ini | ERROR | Archivos absolutamente intocables |
+| FO-002 | panel-admin.html, panel-cliente.html | ERROR | XSS via innerHTML sin sanitizar |
+| FO-003 | *.html | ERROR | API keys o tokens hardcodeados en HTML |
+| FO-004 | panel-admin.html | WARNING | Firma de funciones JS críticas alterada |
+| FO-005 | panel-admin.html | WARNING | Variables globales JS críticas renombradas |
+| FO-006 | panel-cliente.html | ERROR | window._mostrarPrecio default != false |
+| FO-007 | firestore.rules | ERROR | Regla sin request.auth != null |
+| FO-008 | *.py | ERROR | IP real o token hardcodeado en Python |
+| FO-009 | *.py | WARNING | Ruta absoluta Windows hardcodeada |
+| FO-010 | *.py | WARNING | IO sin try/except en pipeline crítico |
+| FO-011 | *.bat | WARNING | Ruta D:\ferreteria-oviedo (migrada a E:) |
+| FO-012 | main.py, leer_xlsm.py | ERROR | main.py escribe xlsm-enrich.json |
+| FO-013 | *.py | ERROR | Token/password logueado en print() |
+| FO-014 | sw.js | WARNING | Estrategia de cache del Service Worker |
+
+### Configurar auth token (REQUERIDO — hacer 1 vez)
+```batch
+REM Ejecutar con tu ANTHROPIC_API_KEY real:
+ocr config set llm.auth_token sk-ant-XXXXXXXXXX
+
+REM Verificar conexión:
+ocr llm test
+```
+Nota: `use_anthropic=true` ya configurado. La key NO se sube a git (.opencodereview/config.json gitignored).
 
 ---
 

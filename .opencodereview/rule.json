@@ -1,0 +1,114 @@
+[
+  {
+    "id": "FO-001",
+    "name": "Archivos prohibidos intocables",
+    "description": "firebase-config.js nunca debe ser modificado. credenciales_db.ini y credenciales_erp.ini nunca deben tocarse ni subirse.",
+    "severity": "error",
+    "filePattern": "(firebase-config\\.js|credenciales_db\\.ini|credenciales_erp\\.ini)",
+    "check": "Si hay cambios en este archivo, reportar como ERROR critico. firebase-config.js es zona absolutamente intocable segun AGENTS.md."
+  },
+  {
+    "id": "FO-002",
+    "name": "XSS via innerHTML en panel HTML",
+    "description": "panel-admin.html y panel-cliente.html: verificar que innerHTML no reciba input de usuario sin sanitizar.",
+    "severity": "error",
+    "filePattern": "(panel-admin\\.html|panel-cliente\\.html)",
+    "check": "Buscar patrones innerHTML con variables externas o data no sanitizada. Reportar todo innerHTML que asigne datos provenientes de fetch/usuario sin escapar HTML."
+  },
+  {
+    "id": "FO-003",
+    "name": "Credenciales Firebase en HTML",
+    "description": "Los archivos HTML no deben contener API keys, tokens ni credenciales hardcodeadas.",
+    "severity": "error",
+    "filePattern": "(panel-admin\\.html|panel-cliente\\.html|index\\.html)",
+    "check": "Buscar strings que parezcan API keys (sk-, AIza, ya29., token:, apiKey:) hardcodeados fuera de firebase-config.js. Reportar como ERROR."
+  },
+  {
+    "id": "FO-004",
+    "name": "Funciones criticas panel-admin intocables",
+    "description": "Las funciones vadmCargarLineas, _vadmCargarStockMap, vadmRenderSobreStock, vadmRenderBajaRot, vadmRenderQuiebre, vadmDatosFiltrados, venAdmParseFecha, venAdmFmt no deben cambiar su firma ni ser renombradas.",
+    "severity": "warning",
+    "filePattern": "panel-admin\\.html",
+    "check": "Si alguna de estas funciones fue renombrada, eliminada o cambio el numero/nombre de parametros, reportar como WARNING critico con referencia a AGENTS.md seccion FUNCIONES JS CLAVE."
+  },
+  {
+    "id": "FO-005",
+    "name": "Variables globales JS criticas",
+    "description": "_vadmLineas, _vadmStockMap, _vadmBodSel, _vadmSSProds, _vadmBRDatos no deben ser eliminadas ni renombradas.",
+    "severity": "warning",
+    "filePattern": "panel-admin\\.html",
+    "check": "Verificar que las variables globales _vadmLineas, _vadmStockMap, _vadmBodSel sigan existiendo. Si fueron eliminadas o renombradas, reportar como WARNING."
+  },
+  {
+    "id": "FO-006",
+    "name": "window._mostrarPrecio default false",
+    "description": "En panel-cliente.html, window._mostrarPrecio siempre debe inicializarse en false.",
+    "severity": "error",
+    "filePattern": "panel-cliente\\.html",
+    "check": "Verificar que window._mostrarPrecio = false sea el valor por defecto. Si se cambio a true, reportar como ERROR."
+  },
+  {
+    "id": "FO-007",
+    "name": "Autenticacion obligatoria en firestore.rules",
+    "description": "Toda nueva regla en firestore.rules debe requerir request.auth != null. No se permiten reglas publicas de escritura.",
+    "severity": "error",
+    "filePattern": "firestore\\.rules",
+    "check": "Para cada regla allow write o allow read nueva, verificar que incluya request.auth != null. Si una regla permite acceso sin autenticacion, reportar como ERROR de seguridad."
+  },
+  {
+    "id": "FO-008",
+    "name": "IP o tokens reales en codigo Python",
+    "description": "Los scripts Python no deben contener IPs reales ni tokens hardcodeados. Usar placeholders [SQL-SERVER-IP] o leer de credenciales_db.ini.",
+    "severity": "error",
+    "filePattern": ".*\\.py",
+    "check": "Buscar IPs con patron \\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3} hardcodeadas fuera de credenciales_db.ini. Buscar tokens o passwords literales. Reportar como ERROR."
+  },
+  {
+    "id": "FO-009",
+    "name": "Rutas hardcodeadas en Python",
+    "description": "Scripts Python no deben usar rutas absolutas hardcodeadas (C:\\, D:\\). Usar rutas relativas o variables de entorno.",
+    "severity": "warning",
+    "filePattern": ".*\\.py",
+    "check": "Buscar strings con rutas absolutas Windows hardcodeadas (C:\\, D:\\, E:\\) en codigo Python. Reportar como WARNING si no estan en un comentario o en archivo de configuracion separado."
+  },
+  {
+    "id": "FO-010",
+    "name": "Manejo de errores en Python",
+    "description": "Funciones criticas del pipeline (descargar_erp.py, main.py, leer_xlsm.py) deben tener manejo de excepciones.",
+    "severity": "warning",
+    "filePattern": ".*\\.py",
+    "check": "Verificar que las funciones principales tengan try/except. Reportar funciones que hagan IO (requests, open, pyodbc) sin try/except como WARNING."
+  },
+  {
+    "id": "FO-011",
+    "name": "Rutas relativas en BATs",
+    "description": "Los archivos .bat deben usar rutas relativas cuando sea posible, no rutas absolutas hardcodeadas a D:.",
+    "severity": "warning",
+    "filePattern": ".*\\.bat",
+    "check": "Buscar referencias a D:\\ferreteria-oviedo hardcodeadas en archivos .bat. Reportar como WARNING — el proyecto migro a E: en 2026-06-02."
+  },
+  {
+    "id": "FO-012",
+    "name": "leer_xlsm.py genera xlsm-enrich.json",
+    "description": "Solo leer_xlsm.py debe generar xlsm-enrich.json. main.py no debe tocar ese archivo.",
+    "severity": "error",
+    "filePattern": "(main\\.py|leer_xlsm\\.py)",
+    "check": "Si main.py escribe xlsm-enrich.json directamente, reportar como ERROR. Este archivo es responsabilidad exclusiva de leer_xlsm.py segun AGENTS.md."
+  },
+  {
+    "id": "FO-013",
+    "name": "Tokens sensibles en logs Python",
+    "description": "Los scripts Python no deben imprimir tokens, passwords ni API keys en logs o print().",
+    "severity": "error",
+    "filePattern": ".*\\.py",
+    "check": "Buscar print() o logging que incluya variables con nombres token, password, api_key, secret, auth. Reportar como ERROR si se loguean valores sensibles."
+  },
+  {
+    "id": "FO-014",
+    "name": "sw.js: no modificar estrategia de cache critica",
+    "description": "sw.js contiene la logica del Service Worker. Cambios en la estrategia de cache pueden romper el PWA.",
+    "severity": "warning",
+    "filePattern": "sw\\.js",
+    "check": "Si se modifico la logica de precacheo, version de cache o la lista de archivos criticos en sw.js, revisar que el CACHE_NAME fue actualizado y que panel-admin.html/panel-cliente.html siguen en el precache."
+  }
+]

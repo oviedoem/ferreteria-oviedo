@@ -1,39 +1,37 @@
-# Credenciales y configuracion sensible — NUNCA AL REPO
-*.ini
-*.env
-credenciales*
-SEGURIDAD_CREDENCIALES*
-users_export.json
-serviceAccountKey.json
+# Credenciales — NUNCA subir
+credenciales_db.ini
+credenciales_db.enc
+credenciales_erp.ini
 serviceAccountKey*.json
+*.env
+.env.*
+users_export.json
 
-# Scripts internos
-*.py
-*.bat
-*.sh
-*.sql
-
-# Datos internos — demasiado grandes y sensibles
-data/*.json
-*.xlsm
-*.xlsb
-*.xlsx
-*.xltm
-*.pptx
-*.mp4
-*.exe
-*.pdf
-
-# Directorios internos — NUNCA AL REPO
+# Scripts pipeline — no van a GitHub
+BODEGAS/
 VENTAS EL MANZANO/
+data/
 backups/
+logs/
+_ARCHIVADOS/
+_HISTORICO/
+
+# Archivos binarios / Excel
+*.xlsm
+*.xlsx
+*.xls
+*.mp4
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude
 .claude/
-_ARCHIVO/
-FLUJOS .MD/
-FLUJOS/
-node_modules/
-CATALOGO PRODUCTOS/
-aereostar-demo/
-docs/
-_HISTORICO*/
-PANEL ADMIN COMPRAS/
+
+# open-code-review: config global tiene auth_token — NUNCA subir
+.opencodereview/config.json
+
+# Centinela pipeline (generado por procesar-actualizacion.py, solo local)
+.pipeline_date
