@@ -74,7 +74,7 @@ robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
   firebase.json firestore.rules firestore.indexes.json storage.rules ^
   sw.js update-sw-version.js firebase-config.js manifest.json ^
   manifest-admin.json manifest-cliente.json ^
-  AGENTS.md MEMORY.md ESTADO_PROYECTO.md ^
+  AGENTS.md MEMORY.md ESTADO_PROYECTO.md CLAUDE.md ^
   RESUMEN_TECNICO_MIGRACION_E.md MAPA_FLUJO_PROYECTOS.md ^
   .gitignore OCR_REVIEW.bat ^
   /XO /NP /NJH /NFL
