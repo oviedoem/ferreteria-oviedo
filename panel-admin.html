@@ -10287,307 +10287,221 @@ function _vadmExcelInventario(inv){
 
 // ── Excel export — SpreadsheetML (.xls con colores, AutoFilter, paneles) ──────
 function vadmDescargarExcel(){
-  // Si el modal fue abierto desde un tab de inventario, generar Excel de inventario
+  // TOCO: vadmDescargarExcel — reescritura tab-aware + estilos profesionales V37.16
   if(_vadmEmailInventarioData){ _vadmExcelInventario(_vadmEmailInventarioData); return; }
   var datos = _vadmDatosEmailFiltrados();
   if(!datos.length){ alert('Sin datos para exportar.'); return; }
 
+  var tab = typeof _vadmTabActiva==='function' ? _vadmTabActiva() : '';
+
   // ── Helpers XML ──
   function xe(v){ if(v==null)return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function tc(v,s){ return '<Cell ss:StyleID="'+s+'"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
-  function nc(v,s){ return '<Cell ss:StyleID="'+s+'"><Data ss:Type="Number">'+(parseFloat(v)||0)+'</Data></Cell>'; }
-  function hc(v){ return '<Cell ss:StyleID="xhdr"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
-  function hcL(v){ return '<Cell ss:StyleID="xhdrL"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
-  function freeze(ncols){ return '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions>'; }
-  function autofilter(r,c){ return '<AutoFilter x:Range="R1C1:R1C'+c+'" xmlns="urn:schemas-microsoft-com:office:excel"/>'; }
+  function tc(v,s){ return '<Cell ss:StyleID="'+(s||'xtx')+'"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
+  function nc(v,s){ return '<Cell ss:StyleID="'+(s||'xn')+'"><Data ss:Type="Number">'+(parseFloat(v)||0)+'</Data></Cell>'; }
+  function hc(v){ return '<Cell ss:StyleID="xH"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
+  function hcL(v){ return '<Cell ss:StyleID="xHL"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
+  function rs(i){ return i%2===0; }
+  function freeze(){ return '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions>'; }
+  function af(c){ return '<AutoFilter x:Range="R1C1:R1C'+c+'" xmlns="urn:schemas-microsoft-com:office:excel"/>'; }
 
-  // ── Periods ──
+  // ── Períodos ──
   var periodos={};
   datos.forEach(function(r){ if(r.periodo)periodos[r.periodo]=1; });
   var pArr=Object.keys(periodos).sort();
   var perStr=pArr.length?pArr[0]+(pArr.length>1?' al '+pArr[pArr.length-1]:''):'todos';
   var perFname=pArr.length?pArr[0].replace('-','_')+(pArr.length>1?'_al_'+pArr[pArr.length-1].replace('-','_'):''):'datos';
-  var nMeses=Math.max(pArr.length,1);
 
-  // ── ABC global (todos los registros históricos) → stock más reciente ──
-  var histMap={};
-  _vadmLineas.forEach(function(r){
-    var cod=r.codigo||''; if(!cod)return;
-    if(!histMap[cod])histMap[cod]={neto:0,lastFecha:'',stock:null,desc:r.descripcion||'',marca:r.marca||'',hiperFam:r.hiperFam||'',familia:r.familia||'',subFam:r.subFam||''};
-    histMap[cod].neto+=r.valorNeto||0;
-    if((r.fecha||'')>=histMap[cod].lastFecha){ histMap[cod].lastFecha=r.fecha||''; if(r.stock!=null)histMap[cod].stock=r.stock; }
-  });
+  // ── Totales generales ──
+  var totalNeto=datos.reduce(function(s,r){return s+(r.valorNeto||0);},0);
 
-  // ── Mapa de productos del período filtrado ──
+  // ── Mapa productos del período ──
   var prodMap={};
-  var totalNeto=0;
   datos.forEach(function(r){
     var cod=r.codigo||''; if(!cod)return;
-    if(!prodMap[cod])prodMap[cod]={cod:cod,desc:r.descripcion||'',marca:r.marca||'',hiperFam:r.hiperFam||'',familia:r.familia||'',subFam:r.subFam||'',neto:0,costo:0,margen:0,qty:0,bodegas:{},stock:null,lastFecha:''};
+    if(!prodMap[cod])prodMap[cod]={cod:cod,desc:r.descripcion||'',marca:r.marca||'',hiperFam:r.hiperFam||'',familia:r.familia||'',subFam:r.subFam||'',neto:0,costo:0,margen:0,qty:0,stock:null,lastFecha:''};
     var p=prodMap[cod];
     p.neto+=r.valorNeto||0; p.costo+=r.costo||0; p.margen+=r.margen||0; p.qty+=r.cantidad||0;
     if((r.fecha||'')>=p.lastFecha){ p.lastFecha=r.fecha||''; if(r.stock!=null)p.stock=r.stock; }
-    if(r.bodegaCorta||r.bodega)p.bodegas[r.bodegaCorta||r.bodega]=1;
   });
-  totalNeto=datos.reduce(function(s,r){return s+(r.valorNeto||0);},0);
-
-  // Usar stock de histMap si no hay en el período
+  // Stock más reciente de histórico si falta en el período
+  var histMap={};
+  _vadmLineas.forEach(function(r){
+    var cod=r.codigo||''; if(!cod)return;
+    if(!histMap[cod])histMap[cod]={stock:null,lastFecha:''};
+    if((r.fecha||'')>=histMap[cod].lastFecha){ histMap[cod].lastFecha=r.fecha||''; if(r.stock!=null)histMap[cod].stock=r.stock; }
+  });
   Object.keys(prodMap).forEach(function(cod){ if(prodMap[cod].stock==null&&histMap[cod])prodMap[cod].stock=histMap[cod].stock; });
-
-  // ABC del período (Pareto 80/95/100)
   var prodArr=Object.values(prodMap).sort(function(a,b){return b.neto-a.neto;});
-  var periodTotal=prodArr.reduce(function(s,p){return s+(p.neto>0?p.neto:0);},0);
-  var cumul=0;
-  prodArr.forEach(function(p){
-    if(p.neto>0){ cumul+=p.neto; var pct=cumul/periodTotal; p.abc=pct<=0.80?'A':pct<=0.95?'B':'C'; }
-    else p.abc='D';
-  });
 
-  // ── Estilos SpreadsheetML ──
+  // ── Estilos profesionales (sin colores ABC) ──
   var XS=[
     '<Style ss:ID="Default"><Alignment ss:Vertical="Center"/></Style>',
-    '<Style ss:ID="xhdr"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#1E1B4B" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#4338CA"/></Borders></Style>',
-    '<Style ss:ID="xhdrL"><Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#1E1B4B" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#4338CA"/></Borders></Style>',
-    // ABC A — verde
-    '<Style ss:ID="Atx"><Alignment ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#14532D"/><Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/></Style>',
-    '<Style ss:ID="An"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#14532D"/><Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
-    '<Style ss:ID="Ap"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#14532D"/><Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
-    '<Style ss:ID="An1"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#14532D"/><Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.0"/></Style>',
-    '<Style ss:ID="Abadge"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#14532D" ss:Size="11"/><Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/></Style>',
-    // ABC B — ámbar
-    '<Style ss:ID="Btx"><Alignment ss:Vertical="Center"/><Font ss:Color="#78350F"/><Interior ss:Color="#FEF9C3" ss:Pattern="Solid"/></Style>',
-    '<Style ss:ID="Bn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Color="#78350F"/><Interior ss:Color="#FEF9C3" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
-    '<Style ss:ID="Bp"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Color="#78350F"/><Interior ss:Color="#FEF9C3" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
-    '<Style ss:ID="Bn1"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Color="#78350F"/><Interior ss:Color="#FEF9C3" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.0"/></Style>',
-    '<Style ss:ID="Bbadge"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#78350F" ss:Size="11"/><Interior ss:Color="#FEF9C3" ss:Pattern="Solid"/></Style>',
-    // ABC C — azul
-    '<Style ss:ID="Ctx"><Alignment ss:Vertical="Center"/><Font ss:Color="#1E3A8A"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/></Style>',
-    '<Style ss:ID="Cn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Color="#1E3A8A"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
-    '<Style ss:ID="Cp"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Color="#1E3A8A"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
-    '<Style ss:ID="Cn1"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Color="#1E3A8A"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.0"/></Style>',
-    '<Style ss:ID="Cbadge"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#1E3A8A" ss:Size="11"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/></Style>',
-    // ABC D — gris
-    '<Style ss:ID="Dtx"><Alignment ss:Vertical="Center"/><Font ss:Italic="1" ss:Color="#6B7280"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/></Style>',
-    '<Style ss:ID="Dn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Italic="1" ss:Color="#6B7280"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
-    '<Style ss:ID="Dp"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Italic="1" ss:Color="#6B7280"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
-    '<Style ss:ID="Dn1"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Italic="1" ss:Color="#6B7280"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.0"/></Style>',
-    '<Style ss:ID="Dbadge"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:Italic="1" ss:Color="#6B7280" ss:Size="11"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/></Style>',
-    // Sin stock (rojo)
-    '<Style ss:ID="xNS"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#DC2626"/><Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/></Style>',
-    '<Style ss:ID="xNSn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#DC2626"/><Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
-    // Advertencia stock bajo (naranja)
-    '<Style ss:ID="xWarn"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#92400E"/><Interior ss:Color="#FEF3C7" ss:Pattern="Solid"/></Style>',
-    // Totales
-    '<Style ss:ID="xtot"><Alignment ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#111827"/><Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/></Style>',
-    '<Style ss:ID="xtotn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#111827"/><Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
-    '<Style ss:ID="xtotp"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#111827"/><Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
-    // Celdas normales
+    '<Style ss:ID="xH"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#1E3A5F" ss:Pattern="Solid"/></Style>',
+    '<Style ss:ID="xHL"><Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#1E3A5F" ss:Pattern="Solid"/></Style>',
     '<Style ss:ID="xtx"><Alignment ss:Vertical="Center"/></Style>',
+    '<Style ss:ID="xaltx"><Alignment ss:Vertical="Center"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/></Style>',
     '<Style ss:ID="xn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="#,##0"/></Style>',
-    '<Style ss:ID="xn1"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="#,##0.0"/></Style>',
+    '<Style ss:ID="xaln"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
     '<Style ss:ID="xpct"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="0.0%"/></Style>',
-    '<Style ss:ID="xctr"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>',
-    // Filas alternas
-    '<Style ss:ID="xaltx"><Alignment ss:Vertical="Center"/><Interior ss:Color="#F9FAFB" ss:Pattern="Solid"/></Style>',
-    '<Style ss:ID="xaln"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Interior ss:Color="#F9FAFB" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
-    '<Style ss:ID="xalp"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Interior ss:Color="#F9FAFB" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
+    '<Style ss:ID="xalp"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
+    '<Style ss:ID="xtot"><Alignment ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/></Style>',
+    '<Style ss:ID="xtotn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
+    '<Style ss:ID="xtotp"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/><NumberFormat ss:Format="0.0%"/></Style>',
+    '<Style ss:ID="xWarn"><Alignment ss:Vertical="Center" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#92400E"/><Interior ss:Color="#FEF3C7" ss:Pattern="Solid"/></Style>',
   ].join('');
 
-  // ── HOJA 1: ABC + Compras (hoja principal para el equipo de compras) ──────
-  function sheetABC(){
+  // ── HOJA: Ranking Productos ──────────────────────────────────────────────────
+  function sheetRanking(){
     var rows=['<Row ss:Height="26">',
-      hc('Rank'),hc('ABC'),hcL('Código'),hcL('Descripción'),hcL('Marca'),
+      hc('Rank'),hcL('Código'),hcL('Descripción'),hcL('Marca'),
       hcL('HiperFam'),hcL('Familia'),hcL('SubFam'),
-      hcL('Bodega(s)'),hc('Unid.Vend.'),hc('Neto $'),hc('Costo Unit.'),
-      hc('Margen $'),hc('Mgn%'),hc('Part%'),
-      hc('Stock Act.'),hc('Cob.(meses)'),hc('Estado Stock'),
+      hc('Qty'),hc('Neto $'),hc('Costo $'),hc('Margen $'),hc('Mgn%'),hc('Part%'),hc('Stock'),
       '</Row>'
     ];
-    var cumPart=0;
-    prodArr.forEach(function(p,idx){
-      var abc=p.abc;
-      var stk=p.stock;
-      var costoU=p.qty>0?p.costo/p.qty:0;
-      var partPct=totalNeto>0?p.neto/totalNeto:0;
-      cumPart+=partPct;
-      var bods=Object.keys(p.bodegas).join(', ');
-      var cobNum=(stk!=null&&stk>0&&p.qty>0)?(stk/(p.qty/nMeses)):null;
-      var cobStr=stk==null?'—':stk<=0?'SIN STOCK':cobNum!=null?cobNum.toFixed(1):'∞';
-      var estStyle, estStr;
-      if(stk==null){estStyle='xtx';estStr='—';}
-      else if(stk<=0){estStyle='xNS';estStr='🔴 SIN STOCK';}
-      else if(cobNum!=null&&cobNum<1){estStyle='xNS';estStr='⚠️ <1 mes';}
-      else if(cobNum!=null&&cobNum<3){estStyle='xWarn';estStr='⚡ <3 meses';}
-      else{estStyle='xtx';estStr='✅ OK';}
-      var badge=abc==='A'?'★ A':abc==='B'?'● B':abc==='C'?'○ C':'— D';
+    prodArr.forEach(function(p,i){
+      var alt=rs(i); var nt=p.neto; var mg=p.margen;
       rows.push('<Row>',
-        nc(idx+1, abc+'n'),
-        tc(badge, abc+'badge'),
-        tc(p.cod, abc+'tx'),
-        tc(p.desc, abc+'tx'),
-        tc(p.marca, abc+'tx'),
-        tc(p.hiperFam, abc+'tx'),
-        tc(p.familia, abc+'tx'),
-        tc(p.subFam, abc+'tx'),
-        tc(bods, abc+'tx'),
-        nc(p.qty, abc+'n'),
-        nc(p.neto, abc+'n'),
-        nc(costoU, abc+'n'),
-        nc(p.margen, abc+'n'),
-        nc(p.neto>0?p.margen/p.neto:0, abc+'p'),
-        nc(partPct, abc+'p'),
-        stk!=null?nc(stk,stk<=0?'xNSn':abc+'n'):tc('—',abc+'tx'),
-        stk!=null&&stk>0?nc(cobNum!=null?cobNum:0,abc+'n1'):tc(cobStr,stk==null?'xtx':'xNS'),
-        tc(estStr, estStyle),
+        nc(i+1,alt?'xaln':'xn'),
+        tc(p.cod,alt?'xaltx':'xtx'),
+        tc(p.desc,alt?'xaltx':'xtx'),
+        tc(p.marca,alt?'xaltx':'xtx'),
+        tc(p.hiperFam,alt?'xaltx':'xtx'),
+        tc(p.familia,alt?'xaltx':'xtx'),
+        tc(p.subFam,alt?'xaltx':'xtx'),
+        nc(p.qty,alt?'xaln':'xn'),
+        nc(nt,alt?'xaln':'xn'),
+        nc(p.costo,alt?'xaln':'xn'),
+        nc(mg,alt?'xaln':'xn'),
+        nc(nt>0?mg/nt:0,alt?'xalp':'xpct'),
+        nc(totalNeto>0?nt/totalNeto:0,alt?'xalp':'xpct'),
+        nc(p.stock!=null?p.stock:0,alt?'xaln':'xn'),
         '</Row>'
       );
     });
     var tQty=prodArr.reduce(function(s,p){return s+p.qty;},0);
     var tMgn=prodArr.reduce(function(s,p){return s+p.margen;},0);
-    rows.push('<Row ss:Height="22">',
-      tc('','xtot'),tc('TOTAL','xtot'),tc('','xtot'),tc('','xtot'),tc('','xtot'),
-      tc('','xtot'),tc('','xtot'),tc('','xtot'),tc('','xtot'),
-      nc(tQty,'xtotn'),nc(totalNeto,'xtotn'),tc('','xtot'),
-      nc(tMgn,'xtotn'),nc(totalNeto>0?tMgn/totalNeto:0,'xtotp'),nc(1,'xtotp'),
-      tc('','xtot'),tc('','xtot'),tc('','xtot'),
+    rows.push('<Row>',
+      tc('TOTAL ('+prodArr.length+' SKUs)','xtot'),tc('','xtot'),tc('','xtot'),tc('','xtot'),tc('','xtot'),tc('','xtot'),tc('','xtot'),
+      nc(tQty,'xtotn'),nc(totalNeto,'xtotn'),nc(0,'xtotn'),nc(tMgn,'xtotn'),
+      nc(totalNeto>0?tMgn/totalNeto:0,'xtotp'),nc(1,'xtotp'),tc('','xtot'),
       '</Row>'
     );
-    return '<Worksheet ss:Name="ABC + Compras"><Table ss:DefaultRowHeight="17">'+
-      '<Column ss:Width="40"/><Column ss:Width="45"/><Column ss:Width="78"/><Column ss:Width="200"/>'+
+    return '<Worksheet ss:Name="Ranking Productos"><Table ss:DefaultRowHeight="16">'+
+      '<Column ss:Width="42"/><Column ss:Width="72"/><Column ss:Width="195"/>'+
       '<Column ss:Width="95"/><Column ss:Width="90"/><Column ss:Width="90"/><Column ss:Width="90"/>'+
-      '<Column ss:Width="75"/><Column ss:Width="62"/><Column ss:Width="82"/><Column ss:Width="72"/>'+
-      '<Column ss:Width="78"/><Column ss:Width="52"/><Column ss:Width="52"/>'+
-      '<Column ss:Width="62"/><Column ss:Width="62"/><Column ss:Width="95"/>'+
-      rows.join('')+'</Table>'+freeze(1)+autofilter(1,18)+'</Worksheet>';
+      '<Column ss:Width="55"/><Column ss:Width="88"/><Column ss:Width="88"/><Column ss:Width="88"/>'+
+      '<Column ss:Width="58"/><Column ss:Width="58"/><Column ss:Width="60"/>'+
+      rows.join('')+'</Table>'+freeze()+af(14)+'</Worksheet>';
   }
 
-  // ── HOJA 2: Por Marca (con conteo ABC y quiebres en A) ──────────────────
+  // ── HOJA: Por Marca ──────────────────────────────────────────────────────────
   function sheetMarcas(){
     var mapM={};
-    prodArr.forEach(function(p){
-      var m=p.marca||'(sin marca)';
-      if(!mapM[m])mapM[m]={m:m,tot:0,cA:0,cB:0,cC:0,cD:0,neto:0,margen:0,qty:0,qs:0};
-      mapM[m].tot++; mapM[m].neto+=p.neto; mapM[m].margen+=p.margen; mapM[m].qty+=p.qty;
-      if(p.abc==='A'){mapM[m].cA++; if(p.stock!=null&&p.stock<=0)mapM[m].qs++;}
-      else if(p.abc==='B')mapM[m].cB++;
-      else if(p.abc==='C')mapM[m].cC++;
-      else mapM[m].cD++;
+    datos.forEach(function(r){
+      var k=(r.marca||'').trim()||'(sin marca)';
+      if(!mapM[k])mapM[k]={marca:k,prods:new Set(),qty:0,neto:0,margen:0};
+      mapM[k].qty+=r.cantidad||0; mapM[k].neto+=r.valorNeto||0; mapM[k].margen+=r.margen||0;
+      if(r.codigo)mapM[k].prods.add(r.codigo);
     });
     var arr=Object.values(mapM).sort(function(a,b){return b.neto-a.neto;});
     var rows=['<Row ss:Height="26">',
-      hc('Rank'),hcL('Marca'),hc('SKUs'),hc('★ A'),hc('● B'),hc('○ C'),hc('— D'),
-      hc('⚠️ A s/stock'),hc('Neto $'),hc('Utilidad $'),hc('Mgn%'),hc('Part%'),
+      hc('Rank'),hcL('Marca'),hc('SKUs'),hc('Qty'),hc('Neto $'),hc('Margen $'),hc('Mgn%'),hc('Part%'),
       '</Row>'
     ];
     arr.forEach(function(m,i){
-      var odd=i%2===0;
+      var alt=rs(i);
       rows.push('<Row>',
-        nc(i+1,odd?'xaln':'xn'),
-        tc(m.m,odd?'xaltx':'xtx'),
-        nc(m.tot,odd?'xaln':'xn'),
-        nc(m.cA,'Abadge'),
-        nc(m.cB,'Bbadge'),
-        nc(m.cC,'Cbadge'),
-        nc(m.cD,'Dbadge'),
-        nc(m.qs,m.qs>0?'xNSn':odd?'xaln':'xn'),
-        nc(m.neto,odd?'xaln':'xn'),
-        nc(m.margen,odd?'xaln':'xn'),
-        nc(m.neto>0?m.margen/m.neto:0,odd?'xalp':'xpct'),
-        nc(totalNeto>0?m.neto/totalNeto:0,odd?'xalp':'xpct'),
+        nc(i+1,alt?'xaln':'xn'),
+        tc(m.marca,alt?'xaltx':'xtx'),
+        nc(m.prods.size,alt?'xaln':'xn'),
+        nc(m.qty,alt?'xaln':'xn'),
+        nc(m.neto,alt?'xaln':'xn'),
+        nc(m.margen,alt?'xaln':'xn'),
+        nc(m.neto>0?m.margen/m.neto:0,alt?'xalp':'xpct'),
+        nc(totalNeto>0?m.neto/totalNeto:0,alt?'xalp':'xpct'),
         '</Row>'
       );
     });
     return '<Worksheet ss:Name="Por Marca"><Table ss:DefaultRowHeight="16">'+
-      '<Column ss:Width="45"/><Column ss:Width="115"/>'+
-      '<Column ss:Width="50"/><Column ss:Width="45"/><Column ss:Width="45"/><Column ss:Width="45"/><Column ss:Width="45"/>'+
-      '<Column ss:Width="75"/><Column ss:Width="85"/><Column ss:Width="85"/><Column ss:Width="60"/><Column ss:Width="60"/>'+
-      rows.join('')+'</Table>'+freeze(1)+autofilter(1,12)+'</Worksheet>';
+      '<Column ss:Width="42"/><Column ss:Width="155"/><Column ss:Width="60"/>'+
+      '<Column ss:Width="65"/><Column ss:Width="88"/><Column ss:Width="88"/><Column ss:Width="58"/><Column ss:Width="58"/>'+
+      rows.join('')+'</Table>'+freeze()+af(8)+'</Worksheet>';
   }
 
-  // ── HOJA 3: Por Categoría ───────────────────────────────────────────────
+  // ── HOJA: Por Categoría ──────────────────────────────────────────────────────
   function sheetCategorias(){
-    var mapH={};
-    prodArr.forEach(function(p){
-      var h=p.hiperFam||'(sin cat.)'; var f=p.familia||''; var s=p.subFam||'';
-      var k=h+'||'+f+'||'+s;
-      if(!mapH[k])mapH[k]={h:h,f:f,s:s,prods:0,neto:0,margen:0,qty:0};
-      mapH[k].prods++; mapH[k].neto+=p.neto; mapH[k].margen+=p.margen; mapH[k].qty+=p.qty;
+    var mapC={};
+    datos.forEach(function(r){
+      var h=(r.hiperFam||'').trim()||'(sin hiperfam)';
+      var f=(r.familia||'').trim()||'(sin familia)';
+      var key=h+'||'+f;
+      if(!mapC[key])mapC[key]={hiperFam:h,familia:f,prods:new Set(),qty:0,neto:0,margen:0};
+      mapC[key].qty+=r.cantidad||0; mapC[key].neto+=r.valorNeto||0; mapC[key].margen+=r.margen||0;
+      if(r.codigo)mapC[key].prods.add(r.codigo);
     });
-    var arr=Object.values(mapH).sort(function(a,b){return b.neto-a.neto;});
+    var arr=Object.values(mapC).sort(function(a,b){return b.neto-a.neto;});
     var rows=['<Row ss:Height="26">',
-      hc('Rank'),hcL('HiperFam'),hcL('Familia'),hcL('SubFam'),
-      hc('SKUs'),hc('Unid.'),hc('Neto $'),hc('Utilidad $'),hc('Mgn%'),hc('Part%'),
+      hc('Rank'),hcL('HiperFam'),hcL('Familia'),hc('SKUs'),hc('Qty'),hc('Neto $'),hc('Margen $'),hc('Mgn%'),hc('Part%'),
       '</Row>'
     ];
     arr.forEach(function(c,i){
-      var odd=i%2===0;
+      var alt=rs(i);
       rows.push('<Row>',
-        nc(i+1,odd?'xaln':'xn'),
-        tc(c.h,odd?'xaltx':'xtx'),
-        tc(c.f,odd?'xaltx':'xtx'),
-        tc(c.s,odd?'xaltx':'xtx'),
-        nc(c.prods,odd?'xaln':'xn'),
-        nc(c.qty,odd?'xaln':'xn'),
-        nc(c.neto,odd?'xaln':'xn'),
-        nc(c.margen,odd?'xaln':'xn'),
-        nc(c.neto>0?c.margen/c.neto:0,odd?'xalp':'xpct'),
-        nc(totalNeto>0?c.neto/totalNeto:0,odd?'xalp':'xpct'),
+        nc(i+1,alt?'xaln':'xn'),
+        tc(c.hiperFam,alt?'xaltx':'xtx'),
+        tc(c.familia,alt?'xaltx':'xtx'),
+        nc(c.prods.size,alt?'xaln':'xn'),
+        nc(c.qty,alt?'xaln':'xn'),
+        nc(c.neto,alt?'xaln':'xn'),
+        nc(c.margen,alt?'xaln':'xn'),
+        nc(c.neto>0?c.margen/c.neto:0,alt?'xalp':'xpct'),
+        nc(totalNeto>0?c.neto/totalNeto:0,alt?'xalp':'xpct'),
         '</Row>'
       );
     });
-    return '<Worksheet ss:Name="Por Categoria"><Table ss:DefaultRowHeight="16">'+
-      '<Column ss:Width="45"/><Column ss:Width="115"/><Column ss:Width="115"/><Column ss:Width="115"/>'+
-      '<Column ss:Width="50"/><Column ss:Width="60"/><Column ss:Width="85"/><Column ss:Width="85"/>'+
-      '<Column ss:Width="60"/><Column ss:Width="60"/>'+
-      rows.join('')+'</Table>'+freeze(1)+autofilter(1,10)+'</Worksheet>';
+    return '<Worksheet ss:Name="Por Categoría"><Table ss:DefaultRowHeight="16">'+
+      '<Column ss:Width="42"/><Column ss:Width="130"/><Column ss:Width="130"/>'+
+      '<Column ss:Width="60"/><Column ss:Width="65"/><Column ss:Width="88"/><Column ss:Width="88"/><Column ss:Width="58"/><Column ss:Width="58"/>'+
+      rows.join('')+'</Table>'+freeze()+af(9)+'</Worksheet>';
   }
 
-  // ── HOJA 4: Por Vendedor ────────────────────────────────────────────────
+  // ── HOJA: Por Vendedor ───────────────────────────────────────────────────────
   function sheetVendedores(){
     var mapV={};
     datos.forEach(function(r){
-      var k=r.nombre||r.vendedorErp||'?';
-      if(!mapV[k])mapV[k]={v:k,docs:new Set(),lin:0,neto:0,margen:0};
-      mapV[k].neto+=r.valorNeto||0; mapV[k].margen+=r.margen||0; mapV[k].lin++;
+      var k=(r.nombre||r.vendedorErp||'').trim()||'(sin vendedor)';
+      if(!mapV[k])mapV[k]={vend:k,docs:new Set(),prods:new Set(),qty:0,neto:0,margen:0};
+      mapV[k].qty+=r.cantidad||0; mapV[k].neto+=r.valorNeto||0; mapV[k].margen+=r.margen||0;
       if(r.numero)mapV[k].docs.add(r.numero);
+      if(r.codigo)mapV[k].prods.add(r.codigo);
     });
     var arr=Object.values(mapV).sort(function(a,b){return b.neto-a.neto;});
-    var totN=arr.reduce(function(s,v){return s+v.neto;},0);
-    var totM=arr.reduce(function(s,v){return s+v.margen;},0);
     var rows=['<Row ss:Height="26">',
-      hc('Rank'),hcL('Vendedor'),hc('Documentos'),hc('Líneas'),
-      hc('Neto $'),hc('Utilidad $'),hc('Mgn%'),hc('Part%'),
+      hc('Rank'),hcL('Vendedor'),hc('Docs'),hc('SKUs'),hc('Qty'),hc('Neto $'),hc('Margen $'),hc('Mgn%'),hc('Part%'),
       '</Row>'
     ];
     arr.forEach(function(v,i){
-      var odd=i%2===0;
+      var alt=rs(i);
       rows.push('<Row>',
-        nc(i+1,odd?'xaln':'xn'),
-        tc(v.v,odd?'xaltx':'xtx'),
-        nc(v.docs.size,odd?'xaln':'xn'),
-        nc(v.lin,odd?'xaln':'xn'),
-        nc(v.neto,odd?'xaln':'xn'),
-        nc(v.margen,odd?'xaln':'xn'),
-        nc(v.neto>0?v.margen/v.neto:0,odd?'xalp':'xpct'),
-        nc(totN>0?v.neto/totN:0,odd?'xalp':'xpct'),
+        nc(i+1,alt?'xaln':'xn'),
+        tc(v.vend,alt?'xaltx':'xtx'),
+        nc(v.docs.size,alt?'xaln':'xn'),
+        nc(v.prods.size,alt?'xaln':'xn'),
+        nc(v.qty,alt?'xaln':'xn'),
+        nc(v.neto,alt?'xaln':'xn'),
+        nc(v.margen,alt?'xaln':'xn'),
+        nc(v.neto>0?v.margen/v.neto:0,alt?'xalp':'xpct'),
+        nc(totalNeto>0?v.neto/totalNeto:0,alt?'xalp':'xpct'),
         '</Row>'
       );
     });
-    rows.push('<Row ss:Height="20">',
-      tc('','xtot'),tc('TOTAL','xtot'),
-      nc(arr.reduce(function(s,v){return s+v.docs.size;},0),'xtotn'),
-      nc(arr.reduce(function(s,v){return s+v.lin;},0),'xtotn'),
-      nc(totN,'xtotn'),nc(totM,'xtotn'),
-      nc(totN>0?totM/totN:0,'xtotp'),nc(1,'xtotp'),
-      '</Row>'
-    );
     return '<Worksheet ss:Name="Por Vendedor"><Table ss:DefaultRowHeight="16">'+
-      '<Column ss:Width="45"/><Column ss:Width="130"/><Column ss:Width="80"/><Column ss:Width="60"/>'+
-      '<Column ss:Width="85"/><Column ss:Width="85"/><Column ss:Width="60"/><Column ss:Width="60"/>'+
-      rows.join('')+'</Table>'+freeze(1)+autofilter(1,8)+'</Worksheet>';
+      '<Column ss:Width="42"/><Column ss:Width="145"/><Column ss:Width="60"/>'+
+      '<Column ss:Width="60"/><Column ss:Width="65"/><Column ss:Width="88"/><Column ss:Width="88"/><Column ss:Width="58"/><Column ss:Width="58"/>'+
+      rows.join('')+'</Table>'+freeze()+af(9)+'</Worksheet>';
   }
 
-  // ── HOJA 5: Ranking Clientes ────────────────────────────────────────────
+  // ── HOJA: Ranking Clientes ────────────────────────────────────────────────
   function sheetClientes(){
     var mapC={};
     datos.forEach(function(r){
@@ -10599,76 +10513,82 @@ function vadmDescargarExcel(){
     });
     var arr=Object.values(mapC).sort(function(a,b){return b.neto-a.neto;});
     var rows=['<Row ss:Height="26">',
-      hc('Rank'),hcL('Cliente'),hcL('RUT'),hc('Documentos'),hc('SKUs distintos'),
-      hc('Neto $'),hc('Utilidad $'),hc('Mgn%'),hc('Part%'),
+      hc('Rank'),hcL('Cliente'),hcL('RUT'),hc('Docs'),hc('SKUs'),hc('Neto $'),hc('Margen $'),hc('Mgn%'),hc('Part%'),
       '</Row>'
     ];
     arr.forEach(function(c,i){
-      var odd=i%2===0;
+      var alt=rs(i);
       rows.push('<Row>',
-        nc(i+1,odd?'xaln':'xn'),
-        tc(c.c,odd?'xaltx':'xtx'),
-        tc(c.rut,odd?'xaltx':'xtx'),
-        nc(c.docs.size,odd?'xaln':'xn'),
-        nc(c.prods.size,odd?'xaln':'xn'),
-        nc(c.neto,odd?'xaln':'xn'),
-        nc(c.margen,odd?'xaln':'xn'),
-        nc(c.neto>0?c.margen/c.neto:0,odd?'xalp':'xpct'),
-        nc(totalNeto>0?c.neto/totalNeto:0,odd?'xalp':'xpct'),
+        nc(i+1,alt?'xaln':'xn'),
+        tc(c.c,alt?'xaltx':'xtx'),
+        tc(c.rut,alt?'xaltx':'xtx'),
+        nc(c.docs.size,alt?'xaln':'xn'),
+        nc(c.prods.size,alt?'xaln':'xn'),
+        nc(c.neto,alt?'xaln':'xn'),
+        nc(c.margen,alt?'xaln':'xn'),
+        nc(c.neto>0?c.margen/c.neto:0,alt?'xalp':'xpct'),
+        nc(totalNeto>0?c.neto/totalNeto:0,alt?'xalp':'xpct'),
         '</Row>'
       );
     });
     return '<Worksheet ss:Name="Ranking Clientes"><Table ss:DefaultRowHeight="16">'+
-      '<Column ss:Width="45"/><Column ss:Width="155"/><Column ss:Width="85"/>'+
-      '<Column ss:Width="80"/><Column ss:Width="80"/>'+
-      '<Column ss:Width="85"/><Column ss:Width="85"/><Column ss:Width="60"/><Column ss:Width="60"/>'+
-      rows.join('')+'</Table>'+freeze(1)+autofilter(1,9)+'</Worksheet>';
+      '<Column ss:Width="42"/><Column ss:Width="160"/><Column ss:Width="85"/>'+
+      '<Column ss:Width="60"/><Column ss:Width="60"/>'+
+      '<Column ss:Width="88"/><Column ss:Width="88"/><Column ss:Width="58"/><Column ss:Width="58"/>'+
+      rows.join('')+'</Table>'+freeze()+af(9)+'</Worksheet>';
   }
 
-  // ── HOJA 6: Detalle Ventas (líneas individuales, máx 20.000) ───────────
+  // ── HOJA: Detalle Ventas ──────────────────────────────────────────────────
   function sheetDetalle(){
     var MAX=20000;
     var slice=datos.length>MAX?datos.slice(0,MAX):datos;
     var rows=['<Row ss:Height="24">',
       hcL('Fecha'),hcL('Vendedor'),hcL('Documento'),hcL('Número'),
-      hcL('Código'),hcL('Descripción'),hcL('Marca'),hcL('HiperFam'),
-      hcL('Familia'),hcL('SubFam'),hcL('Bodega'),hcL('Cliente'),hcL('RUT'),
-      hc('Cant.'),hc('Neto $'),hc('Costo $'),hc('Margen $'),hc('Mgn%'),
+      hcL('Código'),hcL('Descripción'),hcL('Marca'),hcL('Familia'),
+      hcL('Bodega'),hcL('Cliente'),hc('Cant.'),hc('Neto $'),hc('Costo $'),hc('Margen $'),hc('Mgn%'),
       '</Row>'
     ];
     slice.forEach(function(r,i){
-      var odd=i%2===0;
-      var nt=r.valorNeto||0; var mg=r.margen||0;
+      var alt=rs(i); var nt=r.valorNeto||0; var mg=r.margen||0;
       rows.push('<Row>',
-        tc(r.fecha||'',odd?'xaltx':'xtx'),
-        tc(r.nombre||r.vendedorErp||'',odd?'xaltx':'xtx'),
-        tc(r.documento||'',odd?'xaltx':'xtx'),
-        tc(r.numero||'',odd?'xaltx':'xtx'),
-        tc(r.codigo||'',odd?'xaltx':'xtx'),
-        tc(r.descripcion||'',odd?'xaltx':'xtx'),
-        tc(r.marca||'',odd?'xaltx':'xtx'),
-        tc(r.hiperFam||'',odd?'xaltx':'xtx'),
-        tc(r.familia||'',odd?'xaltx':'xtx'),
-        tc(r.subFam||'',odd?'xaltx':'xtx'),
-        tc(r.bodegaCorta||r.bodega||'',odd?'xaltx':'xtx'),
-        tc(r.cliente||'',odd?'xaltx':'xtx'),
-        tc(r.rut||'',odd?'xaltx':'xtx'),
-        nc(r.cantidad||0,odd?'xaln':'xn'),
-        nc(nt,odd?'xaln':'xn'),
-        nc(r.costo||0,odd?'xaln':'xn'),
-        nc(mg,odd?'xaln':'xn'),
-        nc(nt>0?mg/nt:0,odd?'xalp':'xpct'),
+        tc(r.fecha||'',alt?'xaltx':'xtx'),
+        tc(r.nombre||r.vendedorErp||'',alt?'xaltx':'xtx'),
+        tc(r.documento||'',alt?'xaltx':'xtx'),
+        tc(r.numero||'',alt?'xaltx':'xtx'),
+        tc(r.codigo||'',alt?'xaltx':'xtx'),
+        tc(r.descripcion||'',alt?'xaltx':'xtx'),
+        tc(r.marca||'',alt?'xaltx':'xtx'),
+        tc(r.familia||'',alt?'xaltx':'xtx'),
+        tc(r.bodegaCorta||r.bodega||'',alt?'xaltx':'xtx'),
+        tc(r.cliente||'',alt?'xaltx':'xtx'),
+        nc(r.cantidad||0,alt?'xaln':'xn'),
+        nc(nt,alt?'xaln':'xn'),
+        nc(r.costo||0,alt?'xaln':'xn'),
+        nc(mg,alt?'xaln':'xn'),
+        nc(nt>0?mg/nt:0,alt?'xalp':'xpct'),
         '</Row>'
       );
     });
-    if(datos.length>MAX) rows.push('<Row><Cell ss:StyleID="xWarn"><Data ss:Type="String">⚠️ Truncado: se muestran '+MAX.toLocaleString()+' de '+datos.length.toLocaleString()+' líneas. Usa filtros para reducir el rango.</Data></Cell></Row>');
+    if(datos.length>MAX) rows.push('<Row><Cell ss:StyleID="xWarn"><Data ss:Type="String">⚠️ Truncado: se muestran '+MAX.toLocaleString()+' de '+datos.length.toLocaleString()+' líneas.</Data></Cell></Row>');
     return '<Worksheet ss:Name="Detalle Ventas"><Table ss:DefaultRowHeight="16">'+
-      '<Column ss:Width="70"/><Column ss:Width="90"/><Column ss:Width="80"/><Column ss:Width="70"/>'+
-      '<Column ss:Width="78"/><Column ss:Width="185"/><Column ss:Width="92"/><Column ss:Width="92"/>'+
-      '<Column ss:Width="92"/><Column ss:Width="92"/><Column ss:Width="72"/>'+
-      '<Column ss:Width="125"/><Column ss:Width="80"/>'+
-      '<Column ss:Width="55"/><Column ss:Width="78"/><Column ss:Width="78"/><Column ss:Width="78"/><Column ss:Width="55"/>'+
-      rows.join('')+'</Table>'+freeze(1)+autofilter(1,18)+'</Worksheet>';
+      '<Column ss:Width="72"/><Column ss:Width="92"/><Column ss:Width="82"/><Column ss:Width="72"/>'+
+      '<Column ss:Width="78"/><Column ss:Width="195"/><Column ss:Width="95"/><Column ss:Width="95"/>'+
+      '<Column ss:Width="72"/><Column ss:Width="130"/>'+
+      '<Column ss:Width="55"/><Column ss:Width="82"/><Column ss:Width="82"/><Column ss:Width="82"/><Column ss:Width="58"/>'+
+      rows.join('')+'</Table>'+freeze()+af(15)+'</Worksheet>';
+  }
+
+  // ── Selección de hojas según tab activo ──────────────────────────────────
+  var sheets;
+  if(tab==='ventas'){
+    sheets=[sheetDetalle()];
+  } else if(tab==='analisis'||tab==='sectores'){
+    sheets=[sheetCategorias(),sheetVendedores(),sheetDetalle()];
+  } else if(tab==='marcavend'||tab==='marcavend2'||tab==='nc'){
+    sheets=[sheetVendedores(),sheetMarcas(),sheetDetalle()];
+  } else {
+    // arbol / arboltabla / arbolheat / ranking / default
+    sheets=[sheetRanking(),sheetMarcas(),sheetCategorias(),sheetVendedores()];
   }
 
   // ── Armar libro ─────────────────────────────────────────────────────────
@@ -10683,8 +10603,7 @@ function vadmDescargarExcel(){
     '<Title>Ventas El Manzano — '+xe(perStr)+'</Title>'+
     '<Author>Ferreteria Oviedo</Author></DocumentProperties>\n'+
     '<Styles>'+XS+'</Styles>\n'+
-    sheetABC()+'\n'+sheetMarcas()+'\n'+sheetCategorias()+'\n'+
-    sheetVendedores()+'\n'+sheetClientes()+'\n'+sheetDetalle()+'\n'+
+    sheets.join('\n')+'\n'+
     '</Workbook>';
 
   var fname='ventas_manzano_'+perFname+'_'+new Date().toISOString().slice(0,10)+'.xls';
@@ -13202,6 +13121,19 @@ function _vadmDatosEmailFiltrados(){
     }
   } else if(tab === 'comparativa' || tab === 'pagotemporal' || tab === 'arbol' || tab === 'arboltabla' || tab === 'arbolheat'){
     // Estos tabs usan TODOS los períodos — no filtrar por _vadmPeriodoSel
+  } else if(tab === 'sector'){
+    // Tab "Ventas por Sector" usa sus propios inputs de fecha
+    var seD=(document.getElementById('vadmSEdesde')||{}).value||'';
+    var seH=(document.getElementById('vadmSEhasta')||{}).value||'';
+    if(seD && seH){
+      var seDts=new Date(seD+'T00:00:00').getTime(), seHts=new Date(seH+'T23:59:59').getTime();
+      datos=datos.filter(function(r){ var ts=venAdmParseFecha(r.fecha); return ts>=seDts&&ts<=seHts; });
+    }
+    // Excluir notas de crédito (igual que vadmRenderSector)
+    datos=datos.filter(function(r){ var d=(r.documento||r.doc||'').toLowerCase(); return d.indexOf('nota')<0&&d.indexOf('cred')<0; });
+    var seDoc=(document.getElementById('vadmSEdoc')||{}).value||'';
+    if(seDoc==='factura') datos=datos.filter(function(r){ return /factura/i.test(r.documento||r.doc||''); });
+    if(seDoc==='boleta')  datos=datos.filter(function(r){ return /boleta/i.test(r.documento||r.doc||''); });
   } else {
     // analisis, top, marcas, vendrank, clientes, tipodoc, facturacion, pagoanalisis, pagorankings, etc.
     if(_vadmPeriodoSel) datos = datos.filter(function(r){ return r.periodo === _vadmPeriodoSel; });
@@ -13269,9 +13201,11 @@ function _vadmDespacharHtmlEmail(datos, perStr, tab){
   // Árbol de descomposición
   if(tab==='arbol'||tab==='arboltabla'||tab==='arbolheat')
                            return _vadmHtmlEmailArbol(datos, perStr, tab);
+  // Tab Ventas por Sector
+  if(tab==='sector')       return _vadmHtmlEmailSector(datos, perStr);
   // Tabs sin ventas con reporte propio
   if(tab==='despachos') return window._vadmHtmlEmailDespachos ? window._vadmHtmlEmailDespachos() : _vadmHtmlEmailNoDisponible(tab);
-  if(tab==='informe-stock'||tab==='analisis'||tab==='stockconsulta'||tab==='adquisiciones')
+  if(tab==='informe-stock'||tab==='stockconsulta'||tab==='adquisiciones')
     return _vadmHtmlEmailNoDisponible(tab);
   // Tabs XLSM — datos no disponibles en _vadmLineas
   if(tab==='nc'||tab==='marcavend2'||tab==='preciodiff'||tab==='mem')
@@ -13281,6 +13215,59 @@ function _vadmDespacharHtmlEmail(datos, perStr, tab){
     return _vadmHtmlEmailNoDisponible(tab);
   // Detalle y cualquier tab de ventas no listado → resumen de ventas
   return _vadmHtmlEmailDetalle(datos, perStr, tab);
+}
+
+// Plantilla email: Ventas por Sector
+function _vadmHtmlEmailSector(datos, perStr){
+  if(!datos||!datos.length) return '<p style="color:#9ca3af;font-family:Arial,sans-serif;padding:24px">Sin datos para el período seleccionado.</p>';
+  // Dedup por (número de documento + sector) — igual que vadmRenderSector
+  var docMap={};
+  datos.forEach(function(r){
+    var sKey=r.sector||'RETIRO CLIENTE';
+    var key=(r.numero||'_')+'\x01'+sKey;
+    if(!docMap[key]) docMap[key]={sector:sKey,neto:0,vendedor:r.nombre||r.vendedorErp||r.vendedor||'?'};
+    docMap[key].neto+=(r.valorNeto||r.neto||0);
+  });
+  // Agrupar por sector
+  var map={};
+  Object.keys(docMap).forEach(function(k){
+    var d=docMap[k], s=d.sector;
+    if(!map[s]) map[s]={sector:s,neto:0,cnt:0,vendedores:{}};
+    map[s].neto+=d.neto; map[s].cnt++;
+    map[s].vendedores[d.vendedor]=(map[s].vendedores[d.vendedor]||0)+1;
+  });
+  var arr=Object.values(map).sort(function(a,b){
+    if(a.sector==='RETIRO CLIENTE') return 1;
+    if(b.sector==='RETIRO CLIENTE') return -1;
+    return b.neto-a.neto;
+  });
+  var totalN=arr.reduce(function(s,v){return s+v.neto;},0);
+  var totalDocs=arr.reduce(function(s,v){return s+v.cnt;},0);
+  var mgArr=datos.reduce(function(s,r){return s+(r.margen||0);},0);
+  var mgn=totalN>0?((mgArr/totalN)*100).toFixed(1):0;
+  var tdN='padding:8px 10px;font-size:12px;text-align:right';
+  var tdL='padding:8px 10px;font-size:12px';
+  var rows=arr.map(function(v,i){
+    var pct=totalN>0?(v.neto/totalN*100).toFixed(1):0;
+    var topV=Object.keys(v.vendedores).sort(function(a,b){return v.vendedores[b]-v.vendedores[a];})[0]||'—';
+    var bg=i%2===0?'#fff':'#f9fafb';
+    var isRetiro=v.sector==='RETIRO CLIENTE';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="'+tdL+';font-weight:'+(isRetiro?'400':'700')+';color:'+(isRetiro?'#6366f1':'#111827')+'">'+
+        (isRetiro?'<em>':'')+ _emailEsc(v.sector)+(isRetiro?'</em>':'')+'</td>'+
+      '<td style="'+tdN+';font-weight:700">'+_emailFmt(v.neto)+'</td>'+
+      '<td style="'+tdN+'">'+v.cnt+'</td>'+
+      '<td style="'+tdN+';color:#9ca3af">'+pct+'%</td>'+
+      '<td style="'+tdL+';color:#6b7280;font-size:11px">'+_emailEsc(topV)+'</td></tr>';
+  }).join('');
+  return _emailHdr('#7f1d1d','📍','Ventas por Sector',perStr,[
+    ['Total Neto',_emailFmt(totalN),'#7f1d1d'],
+    ['Utilidad',_emailFmt(mgArr),'#059669'],
+    ['Margen',mgn+'%',mgn>=20?'#059669':'#d97706'],
+    ['Documentos',totalDocs,'#1e1b4b'],
+    ['Sectores',arr.length,'#6366f1']
+  ])+_emailTbl('📍 Ventas por Sector','#7f1d1d',
+    [['Sector',false],['Neto',true],['Docs',true],['Part%',true],['Vendedor top',false]],rows)+'</div>';
 }
 
 // Mensaje para tabs de inventario/árbol que no generan email de ventas
@@ -14329,7 +14316,8 @@ function vadmAbrirEmailModal(){
     marcavend:'🏅 Marca×Vendedor',pagoanalisis:'💳 Pago×Categoría',pagorankings:'💳 Pago×Vendedor',
     pagotemporal:'💳 Pago×Mes',entrefechas:'📆 Entre Fechas',facturacion:'🧾 Facturación',
     quiebre:'🔴 Stock & Quiebre',sobrestock:'📦 Sobre-stock',transito:'🚚 Tránsito',
-    merma:'🔖 Merma',bajrot:'📉 Baja Rotación',arbol:'🌳 Árbol',arboltabla:'📋 Tabla KPIs',arbolheat:'🗓️ Mapa Calor'};
+    merma:'🔖 Merma',bajrot:'📉 Baja Rotación',arbol:'🌳 Árbol',arboltabla:'📋 Tabla KPIs',arbolheat:'🗓️ Mapa Calor',
+    sector:'📍 Por Sector',impacto:'📉 Q vs $'};
   var lbl=document.getElementById('vadmEmailTabLabel');
   if(lbl) lbl.textContent='Reporte: '+(tabLabels[tabId]||tabId)+' · '+datos.length+' líneas';
 
