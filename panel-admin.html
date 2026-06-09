@@ -3945,8 +3945,8 @@ function renderDashboard(){
       recent.map(function(c,i){
         return '<tr>'+
           '<td style="white-space:nowrap">'+fmtFecha(c._tsNum||c.ts)+'</td>'+
-          '<td><b>'+(c.user||c.nombre||'?')+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
+          '<td><b>'+venAdmEsc(c.user||c.nombre||'?')+'</b></td>'+
+          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+venAdmEsc(c.app)+'</span></td>'+
           '<td>'+(Array.isArray(c.items)?c.items.reduce(function(a,it){return a+(it.qty||1);},0):c.items)+'</td>'+
           '<td>'+fmtCLP(c.total)+'</td>'+
           '<td><button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="verCotizacion('+i+')">Ver</button></td>'+
@@ -4128,8 +4128,8 @@ function renderCotizaciones(){
         return '<tr class="cotiz-row" onclick="toggleCotizRow(this,'+i+')">'+
           '<td style="font-weight:700;color:var(--naranja);white-space:nowrap">'+nro+'</td>'+
           '<td style="white-space:nowrap">'+fmtFecha(c._tsNum||c.ts)+'</td>'+
-          '<td><b>'+(c.user||c.nombre||'?')+'</b></td>'+
-          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></td>'+
+          '<td><b>'+venAdmEsc(c.user||c.nombre||'?')+'</b></td>'+
+          '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+venAdmEsc(c.app)+'</span></td>'+
           '<td>'+itemCount+'</td>'+
           '<td>'+fmtCLP(c.total)+'</td>'+
           '<td><span class="cotiz-expand">▶</span></td>'+
@@ -4186,8 +4186,8 @@ function toggleCotizRow(tr, idx){
   inner.innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">'+
       '<div style="font-size:12px;color:#6b7280">'+
-        '<b>'+(c.user||c.nombre||'?')+'</b> · '+
-        '<span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span> · '+
+        '<b>'+venAdmEsc(c.user||c.nombre||'?')+'</b> · '+
+        '<span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+venAdmEsc(c.app)+'</span> · '+
         fmtFecha(c._tsNum||c.ts)+
       '</div>'+
       '<div style="display:flex;gap:6px">'+
@@ -4270,8 +4270,8 @@ function verCotizacion(idx){
   document.getElementById('cotizModalContent').innerHTML =
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">'+
       '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Fecha</span><div style="font-weight:700">'+fecha+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Usuario</span><div style="font-weight:700">'+(c.user||c.nombre||'?')+'</div></div>'+
-      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">App origen</span><div><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+c.app+'</span></div></div>'+
+      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">Usuario</span><div style="font-weight:700">'+venAdmEsc(c.user||c.nombre||'?')+'</div></div>'+
+      '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">App origen</span><div><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+venAdmEsc(c.app)+'</span></div></div>'+
       '<div><span style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase">N° items</span><div style="font-weight:700">'+c.items+'</div></div>'+
     '</div>'+
     '<div style="overflow-x:auto;margin-bottom:14px">'+
@@ -4516,7 +4516,7 @@ function cargarUsuariosFS(){
       });
       renderUsuariosFS();
     })
-    .catch(function(e){ document.getElementById('tablaUsuariosFS').innerHTML='<p style="color:#c62828;font-size:13px">Error: '+e.message+'</p>'; });
+    .catch(function(e){ document.getElementById('tablaUsuariosFS').innerHTML='<p style="color:#c62828;font-size:13px">Error: '+venAdmEsc(e.message||'')+'</p>'; });
 }
 
 function renderUsuariosFS(){
@@ -4550,9 +4550,9 @@ function renderUsuariosFS(){
       }).join('');
       var btnRol = '<select data-coop-block="Cambiar rol de usuario" onchange="adminCambiarRolFS(\''+u._docId+'\',this.value,this)" style="font-size:11px;padding:3px 6px;border-radius:4px;border:1px solid #d1d5db;margin-left:4px">'+rolesOpc+'</select>';
       return '<tr>'+
-        '<td><b>'+(u.nombreCompleto||u.nombre||'—')+'</b></td>'+
-        '<td style="font-size:11px">'+(u.email||'—')+'</td>'+
-        '<td style="font-size:11px">'+(u.rut||'—')+'</td>'+
+        '<td><b>'+venAdmEsc(u.nombreCompleto||u.nombre||'—')+'</b></td>'+
+        '<td style="font-size:11px">'+venAdmEsc(u.email||'—')+'</td>'+
+        '<td style="font-size:11px">'+venAdmEsc(u.rut||'—')+'</td>'+
         '<td>'+btnRol+'</td>'+
         '<td>'+estBadge+'</td>'+
         '<td style="white-space:nowrap">'+btnAprobar+btnBloquear+btnReenviar+'</td>'+
@@ -4572,18 +4572,31 @@ function adminReenviarAcceso(email){
     .catch(function(e){ toast('Error: ' + (e.code === 'auth/user-not-found' ? 'No existe cuenta Auth para este correo.' : e.message),'err'); });
 }
 
+function _logAuditAdmin(accion, targetId, detalle){
+  try{
+    if(!window.db || !window.auth || !window.auth.currentUser) return;
+    window.db.collection('auditLog').add({
+      accion: accion, targetId: targetId||'',
+      detalle: detalle||'',
+      adminUid: window.auth.currentUser.uid,
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(){});
+  }catch(e){}
+}
+
 function adminAprobarFS(docId){
   if(!window.db){ toast('Sin conexión','err'); return; }
   if(typeof aprobarUsuario === 'function'){
     aprobarUsuario(docId, function(err){
-      if(err){ toast('Error al aprobar: '+err.message,'err'); return; }
+      if(err){ toast('Error al aprobar: '+venAdmEsc(err.message||''),'err'); return; }
+      _logAuditAdmin('USUARIO_APROBADO', docId, '');
       toast('Usuario aprobado ✓','ok');
       cargarUsuariosFS();
     });
   } else {
     window.db.collection('users').doc(docId).update({ estado:'activo', registroAprobado:true })
-      .then(function(){ toast('Usuario aprobado ✓','ok'); cargarUsuariosFS(); })
-      .catch(function(e){ toast('Error: '+e.message,'err'); });
+      .then(function(){ _logAuditAdmin('USUARIO_APROBADO', docId, ''); toast('Usuario aprobado ✓','ok'); cargarUsuariosFS(); })
+      .catch(function(e){ toast('Error: '+venAdmEsc(e.message||''),'err'); });
   }
 }
 
@@ -4591,8 +4604,8 @@ function adminToggleBloqueoFS(docId, nuevoEstado){
   if(_coopGuard('bloquear/activar usuario')) return;
   if(!window.db){ toast('Sin conexión','err'); return; }
   window.db.collection('users').doc(docId).update({ estado: nuevoEstado })
-    .then(function(){ toast('Estado actualizado ✓','ok'); cargarUsuariosFS(); })
-    .catch(function(e){ toast('Error: '+e.message,'err'); });
+    .then(function(){ _logAuditAdmin('USUARIO_ESTADO', docId, nuevoEstado); toast('Estado actualizado ✓','ok'); cargarUsuariosFS(); })
+    .catch(function(e){ toast('Error: '+venAdmEsc(e.message||''),'err'); });
 }
 
 function adminCambiarRolFS(docId, nuevoRol, selectEl){
@@ -4607,6 +4620,7 @@ function adminCambiarRolFS(docId, nuevoRol, selectEl){
   try{ nombreU = selectEl.closest('tr').querySelector('b').textContent || docId; }catch(e){ nombreU = docId; }
   window.db.collection('users').doc(docId).update({ role: nuevoRol })
     .then(function(){
+      _logAuditAdmin('USUARIO_ROL', docId, nuevoRol);
       toast('Rol actualizado a "'+nuevoRol+'" ✓','ok');
       var logEl = document.getElementById('logUsuarios');
       if(logEl){
@@ -4835,7 +4849,7 @@ function testConexion(){
     var sp=document.getElementById('statProds');
     if(sp && prods.length) sp.textContent=prods.length;
   }).catch(function(e){
-    if(res) res.innerHTML='<div class="url-status url-err">❌ Sin conexión al catálogo — '+e.message+'</div>';
+    if(res) res.innerHTML='<div class="url-status url-err">❌ Sin conexión al catálogo — '+venAdmEsc(e.message||'')+'</div>';
   });
 }
 
@@ -4849,7 +4863,7 @@ function testVentasManzano(){
       var gen=json.generado?json.generado.slice(0,10):'—';
       if(res) res.innerHTML='<div class="url-status url-ok">✅ Ventas activas — '+n+' registros · generado '+gen+'</div>';
     }).catch(function(e){
-      if(res) res.innerHTML='<div class="url-status url-err">❌ Sin conexión a ventas — '+e.message+'</div>';
+      if(res) res.innerHTML='<div class="url-status url-err">❌ Sin conexión a ventas — '+venAdmEsc(e.message||'')+'</div>';
     });
 }
 
@@ -5865,7 +5879,7 @@ function cargarAuditLog(){
           '<span style="color:var(--gris);font-size:10px;white-space:nowrap">'+venAdmEsc(x.fecha||'')+'</span>'+
         '</div>';
       }).join('');
-    }).catch(function(e){ el.innerHTML='<div style="font-size:11px;color:#dc2626">Error: '+e.message+'</div>'; });
+    }).catch(function(e){ el.innerHTML='<div style="font-size:11px;color:#dc2626">Error: '+venAdmEsc(e.message||'')+'</div>'; });
 }
 
 // ── TOAST ────────────────────────────────────────────
@@ -6208,7 +6222,7 @@ function adminResetCorrelativoManual(){
   res.innerHTML = '<div style="font-size:12px;color:#6b7280">Reseteando...</div>';
   if(typeof resetearCorrelativo === 'function'){
     resetearCorrelativo(desde, function(err){
-      if(err){ res.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:12px;color:#991b1b">Error: '+err.message+'</div>'; return; }
+      if(err){ res.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:12px;color:#991b1b">Error: '+venAdmEsc(err.message||'')+'</div>'; return; }
       res.innerHTML = '<div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px;font-size:12px;color:#166534">✅ Correlativo reseteado. El próximo N° de cotización será <b>'+desde+'</b>.</div>';
       toast('Correlativo reseteado desde '+desde,'ok');
     });
@@ -6377,7 +6391,7 @@ function adminCuponesHuerfanosCargar() {
       adminCuponesHuerfanosRenderizar();
     })
     .catch(function(e) {
-      if (lista) lista.innerHTML = '<p style="color:#dc2626;font-size:13px">Error al cargar: ' + (e.message||'') + '</p>';
+      if (lista) lista.innerHTML = '<p style="color:#dc2626;font-size:13px">Error al cargar: ' + venAdmEsc(e.message||'') + '</p>';
     });
 }
 
@@ -6487,13 +6501,13 @@ function sesionesAdminRenderizar() {
           ? '<span class="badge badge-verde">✅ Activo</span>'
           : '<span class="badge badge-rojo">🔒 Cerrado</span>';
         return '<tr>'+
-          '<td><b>'+(d.nombre||d.uid||'?')+'</b></td>'+
-          '<td>'+(d.dispositivo||d.device||'—')+'</td>'+
+          '<td><b>'+venAdmEsc(d.nombre||d.uid||'?')+'</b></td>'+
+          '<td>'+venAdmEsc(d.dispositivo||d.device||'—')+'</td>'+
           '<td>'+(mins<1?'<1':mins)+' min atrás</td>'+
           '<td>'+estado+'</td>'+
           '<td>'+
             (activo
-              ? '<button class="btn btn-danger btn-sm" onclick="adminCerrarSesionUid(\''+s.id+'\',\''+s.data.nombre+'\',this)">🔒 Cerrar sesión</button>'
+              ? '<button class="btn btn-danger btn-sm" onclick="adminCerrarSesionUid(\''+venAdmEsc(s.id).replace(/\'/g,"&#39;")+'\',\''+venAdmEsc(s.data.nombre||'').replace(/\'/g,"&#39;")+'\',this)">🔒 Cerrar sesión</button>'
               : '—')+
           '</td>'+
         '</tr>';
@@ -9667,7 +9681,7 @@ function vadmRenderMerma(){
     })
     .catch(function(e){
       _vadmMermaLoading=false;
-      bd.innerHTML='<div class="ven-adm-empty">merma.json no disponible — ejecuta ACTUALIZAR_TODO.bat para generarlo ('+e.message+')</div>';
+      bd.innerHTML='<div class="ven-adm-empty">merma.json no disponible — ejecuta ACTUALIZAR_TODO.bat para generarlo ('+venAdmEsc(e.message||'')+')</div>';
     });
 }
 

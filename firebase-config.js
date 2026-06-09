@@ -6,6 +6,8 @@
 var db   = null;
 var auth = null;   // Firebase Auth — Bloque C/D/E
 
+// La API key de Firebase es pública por diseño — la seguridad real recae en firestore.rules
+// Ver: https://firebase.google.com/docs/projects/api-keys
 var firebaseConfig = {
   apiKey:            "AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ",
   authDomain:        "ferreteria-oviedo.firebaseapp.com",
@@ -443,7 +445,9 @@ function apiGet(params, cb) {
       .then(function(snap){ var r=[]; snap.forEach(function(d){ r.push(d.data()); }); cb(null,r); })
       .catch(function(e){ cb(e,null); });
   } else if (action === 'getCotizaciones') {
-    db.collection('cotizaciones').orderBy('ts','desc').limit(parseInt(params.limit)||100).get()
+    var lim = parseInt(params.limit) || 100;
+    if (isNaN(lim) || lim < 1 || lim > 1000) lim = 100;
+    db.collection('cotizaciones').orderBy('ts','desc').limit(lim).get()
       .then(function(snap){ var r=[]; snap.forEach(function(d){ r.push(d.data()); }); cb(null,r); })
       .catch(function(e){ cb(e,null); });
   } else {

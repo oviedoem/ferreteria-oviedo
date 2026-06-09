@@ -62,10 +62,11 @@ service cloud.firestore {
     }
 
     // ── SESIONES LOG ──────────────────────────────────────────
+    // docId = uid + '_' + deviceId — solo el propio usuario actualiza su log
     match /sesionesLog/{docId} {
       allow read: if esAdmin();
       allow create: if estaAutenticado();
-      allow update: if esAdmin() || estaAutenticado();
+      allow update: if esAdmin() || (estaAutenticado() && resource.data.uid == request.auth.uid);
     }
 
     // ── AUDIT LOG ─────────────────────────────────────────────

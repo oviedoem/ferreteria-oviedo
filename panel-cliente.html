@@ -1063,6 +1063,8 @@ var carrito     = [];
 window._waNumEmpresa  = '56938623488'; // número empresa — se actualiza desde Firestore
 window._mostrarPrecio = false;         // precios ocultos por defecto — admin activa manualmente
 
+function _cliEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
 // ── Rate limiting login cliente ───────────────────────────────────────────────
 var _CLI_MAX_INTENTOS = 5;
 var _CLI_BLOQUEO_MS   = 10 * 60 * 1000; // 10 minutos
@@ -1891,7 +1893,7 @@ function renderProductos(){
     return;
   }
   list.innerHTML = filtrados.slice(0,40).map(function(p){
-    var safeCod = p.Codigo.replace(/'/g,"\\'");
+    var safeCod = _cliEsc(p.Codigo).replace(/&#39;/g,"'").replace(/'/g,"&#39;");
     var sk = p.Stock||0;
     var stockHtml = sk>10
       ? '<span class="stock-badge stock-ok">🟢 STOCK: '+sk+'</span>'
@@ -1906,16 +1908,16 @@ function renderProductos(){
       : '<button class="precio-consultar-wa" onclick="waConsultarProducto(\''+safeCod+'\')">💬 Consultar precio</button>';
     return '<div class="prod-card">'+
       '<div class="prod-header">'+
-        '<div class="prod-nombre">'+p.Descripcion+'</div>'+
-        '<div class="prod-codigo">'+p.Codigo+'</div>'+
+        '<div class="prod-nombre">'+_cliEsc(p.Descripcion)+'</div>'+
+        '<div class="prod-codigo">'+_cliEsc(p.Codigo)+'</div>'+
       '</div>'+
-      '<div class="prod-marca">'+(p.Marca||'')+(p.SubFamilia?' · '+p.SubFamilia:'')+' '+stockHtml+'</div>'+
+      '<div class="prod-marca">'+_cliEsc(p.Marca||'')+(p.SubFamilia?' · '+_cliEsc(p.SubFamilia):'')+' '+stockHtml+'</div>'+
       '<div class="prod-bottom">'+
         precioHtml+
         '<div class="prod-actions">'+
           '<div class="qty-wrap">'+
             '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',-1)">−</button>'+
-            '<span class="qty-val" id="qty_'+safeCod+'">1</span>'+
+            '<span class="qty-val" id="qty_'+_cliEsc(p.Codigo)+'">1</span>'+
             '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',1)">+</button>'+
           '</div>'+
           '<button class="btn-add" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
@@ -3191,8 +3193,8 @@ function renderAdminCli(){
       '<button onclick="cliDelUser('+i+')" style="background:#fee2e2;color:#c62828;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">🗑</button> '+
       '<button onclick="cliToggleBlock('+i+')" style="background:#fef3c7;color:#d97706;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">'+(u.estado==='bloqueado'?'✅':'🚫')+'</button>' : '—';
     rows += '<tr style="border-bottom:1px solid #f3f4f6">'+
-      '<td style="padding:8px 6px;font-size:12px;font-weight:600">'+u.user+'</td>'+
-      '<td style="padding:8px 6px;font-size:12px">'+u.nombre+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px;font-weight:600">'+_cliEsc(u.user)+'</td>'+
+      '<td style="padding:8px 6px;font-size:12px">'+_cliEsc(u.nombre)+'</td>'+
       '<td style="padding:8px 6px;font-size:12px;color:'+licCol+'">'+licTxt+'</td>'+
       '<td style="padding:8px 6px;font-size:12px">'+estTxt+'</td>'+
       '<td style="padding:8px 6px">'+btns+'</td>'+
