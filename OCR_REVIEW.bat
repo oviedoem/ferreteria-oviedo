@@ -16,6 +16,23 @@ if exist "E:\nodejs-portable\node.exe" (
     set PATH=E:\nodejs-portable;E:\npm-global;%PATH%
 )
 
+:: ============================================================
+:: TOKEN -- leer desde E:\config\anthropic-ocr.key (nunca C:)
+:: ============================================================
+if not exist "E:\config\anthropic-ocr.key" (
+    echo.
+    echo [ERROR] No se encontro E:\config\anthropic-ocr.key
+    echo Crear el archivo con una sola linea: tu API key de Anthropic
+    echo Ejemplo:  echo sk-ant-XXXXXXXX ^> E:\config\anthropic-ocr.key
+    echo.
+    pause
+    exit /b 1
+)
+set /p OCR_LLM_TOKEN=<"E:\config\anthropic-ocr.key"
+set OCR_LLM_URL=https://api.anthropic.com/v1/messages
+set OCR_LLM_MODEL=claude-sonnet-4-6
+set OCR_NO_UPDATE=1
+
 :: Verificar que ocr este disponible
 where ocr >nul 2>&1
 if errorlevel 1 (
