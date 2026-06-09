@@ -1,4 +1,5 @@
-[
+{
+  "rules": [
   {
     "id": "FO-001",
     "name": "Archivos prohibidos intocables",
@@ -111,4 +112,5 @@
     "filePattern": "sw\\.js",
     "check": "Si se modifico la logica de precacheo, version de cache o la lista de archivos criticos en sw.js, revisar que el CACHE_NAME fue actualizado y que panel-admin.html/panel-cliente.html siguen en el precache."
   }
-]
+  ]
+}
