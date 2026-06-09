@@ -1893,7 +1893,9 @@ function renderProductos(){
     return;
   }
   list.innerHTML = filtrados.slice(0,40).map(function(p){
-    var safeCod = _cliEsc(p.Codigo);
+    var rawCod  = p.Codigo;
+    var jsCod   = rawCod.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var safeCod = _cliEsc(rawCod);
     var sk = p.Stock||0;
     var stockHtml = sk>10
       ? '<span class="stock-badge stock-ok">🟢 STOCK: '+sk+'</span>'
@@ -1905,7 +1907,7 @@ function renderProductos(){
           '<div class="precio-label">Precio IVA incl.</div>'+
           '<div class="precio-val">'+fmt(p.PrecioIVA)+'</div>'+
         '</div>'
-      : '<button class="precio-consultar-wa" onclick="waConsultarProducto(\''+safeCod+'\')">💬 Consultar precio</button>';
+      : '<button class="precio-consultar-wa" onclick="waConsultarProducto(\''+jsCod+'\')">💬 Consultar precio</button>';
     return '<div class="prod-card">'+
       '<div class="prod-header">'+
         '<div class="prod-nombre">'+_cliEsc(p.Descripcion)+'</div>'+
@@ -1916,11 +1918,11 @@ function renderProductos(){
         precioHtml+
         '<div class="prod-actions">'+
           '<div class="qty-wrap">'+
-            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',-1)">−</button>'+
-            '<span class="qty-val" id="qty_'+safeCod+'">1</span>'+
-            '<button class="qty-btn" onclick="chgQty(\''+safeCod+'\',1)">+</button>'+
+            '<button class="qty-btn" onclick="chgQty(\''+jsCod+'\',-1)">−</button>'+
+            '<span class="qty-val" id="qty_'+rawCod+'">1</span>'+
+            '<button class="qty-btn" onclick="chgQty(\''+jsCod+'\',1)">+</button>'+
           '</div>'+
-          '<button class="btn-add" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
+          '<button class="btn-add" onclick="addCart(\''+jsCod+'\')">+ Agregar</button>'+
         '</div>'+
       '</div>'+
     '</div>';

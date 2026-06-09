@@ -6507,7 +6507,7 @@ function sesionesAdminRenderizar() {
           '<td>'+estado+'</td>'+
           '<td>'+
             (activo
-              ? '<button class="btn btn-danger btn-sm" onclick="adminCerrarSesionUid(\''+venAdmEsc(s.id).replace(/\'/g,"&#39;")+'\',\''+venAdmEsc(s.data.nombre||'').replace(/\'/g,"&#39;")+'\',this)">🔒 Cerrar sesión</button>'
+              ? '<button class="btn btn-danger btn-sm" onclick="adminCerrarSesionUid(\''+venAdmEsc(s.id)+'\',\''+venAdmEsc(s.data.nombre||'')+'\',this)">🔒 Cerrar sesión</button>'
               : '—')+
           '</td>'+
         '</tr>';
