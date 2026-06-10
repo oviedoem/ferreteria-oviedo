@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.23 · Última actualización: 2026-06-10
+# Versión activa: V37.23 · Última actualización: 2026-06-10 (herramientas seguridad v3)
 
 ---
 
@@ -71,6 +71,11 @@ SQL Server [SQL-SERVER-IP] sincroniza con JustWeb **una sola vez al día a las 2
 - descargar_bod.py / descargar_pedidos.py / descargar_despachos.py / leer_xlsm.py → Solo tras 22:00
 
 **Respuesta estándar:** "Los datos de despachos/pedidos/bodegas vienen del Servidor 2 que sincroniza a las 22:00."
+
+### VPN — Cuándo usar
+- **Cable directo a la red de la ferretería** → NO requiere VPN. Pipeline corre sin VPN.
+- **WiFi (cualquier red)** → SÍ requiere VPN activa antes de correr el pipeline.
+- La VPN da acceso a [SQL-SERVER-IP] y [ERP-SERVER-IP]. Por cable esa conectividad ya existe.
 
 ---
 
@@ -184,22 +189,29 @@ PIP_CACHE_DIR        = E:\pip-cache
 
 ## EMERGENCIA DISCO E: / W:
 
-**Causa raíz confirmada:** FortiClient Zero Trust retiene handle sobre el volumen USB. Historial: 5 ocurrencias (2026-06-03, 2026-06-04 tarde, 2026-06-04 noche, 2026-06-06, 2026-06-09).
+**Causa raíz confirmada:** `FortiUSBmon.exe` (C:\Users\Ferreteria Oviedo\Desktop\FortiUSBmon.exe)
+re-adhiere FortiShield/fortimon3 al volumen USB inmediatamente al remontar, impidiendo que NTFS monte.
+Historial: 6 ocurrencias (2026-06-03, 2026-06-04 tarde, 2026-06-04 noche, 2026-06-06, 2026-06-09, 2026-06-10).
 
 - 2026-06-06: ocurrencia #4 — pipeline test post-auditoria.
   Code perdio acceso a W:\claude-appdata\ccd-environment-config.json.
   Xlsx ventas quedo en 0 bytes. Eliminado y regenerado.
   Recuperado con USBDeview Disable+Enable.
+- 2026-06-10: ocurrencia #6 — 9 ciclos fallidos del Scheduled Task.
+  Causa raiz identificada: FortiUSBmon.exe re-adheria filtros tras cada intento.
+  Scripts actualizados a v3: Stop-FortiUSBmon + Repair-DirtyBit + contador fallos.
 
-### Opción 0 — Detach Forti del volumen (lo más rápido y quirúrgico) ★
-Quita los minifiltros FortiShield/fortimon3 SOLO de los discos USB; C: queda protegido.
-No pelea con el tamper protection (no toca servicios). Dura hasta reboot o reconexión del USB.
+### Opción 0 — Matar FortiUSBmon + Detach Forti (fix v3 definitivo) ★
 ```powershell
+# Matar FortiUSBmon.exe PRIMERO (sin esto, re-adhiere los filtros al remontar)
+Stop-Process -Name FortiUSBmon -Force -ErrorAction SilentlyContinue
+# Luego desadherir filtros
 foreach ($v in 'E:','W:','F:','L:','M:') { fltmc detach FortiShield $v; fltmc detach fortimon3 $v }
 fltmc instances -v E:   # verificar: no debe listar FortiShield ni fortimon3
 ```
-Esto ya está integrado en REMONTAR_DISCO_E.ps1 v3 (función `Detach-FortiUSB`, corre
-preventivo + post-recuperación), que a su vez lo ejecuta la tarea `AutoRemontarDiscoE` en cada boot.
+Integrado en REMONTAR_DISCO_E.ps1 v3: Stop-FortiUSBmon + Detach-FortiUSB + Repair-DirtyBit
++ contador de fallos (Pause-ScheduledTask tras 3 fallos consecutivos).
+Ejecutado por tarea `AutoRemontarDiscoE` en cada boot.
 
 ### Opción A — Sin scripts (30 seg)
 1. Explorador de Windows → clic derecho disco E: → Expulsar
@@ -252,6 +264,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.21: 2026-06-09 10:22 — fixes OCR segunda ronda: safeCod correcto (rawCod/jsCod/safeCod separados), id usa rawCod, onclick usa jsCod, .replace redundante removido de venAdmEsc ✅
 - Deploy V37.22: 2026-06-09 — tab "Por Recepcionar" en panel admin (GRT/GIB pendientes Editar+Grabar); PASO 1H descargar_recepciones_pendientes.py Playwright→Blazor Intranet; documentado flujo GRT/GIB dos pasos en AGENTS.md ✅
 - Deploy V37.23: 2026-06-10 — OCR fix: sw.js var→const (PRECACHE_ASSETS, CACHE_FIRST_EXTS, BUILD_DATE, CACHE_NAME, url, clone, ext); update-sw-version.js regex ampliado a (?:const|var) + reemplaza con const. Infra: disco F: (USB JMicron) listo para boot alterno — scripts de primer arranque, letras USB, perfil Claude, VPN-only staged ✅
+- Sesion 2026-06-10 tarde: herramientas seguridad v3 — FortiUSBmon.exe (causa raiz #6) documentado; Stop-FortiUSBmon + Repair-DirtyBit + contador fallos en REMONTAR_DISCO_E.ps1 v3; 6 archivos actualizados en D: y W: (M: pendiente, no disponible)
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
