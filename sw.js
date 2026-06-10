@@ -4,11 +4,11 @@
 // BUILD_DATE se actualiza automáticamente al hacer deploy
 // ============================================================
 
-var BUILD_DATE = '2026-06-06 21:58:14'; // ← actualizado por update-sw-version.js
-var CACHE_NAME = 'oviedo-' + BUILD_DATE.replace(/[^0-9]/g,'').slice(0,12);
+const BUILD_DATE = '2026-06-10 12:00:32'; // ← actualizado por update-sw-version.js
+const CACHE_NAME = 'oviedo-' + BUILD_DATE.replace(/[^0-9]/g,'').slice(0,12);
 
 // Assets estáticos que se cachean en instalación (NO incluir HTML)
-var PRECACHE_ASSETS = [
+const PRECACHE_ASSETS = [
   '/firebase-config.js',
   '/logo_oviedo.jpg',
   '/logo_oviedo_white.jpg',
@@ -18,7 +18,7 @@ var PRECACHE_ASSETS = [
 ];
 
 // Extensiones que se sirven desde caché (Cache-First)
-var CACHE_FIRST_EXTS = ['.js', '.css', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.woff', '.woff2', '.ico'];
+const CACHE_FIRST_EXTS = ['.js', '.css', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.woff', '.woff2', '.ico'];
 
 // ── INSTALL: pre-cachear assets estáticos ───────────────────
 self.addEventListener('install', function(event) {
@@ -46,7 +46,7 @@ self.addEventListener('activate', function(event) {
 
 // ── FETCH ──────────────────────────────────────────────────
 self.addEventListener('fetch', function(event) {
-  var url = new URL(event.request.url);
+  const url = new URL(event.request.url);
 
   // Solo manejar GET del mismo origen
   if (event.request.method !== 'GET') return;
@@ -70,7 +70,7 @@ self.addEventListener('fetch', function(event) {
       fetch(event.request).then(function(response) {
         if (response && response.status === 200) {
           // Guardar copia fresca en caché (para offline)
-          var clone = response.clone();
+          const clone = response.clone();
           caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
         }
         return response;
@@ -86,14 +86,14 @@ self.addEventListener('fetch', function(event) {
   }
 
   // ── ASSETS ESTÁTICOS → Cache-First ─────────────────────
-  var ext = url.pathname.substring(url.pathname.lastIndexOf('.')).toLowerCase();
+  const ext = url.pathname.substring(url.pathname.lastIndexOf('.')).toLowerCase();
   if (CACHE_FIRST_EXTS.indexOf(ext) !== -1) {
     event.respondWith(
       caches.match(event.request).then(function(cached) {
         if (cached) return cached;
         return fetch(event.request).then(function(response) {
           if (response && response.status === 200 && response.type === 'basic') {
-            var clone = response.clone();
+            const clone = response.clone();
             caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
           }
           return response;
