@@ -280,6 +280,17 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 
 ---
 
+## REGLA PERMANENTE: DATOS ERP — AISLAMIENTO TOTAL
+
+La carpeta `E:\ferreteria-oviedo\DATOS ERP\` está INCOMPLETA y es solo una prueba.
+Su integración al panel-admin se completará en una sesión separada y dedicada.
+
+- Trabajo actual: siempre desde la raíz `E:\ferreteria-oviedo\` (operativa)
+- Si una tarea menciona DATOS ERP o archivos dentro de esa carpeta → confirmar con el usuario antes de avanzar
+- NUNCA mezclar cambios de DATOS ERP con cambios del panel operativo en el mismo prompt/commit
+
+---
+
 ## REGLA ANTI-CICLO
 
 El ciclo que se repite: se arregla X, se rompe Y que estaba bien.

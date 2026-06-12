@@ -2859,7 +2859,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 <!-- ── ANÁLISIS BODEGAS ── -->
 <div class="tab-pane" id="tab-analisis">
   <div class="card">
-    <div class="card-title"><span>📊</span> Análisis de Bodegas — IEM / RCE / CEM</div>
+    <div class="card-title"><span>📊</span> Análisis de Bodegas — IEM / RCE / CEM / ICD</div>
     <div class="vadm-anal-bar" style="gap:12px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
       <span style="font-size:12px;font-weight:700;color:#374151">Bodega</span>
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
@@ -2870,6 +2870,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       </label>
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
         <input type="checkbox" id="bfChkCEM" checked onchange="vadmRenderBodFem()" style="width:14px;height:14px"> CEM
+      </label>
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="bfChkICD" checked onchange="vadmRenderBodFem()" style="width:14px;height:14px"> ICD
       </label>
       <span style="border-left:1px solid #d1d5db;height:18px"></span>
       <select id="bfTipoDoc" onchange="vadmFiltrarBodFem()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
@@ -3147,7 +3150,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.22<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">09-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.24<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">12-06-2026</span></div>
 
 <script>
 
@@ -15754,6 +15757,8 @@ function vadmRenderBodFem(){
   if(chkIEM&&chkIEM.checked) promesas.push(_f('/data/bod-iem-registros.json'));
   if(chkRCE&&chkRCE.checked) promesas.push(_f('/data/bod-rce-registros.json'));
   if(chkCEM&&chkCEM.checked) promesas.push(_f('/data/bod-cem-registros.json'));
+  var chkICD=document.getElementById('bfChkICD');
+  if(chkICD&&chkICD.checked) promesas.push(_f('/data/bod-icd-registros.json'));
   if(!promesas.length){ _bfDatos=[]; vadmFiltrarBodFem(); return; }
   Promise.all(promesas)
     .then(function(res){
@@ -15811,7 +15816,7 @@ function vadmFiltrarBodFem(){
       bk[b].val+=(r.fisico!=null?r.fisico:(r.disp||0))*(r.costo||0);
       bk[b].old=Math.max(bk[b].old,r.diasAntiguedad||0);
     });
-    var BC={'IEM':'background:#eff6ff;color:#1e40af','RCE':'background:#dcfce7;color:#166534','CEM':'background:#fef3c7;color:#92400e'};
+    var BC={'IEM':'background:#eff6ff;color:#1e40af','RCE':'background:#dcfce7;color:#166534','CEM':'background:#fef3c7;color:#92400e','ICD':'background:#f5f3ff;color:#5b21b6'};
     var tV=fil.reduce(function(a,r){ return a+(r.fisico!=null?r.fisico:(r.disp||0))*(r.costo||0); },0);
     var kh=Object.keys(bk).sort().map(function(b){
       var c=BC[b]||'background:#f3f4f6;color:#374151';
