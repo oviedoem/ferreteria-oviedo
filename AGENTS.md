@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.23 · Última actualización: 2026-06-10 (herramientas seguridad v3)
+# Versión activa: V37.24 · Última actualización: 2026-06-13
 
 ---
 
@@ -264,12 +264,16 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 - Deploy V37.21: 2026-06-09 10:22 — fixes OCR segunda ronda: safeCod correcto (rawCod/jsCod/safeCod separados), id usa rawCod, onclick usa jsCod, .replace redundante removido de venAdmEsc ✅
 - Deploy V37.22: 2026-06-09 — tab "Por Recepcionar" en panel admin (GRT/GIB pendientes Editar+Grabar); PASO 1H descargar_recepciones_pendientes.py Playwright→Blazor Intranet; documentado flujo GRT/GIB dos pasos en AGENTS.md ✅
 - Deploy V37.23: 2026-06-10 — OCR fix: sw.js var→const (PRECACHE_ASSETS, CACHE_FIRST_EXTS, BUILD_DATE, CACHE_NAME, url, clone, ext); update-sw-version.js regex ampliado a (?:const|var) + reemplaza con const. Infra: disco F: (USB JMicron) listo para boot alterno — scripts de primer arranque, letras USB, perfil Claude, VPN-only staged ✅
+- Deploy V37.24: 2026-06-12 — bodega ICD (Ingreso CD, IDBODEGA=73, SUC=08) agregada al tab Análisis de Bodegas; descargar_bod.py parametrizado (IDSUCURSAL como 4to arg en BODEGAS tuple); IDS_REFERENCIA.md creado con todos los IDs SQL/ERP/SSRS verificados ✅
 - Sesion 2026-06-10 tarde: herramientas seguridad v3 — FortiUSBmon.exe (causa raiz #6) documentado; Stop-FortiUSBmon + Repair-DirtyBit + contador fallos en REMONTAR_DISCO_E.ps1 v3; 6 archivos actualizados en D: y W: (M: pendiente, no disponible)
 - Sesion 2026-06-06 mejoras adicionales:
   launch.json creado para Claude Code.
   LIBERAR_CLAUDE_RAM.bat — cierra Claude Desktop, preserva Claude Code.
   Justime Regsvr32 fix — /s agregado en 12 archivos bat (System32 + SysWOW64).
   Backups .bak-20260606 generados. Dialogos al abrir Claude eliminados.
+
+- Sesion 2026-06-12 madrugada (DATOS ERP): descargar_despachos_erp.py Blazor IdMenu=377 (NUEVO); fusionar_despachos.py ERP+SQL→despachos-panel.json (NUEVO); erp_ventas_dia_hora.py SSRS Ventas_Dia_Hora 998 docs OK; erp_documentos_dia.py 3 bugs corregidos (select2=cobrador, checkbox1=cancelados, Fecha explícita); TOKEN_B→credenciales_erp.ini; ACTUALIZAR_TODO.bat pasos 1I+1J; ACTUALIZAR_ERP.bat paso [VH]. Sin integración panel-admin (sesión dedicada pendiente).
+- Sesion 2026-06-13 (DATOS ERP): erp_ventas_producto.py NUEVO (Ventas Por Producto tipo=2 + Ventas Por Cliente-Producto tipo=4, incremental, HTTP+Playwright fallback, ventas-manzano-YYYY.json); erp_documentos_dia.py DEPRECADO (header cambiado, conservado como referencia); ACTUALIZAR_ERP.bat orden EC→OC→VH→VP (DD eliminado); pipeline-datos-erp.html Flujo3 tachado DEPRECADO + Flujo7 VP completo.
 
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 

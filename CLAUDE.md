@@ -56,6 +56,18 @@ Un prompt = una función tocada. Si el fix requiere 2 funciones → dos prompts 
 
 **W: y E: son el mismo USB físico.** Si se desconecta: Explorador → clic derecho E: → Expulsar → remontar.
 
+### FortiShield bloquea los discos USB (causa de desconexiones)
+`FortiShield` + `fortimon3` (minifiltros FSFilter) retienen handles sobre los volúmenes USB
+y los bloquean tras una desconexión abrupta. Fix rápido y quirúrgico — desadherir solo de los
+USB (C: queda protegido, no toca servicios → no pelea con tamper protection):
+```powershell
+foreach ($v in 'E:','W:','F:','L:','M:') { fltmc detach FortiShield $v; fltmc detach fortimon3 $v }
+```
+Dura hasta reboot o reconexión del USB. Ya integrado en `REMONTAR_DISCO_E.ps1` v3
+(función `Detach-FortiUSB`) → lo corre la tarea `AutoRemontarDiscoE` en cada boot.
+Script v3 en 3 copias sincronizadas: `W:\herramientas\seguridad\` · `D:\` · `M:\herramientas\seguridad\`.
+Detalle completo en AGENTS.md → "EMERGENCIA DISCO E: / W:".
+
 ---
 
 ## OPEN CODE REVIEW (OCR)
