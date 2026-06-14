@@ -15445,7 +15445,16 @@ function _reqStockPoblarMarcas(){
   });
 }
 
+var _reqStockParams = null;  // {codigo:{min,max,critico,repo,disp}} desde stock-critico.json (parametros ERP / Adquisiciones)
 function reqStockPrellenar(){
+  // Cargar parametros ERP (ST_MIN/ST_MAX/ST_REPOSICION desde SQL) una vez, luego re-ejecutar
+  if(_reqStockParams === null){
+    fetch('/data/stock-critico.json?t='+Math.floor(Date.now()/3600000))
+      .then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(j){ _reqStockParams = (j && j.productos) || {}; reqStockPrellenar(); })
+      .catch(function(){ _reqStockParams = {}; reqStockPrellenar(); });
+    return;
+  }
   var desde    = document.getElementById('reqDesde').value;
   var hasta    = document.getElementById('reqHasta').value;
   var dias     = parseInt(document.getElementById('reqDias').value) || 90;
@@ -15525,15 +15534,17 @@ function reqStockPrellenar(){
     return true;
   })
 
-  // ── 4. Calcular métricas ──
+  // ── 4. Métricas: Mínimo/Reposición = parámetros ERP (R_STOCK_PRODUCTOS), misma lógica del ERP ──
+  // NO se calcula por velocidad de venta. 0 = producto sin parámetros configurados por Adquisiciones.
   .map(function(cod){
-    var p           = _vadmStockMap[cod] || {};
-    var qty         = qtyMap[cod];
-    var vel         = qty / diasRango;
-    var minimoActual = Math.round(vel * dias);
+    var p            = _vadmStockMap[cod] || {};
+    var qty          = qtyMap[cod];
+    var erp          = _reqStockParams[cod] || {};
+    var minimoActual = erp.min  || 0;   // ERP ST_MIN
+    var reposicion   = erp.repo || 0;   // ERP ST_REPOSICION
     var transito     = (p.pem_trans || 0) + (p.tem_trans || 0);
-    var stockActual  = (p.pem || 0) + (p.sem || 0);
-    var reposicion   = Math.max(0, minimoActual - stockActual - transito);
+    // Stock actual = bodegas comerciales (vendibles) PEM+SEM+CEM+MEM. Excluye IEM/RCE/TEM/CD (recepcion/transito).
+    var stockActual  = (p.pem || 0) + (p.sem || 0) + (p.cem || 0) + (p.mem || 0);
     return { cod:cod, desc:p.desc||cod, marca:p.marca||'', abc:abcMap[cod]||'C',
              qty:qty, minimoActual:minimoActual, transito:transito,
              stockActual:stockActual, reposicion:reposicion };

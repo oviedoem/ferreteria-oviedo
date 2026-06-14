@@ -118,7 +118,7 @@ NO TOCO:     [lista explícita con razón de cada una]
 [ ] No se hardcodeó ningún valor que venga de datos reales
 [ ] No se renombró ninguna función pública
 [ ] window._mostrarPrecio = false sigue siendo default en panel-cliente.html
-[ ] xlsm-enrich.json sigue siendo generado por leer_xlsm.py (no por main.py)
+[ ] xlsm-enrich.json generado por descargar_ventas_enrich.py (SQL) o leer_xlsm.py (fallback), NUNCA main.py
 [ ] _catalogo_generado_hoy() no fue revertida a _actualizar_xlsx_es_hoy()
 [ ] ventas-manzano.json sigue siendo generado por guardar_json() en main.py
 [ ] Subquery ULT en descargar_bod.py tiene WHERE IDBODEGA=? antes del GROUP BY
@@ -272,8 +272,7 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
   Justime Regsvr32 fix — /s agregado en 12 archivos bat (System32 + SysWOW64).
   Backups .bak-20260606 generados. Dialogos al abrir Claude eliminados.
 
-- Sesion 2026-06-12 madrugada (DATOS ERP): descargar_despachos_erp.py Blazor IdMenu=377 (NUEVO); fusionar_despachos.py ERP+SQL→despachos-panel.json (NUEVO); erp_ventas_dia_hora.py SSRS Ventas_Dia_Hora 998 docs OK; erp_documentos_dia.py 3 bugs corregidos (select2=cobrador, checkbox1=cancelados, Fecha explícita); TOKEN_B→credenciales_erp.ini; ACTUALIZAR_TODO.bat pasos 1I+1J; ACTUALIZAR_ERP.bat paso [VH]. Sin integración panel-admin (sesión dedicada pendiente).
-- Sesion 2026-06-13 (DATOS ERP): erp_ventas_producto.py NUEVO (Ventas Por Producto tipo=2 + Ventas Por Cliente-Producto tipo=4, incremental, HTTP+Playwright fallback, ventas-manzano-YYYY.json); erp_documentos_dia.py DEPRECADO (header cambiado, conservado como referencia); ACTUALIZAR_ERP.bat orden EC→OC→VH→VP (DD eliminado); pipeline-datos-erp.html Flujo3 tachado DEPRECADO + Flujo7 VP completo.
+- Sesiones 2026-06-12 y 2026-06-13: pipeline descarga ERP — completado en proyecto separado.
 
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
@@ -284,16 +283,6 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 
 ---
 
-## REGLA PERMANENTE: DATOS ERP — AISLAMIENTO TOTAL
-
-La carpeta `E:\ferreteria-oviedo\DATOS ERP\` está INCOMPLETA y es solo una prueba.
-Su integración al panel-admin se completará en una sesión separada y dedicada.
-
-- Trabajo actual: siempre desde la raíz `E:\ferreteria-oviedo\` (operativa)
-- Si una tarea menciona DATOS ERP o archivos dentro de esa carpeta → confirmar con el usuario antes de avanzar
-- NUNCA mezclar cambios de DATOS ERP con cambios del panel operativo en el mismo prompt/commit
-
----
 
 ## REGLA ANTI-CICLO
 
@@ -325,8 +314,8 @@ e. Si hay duda, detenerse y reportar antes de continuar.
 
 - **CATALOGO PRODUCTOS\Datos.xlsx** → MASTER del catálogo. Si se corrompe, regenerar con seed (ver _HISTORICO\20260604_AGENTS_completo.md → sección REGENERACIÓN COMPLETA SEGURA).
 - **ventas-manzano.json** → NECESARIO: el panel lo usa como fallback en 4 puntos. NO eliminar.
-- **credenciales_db.ini** → NUNCA tocar ni leer en voz alta
-- **credenciales_erp.ini** → NUNCA tocar ni leer en voz alta
+- **credenciales_db.ini** → NUNCA tocar ni leer en voz alta (SQL Server, en raíz del proyecto)
+- **credenciales_erp.ini** → NUNCA tocar (copias en VENTAS EL MANZANO\ y CATALOGO PRODUCTOS\scripts\, gitignored por nombre)
 - **E:\git-sync\** → NUNCA modificar directamente
 
 ### REGENERACIÓN COMPLETA SEGURA — qué SÍ y qué NO eliminar:
@@ -402,13 +391,18 @@ grep "D:\\ferreteria-oviedo" panel-admin.html → debe dar 0
 ```
 [PASO 1A] descargar_erp.py → actualizar.xlsx (precios + stock SSRS 8 bodegas, 2 bloques, 23 cols)
 [PASO 1B] procesar-actualizacion.py + xlsx_a_csv.py + csv_a_json.py → Datos.json + catalogo-dinamico.json
-[PASO 1C] leer_xlsm.py → xlsm-enrich.json
+[PASO 1C] leer_xlsm.py → ventas-xlsm-*.json + ranking-unidades.json + precios-diff.json
+          (+ xlsm-enrich.json como FALLBACK — el primario lo genera PASO 1K desde SQL)
 [PASO 1D] descargar_bod.py (BODEGAS/) → bod-iem-registros.json + bod-rce-registros.json + bod-cem-registros.json
           SQL Server directo — IEM=72, RCE=55, CEM=24
 [PASO 1E] descargar_pedidos.py (BODEGAS/) → pedidos-comprometidos.json + pedidos-detalle.json
           Fuente: R_STOCK_PRODUCTOS.ST_PEDIDO · Tipos: NVM/VMN/VMP
 [PASO 1F] descargar_despachos.py (BODEGAS/) → despachos-comprometidos.json + despachos-detalle.json
           Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0
+[PASO 1K] descargar_ventas_enrich.py (BODEGAS/) → xlsm-enrich.json (PRIMARIO, V37.25)
+          SQL Server directo — M_DOCUMENTOS_ENCABEZADO + M_ENTIDADES + Observacion
+          Docs BVE/FVE/NCE suc 04 → rut/sector/razonSocial · reemplaza VENTAS.xlsm manual
+          (en ACTUALIZAR_TODO_AUTO.bat es PASO 1J; corre siempre ANTES de main.py)
 [PASO 2]  main.py --sin-deploy
           PASO 1: _catalogo_generado_hoy()? SI → leer_bodegas_desde_actualizar (3s) / NO → HTTP (~70s)
           PASO 2: descargar_ventas_erp.py incremental (dedup por Numero+Codigo)
@@ -443,13 +437,13 @@ BATs archivados en `_HISTORICO\` — NO ejecutar:
 ```
 firebase-config.js             — no modificar nunca desde panel HTML
 window._mostrarPrecio          — default SIEMPRE false en panel-cliente.html
-credenciales_erp.ini           — nunca tocar, nunca subir a git
 credenciales_db.ini            — nunca tocar, nunca subir a git
+credenciales_erp.ini           — nunca tocar, nunca subir a git (en VENTAS EL MANZANO\ y CATALOGO PRODUCTOS\scripts\)
 E:\git-sync\                   — nunca trabajar aquí directamente
 venAdmParseFecha()             — no cambiar firma ni comportamiento
 venAdmFmt()                    — no cambiar firma
 _actualizar_xlsx_es_hoy()      — ELIMINADA en V36.5, no restaurar
-xlsm-enrich.json               — solo leer_xlsm.py lo genera, nadie más
+xlsm-enrich.json               — lo genera descargar_ventas_enrich.py (SQL, primario, V37.25) o leer_xlsm.py (XLSM, fallback); NUNCA main.py
 ```
 
 ---
@@ -480,7 +474,8 @@ vadmSSMarcaClick(el)     Usa data-marca del HTML. NUNCA string en onclick.
 Sidebar HTML             Que grupos siguen colapsando correctamente.
 onclick=""               NUNCA usar JSON.stringify — rompe con comillas.
 venAdmParseFecha         Utility global en TODOS los tabs. No modificar firma.
-leer_xlsm.py             Debe seguir generando xlsm-enrich.json al final.
+descargar_ventas_enrich.py Genera xlsm-enrich.json desde SQL (primario). Debe correr ANTES de main.py.
+leer_xlsm.py             Genera ventas-xlsm-*.json + ranking + precios. xlsm-enrich.json = fallback si SQL falla.
 enriquecer_desde_xlsm() Debe correr DESPUÉS de consolidar() y ANTES de guardar_json().
 _catalogo_generado_hoy() Verifica catalogo-dinamico.json mtime — no revertir.
 descargar_bod.py         Subquery ULT: WHERE IDBODEGA=? ANTES del GROUP BY.
@@ -708,7 +703,7 @@ Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
 [ ] No se hardcodeó ningún valor que debe venir de datos reales
 [ ] No se renombró ninguna función pública
 [ ] window._mostrarPrecio = false en panel-cliente.html
-[ ] xlsm-enrich.json sigue siendo generado por leer_xlsm.py (no main.py)
+[ ] xlsm-enrich.json generado por descargar_ventas_enrich.py (SQL) o leer_xlsm.py (fallback), NUNCA main.py
 [ ] _catalogo_generado_hoy() no fue revertida
 [ ] ventas-manzano.json sigue siendo generado por guardar_json() en main.py
 [ ] Subquery ULT en descargar_bod.py tiene WHERE IDBODEGA=? antes del GROUP BY
@@ -885,3 +880,79 @@ REM Debe mostrar: Source: OCR config file / URL: .../v1/messages / Model: claude
 *AGENTS.md consolidado 2026-06-07*
 *Historial completo pre-junio: _HISTORICO\20260604_AGENTS_completo.md*
 *Para actualizar: editar directamente este archivo al cierre de cada sesión.*
+
+---
+
+## HISTORIAL SESIÓN 2026-06-13 — V37.25 fix pipeline + skills
+
+### Diagnóstico
+- Pipeline automático (AutoUpdate18:00) NO existía en Task Scheduler — sin ejecución automática desde 2026-06-09
+- Pipeline manual (ACTUALIZAR_TODO.bat) corrió a las 3:10-3:15 AM — todos los JSONs actualizados
+- `recepciones-pendientes.json = []` — correcto: 0 anomalías Dif<0 en informe-stock confirmadas
+- `sector/rut/razonSocial` ausentes en VENTAS EL MANZANO: VENTAS.xlsm desactualizado desde 2026-05-17
+  - xlsm-enrich.json tiene datos hasta numero 1.069.494 (mayo), ventas junio > 1.080.000 → 0 matches
+  - FIX REQUERIDO: actualizar VENTAS.xlsm manualmente desde servidor, luego re-correr pipeline
+
+### Cambios realizados
+- `BODEGAS\descargar_blazor_bodegas.py`:
+  - Eliminada referencia a `E:\datos-erp\` en `_CRED_PATHS` (carpeta independiente/test)
+  - Corregida URL de navegación: `/?Token=...&IdMenu=377` → `Central.aspx?IdMenu=377`
+  - Estrategia token-directo: prueba Token URL sin form login previo (investigando)
+  - `ACTUALIZAR_TODO_AUTO.bat`: PASO 1H (descargar_blazor_bodegas.py) + PASO 1I (fusionar_despachos.py) añadidos
+
+### Skills creados (costo $0)
+- `.claude/commands/ahorro-tokens.md` — compresión de contexto
+- `.claude/commands/revisar-codigo.md` — revisión código vs 14 reglas FO-001 a FO-014, sin API externa
+
+### MIGRACIÓN xlsm-enrich.json: VENTAS.xlsm manual → SQL Server (RESUELTO)
+Causa raíz del `sector/rut/razonSocial` ausente: los 3 XLSM manuales (VENTAS 27d, RANKING 17d,
+PRECIOS 27d) estaban desactualizados. Investigación confirmó que TODOS los campos están en SQL:
+- `RAZON_SOCIAL`, `RUT` → `M_ENTIDADES` (ya usado en descargar_despachos.py)
+- `OBSERVACION_IMPRESA` (sector) → `M_Documentos_Encabezado_Observacion` (ya usado en descargar_bod.py)
+- La descarga ERP web (Reporte_VentasPorVendedor.asp) NO trae estas columnas (solo 3 tipos: 1/2/4)
+
+**Nuevo script `BODEGAS\descargar_ventas_enrich.py` (V1.0):**
+- Genera xlsm-enrich.json desde SQL — docs BVE/FVE/NCE suc 04, índice por NUMERO
+- Reutiliza `_extraer_sector` + `_SECTOR_DISPLAY` de leer_xlsm.py (fuente única del sector)
+- Validado: BVE+FVE+NCE = 100% de los números de ventas-manzano junio (1086/1086)
+- Resultado tras re-correr main.py: rut 0%→100%, razonSocial 0%→100%, sector 0%→11.5% (todos los meses 2026)
+- Integrado: PASO 1K en ACTUALIZAR_TODO.bat / PASO 1J en ACTUALIZAR_TODO_AUTO.bat (antes de main.py)
+- leer_xlsm.py NO modificado: sigue generando ventas-xlsm/ranking/precios; su xlsm-enrich queda como fallback
+- Limitación: SQL sincroniza 22:00 → enriquecimiento con ≤1 día retraso (igual que bod/pedidos/despachos)
+
+### SOLICITUD SEMANAL DE STOCK — Mínimo/Reposición desde ERP (SQL) 2026-06-14
+Antes el tab `adquisiciones` (reqStockPrellenar) CALCULABA Mínimo/Reposición por velocidad de venta
+(qty/díasRango × cobertura). El usuario pidió usar la MISMA LÓGICA del ERP y quitar el cálculo de velocidad.
+- **Dónde vive el dato:** `R_STOCK_PRODUCTOS.ST_MIN/ST_MAX/ST_CRITICO/ST_REPOSICION` (por bodega, SQL). NO está en M_PRODUCTOS (todo 0) ni P_PRODUCTOS_CRITERIOS (vacía).
+- **Cobertura:** solo ~3.6% (1471 productos) — PEM ~10%, SEM ~11%, CEM/MEM 0%. Lo llena Adquisiciones de a poco. Productos sin configurar → 0.
+- **Nuevo script** `BODEGAS\descargar_stock_critico.py` → `data/stock-critico.json` ({codigo:{min,max,critico,repo,disp}} sumado comerciales). PASO 1L en ambos bats.
+- **panel-admin.html reqStockPrellenar():** Mínimo actual = ERP ST_MIN, Reposición actual = ERP ST_REPOSICION (vía `_reqStockParams` de stock-critico.json). Quitado `vel = qty/diasRango; minimoActual = vel*dias`.
+- **Stock actual:** ahora PEM+SEM+CEM+MEM (antes solo PEM+SEM). Excluye IEM/RCE/TEM/CD (recepción/tránsito).
+- Vta últimos 2 meses sigue de ventas-manzano (cuadra con ERP en el rango).
+
+### Limpieza data/
+- Movidos a `E:\datos-erp\`: 32 scripts de prueba + 9 archivos VENTAS EL MANZANO + 4 erp-*.json huérfanos (~20 MB)
+
+### LIMPIEZA EXTREMA 2026-06-14 → E:\_ARCHIVO_FERRETERIA (~300 MB)
+Carpeta `E:\_ARCHIVO_FERRETERIA\` **FUERA del proyecto** (raíz del disco E, NO dentro de ferreteria-oviedo;
+así no se mezcla, no se sube a git ni se despliega). Estructura espejo + README.
+Contiene todo lo que NO es flujo activo:
+- Carpetas completas: `backups\` (node_modules+HTML+JS, 54MB), `CATALOGO PRODUCTOS\backups\` (raw CSVs, 109MB), `backups_pre_descarga\` (6MB), `VENTAS EL MANZANO LOCAL\` (flujo deprecado, 8.8MB)
+- `VENTAS EL MANZANO\ventas_erp_*` viejos: 28 xlsx (solo se conserva el más reciente _20260613; el script es incremental)
+- BODEGAS deprecados: `descargar_despachos_erp.py` + `descargar_recepciones_pendientes.py` (reemplazados por descargar_blazor_bodegas.py) · duplicados RANKING-FINAL/RANKINGcopia.XLSM · 2 txt vacíos
+- logs viejos (17) · raíz: EJEMPLO1-4, log_actualizar viejo, diagnostico_huerfanos.py
+- MANTENIDO en proyecto (decisión usuario): `_HISTORICO\`, `_PROMPTS\`, BODEGAS VBA (.bas/.cls) + xlsx análisis + EXTRAER DIRECCION.xlsx + Copia de Movimiento Stock.xlsx
+- Resultado: VENTAS EL MANZANO 132→20MB, CATALOGO 118→9.6MB. Núcleo del flujo verificado íntegro.
+- REGLA: archivos de respaldo/temporales/deprecados NO se mezclan con el flujo → van a `E:\_ARCHIVO_FERRETERIA`
+  (FUERA de ferreteria-oviedo, en la raíz del disco E). El usuario la sacó del proyecto manualmente 2026-06-14.
+- Utilidades del equipo (no son pipeline) movidas a `_utilidades\`: encriptar_credenciales.py, EXPULSAR_DISCO_SEGURO.bat, ACTIVAR_EN_ESTE_EQUIPO.bat. Ningún bat las invoca. Raíz verificada: solo flujo activo + config + assets + docs (los .jpg/manifest de mayo SÍ se usan, no son obsoletos).
+
+### Carpeta "DATOS ERP" eliminada de GitHub (commit 9c6b4f6)
+- `git rm` de `DATOS ERP/pipeline-datos-erp.html` (única doc que contenía) + push a oviedoem/ferreteria-oviedo
+- Removido el bloque robocopy `E:\datos-erp → git-sync\DATOS ERP` de ACTUALIZAR_GITHUB.bat para que NO se recree
+
+### Pendientes usuario
+- **Crear tarea programada AutoUpdate18:00** (requiere autorización): `schtasks /create /tn "AutoUpdate18:00" /tr "cmd /c E:\ferreteria-oviedo\ACTUALIZAR_TODO_AUTO.bat" /sc daily /st 18:00`
+- ~~Actualizar VENTAS.xlsm~~ → RESUELTO: ya no se depende del XLSM manual para rut/sector/razonSocial (ahora SQL)
+- **RANKING.xlsm / PRECIOS.xlsm** siguen manuales (tabs ranking-unidades y precios-diff) — migrar a SQL en sesión futura si se desea
+- **Blazor script** (`descargar_blazor_bodegas.py`): navegación a IdMenu=377 pendiente de fix definitivo (JustWeb ASP.NET TreeView usa postbacks)
