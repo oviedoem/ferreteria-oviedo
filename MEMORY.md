@@ -1,6 +1,6 @@
 # MEMORY.md — Ferretería Oviedo El Manzano
 # Referencia consolidada · Desde 2026-06-01
-# Última actualización: 2026-06-07 · Versión activa: V37.14
+# Última actualización: 2026-06-14 · Versión activa: V37.25
 
 ---
 
@@ -8,14 +8,18 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | V37.14 |
-| Fecha último deploy | 2026-06-06 21:58 |
-| Último cambio | V37.14 + sesion 2026-06-07: verificacion IDs bodegas+documentos SQL, consistencia ERP↔SQL, fix nav panel-admin, documentacion completa _BOD_CORTA/M_DOCUMENTOS/P_BODEGAS |
-| Deploy cierre sesión | 2026-06-06 21:58 — auditoria 6 puntos. Sesion 2026-06-07: sin deploy (cambios solo en panel-admin.html L2217 + docs). |
+| Versión | V37.25 |
+| Fecha último deploy | 2026-06-13 23:04 (datos ventas con rut/sector/razón desde SQL) |
+| Último cambio | V37.25: enrich ventas migrado XLSM→SQL (descargar_ventas_enrich.py), limpieza extrema a E:\_ARCHIVO_FERRETERIA, _utilidades\, DATOS ERP eliminada de GitHub |
+| Pendiente | commit V37.25 + badges 3 paneles (datos ya desplegados) |
 
 Historial reciente (desde 2026-06-01):
-- V37.14 (2026-06-02): fix D:→E: en 5 scripts + precios arg + XDG_CONFIG_HOME
-- V37.13 (2026-06-02): fix árbol auto-init + guard re-render + tutoriales D:→E:
+- V37.25 (2026-06-13/14): enrich SQL (PASO 1K), limpieza extrema, blazor recepciones/despachos
+- V37.22 (2026-06-09): tab Por Recepcionar/Despachar — descargar_blazor_bodegas.py
+- V37.24 (2026-06-12): bodega ICD (IDBODEGA=73) en tab Análisis de Bodegas
+- V37.19-21 (2026-06-09): auditoría seguridad XSS/CSP + fixes OCR
+
+*Historial pre-junio en _HISTORICO\20260602_MEMORY_completo.md*
 
 *Historial pre-junio en _HISTORICO\20260602_MEMORY_completo.md*
 
@@ -39,6 +43,8 @@ Historial reciente (desde 2026-06-01):
 Proyecto activo:     E:\ferreteria-oviedo\
 Git sync (solo):     E:\git-sync\        (solo copia sanitizada para GitHub)
 Historico:           E:\ferreteria-oviedo\_HISTORICO\
+Utilidades equipo:   E:\ferreteria-oviedo\_utilidades\   (encriptar_credenciales, EXPULSAR_DISCO, ACTIVAR, etc.)
+Archivo historico:   E:\_ARCHIVO_FERRETERIA\   (FUERA del proyecto — backups/deprecados/temporales, no se sube)
 Bodegas XLSM:        E:\ferreteria-oviedo\BODEGAS\
 Pipeline ventas:     E:\ferreteria-oviedo\VENTAS EL MANZANO\
 Catálogo scripts:    E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\
@@ -74,10 +80,9 @@ PASO 1B  procesar-actualizacion.py → Datos.xlsx
          csv_a_json.py → Datos.json (~3.5MB, 6011 productos)
          CRÍTICO: procesar-actualizacion.py escribe data/catalogo-dinamico.json (señal para main.py)
 
-PASO 1C  leer_xlsm.py (lee VENTAS EL MANZANO/VENTAS.xlsm + RANKING.xlsm + PRECIOS.xlsm)
-         → xlsm-enrich.json (rut, sector, bodegaCorta, hora, razonSocial)
+PASO 1C  leer_xlsm.py (lee VENTAS EL MANZANO/RANKING.xlsm + PRECIOS.xlsm + VENTAS.xlsm)
          → ventas-xlsm-YYYY.json · ventas-xlsm-sector.json · ranking-unidades.json · precios-diff.json
-         REGLA: solo leer_xlsm.py genera estos archivos — main.py consume xlsm-enrich.json, no lo genera
+         → xlsm-enrich.json (FALLBACK — el primario lo genera PASO 1K desde SQL desde V37.25)
          NOTA: NO lee BODEGAS/ — eso es exclusivo de descargar_bod.py (PASO 1D)
 
 PASO 1D  descargar_bod.py (BODEGAS/)
@@ -105,6 +110,22 @@ PASO 1G  generar_informe_stock.py (BODEGAS/)
          pem_ped = St_DVen + St_Ped de TODAS las sucursales (mas completo que pedidos-comprometidos.json)
          CRITICO parseo CSV: punto=miles, coma=decimal — igual que regla SSRS en AGENTS.md
          Si no encuentra ningun CSV: sys.exit(1). BAT captura el error y continua con [AVISO].
+
+PASO 1H  descargar_blazor_bodegas.py (BODEGAS/)  [V37.22]
+         Playwright headless → Intranet JustWeb Blazor IdMenu=377 (1 sesion = 2 tabs)
+         → data/recepciones-pendientes.json (GRT/GIB pendientes Editar+Grabar — anomalia JT)
+         → data/despachos-pendientes-erp.json
+         Reemplaza descargar_recepciones_pendientes.py + descargar_despachos_erp.py (deprecados)
+
+PASO 1I  fusionar_despachos.py (BODEGAS/) → data/despachos-panel.json (ERP tiempo real + SQL)
+
+PASO 1K  descargar_ventas_enrich.py (BODEGAS/)  [V37.25 — NUEVO]
+         SQL: M_DOCUMENTOS_ENCABEZADO + M_ENTIDADES (RUT/razon) + Encabezado_Observacion (sector)
+         Docs venta BVE/FVE/NCE suc 04, indice por NUMERO
+         → data/xlsm-enrich.json (PRIMARIO — reemplaza generacion desde VENTAS.xlsm manual)
+         rut 0%→100%, razonSocial 0%→100%, sector 0%→~12%
+         REGLA: xlsm-enrich.json lo genera descargar_ventas_enrich.py (SQL) o leer_xlsm.py (fallback), NUNCA main.py
+         (en ACTUALIZAR_TODO_AUTO.bat este paso es 1J; corre ANTES de main.py)
 
 PASO 2   main.py --sin-deploy
          PASO 1: _catalogo_generado_hoy()? SI → leer_bodegas_desde_actualizar (3s)
@@ -286,8 +307,10 @@ REGLA CRÍTICA subquery ULT:
 | generar_informe_stock.py | BODEGAS\ | data/informe-stock.json | Stock fisico + comprometido todas sucursales. Fuente: raw_bloque1/2_*.csv (backups/). pem/sem/cem/mem_bod + _ped |
 | main.py | VENTAS EL MANZANO\ | ventas-manzano*.json | Pipeline ventas completo |
 | descargar_ventas_erp.py | VENTAS EL MANZANO\ | ventas_erp_producto_YYYYMMDD.xlsx | Incremental; dedup por (Numero, Codigo) |
-| encriptar_credenciales.py | raíz | credenciales_db.enc | Usado por descargar_bod, descargar_despachos |
-| diagnostico_huerfanos.py | raíz | — | Detecta/repara usuarios Auth sin doc Firestore |
+| descargar_ventas_enrich.py | BODEGAS\ | xlsm-enrich.json | **V37.25** SQL: rut/sector/razon desde M_ENTIDADES+Observacion (BVE/FVE/NCE) |
+| descargar_blazor_bodegas.py | BODEGAS\ | recepciones-pendientes.json + despachos-pendientes-erp.json | Playwright Intranet IdMenu=377 |
+| fusionar_despachos.py | BODEGAS\ | despachos-panel.json | Fusiona despachos ERP + SQL |
+| encriptar_credenciales.py | _utilidades\ | credenciales_db.enc | Utilidad seguridad (no es pipeline; movido V37.25) |
 
 ---
 
@@ -357,12 +380,12 @@ vadmDatosFiltrados()         Filtrado central — todas las funciones render deb
 | Archivo | Motivo |
 |---|---|
 | firebase-config.js | Configuración SDK Firebase compartida — no modificar nunca desde panel HTML |
-| credenciales_erp.ini | Credenciales ERP — nunca tocar, nunca subir a git |
+| credenciales_erp.ini | En VENTAS EL MANZANO\ y CATALOGO PRODUCTOS\scripts\ — nunca subir a git |
 | credenciales_db.ini | Credenciales SQL Server — nunca tocar, nunca subir |
 | venAdmParseFecha() | Utility global — no cambiar firma ni comportamiento |
 | venAdmFmt() | Utility global — no cambiar firma |
 | window._mostrarPrecio | Default SIEMPRE false en panel-cliente.html |
-| xlsm-enrich.json | Solo leer_xlsm.py lo genera — main.py lo consume |
+| xlsm-enrich.json | Lo genera descargar_ventas_enrich.py (SQL, primario, V37.25) o leer_xlsm.py (fallback) — NUNCA main.py |
 | ventas-manzano.json | Fallback del panel en 4 puntos — NO eliminar |
 | _catalogo_generado_hoy() | No revertir a _actualizar_xlsx_es_hoy() (eliminada V36.5) |
 
@@ -380,7 +403,8 @@ vadmDatosFiltrados()         Filtrado central — todas las funciones render deb
 | vadmSSMarcaClick(el) | Usa data-marca del HTML — NUNCA string en onclick |
 | Sidebar HTML | Verificar que grupos siguen colapsando correctamente |
 | onclick="" en botones | NUNCA usar JSON.stringify — rompe con comillas en nombres |
-| leer_xlsm.py | Debe seguir generando xlsm-enrich.json al final del loop |
+| descargar_ventas_enrich.py | Genera xlsm-enrich.json desde SQL (primario). Correr ANTES de main.py |
+| leer_xlsm.py | Genera ventas-xlsm/ranking/precios; su xlsm-enrich es fallback si SQL falla |
 | enriquecer_desde_xlsm() | Debe correr DESPUÉS de consolidar() y ANTES de guardar_json() |
 | _catalogo_generado_hoy() | Verifica catalogo-dinamico.json mtime — no revertir |
 | descargar_bod.py | Subquery ULT con WHERE IDBODEGA=? antes del GROUP BY |

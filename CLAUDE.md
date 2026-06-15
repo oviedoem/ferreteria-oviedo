@@ -25,9 +25,13 @@
 ### Nunca hacer esto
 - Usar `C:` para guardar archivos del proyecto
 - Subir IPs reales, tokens, contraseñas a git (usar placeholders)
-- Modificar `firebase-config.js`, `credenciales_db.ini`, `credenciales_erp.ini`
+- Modificar `firebase-config.js`, `credenciales_db.ini`
 - Trabajar directamente en `E:\git-sync\`
 - Usar `cmd /c bat > NUL` desde bash (usar PowerShell)
+- Dejar respaldos/temporales/duplicados/deprecados dentro del proyecto → van a `E:\_ARCHIVO_FERRETERIA\` (fuera del proyecto). Utilidades del equipo → `_utilidades\`.
+
+### xlsm-enrich.json (V37.25)
+Lo genera `BODEGAS\descargar_ventas_enrich.py` desde SQL (primario) o `leer_xlsm.py` desde XLSM (fallback). NUNCA main.py.
 
 ### Antes de cualquier cambio de código
 ```
@@ -49,7 +53,8 @@ Un prompt = una función tocada. Si el fix requiere 2 funciones → dos prompts 
 
 | Ruta | Contenido |
 |---|---|
-| `E:\ferreteria-oviedo\` | Proyecto activo |
+| `E:\ferreteria-oviedo\` | Proyecto activo (solo flujo + datos + docs + `_HISTORICO` + `_utilidades`) |
+| `E:\_ARCHIVO_FERRETERIA\` | Archivo histórico FUERA del proyecto — backups/deprecados/temporales (no se sube a git/firebase) |
 | `E:\git-sync\` | Repo git (solo para commits/push) |
 | `W:\claude-config\` | Config Claude (junction desde C:\Users\..\.claude) |
 | `E:\config\` | Tokens, gitconfig, credenciales cifradas |

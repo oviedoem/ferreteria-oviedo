@@ -11321,10 +11321,13 @@ function vadmRenderSector(){
         map[s].clientes[d.razonSocial].neto+=d.neto;
       }
     });
-    // RETIRO CLIENTE siempre al final; resto por neto desc
+    // RETIRO CLIENTE y RETIRO EMPAQUE siempre al final; resto por neto desc
+    var _retiroFin=['RETIRO CLIENTE','RETIRO EMPAQUE'];
     var arr=Object.values(map).sort(function(a,b){
-      if(a.sector==='RETIRO CLIENTE') return 1;
-      if(b.sector==='RETIRO CLIENTE') return -1;
+      var aR=_retiroFin.indexOf(a.sector)>=0, bR=_retiroFin.indexOf(b.sector)>=0;
+      if(aR && !bR) return 1;
+      if(!aR && bR) return -1;
+      if(aR && bR)  return a.sector<b.sector?-1:1;
       return b.neto-a.neto;
     });
     var totalN=arr.reduce(function(s,v){return s+v.neto;},0);
@@ -11352,7 +11355,7 @@ function vadmRenderSector(){
         topCliente=tc; var rn=String(v.clientes[tc].rut||'').replace(/\D/g,'');
         topRut=rn?rn.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'—';
       }
-      var isRetiro=v.sector==='RETIRO CLIENTE';
+      var isRetiro=v.sector==='RETIRO CLIENTE'||v.sector==='RETIRO EMPAQUE';
       var rowBg=isRetiro?'background:#f0f4ff':(i%2===0?'':'background:#f9fafb');
       var sectorCell=isRetiro
         ?'<span style="color:#6366f1;font-style:italic">'+venAdmEsc(v.sector)+'</span>'

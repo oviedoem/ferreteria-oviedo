@@ -1,6 +1,6 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.18
-# Fecha: 2026-06-08
+# Version activa: V37.25
+# Fecha: 2026-06-14
 # Versiones anteriores disponibles en _HISTORICO/
 
 ---
@@ -9,14 +9,30 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.18 |
-| Fecha | 2026-06-08 |
-| Deploy | 2026-06-08 23:12 |
-| Sin pendientes | SI — todo publicado al cierre de sesion |
+| Version | V37.25 |
+| Fecha | 2026-06-14 |
+| Deploy | 2026-06-13 23:04 (datos ventas con rut/sector/razon) |
+| Pendiente | commit V37.25 + badges 3 paneles (datos ya desplegados) |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.25 — 2026-06-13/14
+- **Enrich ventas migrado XLSM→SQL:** nuevo `BODEGAS\descargar_ventas_enrich.py` genera `xlsm-enrich.json` desde SQL Server (M_DOCUMENTOS_ENCABEZADO + M_ENTIDADES + Encabezado_Observacion, docs BVE/FVE/NCE). rut/razonSocial 0%→100%, sector 0%→~12% en todos los meses. PASO 1K (TODO) / 1J (AUTO), antes de main.py
+- leer_xlsm.py intacto (sigue generando ventas-xlsm/ranking/precios; su xlsm-enrich queda como fallback)
+- Skills creados: `/ahorro-tokens`, `/revisar-codigo` (revisión $0 vs 14 reglas FO)
+- **Limpieza extrema (~300MB):** carpeta `E:\_ARCHIVO_FERRETERIA` (FUERA del proyecto) con backups/node_modules, CSVs crudos, VENTAS EL MANZANO LOCAL (deprecado), 28 ventas_erp viejos, scripts deprecados (descargar_recepciones_pendientes, descargar_despachos_erp), duplicados RANKING
+- Utilidades del equipo → `_utilidades\`: encriptar_credenciales.py, EXPULSAR_DISCO_SEGURO.bat, ACTIVAR_EN_ESTE_EQUIPO.bat, Tarjeta rápida.docx
+- Carpeta `DATOS ERP` eliminada de GitHub (commit 9c6b4f6)
+- pipeline-datos-mapa.html reescrito (8 secciones) — solo local, excluido de git/firebase
+
+### V37.22 — 2026-06-09
+- panel-admin: tab "Por Recepcionar" (GRT/GIB pendientes Editar+Grabar) · Blazor Intranet
+- `descargar_blazor_bodegas.py` (1 sesión Playwright = 2 tabs) reemplaza descargar_recepciones_pendientes + descargar_despachos_erp
+
+### V37.19–V37.21 — 2026-06-09
+- Auditoría seguridad: XSS fixes (venAdmEsc/_cliEsc), CSP sin unsafe-eval, _logAuditAdmin(), fixes OCR
 
 ### V37.10 — 2026-05-29
 - panel-admin.html: módulo Despachos Pendientes (BVE/FVE pendientes de despacho, email, Excel)
@@ -133,7 +149,12 @@
 ### ANALISIS BODEGAS
 | Modulo | Tab | Estado |
 |---|---|---|
-| IEM / RCE / CEM | analisis | OK V36.9k — selector bfFuente (Todas/IEM/RCE/CEM) |
+| IEM / RCE / CEM / ICD | analisis | OK V37.24 — selector bfFuente (Todas/IEM/RCE/CEM/ICD) |
+
+### RECEPCIONES / DESPACHOS (Blazor JustWeb)
+| Modulo | Tab | Estado |
+|---|---|---|
+| Por Recepcionar / Por Despachar | — | OK V37.22 — descargar_blazor_bodegas.py (Playwright) |
 
 ### ARBOL RETAIL
 | Modulo | Tab | Estado |
@@ -151,13 +172,11 @@
 
 ## PENDIENTES CONOCIDOS
 
-- _HISTORICO/ no esta excluida del robocopy de ACTUALIZAR_GITHUB.bat
-  → Agregar exclusion en ACTUALIZAR_GITHUB.bat en proxima sesion que toque ese bat
-  → No es urgente: los MDs no se suben a git (git-sync los filtra por extension)
-
-- descargar_erp.py falla silencioso: si falla agregar:
-  await page.screenshot(path="debug.png") antes del click (documentado en CLAUDE.md)
+- **Commit V37.25 + badges:** datos ya desplegados (2026-06-13); falta commit a GitHub y actualizar badge de versión en los 3 paneles
+- **RANKING.xlsm / PRECIOS.xlsm** siguen siendo manuales (tabs ranking-unidades y precios-diff) — migrar a SQL en sesión futura si se desea (igual que se hizo con VENTAS.xlsm→enrich SQL)
+- Tarea programada AutoUpdate18:00 no existe en Task Scheduler — crear si se quiere pipeline automático
+- descargar_erp.py falla silencioso: si falla agregar `await page.screenshot(path="debug.png")` antes del click
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.2 · 2026-05-26*
+*ESTADO_PROYECTO.md · Version V37.25 · 2026-06-14*

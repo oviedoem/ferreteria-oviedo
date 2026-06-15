@@ -10,11 +10,13 @@ users_export.json
 # Scripts pipeline — no van a GitHub
 BODEGAS/
 VENTAS EL MANZANO/
+DATOS ERP/
 data/
 backups/
 logs/
 _ARCHIVADOS/
 _HISTORICO/
+_utilidades/
 
 # Archivos binarios / Excel
 *.xlsm
