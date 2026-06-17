@@ -97,6 +97,13 @@ set FECHA=%date:~6,4%-%date:~3,2%-%date:~0,2%
 "%GIT_EXE%" add .
 "%GIT_EXE%" commit -m "V37 %FECHA% %HORA% -- actualizacion automatica"
 "%GIT_EXE%" pull --rebase
+
+:: Limpiar credenciales viejas y abrir navegador para login fresco
+echo url=https://github.com > "%TEMP%\gh_cred.txt"
+"%GIT_EXE%" credential reject < "%TEMP%\gh_cred.txt"
+del "%TEMP%\gh_cred.txt" >nul 2>&1
+echo [INFO] Si abre el navegador, inicia sesion con ferreteriaoviedo.elmanzano@gmail.com
+
 "%GIT_EXE%" push
 
 echo.
