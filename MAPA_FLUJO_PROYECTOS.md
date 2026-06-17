@@ -1,6 +1,14 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
-# Última actualización: 2026-06-06
+# Última actualización: 2026-06-14 · Versión activa: V37.25
+#
+# NOTA V37.25 — cambios al pipeline (ver MAPA 2):
+#   · xlsm-enrich.json (rut/sector/razón) ahora se genera desde SQL via descargar_ventas_enrich.py
+#     (PASO 1K), NO desde VENTAS.xlsm manual. leer_xlsm.py queda como fallback + ranking/precios.
+#   · descargar_blazor_bodegas.py (PASO 1H) → recepciones/despachos pendientes (Playwright Intranet).
+#   · fusionar_despachos.py (PASO 1I) → despachos-panel.json.
+#   · bod-icd-registros.json agregado (ICD=73). Para el detalle visual completo ver pipeline-datos-mapa.html (solo local).
+#   · Limpieza: respaldos/deprecados movidos a E:\_ARCHIVO_FERRETERIA (fuera del proyecto); utilidades a _utilidades\.
 
 ---
 
