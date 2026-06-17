@@ -629,11 +629,16 @@ ERP:    hora · topMarcas · comparativa · vendrank · marcavend · clientes
         tipodoc · facturacion · quiebre · sobrestock · transito · merma
         rankingmarca · estaciones · bajrot · pagoanalisis · pagorankings
         pagotemporal · entrefechas · arbol · arboltabla · arbolheat · sector
-        stockconsulta (V37.1)
+        stockconsulta (V37.1) · informe-stock (PASO 1G) · despachos (V37.22) · recepciones (V37.22)
 XLSM:   nc · marcavend2 · preciodiff · mem
 Stubs:  impacto
 Análisis bodegas: analisis (IEM/RCE/CEM con selector bfFuente)
 ```
+
+Notas tabs nuevos:
+- `informe-stock`: usa informe-stock.json (PASO 1G descargar_blazor_informe.py Playwright). Muestra Dif<0 (anomalía JT) como filas rojas.
+- `despachos`: usa despachos-pendientes.json (PASO 1F descargar_despachos.py SQL). Despachos NVM sin BVE/FVE.
+- `recepciones` / sub-tab "Por Recepcionar": usa recepciones-pendientes.json (PASO 1H descargar_blazor_bodegas.py Playwright). GRT/GIB pendientes de Editar+Grabar.
 
 TABS ELIMINADOS (no recrear): `vvsstock` (eliminado V35.0)
 NAVEGACIÓN REAL: `showTab` → `vadmGrupo` → `vadmSubTab`. NO existe `adminShowTab()`.

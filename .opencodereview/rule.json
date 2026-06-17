@@ -90,11 +90,11 @@
   },
   {
     "id": "FO-012",
-    "name": "leer_xlsm.py genera xlsm-enrich.json",
-    "description": "Solo leer_xlsm.py debe generar xlsm-enrich.json. main.py no debe tocar ese archivo.",
+    "name": "xlsm-enrich.json solo por scripts autorizados",
+    "description": "xlsm-enrich.json lo genera descargar_ventas_enrich.py (primario desde SQL, V37.25) o leer_xlsm.py (fallback desde XLSM). main.py NO debe escribir este archivo.",
     "severity": "error",
-    "filePattern": "(main\\.py|leer_xlsm\\.py)",
-    "check": "Si main.py escribe xlsm-enrich.json directamente, reportar como ERROR. Este archivo es responsabilidad exclusiva de leer_xlsm.py segun AGENTS.md."
+    "filePattern": "(main\\.py|leer_xlsm\\.py|descargar_ventas_enrich\\.py)",
+    "check": "Si main.py escribe xlsm-enrich.json directamente, reportar como ERROR critico. El archivo lo genera descargar_ventas_enrich.py (PASO 1K, primario) o leer_xlsm.py (fallback). Nunca main.py."
   },
   {
     "id": "FO-013",
