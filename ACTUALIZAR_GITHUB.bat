@@ -17,12 +17,10 @@ if exist "E:\nodejs-portable\node.exe" (
     set NODE_EXE=E:\nodejs-portable\node.exe
     set PATH=E:\nodejs-portable;E:\npm-global\bin;%PATH%
 )
-:: NOTA: usar mingw64\bin\git.exe (real) no bin\git.exe (shim roto)
 if exist "E:\git-portable\mingw64\bin\git.exe" (
     set GIT_EXE=E:\git-portable\mingw64\bin\git.exe
     set PATH=E:\git-portable\mingw64\bin;E:\git-portable\usr\bin;%PATH%
 )
-:: firebase: E:\npm-global\firebase.cmd (prefijo npm = E:\npm-global)
 if exist "E:\npm-global\firebase.cmd" (
     set FIREBASE_EXE=E:\npm-global\firebase.cmd
 ) else if exist "E:\npm-global\bin\firebase" (
@@ -79,11 +77,9 @@ robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
   .gitignore OCR_REVIEW.bat ^
   /XO /NP /NJH /NFL
 
-:: Sincronizar reglas OCR (sin config.json que tiene la API key)
 robocopy "E:\ferreteria-oviedo\.opencodereview" "E:\git-sync\.opencodereview" ^
   rule.json ^
   /XO /NP /NJH /NFL
-
 
 :: ============================================================
 :: BLOQUE 3 - COMMIT CON TRAZABILIDAD
@@ -97,16 +93,13 @@ echo.
 
 set HORA=%time:~0,2%:%time:~3,2%
 set FECHA=%date:~6,4%-%date:~3,2%-%date:~0,2%
-set /p MSG="Descripcion del cambio (Enter = session): "
-if "%MSG%"=="" set MSG=session
 
 "%GIT_EXE%" add .
-"%GIT_EXE%" commit -m "V37 %FECHA% %HORA% -- %MSG%"
+"%GIT_EXE%" commit -m "V37 %FECHA% %HORA% -- actualizacion automatica"
 "%GIT_EXE%" pull --rebase
 "%GIT_EXE%" push
 
 echo.
-echo [OK] Commit subido: V37 %FECHA% %HORA% -- %MSG%
+echo [OK] Commit subido: V37 %FECHA% %HORA%
 echo      Ver en: https://github.com/oviedoem/ferreteria-oviedo/commits
 echo.
-pause
