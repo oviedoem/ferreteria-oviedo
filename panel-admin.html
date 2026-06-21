@@ -2687,14 +2687,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
               style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;background:var(--input-bg,#fff)"
               oninput="bnrActualizarTexto()">
           </div>
-          <div style="margin-bottom:12px">
-            <span style="font-size:11px;font-weight:600;color:var(--gris)">Posición del bloque de texto</span>
-            <div style="display:flex;gap:8px;margin-top:6px">
-              <button id="bnrPosLeft"  onclick="bnrSetTextoPos('left')"
-                style="flex:1;padding:8px;border-radius:8px;border:2px solid #2563eb;background:var(--card);cursor:pointer;font-size:13px;font-weight:700">◀ Izquierda</button>
-              <button id="bnrPosRight" onclick="bnrSetTextoPos('right')"
-                style="flex:1;padding:8px;border-radius:8px;border:2px solid var(--border);background:var(--card);cursor:pointer;font-size:13px;font-weight:400">Derecha ▶</button>
-            </div>
+          <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="bnrMostrarHorario" checked style="width:16px;height:16px;cursor:pointer">
+            <label for="bnrMostrarHorario" style="font-size:12px;color:var(--gris);cursor:pointer">Mostrar botón "Horario" a los clientes</label>
           </div>
           <button onclick="bnrGuardarTexto()"
             style="width:100%;padding:9px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">💾 Guardar texto del banner</button>
@@ -5129,6 +5124,15 @@ function loadRedes(){
   if(fb){ document.getElementById('fbUrl').value=fb; document.getElementById('fbStatus').textContent=fb; }
   if(wa){ document.getElementById('waNum').value=wa; document.getElementById('waStatus').textContent=wa; }
   renderWaPlantillas();
+  if(window.db){
+    window.db.collection('config').doc('redes').get().then(function(doc){
+      if(!doc.exists) return;
+      var d=doc.data()||{};
+      if(d.ig){ document.getElementById('igUser').value=d.ig; document.getElementById('igStatus').textContent='@'+d.ig; }
+      if(d.fb){ document.getElementById('fbUrl').value=d.fb; document.getElementById('fbStatus').textContent=d.fb; }
+      if(d.wa){ document.getElementById('waNum').value=d.wa; document.getElementById('waStatus').textContent=d.wa; }
+    }).catch(function(){});
+  }
 }
 
 var _WA_PLANTILLAS = [
@@ -5217,6 +5221,14 @@ function vincularRed(tipo){
   else if(tipo==='fb') val=document.getElementById('fbUrl').value.trim();
   else if(tipo==='wa') val=document.getElementById('waNum').value.trim();
   if(!val){toast('Ingresa un valor válido','warn');return;}
+  if(tipo==='ig' && !/^[A-Za-z0-9._]{1,30}$/.test(val)){
+    toast('Formato inválido para Instagram','warn');
+    return;
+  }
+  if(tipo==='fb' && !/^https:\/\/(www\.)?facebook\.com\//.test(val)){
+    toast('Formato inválido para Facebook','warn');
+    return;
+  }
   localStorage.setItem('ov_'+tipo, val);
   if(tipo==='ig') document.getElementById('igStatus').textContent='@'+val;
   else if(tipo==='fb') document.getElementById('fbStatus').textContent=val;
@@ -5317,7 +5329,8 @@ function bannerAdminCargar(){
     var et1 = document.getElementById('bnrTextoL1'), et2 = document.getElementById('bnrTextoL2');
     if(et1) et1.value = d.horario1 || 'Lun–Vie 08:30–13:30 · 14:30–18:00';
     if(et2) et2.value = d.horario2 || 'Sáb 09:00–13:30';
-    bnrSetTextoPos(d.textoPos || 'left');
+    var chkHorario = document.getElementById('bnrMostrarHorario');
+    if(chkHorario) chkHorario.checked = (d.mostrarHorario !== false);
     bnrActualizarTexto();
   }).catch(function(){ bnrActualizar(); });
 }
@@ -5535,35 +5548,14 @@ function bnrActualizarTexto(){
   if(l2 && pl2) pl2.textContent = l2.value || 'Sáb 09:00–13:30';
 }
 
-function bnrSetTextoPos(pos){
-  window._bnrTextoPos = pos;
-  // Botones
-  var btnL = document.getElementById('bnrPosLeft');
-  var btnR = document.getElementById('bnrPosRight');
-  if(btnL){ btnL.style.borderColor = pos==='left' ? '#2563eb' : 'var(--border)'; btnL.style.fontWeight = pos==='left' ? '700' : '400'; }
-  if(btnR){ btnR.style.borderColor = pos==='right'? '#2563eb' : 'var(--border)'; btnR.style.fontWeight = pos==='right'? '700' : '400'; }
-  // Preview — mover bloque de texto y girar gradiente
-  var txt     = document.getElementById('bnrPreviewTxt');
-  var overlay = document.querySelector('#bnrPreviewWrap .bnr-preview-overlay');
-  if(txt){
-    if(pos==='right'){ txt.style.left='auto'; txt.style.right='0'; txt.style.paddingLeft='14px'; txt.style.paddingRight='14px'; txt.style.alignItems='flex-end'; }
-    else             { txt.style.left='0';    txt.style.right='auto'; txt.style.paddingLeft='14px'; txt.style.paddingRight='14px'; txt.style.alignItems='flex-start'; }
-  }
-  if(overlay){
-    overlay.style.background = pos==='right'
-      ? 'linear-gradient(to left,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)'
-      : 'linear-gradient(to right,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)';
-  }
-}
-
 function bnrGuardarTexto(){
   if(!window.db){ bnrMostrarStatus('bnrTextoStatus','err','Firebase no disponible'); return; }
   var l1  = (document.getElementById('bnrTextoL1')||{}).value || 'Lun–Vie 08:30–13:30 · 14:30–18:00';
   var l2  = (document.getElementById('bnrTextoL2')||{}).value || 'Sáb 09:00–13:30';
-  var pos = window._bnrTextoPos || 'left';
+  var mostrarHorario = (document.getElementById('bnrMostrarHorario')||{}).checked !== false;
   bnrMostrarStatus('bnrTextoStatus','info','Guardando...');
   window.db.collection('config').doc('banner').set(
-    { horario1: l1, horario2: l2, textoPos: pos },
+    { horario1: l1, horario2: l2, mostrarHorario: mostrarHorario },
     { merge: true }
   ).then(function(){
     bnrMostrarStatus('bnrTextoStatus','ok','✓ Texto guardado. Los paneles lo actualizan al recargar.');

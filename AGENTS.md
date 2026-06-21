@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.24 · Última actualización: 2026-06-13
+# Versión activa: V37.26 · Última actualización: 2026-06-21
 
 ---
 
@@ -961,3 +961,20 @@ Contiene todo lo que NO es flujo activo:
 - ~~Actualizar VENTAS.xlsm~~ → RESUELTO: ya no se depende del XLSM manual para rut/sector/razonSocial (ahora SQL)
 - **RANKING.xlsm / PRECIOS.xlsm** siguen manuales (tabs ranking-unidades y precios-diff) — migrar a SQL en sesión futura si se desea
 - **Blazor script** (`descargar_blazor_bodegas.py`): navegación a IdMenu=377 pendiente de fix definitivo (JustWeb ASP.NET TreeView usa postbacks)
+
+## HISTORIAL SESIÓN 2026-06-21 — V37.26 Redes sociales + banner horario
+
+### Hecho
+- panel-admin.html `loadRedes()`: ahora también lee `config/redes` de Firestore (antes solo localStorage) — corrige que Instagram/FB/WA aparecieran "Sin vincular" en otro equipo/navegador
+- panel-admin.html `vincularRed()`: validación de formato antes de guardar (usuario IG regex, URL FB debe empezar con facebook.com/)
+- panel-cliente.html: bloque de redes sociales (`#redesInline`) movido del `.vend-section` oculto (display:none) al `<header>` siempre visible — antes nunca se mostraba a clientes. Responsive: solo iconos en mobile (<480px), texto completo en desktop
+- panel-cliente.html: banner sucursal rediseñado — el horario/ubicación ya no tapa la imagen, ahora es un botón "📍 Sucursal y horario" que despliega un popover al click (cierra con click afuera o toggle)
+- Limpieza código muerto: eliminado selector "Posición del texto Izquierda/Derecha" del admin (`bnrSetTextoPos`, campo `textoPos` en Firestore) — quedó sin efecto tras el cambio de banner a botón+popover; también removido el código equivalente en `cargarBannerDinamico()` de panel-cliente que ya no tenía elemento `.sucursal-info` al que aplicarse
+- Deploy hecho (`firebase deploy --only hosting`) — 2 deploys en la sesión
+
+### Pendiente
+- Commit a GitHub (ACTUALIZAR_GITHUB.bat)
+- Continuar plan original "Banner Principal + Redes Sociales" (memory/estado-sesion-20260621.md) — quedan: Prompt 3 (embeds Instagram), Prompt 4-10 (link banner, historial, programación por fecha, carrusel)
+
+### Próxima sesión debe empezar por
+- Confirmar commit hecho, y seguir con Prompt 3 del plan (embeds de posts Instagram) si el usuario lo pide

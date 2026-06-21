@@ -89,6 +89,10 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 /* Redes inline con vendedores */
 .redes-inline{display:flex;gap:6px;align-items:center}
 .red-btn-inline{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;text-decoration:none;color:white;white-space:nowrap}
+@media(max-width:480px){
+  .red-btn-inline{padding:4px 7px}
+  .red-btn-inline span{display:none}
+}
 
 /* SEARCH */
 .search-section{padding:10px 14px;background:white;border-bottom:1px solid var(--gris-border)}
@@ -155,11 +159,17 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
     transparent 100%
   );
 }
-.sucursal-info{
-  position:absolute;top:0;left:0;bottom:0;
-  z-index:2;display:flex;flex-direction:column;
-  justify-content:center;gap:7px;
-  padding:0 20px;max-width:290px;
+.btn-horario{
+  font-size:11px;color:rgba(255,255,255,.8);cursor:pointer;padding:6px 10px;
+  border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);
+  font-family:inherit;font-weight:700;white-space:nowrap;
+}
+.btn-horario:hover{background:rgba(255,255,255,.15)}
+.sucursal-popover{
+  position:absolute;top:calc(100% + 8px);left:0;z-index:50;
+  background:rgba(20,20,20,.96);border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;
+  gap:8px;width:230px;box-shadow:0 6px 18px rgba(0,0,0,.5);
 }
 .sucursal-loc{display:flex;align-items:center;gap:5px}
 .sucursal-loc-icon{display:flex;align-items:center;opacity:.95}
@@ -474,7 +484,34 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 
 <header>
   <img src="logo_oviedo.jpg" alt="Ferreterías Oviedo" style="height:40px;width:auto;flex-shrink:0;display:block">
+  <div class="horario-wrap" id="horarioWrap" style="position:relative">
+    <button class="btn-horario" id="sucursalInfoBtn" onclick="toggleSucursalInfo()">🕐 Horario</button>
+    <div class="sucursal-popover" id="sucursalPopover" style="display:none">
+      <div class="sucursal-loc">
+        <a href="https://maps.app.goo.gl/umCSP9Mz2JZ9xv1b6" target="_blank" rel="noopener" title="Ver en Google Maps" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:5px">
+          <span class="sucursal-loc-icon">
+            <svg width="14" height="18" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 0C3.686 0 1 2.686 1 6c0 4.2 6 12 6 12s6-7.8 6-12c0-3.314-2.686-6-6-6z" fill="#DA0000"/>
+              <circle cx="7" cy="6" r="2.2" fill="white"/>
+            </svg>
+          </span>
+          <span class="sucursal-loc-name">Sucursal El Manzano</span>
+        </a>
+      </div>
+      <div class="sucursal-horario">
+        <div class="sched-row">
+          <span class="sched-day">Lun – Vie</span>
+          <span class="sched-time" id="bnrSched1">08:30–13:30 · 14:30–18:00</span>
+        </div>
+        <div class="sched-row">
+          <span class="sched-day">Sábado</span>
+          <span class="sched-time" id="bnrSched2">09:00–13:30</span>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="header-spacer"></div>
+  <div class="redes-inline" id="redesInline"></div>
   <button id="adminBtn" class="btn-logout" onclick="openAdminCli()" style="display:none;background:#333;color:white;margin-right:6px">⚙ Usuarios</button>
   <button id="pwaInstall" onclick="instalarPWA()" style="display:none;background:rgba(255,255,255,.1);color:white;border:none;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-right:4px" title="Instalar app">📲</button>
   <button class="btn-logout" onclick="doLogout()">Salir</button>
@@ -490,29 +527,6 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 <div class="sucursal-banner">
   <div class="sucursal-bg"></div>
   <div class="sucursal-overlay"></div>
-  <div class="sucursal-info">
-    <div class="sucursal-loc">
-      <a href="https://maps.app.goo.gl/umCSP9Mz2JZ9xv1b6" target="_blank" rel="noopener" title="Ver en Google Maps" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:5px">
-        <span class="sucursal-loc-icon">
-          <svg width="14" height="18" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 0C3.686 0 1 2.686 1 6c0 4.2 6 12 6 12s6-7.8 6-12c0-3.314-2.686-6-6-6z" fill="#DA0000"/>
-            <circle cx="7" cy="6" r="2.2" fill="white"/>
-          </svg>
-        </span>
-        <span class="sucursal-loc-name">Sucursal El Manzano</span>
-      </a>
-    </div>
-    <div class="sucursal-horario">
-      <div class="sched-row">
-        <span class="sched-day">Lun – Vie</span>
-        <span class="sched-time" id="bnrSched1">08:30–13:30 · 14:30–18:00</span>
-      </div>
-      <div class="sched-row">
-        <span class="sched-day">Sábado</span>
-        <span class="sched-time" id="bnrSched2">09:00–13:30</span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- VENDEDORES — movidos al asistente flotante y panel contacto comercial -->
@@ -525,7 +539,6 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
         <div class="vend-header-sub">Contacto directo vía WhatsApp</div>
       </div>
     </div>
-    <div class="redes-inline" id="redesInline"></div>
   </div>
   <div class="vend-grid" id="vendGrid">
     <!-- Ricardo -->
@@ -2189,6 +2202,19 @@ function waConsultarCategoria(cat){
   window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank');
 }
 
+function toggleSucursalInfo(){
+  var pop = document.getElementById('sucursalPopover');
+  if(!pop) return;
+  pop.style.display = (pop.style.display === 'none' || !pop.style.display) ? 'flex' : 'none';
+}
+document.addEventListener('click', function(e){
+  var pop = document.getElementById('sucursalPopover');
+  var btn = document.getElementById('sucursalInfoBtn');
+  if(!pop || pop.style.display === 'none' || !pop.style.display) return;
+  if(pop.contains(e.target) || (btn && btn.contains(e.target))) return;
+  pop.style.display = 'none';
+});
+
 function cargarBannerDinamico(){
   if(!window.db) return;
   window.db.collection('config').doc('banner').get().then(function(doc){
@@ -2212,16 +2238,8 @@ function cargarBannerDinamico(){
     var s2 = document.getElementById('bnrSched2');
     if(s1 && d.horario1) s1.textContent = d.horario1;
     if(s2 && d.horario2) s2.textContent = d.horario2;
-    // Posición del bloque de texto
-    var info = document.querySelector('.sucursal-info');
-    var ovrl = document.querySelector('.sucursal-overlay');
-    if(info && d.textoPos === 'right'){
-      info.style.left='auto'; info.style.right='0';
-      if(ovrl) ovrl.style.background='linear-gradient(to left,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)';
-    } else if(info){
-      info.style.left='0'; info.style.right='auto';
-      if(ovrl) ovrl.style.background='linear-gradient(to right,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)';
-    }
+    var horarioWrap = document.getElementById('horarioWrap');
+    if(horarioWrap) horarioWrap.style.display = (d.mostrarHorario === false) ? 'none' : '';
   }).catch(function(){});
 }
 
@@ -2599,17 +2617,17 @@ function renderRedesCliente(data){
   if(data.ig){
     h += '<a href="https://instagram.com/'+data.ig+'" target="_blank" class="red-btn-inline" '+
       'style="background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)">'+
-      '📸 @'+data.ig+'</a>';
+      '📸<span>&nbsp;@'+data.ig+'</span></a>';
   }
   if(data.fb){
     h += '<a href="'+data.fb+'" target="_blank" class="red-btn-inline" style="background:#1877F2">'+
-      '📘 Facebook</a>';
+      '📘<span>&nbsp;Facebook</span></a>';
   }
   if(data.wa){
     var num = data.wa.replace(/[^0-9+]/g,'');
     window._waNumEmpresa = num.replace('+','');
     h += '<a href="https://wa.me/'+num+'" target="_blank" class="red-btn-inline" style="background:#25D366">'+
-      '💬 WA</a>';
+      '💬<span>&nbsp;WA</span></a>';
   }
   if(h) inline.innerHTML = h;
 }
