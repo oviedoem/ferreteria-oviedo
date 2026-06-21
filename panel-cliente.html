@@ -150,15 +150,6 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
   background:url('FONDO3.jpg') center 40%/cover no-repeat;
   opacity:.82;
 }
-.sucursal-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to right,
-    rgba(0,0,0,.72) 0%,
-    rgba(0,0,0,.42) 36%,
-    rgba(0,0,0,.08) 64%,
-    transparent 100%
-  );
-}
 .btn-horario{
   font-size:11px;color:rgba(255,255,255,.8);cursor:pointer;padding:6px 10px;
   border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);
@@ -526,7 +517,6 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 <!-- BANNER SUCURSAL -->
 <div class="sucursal-banner">
   <div class="sucursal-bg"></div>
-  <div class="sucursal-overlay"></div>
 </div>
 
 <!-- VENDEDORES — movidos al asistente flotante y panel contacto comercial -->
@@ -2215,25 +2205,64 @@ document.addEventListener('click', function(e){
   pop.style.display = 'none';
 });
 
-function cargarBannerDinamico(){
-  if(!window.db) return;
+// ── BANNER: pinta un slide (imagen + ajustes + link) en el fondo del header ──
+function _bnrPintarSlide(d){
+  var imgSrc = d.imageData || d.url || null;
+  if(!imgSrc) return;
+  var bg     = document.querySelector('.sucursal-bg');
+  var banner = document.querySelector('.sucursal-banner');
+  if(bg){
+    bg.style.backgroundImage    = "url('" + imgSrc + "')";
+    bg.style.backgroundPosition = (d.posX||50) + '% ' + (d.posY||40) + '%';
+    bg.style.backgroundSize     = 'contain';
+    bg.style.opacity            = (d.opacity||82) / 100;
+    bg.style.filter = 'brightness('+(d.brightness||100)+'%) contrast('+(d.contrast||100)+'%) saturate('+(d.saturacion||100)+'%)';
+  }
+  if(banner && d.height) banner.style.height = d.height + 'px';
+  if(banner){
+    if(d.linkURL){
+      banner.style.cursor = 'pointer';
+      banner.onclick = function(){ window.open(d.linkURL, '_blank', 'noopener'); };
+    } else {
+      banner.style.cursor = '';
+      banner.onclick = null;
+    }
+  }
+}
+
+// ── BANNER: rota entre varios slides activos (carrusel, Prompt 10c) ─────────
+var _bnrRotacionTimer = null;
+function _bnrIniciarRotacion(slides){
+  if(_bnrRotacionTimer){ clearInterval(_bnrRotacionTimer); _bnrRotacionTimer = null; }
+  var idx = 0;
+  _bnrPintarSlide(slides[idx]);
+  if(slides.length > 1){
+    _bnrRotacionTimer = setInterval(function(){
+      idx = (idx + 1) % slides.length;
+      _bnrPintarSlide(slides[idx]);
+    }, 6000);
+  }
+}
+
+// ── BANNER: fallback al doc único config/banner (sin carrusel todavía) ──────
+function _bnrCargarBannerUnico(){
   window.db.collection('config').doc('banner').get().then(function(doc){
     if(!doc.exists) return;
     var d = doc.data();
-    var imgSrc = d.imageData || d.url || null;
-    if(!d.activo || !imgSrc) return;
-    var bg     = document.querySelector('.sucursal-bg');
-    var banner = document.querySelector('.sucursal-banner');
-    if(bg){
-      bg.style.backgroundImage    = "url('" + imgSrc + "')";
-      bg.style.backgroundPosition = (d.posX||50) + '% ' + (d.posY||40) + '%';
-      bg.style.backgroundSize     = 'cover';
-      bg.style.opacity            = (d.opacity||82) / 100;
-      var f = 'brightness('+(d.brightness||100)+'%) contrast('+(d.contrast||100)+'%) saturate('+(d.saturacion||100)+'%)';
-      bg.style.filter = f;
-    }
-    if(banner && d.height) banner.style.height = d.height + 'px';
-    // Texto del banner
+    if(!d.activo) return;
+    var ahora = Date.now();
+    if(d.fechaInicio && ahora < d.fechaInicio) return;
+    if(d.fechaFin && ahora > d.fechaFin) return;
+    _bnrPintarSlide(d);
+  }).catch(function(){});
+}
+
+function cargarBannerDinamico(){
+  if(!window.db) return;
+  // Texto/horario vive en el doc único, independiente del carrusel de imágenes
+  window.db.collection('config').doc('banner').get().then(function(doc){
+    if(!doc.exists) return;
+    var d = doc.data();
     var s1 = document.getElementById('bnrSched1');
     var s2 = document.getElementById('bnrSched2');
     if(s1 && d.horario1) s1.textContent = d.horario1;
@@ -2241,6 +2270,22 @@ function cargarBannerDinamico(){
     var horarioWrap = document.getElementById('horarioWrap');
     if(horarioWrap) horarioWrap.style.display = (d.mostrarHorario === false) ? 'none' : '';
   }).catch(function(){});
+
+  // Carrusel: slides activos y dentro de su rango de fechas
+  window.db.collection('config').doc('banner').collection('carrusel').get().then(function(snap){
+    var ahora = Date.now();
+    var slides = [];
+    snap.forEach(function(doc){
+      var d = doc.data();
+      if(d.activo === false || !d.imageData) return;
+      if(d.fechaInicio && ahora < d.fechaInicio) return;
+      if(d.fechaFin && ahora > d.fechaFin) return;
+      slides.push(d);
+    });
+    slides.sort(function(a,b){ return (a.orden||0) - (b.orden||0); });
+    if(slides.length > 0) _bnrIniciarRotacion(slides);
+    else _bnrCargarBannerUnico();
+  }).catch(function(){ _bnrCargarBannerUnico(); });
 }
 
 // ── Sanitizar inputs de cotización ───────────────────────────────────────────
@@ -3315,6 +3360,6 @@ function registrarAccesoCli(uid, nombre, role){
 
 
 </script>
-<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.24<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">12-06-2026</span></div>
+<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.27<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">21-06-2026</span></div>
 </body>
 </html>

@@ -299,9 +299,8 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 .tc-link{font-size:11px;font-weight:700;color:var(--naranja);margin-top:auto;display:flex;align-items:center;gap:4px}
 /* ── BANNER ADMIN ─────────────────────────────────────────────────── */
 .bnr-preview-wrap{border-radius:12px;overflow:hidden;border:2px solid var(--border);margin-bottom:6px;height:160px;background:#1a1a1a;position:relative;transition:height .2s}
-.bnr-preview-bg{position:absolute;inset:0;background-size:cover;background-position:50% 40%;transition:opacity .2s,filter .2s,background-position .1s}
-.bnr-preview-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)}
-.bnr-preview-txt{position:absolute;top:0;left:0;bottom:0;z-index:2;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 14px;max-width:220px}
+.bnr-preview-bg{position:absolute;inset:0;background-size:contain;background-repeat:no-repeat;background-position:50% 40%;transition:opacity .2s,filter .2s,background-position .1s}
+.bnr-preview-txt{display:flex;flex-direction:column;gap:3px;padding:8px 4px 0}
 /* sticky preview panel */
 .bnr-sticky-wrap{position:sticky;top:68px;z-index:20;background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
 .bnr-upload-zone{border:2px dashed var(--border);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;transition:.18s;background:#fafafa;position:relative}
@@ -2119,6 +2118,14 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           </div>
         </div>
         <div id="igInfo" style="display:none;margin-top:10px"></div>
+        <div class="fgroup" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+          <label class="flabel">Posts embebidos</label>
+          <div style="display:flex;gap:8px">
+            <input class="finput" id="igEmbedUrl" placeholder="https://www.instagram.com/p/XXXXXXX/">
+            <button class="btn btn-sm btn-success" onclick="igEmbedAgregar()">Agregar post</button>
+          </div>
+          <div id="igEmbedsList" style="margin-top:10px;display:flex;flex-direction:column;gap:10px"></div>
+        </div>
       </div>
       <div class="red-card">
         <div class="red-header">
@@ -2663,12 +2670,11 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <div class="card-title" style="margin-bottom:8px"><span>👁️</span> Vista previa en vivo <span style="font-size:10px;font-weight:400;color:var(--gris);margin-left:6px">— fiel reflejo de cómo lo ven clientes y vendedores</span></div>
           <div class="bnr-preview-wrap" id="bnrPreviewWrap" style="height:160px">
             <div class="bnr-preview-bg" id="bnrPreviewBg" style="background-image:url('FONDO3.jpg')"></div>
-            <div class="bnr-preview-overlay"></div>
-            <div class="bnr-preview-txt" id="bnrPreviewTxt">
-              <div style="font-size:9px;font-weight:800;color:#DA0000;text-transform:uppercase;letter-spacing:.7px">📍 Sucursal El Manzano</div>
-              <div id="bnrPreviewLine1" style="font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7)">Lun–Vie 08:30–13:30 · 14:30–18:00</div>
-              <div id="bnrPreviewLine2" style="font-size:10px;color:rgba(255,255,255,.8)">Sáb 09:00–13:30</div>
-            </div>
+          </div>
+          <div class="bnr-preview-txt" id="bnrPreviewTxt">
+            <div style="font-size:9px;font-weight:800;color:#DA0000;text-transform:uppercase;letter-spacing:.7px">📍 Sucursal El Manzano — texto que ve el cliente al tocar "🕐 Horario"</div>
+            <div id="bnrPreviewLine1" style="font-size:12px;font-weight:700;color:var(--dark)">Lun–Vie 08:30–13:30 · 14:30–18:00</div>
+            <div id="bnrPreviewLine2" style="font-size:10px;color:var(--gris)">Sáb 09:00–13:30</div>
           </div>
         </div>
 
@@ -2690,6 +2696,11 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
             <input type="checkbox" id="bnrMostrarHorario" checked style="width:16px;height:16px;cursor:pointer">
             <label for="bnrMostrarHorario" style="font-size:12px;color:var(--gris);cursor:pointer">Mostrar botón "Horario" a los clientes</label>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:600;color:var(--gris);margin-bottom:4px;display:block">Link al hacer clic en el banner (opcional)</label>
+            <input type="text" id="bnrLinkURL" placeholder="https://... (ej: tab de promociones)"
+              style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;background:var(--input-bg,#fff)">
           </div>
           <button onclick="bnrGuardarTexto()"
             style="width:100%;padding:9px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">💾 Guardar texto del banner</button>
@@ -2741,6 +2752,19 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <span class="bnr-slider-val" id="bnrSatVal">100%</span>
           </div>
 
+          <span class="bnr-section-lbl">Programación (opcional)</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <div style="flex:1;min-width:140px">
+              <label style="font-size:11px;font-weight:600;color:var(--gris);margin-bottom:4px;display:block">Mostrar desde</label>
+              <input type="datetime-local" id="bnrFechaInicio" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;background:var(--input-bg,#fff)">
+            </div>
+            <div style="flex:1;min-width:140px">
+              <label style="font-size:11px;font-weight:600;color:var(--gris);margin-bottom:4px;display:block">Mostrar hasta</label>
+              <input type="datetime-local" id="bnrFechaFin" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;background:var(--input-bg,#fff)">
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--gris);margin:0 0 8px">Dejá vacío para mostrar el banner siempre.</p>
+
           <!-- Botones de acción -->
           <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
             <button class="lbtn" style="flex:1;min-width:150px;padding:12px;font-size:13px" onclick="bnrGuardar()">🚀 Guardar fondo</button>
@@ -2752,6 +2776,26 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <button id="bnrRestaurarAnteriorBtn" style="display:none;flex:1;padding:10px;border:1.5px solid #f59e0b;background:#fffbeb;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#92400e" onclick="bnrRestaurarAnterior()">⏪ Fondo anterior</button>
           </div>
           <div class="bnr-status-msg" id="bnrSaveStatus"></div>
+
+          <!-- Historial de banners -->
+          <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+            <div class="card-title" style="margin-bottom:8px"><span>📜</span> Historial de banners</div>
+            <div id="bnrHistorialLista" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--gris)">Cargando...</div>
+          </div>
+        </div>
+
+        <!-- ②b CARRUSEL — múltiples banners (Prompt 10b) -->
+        <div class="card">
+          <div class="card-title"><span>🎞️</span> Carrusel de banners</div>
+          <p style="font-size:12px;color:var(--gris);margin-bottom:10px">El banner activo (de arriba) se puede agregar como un slide más. Si hay 2+ slides activos, el sitio los rota automáticamente.</p>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <button onclick="bnrMigrarACarrusel().then(function(r){ bnrMostrarStatus('bnrCarruselStatus','ok', r==='migrado' ? '✓ Banner actual migrado como primer slide.' : 'Nada para migrar (ya hay slides o no hay banner activo).'); bnrCargarCarrusel(); }).catch(function(e){ bnrMostrarStatus('bnrCarruselStatus','err','Error: '+e.message); })"
+              style="flex:1;min-width:160px;padding:10px;border:1.5px solid var(--border);background:#fff;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--dark)">↪ Migrar banner actual (1ra vez)</button>
+            <button onclick="bnrAgregarSlideActual()"
+              style="flex:1;min-width:160px;padding:10px;border:none;background:#2563eb;color:#fff;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Agregar banner actual como slide</button>
+          </div>
+          <div id="bnrCarruselLista" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--gris)">Cargando...</div>
+          <div class="bnr-status-msg" id="bnrCarruselStatus"></div>
         </div>
 
         <!-- ③ CARGAR IMAGEN — al fondo para no distraer -->
@@ -3145,7 +3189,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.24<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">12-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.27<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">21-06-2026</span></div>
 
 <script>
 
@@ -3477,8 +3521,10 @@ function _adminResetarIntentos(){
 // ── Device binding: solo dispositivos autorizados pueden entrar como admin ────
 // config/adminDispositivos  →  { lista: ['deviceId1', 'deviceId2', ...] }
 // Primera vez (lista vacía): registra el dispositivo actual automáticamente.
-function _adminVerificarDispositivo(uid, nombre, onOk, onBloqueado){
+var ADMIN_DUENO_EMAIL = 'alejandrog45@gmail.com'; // cuenta dueño: nunca pide autorización de equipo
+function _adminVerificarDispositivo(uid, nombre, onOk, onBloqueado, email){
   if(!window.db){ onOk(); return; }
+  if(email && email.toLowerCase() === ADMIN_DUENO_EMAIL){ onOk(); return; }
   var deviceId = getDeviceId();
   window.db.collection('config').doc('adminDispositivos').get()
     .then(function(snap){
@@ -3600,7 +3646,8 @@ function doLoginGoogleAdmin(){
               function(){
                 var err=document.getElementById('lerr');
                 if(err){ err.style.color='#c62828'; err.innerHTML='Dispositivo no autorizado.<br><span style="font-size:11px;color:#374151">Copia este ID y agrégalo desde el panel admin en tu equipo autorizado:</span><br><code id="errDevId" style="display:block;background:#f3f4f6;border-radius:6px;padding:6px 8px;margin:6px 0;font-size:11px;word-break:break-all;color:#1e40af;cursor:pointer" onclick="navigator.clipboard.writeText(getDeviceId()).then(function(){document.getElementById(\'errDevId\').style.background=\'#dcfce7\';setTimeout(function(){document.getElementById(\'errDevId\').style.background=\'#f3f4f6\';},1500)})">'+getDeviceId()+' — toca para copiar</code>'; }
-              }
+              },
+              result.user.email
             );
           });
       })
@@ -3651,7 +3698,8 @@ function doLogin(){
               function(){
                 err.style.color='#c62828';
                 err.textContent='Dispositivo no autorizado. Accede desde tu equipo habitual o registra este equipo desde el panel admin.';
-              }
+              },
+              email
             );
           });
       })
@@ -3749,7 +3797,8 @@ function mostrarApp(){
                   window.auth.signOut().catch(function(){});
                   var err=document.getElementById('lerr');
                   if(err){ err.style.color='#c62828'; err.textContent='Sesion restaurada desde dispositivo no autorizado. Inicia sesion desde tu equipo habitual.'; }
-                }
+                },
+                user.email
               );
             }
           }).catch(function(){});
@@ -5131,6 +5180,9 @@ function loadRedes(){
       if(d.ig){ document.getElementById('igUser').value=d.ig; document.getElementById('igStatus').textContent='@'+d.ig; }
       if(d.fb){ document.getElementById('fbUrl').value=d.fb; document.getElementById('fbStatus').textContent=d.fb; }
       if(d.wa){ document.getElementById('waNum').value=d.wa; document.getElementById('waStatus').textContent=d.wa; }
+      var embedsList = document.getElementById('igEmbedsList');
+      if(embedsList) embedsList.innerHTML = '';
+      if(Array.isArray(d.igEmbeds)) d.igEmbeds.forEach(_igPintarEmbed);
     }).catch(function(){});
   }
 }
@@ -5243,6 +5295,45 @@ function vincularRed(tipo){
   toast('Red social vinculada y publicada en clientes','ok');
 }
 
+function _igCargarEmbedScript(cb){
+  if(window.instgrm){ cb(); return; }
+  if(document.getElementById('igEmbedScript')){ setTimeout(function(){ _igCargarEmbedScript(cb); }, 300); return; }
+  var s = document.createElement('script');
+  s.id = 'igEmbedScript';
+  s.src = 'https://www.instagram.com/embed.js';
+  s.onload = cb;
+  document.body.appendChild(s);
+}
+
+function _igPintarEmbed(url){
+  var cont = document.getElementById('igEmbedsList');
+  if(!cont) return;
+  var bq = document.createElement('blockquote');
+  bq.className = 'instagram-media';
+  bq.setAttribute('data-instgrm-permalink', url);
+  cont.appendChild(bq);
+  _igCargarEmbedScript(function(){
+    if(window.instgrm) window.instgrm.Embeds.process();
+  });
+}
+
+function igEmbedAgregar(){
+  var input = document.getElementById('igEmbedUrl');
+  var url = (input.value || '').trim();
+  if(!/^https:\/\/(www\.)?instagram\.com\/(p|reel)\/[A-Za-z0-9_-]+\/?/.test(url)){
+    toast('URL de post de Instagram inválida','warn');
+    return;
+  }
+  _igPintarEmbed(url);
+  input.value = '';
+  if(window.db){
+    window.db.collection('config').doc('redes')
+      .set({ igEmbeds: firebase.firestore.FieldValue.arrayUnion(url) }, { merge:true })
+      .catch(function(){});
+  }
+  toast('Post agregado','ok');
+}
+
 function showRedInstrucciones(tipo){
   var modal=document.getElementById('redModal');
   modal.style.display='block';
@@ -5331,8 +5422,23 @@ function bannerAdminCargar(){
     if(et2) et2.value = d.horario2 || 'Sáb 09:00–13:30';
     var chkHorario = document.getElementById('bnrMostrarHorario');
     if(chkHorario) chkHorario.checked = (d.mostrarHorario !== false);
+    var elLink = document.getElementById('bnrLinkURL');
+    if(elLink) elLink.value = d.linkURL || '';
     bnrActualizarTexto();
+    // Programación por fecha/hora
+    var fmtDT = function(ms){
+      if(!ms) return '';
+      var dt = new Date(ms);
+      var pad = function(n){ return (n<10?'0':'')+n; };
+      return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate())+'T'+pad(dt.getHours())+':'+pad(dt.getMinutes());
+    };
+    var elFIni = document.getElementById('bnrFechaInicio');
+    var elFFin = document.getElementById('bnrFechaFin');
+    if(elFIni) elFIni.value = fmtDT(d.fechaInicio);
+    if(elFFin) elFFin.value = fmtDT(d.fechaFin);
   }).catch(function(){ bnrActualizar(); });
+  bnrCargarHistorial();
+  bnrCargarCarrusel();
 }
 
 function bnrActualizar(){
@@ -5356,7 +5462,7 @@ function bnrActualizar(){
     var url = _bnrCroppedUrl || _bnrUrlBlob || _bnrUrlLive || 'FONDO3.jpg';
     bg.style.backgroundImage    = "url('" + url + "')";
     bg.style.backgroundPosition = posX + '% ' + posY + '%';
-    bg.style.backgroundSize     = 'cover';
+    bg.style.backgroundSize     = 'contain';
     bg.style.opacity            = opacity / 100;
     bg.style.filter             = 'brightness('+bright+'%) contrast('+contrast+'%) saturate('+sat+'%)';
   }
@@ -5493,6 +5599,205 @@ function bnrGuardar(){
   bnrGuardarFirestore(imgData);
 }
 
+// ── BANNER: archiva el banner vigente en config/banner/historial antes de sobrescribirlo (máx 5) ──
+function bnrArchivarBannerActual(){
+  var ref = window.db.collection('config').doc('banner');
+  return ref.get().then(function(doc){
+    if(!doc.exists) return;
+    var data = doc.data();
+    if(!data.imageData) return; // no hay banner previo que archivar
+    return ref.collection('historial').add({
+      imageData:  data.imageData,
+      posX:       data.posX,
+      posY:       data.posY,
+      height:     data.height,
+      opacity:    data.opacity,
+      brightness: data.brightness,
+      contrast:   data.contrast,
+      saturacion: data.saturacion,
+      archivedAt: nowTs()
+    }).then(function(){
+      return ref.collection('historial').orderBy('archivedAt', 'desc').get();
+    }).then(function(snap){
+      var docs = snap.docs;
+      if(docs.length <= 5) return;
+      var aBorrar = docs.slice(5);
+      return Promise.all(aBorrar.map(function(d){ return d.ref.delete(); }));
+    });
+  });
+}
+
+// ── BANNER: pinta el historial (últimos 5) en #bnrHistorialLista ──────────────
+// ── CARRUSEL (Prompt 10a) ──────────────────────────────────────────────────
+// Estructura nueva: subcolección config/banner/carrusel — un doc por slide,
+// mismos campos que el doc único de hoy + orden (int) + activo (bool).
+// El doc único config/banner sigue siendo la fuente que lee panel-cliente.html
+// hasta el Prompt 10c (rotación). Esta función solo prepara el primer slide
+// a partir del banner actual, de forma idempotente (no pisa si ya hay slides).
+function bnrMigrarACarrusel(){
+  if(!window.db) return Promise.reject(new Error('Firebase no disponible'));
+  var refCarrusel = window.db.collection('config').doc('banner').collection('carrusel');
+  return refCarrusel.limit(1).get().then(function(snap){
+    if(!snap.empty) return 'ya-existe'; // idempotente: no migra dos veces
+    return window.db.collection('config').doc('banner').get().then(function(doc){
+      if(!doc.exists || !doc.data().imageData) return 'sin-banner-actual';
+      var d = doc.data();
+      return refCarrusel.add({
+        imageData:   d.imageData,
+        posX:        d.posX,
+        posY:        d.posY,
+        height:      d.height,
+        opacity:     d.opacity,
+        brightness:  d.brightness,
+        contrast:    d.contrast,
+        saturacion:  d.saturacion,
+        linkURL:     d.linkURL || '',
+        fechaInicio: d.fechaInicio || null,
+        fechaFin:    d.fechaFin || null,
+        orden:       0,
+        activo:      true
+      }).then(function(){ return 'migrado'; });
+    });
+  });
+}
+
+// ── CARRUSEL (Prompt 10b): agrega el banner actualmente activo como slide nuevo ──
+function bnrAgregarSlideActual(){
+  if(!window.db){ bnrMostrarStatus('bnrCarruselStatus','err','Firebase no disponible'); return; }
+  if(!_bnrUrlLive){ bnrMostrarStatus('bnrCarruselStatus','err','No hay un banner activo guardado para agregar.'); return; }
+  var refCarrusel = window.db.collection('config').doc('banner').collection('carrusel');
+  var v = function(id){ var el = document.getElementById(id); return el ? parseInt(el.value) : null; };
+  var elIni = document.getElementById('bnrFechaInicio');
+  var elFin = document.getElementById('bnrFechaFin');
+  var elLink = document.getElementById('bnrLinkURL');
+  refCarrusel.orderBy('orden','desc').limit(1).get().then(function(snap){
+    var siguienteOrden = snap.empty ? 0 : (snap.docs[0].data().orden||0) + 1;
+    return refCarrusel.add({
+      imageData:   _bnrUrlLive,
+      posX:        v('bnrPosX'),
+      posY:        v('bnrPosY'),
+      height:      v('bnrHeight'),
+      opacity:     v('bnrOpacity'),
+      brightness:  v('bnrBright'),
+      contrast:    v('bnrContrast'),
+      saturacion:  v('bnrSat'),
+      linkURL:     (elLink && elLink.value) || '',
+      fechaInicio: (elIni && elIni.value) ? new Date(elIni.value).getTime() : null,
+      fechaFin:    (elFin && elFin.value) ? new Date(elFin.value).getTime() : null,
+      orden:       siguienteOrden,
+      activo:      true
+    });
+  }).then(function(){
+    bnrMostrarStatus('bnrCarruselStatus','ok','✓ Slide agregado al carrusel.');
+    bnrCargarCarrusel();
+  }).catch(function(e){ bnrMostrarStatus('bnrCarruselStatus','err','Error: '+e.message); });
+}
+
+// ── CARRUSEL: lista de slides con reordenar / activar-desactivar / eliminar ──
+function bnrCargarCarrusel(){
+  var cont = document.getElementById('bnrCarruselLista');
+  if(!cont || !window.db) return;
+  var refCarrusel = window.db.collection('config').doc('banner').collection('carrusel');
+  refCarrusel.orderBy('orden','asc').get().then(function(snap){
+    if(snap.empty){ cont.textContent = 'Sin slides en el carrusel todavía.'; return; }
+    cont.innerHTML = '';
+    var docs = snap.docs;
+    docs.forEach(function(doc, i){
+      var d = doc.data();
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px;border:1px solid var(--border);border-radius:8px' + (d.activo===false ? ';opacity:0.5' : '');
+      row.innerHTML =
+        '<img src="'+d.imageData+'" style="width:48px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0">'+
+        '<span style="flex:1">Orden '+d.orden+(d.activo===false?' · inactivo':'')+'</span>'+
+        '<button data-act="up"   style="padding:4px 8px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-family:inherit" '+(i===0?'disabled':'')+'>▲</button>'+
+        '<button data-act="down" style="padding:4px 8px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-family:inherit" '+(i===docs.length-1?'disabled':'')+'>▼</button>'+
+        '<button data-act="toggle" style="padding:4px 8px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-family:inherit">'+(d.activo===false?'Activar':'Desactivar')+'</button>'+
+        '<button data-act="del" style="padding:4px 8px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:6px;cursor:pointer;font-family:inherit">🗑</button>';
+      row.querySelector('[data-act="up"]').onclick   = function(){ bnrCarruselSwap(docs, i, i-1); };
+      row.querySelector('[data-act="down"]').onclick = function(){ bnrCarruselSwap(docs, i, i+1); };
+      row.querySelector('[data-act="toggle"]').onclick = function(){
+        refCarrusel.doc(doc.id).update({ activo: d.activo===false }).then(bnrCargarCarrusel);
+      };
+      row.querySelector('[data-act="del"]').onclick = function(){
+        if(!confirm('¿Eliminar este slide del carrusel?')) return;
+        refCarrusel.doc(doc.id).delete().then(bnrCargarCarrusel);
+      };
+      cont.appendChild(row);
+    });
+  }).catch(function(){ cont.textContent = 'No se pudo cargar el carrusel.'; });
+}
+
+// Intercambia el campo "orden" entre dos slides (reordenar con ▲▼)
+function bnrCarruselSwap(docs, i, j){
+  if(j<0 || j>=docs.length) return;
+  var refCarrusel = window.db.collection('config').doc('banner').collection('carrusel');
+  var a = docs[i], b = docs[j];
+  var ordenA = a.data().orden, ordenB = b.data().orden;
+  Promise.all([
+    refCarrusel.doc(a.id).update({orden: ordenB}),
+    refCarrusel.doc(b.id).update({orden: ordenA})
+  ]).then(bnrCargarCarrusel);
+}
+
+function bnrCargarHistorial(){
+  var cont = document.getElementById('bnrHistorialLista');
+  if(!cont || !window.db) return;
+  window.db.collection('config').doc('banner').collection('historial')
+    .orderBy('archivedAt', 'desc').limit(5).get().then(function(snap){
+      if(snap.empty){ cont.textContent = 'Sin banners anteriores guardados.'; return; }
+      cont.innerHTML = '';
+      snap.forEach(function(doc){
+        var d = doc.data();
+        var fecha = '';
+        try { fecha = d.archivedAt && d.archivedAt.toDate ? d.archivedAt.toDate().toLocaleString('es-CL') : ''; } catch(e){}
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px;border:1px solid var(--border);border-radius:8px';
+        row.innerHTML =
+          '<img src="'+d.imageData+'" style="width:48px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0">'+
+          '<span style="flex:1">'+(fecha||'(sin fecha)')+'</span>'+
+          '<button style="padding:5px 10px;border:1.5px solid #f59e0b;background:#fffbeb;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#92400e">Restaurar este</button>';
+        row.querySelector('button').onclick = function(){ bnrRestaurarDeHistorial(doc.id); };
+        cont.appendChild(row);
+      });
+    }).catch(function(){ cont.textContent = 'No se pudo cargar el historial.'; });
+}
+
+// ── BANNER: restaura un banner puntual del historial (no toca bnrRestaurarAnterior) ──
+function bnrRestaurarDeHistorial(docId){
+  if(!window.db) return;
+  if(!confirm('¿Restaurar este banner del historial?\nEsto reemplazará la imagen actual.')) return;
+  var ref = window.db.collection('config').doc('banner');
+  ref.collection('historial').doc(docId).get().then(function(doc){
+    if(!doc.exists) throw new Error('Ese banner ya no está disponible en el historial');
+    var d = doc.data();
+    return bnrArchivarBannerActual().then(function(){
+      return ref.set({
+        imageData:  d.imageData,
+        posX:       d.posX,
+        posY:       d.posY,
+        height:     d.height,
+        opacity:    d.opacity,
+        brightness: d.brightness,
+        contrast:   d.contrast,
+        saturacion: d.saturacion,
+        activo:     true,
+        ts:         nowTs()
+      }, { merge: true });
+    }).then(function(){ return d.imageData; });
+  }).then(function(imageData){
+    _bnrUrlLive    = imageData;
+    _bnrUrlBlob    = null;
+    _bnrCroppedUrl = null;
+    var thumb = document.getElementById('bnrImgThumb');
+    if(thumb) thumb.src = imageData;
+    document.getElementById('bnrImgName').textContent = '✓ Banner restaurado desde historial';
+    document.getElementById('bnrImgTag').style.display = 'flex';
+    bnrActualizar();
+    bnrCargarHistorial();
+    bnrMostrarStatus('bnrSaveStatus','ok','✓ Banner restaurado desde historial.');
+  }).catch(function(e){ bnrMostrarStatus('bnrSaveStatus','err','Error: '+(e.message||e)); });
+}
+
 // ── BANNER: guarda base64 directo en Firestore — plan Spark (costo cero) ──────
 function bnrGuardarFirestore(imageData){
   if(!window.db){ bnrMostrarStatus('bnrSaveStatus','err','Firebase no disponible'); return; }
@@ -5510,8 +5815,13 @@ function bnrGuardarFirestore(imageData){
     activo:     true,
     ts:         nowTs()
   };
-  window.db.collection('config').doc('banner').set(payload)
-    .then(function(){
+  var elIni = document.getElementById('bnrFechaInicio');
+  var elFin = document.getElementById('bnrFechaFin');
+  payload.fechaInicio = (elIni && elIni.value) ? new Date(elIni.value).getTime() : null;
+  payload.fechaFin    = (elFin && elFin.value) ? new Date(elFin.value).getTime() : null;
+  bnrArchivarBannerActual().then(function(){
+    return window.db.collection('config').doc('banner').set(payload, { merge: true });
+  }).then(function(){
       if(prog) prog.style.display='none';
       bnrMostrarStatus('bnrSaveStatus','ok','✓ Banner guardado. Los clientes lo ven al recargar el catálogo.');
       _bnrUrlLive    = imageData;
@@ -5553,9 +5863,15 @@ function bnrGuardarTexto(){
   var l1  = (document.getElementById('bnrTextoL1')||{}).value || 'Lun–Vie 08:30–13:30 · 14:30–18:00';
   var l2  = (document.getElementById('bnrTextoL2')||{}).value || 'Sáb 09:00–13:30';
   var mostrarHorario = (document.getElementById('bnrMostrarHorario')||{}).checked !== false;
+  var linkURL = (document.getElementById('bnrLinkURL')||{}).value || '';
+  linkURL = linkURL.trim();
+  if(linkURL && !/^https?:\/\//.test(linkURL)){
+    bnrMostrarStatus('bnrTextoStatus','err','El link debe empezar con http:// o https://');
+    return;
+  }
   bnrMostrarStatus('bnrTextoStatus','info','Guardando...');
   window.db.collection('config').doc('banner').set(
-    { horario1: l1, horario2: l2, mostrarHorario: mostrarHorario },
+    { horario1: l1, horario2: l2, mostrarHorario: mostrarHorario, linkURL: linkURL },
     { merge: true }
   ).then(function(){
     bnrMostrarStatus('bnrTextoStatus','ok','✓ Texto guardado. Los paneles lo actualizan al recargar.');

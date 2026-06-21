@@ -160,12 +160,7 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
 .stock-ok{background:#dcfce7;color:#166534}.stock-low{background:#fef9c3;color:#854d0e}.stock-out{background:#fee2e2;color:#991b1b}
 /* ── BANNER SUCURSAL ─────────────────────────── */
 .sucursal-banner{position:relative;overflow:hidden;height:160px;border-bottom:2px solid #DA0000;background:#1a1a1a;flex-shrink:0}
-.sucursal-bg{position:absolute;inset:0;background:url('FONDO3.jpg') center 40%/cover no-repeat;opacity:.82}
-.sucursal-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)}
-.sucursal-info{position:absolute;top:0;left:0;bottom:0;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:0 20px;gap:5px;max-width:280px}
-.sucursal-loc{font-size:9px;font-weight:800;color:#DA0000;text-transform:uppercase;letter-spacing:.7px}
-.sucursal-hora{font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7)}
-.sucursal-hora2{font-size:10px;color:rgba(255,255,255,.8)}
+.sucursal-bg{position:absolute;inset:0;background:url('FONDO3.jpg') center 40%/contain no-repeat;opacity:.82}
 .bvac{width:100%;padding:9px;background:#fff;color:var(--rd);border:1px solid var(--rd);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--ff);margin-top:7px}
 .empty{text-align:center;padding:40px 16px;color:var(--grm)}
 
@@ -337,6 +332,22 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
     <div class="htitle">
       <p style="font-size:10px;color:var(--grm);margin:0">Sucursal El Manzano — <span id="wuser"></span></p>
     </div>
+    <div id="horarioWrapVend" style="position:relative">
+      <button onclick="toggleSucursalInfoVend()" style="font-size:11px;color:rgba(255,255,255,.8);cursor:pointer;padding:6px 10px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);font-family:inherit;font-weight:700;white-space:nowrap;margin-right:4px">🕐 Horario</button>
+      <div id="sucursalPopoverVend" style="display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:50;background:rgba(20,20,20,.96);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;width:230px;box-shadow:0 6px 18px rgba(0,0,0,.5)">
+        <div style="font-size:10px;font-weight:800;color:#ff3a3a;text-transform:uppercase;letter-spacing:.8px">📍 Sucursal El Manzano</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);min-width:52px">Lun–Vie</span>
+            <span id="bnrHora1Vend" style="font-size:13px;font-weight:800;color:#fff">08:30–13:30 · 14:30–18:00</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);min-width:52px">Sábado</span>
+            <span id="bnrHora2Vend" style="font-size:13px;font-weight:800;color:#fff">09:00–13:30</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="hbadge">VENDEDOR</div>
     <button id="cuponBadgeVend" onclick="toggleCuponPanel()" style="display:none;position:relative;background:#DA0000;color:white;border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-right:4px">
       🏷️ Cupones <span id="cuponCountVend" style="background:white;color:#DA0000;border-radius:10px;padding:0 5px;margin-left:3px;font-size:10px">0</span>
@@ -349,12 +360,6 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
   <!-- BANNER SUCURSAL VENDEDOR -->
   <div class="sucursal-banner" id="sucursalBannerVend">
     <div class="sucursal-bg" id="sucursalBgVend"></div>
-    <div class="sucursal-overlay"></div>
-    <div class="sucursal-info" id="sucursalInfoVend">
-      <div class="sucursal-loc">📍 Sucursal El Manzano</div>
-      <div class="sucursal-hora" id="bnrHora1Vend">Lun–Vie 08:30–13:30 · 14:30–18:00</div>
-      <div class="sucursal-hora2" id="bnrHora2Vend">Sáb 09:00–13:30</div>
-    </div>
   </div>
 
   <div class="sbar loading" id="sbar"><div class="sdot"></div><span id="stxt">Cargando precios...</span></div>
@@ -1641,39 +1646,99 @@ function genPDF(){
 }
 
 // ── BANNER DINÁMICO (Firestore → CSS) ─────────────────────────────────────────
-function cargarBannerDinamicoVend(){
-  if(!window.db) return;
+// ── BANNER: pinta un slide (imagen + ajustes + link) en el fondo del banner vendedor ──
+function _bnrPintarSlideVend(d){
+  var imgSrc = d.imageData || d.url || null;
+  if(!imgSrc) return;
+  var bg     = document.getElementById('sucursalBgVend');
+  var banner = document.getElementById('sucursalBannerVend');
+  if(bg){
+    bg.style.backgroundImage    = "url('" + imgSrc + "')";
+    bg.style.backgroundPosition = (d.posX||50) + '% ' + (d.posY||40) + '%';
+    bg.style.backgroundSize     = 'contain';
+    bg.style.opacity            = (d.opacity||82) / 100;
+    bg.style.filter             = 'brightness('+(d.brightness||100)+'%) contrast('+(d.contrast||100)+'%) saturate('+(d.saturacion||100)+'%)';
+  }
+  if(banner && d.height) banner.style.height = d.height + 'px';
+  if(banner){
+    if(d.linkURL){
+      banner.style.cursor = 'pointer';
+      banner.onclick = function(){ window.open(d.linkURL, '_blank', 'noopener'); };
+    } else {
+      banner.style.cursor = '';
+      banner.onclick = null;
+    }
+  }
+}
+
+// ── BANNER: rota entre varios slides activos (carrusel) ─────────────────────
+var _bnrRotacionTimerVend = null;
+function _bnrIniciarRotacionVend(slides){
+  if(_bnrRotacionTimerVend){ clearInterval(_bnrRotacionTimerVend); _bnrRotacionTimerVend = null; }
+  var idx = 0;
+  _bnrPintarSlideVend(slides[idx]);
+  if(slides.length > 1){
+    _bnrRotacionTimerVend = setInterval(function(){
+      idx = (idx + 1) % slides.length;
+      _bnrPintarSlideVend(slides[idx]);
+    }, 6000);
+  }
+}
+
+// ── BANNER: fallback al doc único config/banner (sin carrusel todavía) ──────
+function _bnrCargarBannerUnicoVend(){
   window.db.collection('config').doc('banner').get().then(function(doc){
     if(!doc.exists) return;
-    var d      = doc.data();
-    var imgSrc = d.imageData || d.url || null;
-    if(!d.activo || !imgSrc) return;
-    var bg     = document.getElementById('sucursalBgVend');
-    var banner = document.getElementById('sucursalBannerVend');
-    if(bg){
-      bg.style.backgroundImage    = "url('" + imgSrc + "')";
-      bg.style.backgroundPosition = (d.posX||50) + '% ' + (d.posY||40) + '%';
-      bg.style.backgroundSize     = 'cover';
-      bg.style.opacity            = (d.opacity||82) / 100;
-      bg.style.filter             = 'brightness('+(d.brightness||100)+'%) contrast('+(d.contrast||100)+'%) saturate('+(d.saturacion||100)+'%)';
-    }
-    if(banner && d.height) banner.style.height = d.height + 'px';
-    // Texto del banner
+    var d = doc.data();
+    if(!d.activo) return;
+    var ahora = Date.now();
+    if(d.fechaInicio && ahora < d.fechaInicio) return;
+    if(d.fechaFin && ahora > d.fechaFin) return;
+    _bnrPintarSlideVend(d);
+  }).catch(function(){});
+}
+
+function toggleSucursalInfoVend(){
+  var pop = document.getElementById('sucursalPopoverVend');
+  if(pop) pop.style.display = (pop.style.display === 'none' || !pop.style.display) ? 'flex' : 'none';
+}
+document.addEventListener('click', function(e){
+  var pop = document.getElementById('sucursalPopoverVend');
+  var wrap = document.getElementById('horarioWrapVend');
+  if(!pop || pop.style.display === 'none' || !pop.style.display) return;
+  if(wrap && wrap.contains(e.target)) return;
+  pop.style.display = 'none';
+});
+
+function cargarBannerDinamicoVend(){
+  if(!window.db) return;
+  // Texto/horario vive en el doc único, independiente del carrusel de imágenes
+  window.db.collection('config').doc('banner').get().then(function(doc){
+    if(!doc.exists) return;
+    var d = doc.data();
     var h1 = document.getElementById('bnrHora1Vend');
     var h2 = document.getElementById('bnrHora2Vend');
     if(h1 && d.horario1) h1.textContent = d.horario1;
     if(h2 && d.horario2) h2.textContent = d.horario2;
-    // Posición del bloque de texto
-    var infoV = document.getElementById('sucursalInfoVend');
-    var ovrlV = banner ? banner.querySelector('.sucursal-overlay') : null;
-    if(infoV && d.textoPos === 'right'){
-      infoV.style.left='auto'; infoV.style.right='0';
-      if(ovrlV) ovrlV.style.background='linear-gradient(to left,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)';
-    } else if(infoV){
-      infoV.style.left='0'; infoV.style.right='auto';
-      if(ovrlV) ovrlV.style.background='linear-gradient(to right,rgba(0,0,0,.72) 0%,rgba(0,0,0,.42) 36%,rgba(0,0,0,.08) 64%,transparent 100%)';
-    }
+    var wrapV = document.getElementById('horarioWrapVend');
+    if(wrapV) wrapV.style.display = (d.mostrarHorario === false) ? 'none' : '';
   }).catch(function(){});
+
+  // Carrusel: slides activos y dentro de su rango de fechas
+  window.db.collection('config').doc('banner').collection('carrusel').get().then(function(snap){
+    var ahora = Date.now();
+    var slides = [];
+    snap.forEach(function(doc){
+      var d = doc.data();
+      if(d.activo === false || !d.imageData) return;
+      if(d.fechaInicio && ahora < d.fechaInicio) return;
+      if(d.fechaFin && ahora > d.fechaFin) return;
+      slides.push(d);
+    });
+    slides.sort(function(a,b){ return (a.orden||0) - (b.orden||0); });
+    if(slides.length > 0) _bnrIniciarRotacionVend(slides);
+    else _bnrCargarBannerUnicoVend();
+  }).catch(function(){ _bnrCargarBannerUnicoVend(); });
 }
 
 // ── VISIBILIDAD DE PRECIOS (Vendedor) ─────────────────────────────────────────
@@ -2122,6 +2187,6 @@ document.addEventListener('keydown', function(e){
   </div>
 </div>
 
-<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.24<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">12-06-2026</span></div>
+<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.27<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">21-06-2026</span></div>
 </body>
 </html>

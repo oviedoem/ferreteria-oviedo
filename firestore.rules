@@ -53,6 +53,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if esAdmin();
     }
+    // Subcolecciones de config (ej: config/banner/historial, config/banner/carrusel)
+    match /config/{docId}/{subColl}/{subId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
 
     // ── SESIONES ACTIVAS ──────────────────────────────────────
     // Cada usuario escribe/lee su propia sesión

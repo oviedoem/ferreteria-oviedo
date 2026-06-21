@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.26 · Última actualización: 2026-06-21
+# Versión activa: V37.27 · Última actualización: 2026-06-21
 
 ---
 
@@ -978,3 +978,35 @@ Contiene todo lo que NO es flujo activo:
 
 ### Próxima sesión debe empezar por
 - Confirmar commit hecho, y seguir con Prompt 3 del plan (embeds de posts Instagram) si el usuario lo pide
+
+---
+
+## HISTORIAL SESIÓN 2026-06-21 (continuación) — V37.27 Carrusel de banners + fixes
+
+### Hecho
+- Prompt 3 (embeds Instagram): card en admin con input URL + `igEmbedAgregar()`, guarda en `config/redes.igEmbeds` (arrayUnion), embed oficial `instagram.com/embed.js`
+- Prompt 4: link clicable en banner (`config/banner.linkURL`), banner abre en nueva pestaña si hay link
+- BUG FIX: `bnrGuardarFirestore()` usaba `.set()` sin `merge:true` — cada imagen nueva borraba horario/igEmbeds/linkURL. Corregido a `{merge:true}`
+- Prompt 6: historial de banners — subcolección `config/banner/historial` (máx 5), archivado automático antes de cada guardado (`bnrArchivarBannerActual()`)
+- Prompt 7: UI de historial en admin (thumbnail + fecha + restaurar) — `bnrCargarHistorial()`, `bnrRestaurarDeHistorial()`
+- Prompt 8: programación banner por fecha/hora — inputs `bnrFechaInicio`/`bnrFechaFin` en admin, guardados como timestamp
+- Prompt 9: panel-cliente.html respeta `fechaInicio`/`fechaFin` — fuera de rango muestra fondo estático default
+- Prompt 10 (carrusel multi-banner): subcolección `config/banner/carrusel` (orden, activo, mismos campos que el doc único). UI admin con migrar/agregar/reordenar/activar/eliminar slides. Rotación cada 6s en panel-cliente.html **y en panel-admin (index.html)** — antes index.html no tenía nada de esto
+- FIX CRÍTICO firestore.rules: `match /config/{docId}` no cubría subcolecciones (`historial`, `carrusel`) — quedaban bloqueadas por la regla catch-all. Agregado `match /config/{docId}/{subColl}/{subId}` con la misma política
+- Fix visual: `background-size` cambiado de `cover` a `contain` (+`no-repeat` donde faltaba) en los 3 paneles — banners anchos (ej. oviedo.cl, 1280×341) se recortaban; ahora se ven completos
+- Fix: eliminado `.sucursal-overlay` (gradiente oscuro) de panel-cliente.html y de index.html (vendedor) — quedó sin propósito real tras mover el horario a botón+popover; index.html ahora también usa botón "🕐 Horario" + popover igual que cliente (antes tenía el texto superpuesto directo en la imagen)
+- Fix: preview de banner en panel-admin ("Vista previa en vivo") tenía su propio overlay+texto superpuesto desincronizado de la realidad — eliminado, texto movido a leyenda debajo de la imagen
+- Limpieza: `textoPos` (selector izq/der ya removido del admin) seguía referenciado en index.html — eliminado
+- Fix `_adminVerificarDispositivo()`: cuenta dueño (`alejandrog45@gmail.com`) ya no pide autorización de equipo; el resto de las cuentas admin/cooperador sigue pasando por el control de `config/adminDispositivos`
+- Probado con 3 imágenes reales del carrusel de oviedo.cl cargadas directo en Firestore (vía consola del navegador, sesión admin real) — rotación confirmada funcionando en panel-cliente
+- Badge de versión actualizado a V37.27 · 21-06-2026 en los 3 paneles
+- Deploy: `firestore:rules` + `hosting` (varias veces durante la sesión)
+
+### Pendiente
+- Commit a GitHub (este cierre de sesión)
+- Las 3 imágenes de prueba de oviedo.cl quedaron como slides reales en `config/banner/carrusel` — reemplazar por banners propios cuando se quiera publicar contenido real, o borrarlas desde la UI del carrusel en admin
+- Plan original aún sin cerrar checklist final (Safe-Change Protocol por prompt, probado en admin/cliente/vendedor — vendedor recién se sumó al final, falta una pasada de prueba completa ahí)
+
+### Próxima sesión debe empezar por
+- Confirmar commit hecho
+- Si se va a usar el carrusel en producción: reemplazar los 3 slides de prueba (oviedo.cl) por banners reales de Ferretería Oviedo desde el admin
