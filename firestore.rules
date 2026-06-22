@@ -81,6 +81,16 @@ service cloud.firestore {
       allow create: if esAdmin();
     }
 
+    // ── TOKEN DE ACCESO A data/ (mitigación V37.28 — ruta oculta) ──
+    // El nombre de carpeta donde vive data/*.json sensible rota en cada
+    // corrida del pipeline. Solo admin/vendedor autenticados pueden leerlo
+    // para construir la URL real. Escritura: solo el pipeline (Admin SDK
+    // bypassa esta regla) — bloqueada desde el cliente.
+    match /dataAccessToken/{docId} {
+      allow read: if esAdmin() || esVendedor();
+      allow write: if false;
+    }
+
     // ── PROMOS ────────────────────────────────────────────────
     // Lectura pública (catálogo visible sin login)
     // Escritura solo admin

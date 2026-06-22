@@ -28,6 +28,36 @@ if (typeof firebase !== 'undefined') {
   window.auth = auth;
 }
 
+// ── HASH DE CONTRASEÑAS LEGADO (mitigación texto plano) ───────────────────
+// Solo aplica al sistema legado usuario+contraseña en Firestore (users/{uid}.pass).
+// Firebase Auth (Google y email/password modernos) ya hashea server-side — esto NO los toca.
+// Formato hash: 'h1:' + SHA-256 hex. Si el valor guardado no tiene el prefijo,
+// se asume texto plano legado y se compara igual (compatibilidad), migrando al hash
+// automáticamente en el primer login exitoso — nunca corta el acceso de nadie.
+function hashPassLegado(plain, cb) {
+  if (!window.crypto || !window.crypto.subtle) { cb(null); return; } // sin Web Crypto: no migrar, no romper
+  var enc = new TextEncoder().encode(String(plain||''));
+  window.crypto.subtle.digest('SHA-256', enc).then(function(buf){
+    var hex = Array.prototype.map.call(new Uint8Array(buf), function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    cb('h1:' + hex);
+  }).catch(function(){ cb(null); });
+}
+
+// Compara una contraseña ingresada contra el valor guardado (hash o texto plano legado).
+// cb(match, hashParaMigrar) — hashParaMigrar viene seteado solo si matcheó en texto plano
+// (para que el caller la reescriba en Firestore con merge:true, sin afectar otros campos).
+function passMatchLegado(storedValue, inputPlain, cb) {
+  var stored = String(storedValue||'');
+  if (stored.indexOf('h1:') === 0) {
+    hashPassLegado(inputPlain, function(hash){ cb(hash !== null && hash === stored, null); });
+    return;
+  }
+  // Texto plano legado (o vacío)
+  var match = stored !== '' && stored === String(inputPlain||'');
+  if (!match) { cb(false, null); return; }
+  hashPassLegado(inputPlain, function(hash){ cb(true, hash); }); // hash null si no hay Web Crypto: no migra, pero deja pasar
+}
+
 function nowTs() { return firebase.firestore.FieldValue.serverTimestamp(); }
 
 // ══════════════════════════════════════════════════════════════
@@ -100,9 +130,21 @@ function saveUser(userData, cb) {
   if (userData.registroAprobado !== undefined) doc.registroAprobado = userData.registroAprobado;
   if (!doc.fechaRegistro)       doc.fechaRegistro   = userData.fechaRegistro || nowTs();
 
-  db.collection('users').doc(id).set(doc, { merge: true })
-    .then(function(){ if(cb) cb(null,{success:true}); })
-    .catch(function(e){ if(cb) cb(e); });
+  function _guardar(){
+    db.collection('users').doc(id).set(doc, { merge: true })
+      .then(function(){ if(cb) cb(null,{success:true}); })
+      .catch(function(e){ if(cb) cb(e); });
+  }
+  // Endurecimiento: si la contraseña viene en texto plano (sin prefijo 'h1:'),
+  // hashearla antes de guardar — nunca persistir texto plano nuevo en Firestore.
+  if (doc.pass && doc.pass.indexOf('h1:') !== 0) {
+    hashPassLegado(doc.pass, function(hash){
+      if (hash) { doc.pass = hash; doc.p = hash; }
+      _guardar();
+    });
+  } else {
+    _guardar();
+  }
 }
 
 function deleteUser(uid, cb) {

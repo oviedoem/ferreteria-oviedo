@@ -890,7 +890,21 @@ function mostrarAppVend(found){
   cargarBannerDinamicoVend();
   _cargarConfigPreciosVendedor();
   _vendIniciarWatchdog();
-  startApp();
+  _cargarDataToken(startApp);
+}
+
+// ── TOKEN data/ (mitigación seguridad V37.28) ──────────────────────────────
+// Espejo de panel-admin.html: data/*.json sensibles viven en data/<token>/
+// con nombre rotativo (ver rotar_token_data.py). Token en Firestore
+// dataAccessToken/current, protegido por firestore.rules (admin/vendedor).
+function _cargarDataToken(cb){
+  window.db.collection('dataAccessToken').doc('current').get()
+    .then(function(snap){ window._dataToken = snap.exists ? (snap.data().token||'') : ''; })
+    .catch(function(){ window._dataToken = ''; })
+    .then(cb);
+}
+function dataUrl(nombre){
+  return window._dataToken ? '/data/' + window._dataToken + '/' + nombre : '/data/' + nombre;
 }
 
 // ── TIMEOUT DE SESIÓN (8 horas de inactividad) ───────────────────────────────
@@ -2032,7 +2046,7 @@ function venCargar(){
   }
 
   // 1. Intentar JSON estático (sin Firestore)
-  fetch('/data/ventas-manzano.json?t='+Date.now())
+  fetch(dataUrl('ventas-manzano.json')+'?t='+Date.now())
     .then(function(res){ if(!res.ok) throw new Error('no-json'); return res.json(); })
     .then(function(json){
       var lineas = json.registros || [];

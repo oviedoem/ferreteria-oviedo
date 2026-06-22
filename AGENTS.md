@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.27 · Última actualización: 2026-06-21
+# Versión activa: V37.28 (en curso) · Última actualización: 2026-06-21
 
 ---
 
@@ -683,6 +683,39 @@ Content-Security-Policy: scripts/styles/fonts/img/connect srcs definidos
 - 1 commit limpio, sin credenciales ni IPs reales
 - IPs/tokens reemplazados por placeholders: `[SQL-SERVER-IP]` · `[ERP-SERVER-IP]` · `[TOKEN-ERP]`
 - .gitignore bloquea: `FLUJOS/` · `VENTAS EL MANZANO/` · `CATALOGO PRODUCTOS/` · `.claude/`
+
+### ⚠️ MITIGACIÓN ACTIVA V37.28 — data/*.json (ventas, costos, stock) ya no usa ruta fija
+**Hallazgo 2026-06-21:** `data/*.json` (27 archivos: ventas con RUT de clientes, costos, stock,
+pedidos, despachos) se servía como estático de Firebase Hosting en ruta fija. `firestore.rules`
+NO protege Hosting → cualquiera con la URL (visible en el código fuente de `panel-admin.html`)
+los descargaba sin login.
+
+**Storage descartado:** requiere plan Blaze (tarjeta vinculada) para crear bucket nuevo desde
+oct-2024 — rompe la regla de costo cero. Firestore directo también descartado: varios archivos
+superan los 26 MB, muy por encima del límite de 1MB/documento.
+
+**Solución aplicada — token rotativo (sin Storage, sin Blaze, sin Firestore grande):**
+- Los 27 JSON sensibles viven en `data/<token>/` con nombre aleatorio (32 hex), NO en `data/` raíz
+- El token vigente se publica en Firestore `dataAccessToken/current`, protegido por
+  `firestore.rules` (solo `esAdmin()`/`esVendedor()` lo leen)
+- `panel-admin.html` e `index.html` (vendedor) leen el token una sola vez tras login
+  (`_cargarDataToken()`) y construyen la URL con `dataUrl(nombre)` — ya no hay rutas fijas
+  en el código fuente
+- `_utilidades/rotar_token_data.py` rota el token y borra la carpeta del token anterior en
+  cada corrida del pipeline (PASO 3.5, ver `MAPA_FLUJO_PROYECTOS.md`)
+- `catalogo-dinamico.json` sigue público en ruta fija a propósito (catálogo del cliente)
+
+**Limitación honesta:** esto NO es auth real a nivel HTTP — Hosting sigue sirviendo el archivo
+sin verificar sesión. Cierra el escaneo casual y la exposición por código fuente (la URL ya no
+es fija ni adivinable, y rota), pero alguien que capture la URL activa mientras es válida podría
+reusarla hasta la próxima rotación. Para protección real habría que migrar a Firestore fragmentado
+(documentado pero no implementado — esfuerzo alto) o aceptar Blaze.
+
+**IMPORTANTE — ejecutar `rotar_token_data.py` SIEMPRE como parte de `ACTUALIZAR_TODO.bat`,
+después de PASO 1-3 y antes de PASO 4 (`firebase deploy`)**, o los datos nuevos del pipeline
+quedarán en `data/` raíz (rutas que ya no usa el panel) y el panel seguirá leyendo del token
+de la corrida anterior. `subir_data_storage.py` y `storage.rules`/`firebase.json→storage`
+quedan en el repo sin usar, por si se reconsidera Blaze más adelante.
 
 ---
 

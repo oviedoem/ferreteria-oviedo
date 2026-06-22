@@ -204,8 +204,10 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 .wa-menu-panel{
   background:white;border-radius:18px;
   box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden;width:268px;
+  max-height:calc(100dvh - 110px);display:flex;flex-direction:column;
   animation:waMenuIn .3s cubic-bezier(.34,1.56,.64,1);
 }
+.wa-menu-contacts{overflow-y:auto;-webkit-overflow-scrolling:touch}
 @keyframes waMenuIn{from{transform:scale(.85) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
 .wa-menu-header{
   background:linear-gradient(135deg,#1a1a1a 0%,#DA0000 100%);
@@ -752,6 +754,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
       <button class="wa-menu-close-btn" onclick="waMenuCerrar()" title="Cerrar">✕</button>
     </div>
 
+    <div class="wa-menu-contacts">
     <a class="wa-contact-item" onclick="waContacto('56968410852','Ricardo Vidal')" href="javascript:void(0)">
       <div class="wa-contact-avatar">RV</div>
       <div class="wa-contact-info">
@@ -787,15 +790,8 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
       </div>
       <div class="wa-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
     </a>
+    </div>
 
-    <a class="wa-contact-item" onclick="waContactoSucursal()" href="javascript:void(0)">
-      <div class="wa-contact-avatar store-av">OM</div>
-      <div class="wa-contact-info">
-        <div class="wa-contact-name">Oviedo El Manzano</div>
-        <div class="wa-contact-role">Sucursal · Línea directa</div>
-      </div>
-      <div class="wa-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
-    </a>
   </div>
 
   <!-- Asesor IA — cápsula vertical con imagen del trabajador -->
@@ -852,14 +848,6 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
       <div class="cpc-contact-info">
         <div class="cpc-contact-name">Jaime Subiabre</div>
         <div class="cpc-contact-role">Ejecutivo de Ventas</div>
-      </div>
-      <div class="cpc-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
-    </div>
-    <div class="cpc-contact-item" onclick="cpcContactarSucursal()">
-      <div class="cpc-avatar store">OM</div>
-      <div class="cpc-contact-info">
-        <div class="cpc-contact-name">Oviedo El Manzano</div>
-        <div class="cpc-contact-role">Sucursal · Línea directa</div>
       </div>
       <div class="cpc-contact-go"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.85L.057 23.886l6.194-1.624A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.866 9.866 0 01-5.031-1.376l-.361-.214-3.735.979 1.001-3.638-.235-.374A9.848 9.848 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106S21.894 6.527 21.894 12 17.473 21.894 12 21.894z"/></svg></div>
     </div>
@@ -1439,16 +1427,27 @@ function doLogin(){
 
   if(!u || !p){ err.textContent='Ingresa usuario y contraseña'; return; }
 
+  // Migración transparente: compara contra hash o texto plano legado (passMatchLegado).
+  // Si matchea en texto plano, reescribe el hash en Firestore sin afectar otros campos
+  // ni cerrar el acceso — nunca rompe un login que hoy funciona.
   function tryLogin(lista){
-    var found = null;
-    for(var i=0;i<lista.length;i++){
-      if(lista[i].user===u && lista[i].pass===p){ found=lista[i]; break; }
+    var candidatos = lista.filter(function(x){ return x.user===u; });
+    function intentar(idx){
+      if(idx >= candidatos.length){ err.textContent='Usuario o contraseña incorrectos'; return; }
+      var found = candidatos[idx];
+      passMatchLegado(found.pass, p, function(match, hashParaMigrar){
+        if(!match){ intentar(idx+1); return; }
+        if(found.estado==='bloqueado'){ err.textContent='Usuario bloqueado. Contacta a Ferretería Oviedo.'; return; }
+        if(new Date(found.licExpiry) < new Date()){ err.textContent='Acceso vencido. Contacta a Ferretería Oviedo.'; return; }
+        if(hashParaMigrar && found._docId && window.db){
+          window.db.collection('users').doc(found._docId).set({ pass: hashParaMigrar, p: hashParaMigrar }, { merge: true }).catch(function(){});
+          found.pass = hashParaMigrar; // cachear el valor nuevo, no el texto plano viejo
+        }
+        localStorage.setItem(OV_CLI_SESSION_KEY, JSON.stringify({user:found.user, pass:found.pass}));
+        mostrarAppCli(found);
+      });
     }
-    if(!found){ err.textContent='Usuario o contraseña incorrectos'; return; }
-    if(found.estado==='bloqueado'){ err.textContent='Usuario bloqueado. Contacta a Ferretería Oviedo.'; return; }
-    if(new Date(found.licExpiry) < new Date()){ err.textContent='Acceso vencido. Contacta a Ferretería Oviedo.'; return; }
-    localStorage.setItem(OV_CLI_SESSION_KEY, JSON.stringify({user:found.user, pass:found.pass}));
-    mostrarAppCli(found);
+    intentar(0);
   }
 
   // Intentar primero desde Firestore (usuarios creados por admin)
@@ -1465,7 +1464,8 @@ function doLogin(){
               nombre: dat.nombre || '',
               role: dat.role || 'cliente',
               licExpiry: dat.licExpiry || new Date(dat.exp||Date.now()+30*864e5).toISOString(),
-              estado: dat.estado || 'activo'
+              estado: dat.estado || 'activo',
+              _docId: d.id
             });
           }
         });

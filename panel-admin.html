@@ -3615,7 +3615,21 @@ function _activarSesionAdmin(uid, nombre, role){
   if(window._esCooperador){
     try{ registrarPresencia(uid, nombre, 'Cooperador'); }catch(e){}
   }
-  mostrarApp();
+  _cargarDataToken(function(){ mostrarApp(); });
+}
+
+// ── TOKEN data/ (mitigación seguridad V37.28) ──────────────────────────────
+// data/*.json sensibles viven en data/<token>/ con nombre rotativo (ver
+// rotar_token_data.py). El token se lee de Firestore (dataAccessToken/current,
+// protegido por firestore.rules) recién aquí, tras login admin/vendedor.
+function _cargarDataToken(cb){
+  window.db.collection('dataAccessToken').doc('current').get()
+    .then(function(snap){ window._dataToken = snap.exists ? (snap.data().token||'') : ''; })
+    .catch(function(){ window._dataToken = ''; })
+    .then(cb);
+}
+function dataUrl(nombre){
+  return window._dataToken ? '/data/' + window._dataToken + '/' + nombre : '/data/' + nombre;
 }
 
 // ── LOGIN CON GOOGLE — ADMIN ──────────────────────────────────────────────────
@@ -4940,7 +4954,7 @@ function testConexion(){
 function testVentasManzano(){
   var res=document.getElementById('ventasTestResult');
   if(res) res.innerHTML='<div class="url-status url-loading">⏳ Probando ventas...</div>';
-  fetch('https://ferreteria-oviedo.web.app/data/ventas-manzano.json?t='+Date.now())
+  fetch('https://ferreteria-oviedo.web.app'+dataUrl('ventas-manzano.json')+'?t='+Date.now())
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(json){
       var n=(json.registros||[]).length;
@@ -7408,7 +7422,7 @@ function vadmCargarLineas(){
 
   var _ts = Math.floor(Date.now()/3600000); // cache 1h
   // Paso 1: leer meta para saber qué años hay disponibles
-  fetch('/data/ventas-manzano-meta.json?t='+_ts)
+  fetch(dataUrl('ventas-manzano-meta.json')+'?t='+_ts)
     .then(function(r){ return r.ok ? r.json() : {anios:[]}; })
     .then(function(meta){
       _vadmMetaAnios = (meta.anios||[]).map(function(a){ return a.anio||a; }).sort().reverse();
@@ -7430,15 +7444,15 @@ function vadmCargarLineas(){
       var anioCargar = _vadmAnioSel || anioActual;
       var urlJson;
       if(!_vadmAnioSel){
-        urlJson = '/data/ventas-manzano-' + mesActual + '.json?t=' + _ts;
+        urlJson = dataUrl('ventas-manzano-' + mesActual + '.json') + '?t=' + _ts;
         if(status) status.textContent = '⏳ Cargando ' + mesActual + '...';
       } else {
-        urlJson = '/data/ventas-manzano-' + anioCargar + '.json?t=' + _ts;
+        urlJson = dataUrl('ventas-manzano-' + anioCargar + '.json') + '?t=' + _ts;
         if(status) status.textContent = '⏳ Cargando ' + anioCargar + '...';
       }
       status.style.color='#6b7280';
       // Fallback: si no existe meta, usar el JSON actual
-      if(!_vadmMetaAnios.length) urlJson = '/data/ventas-manzano.json?t='+_ts;
+      if(!_vadmMetaAnios.length) urlJson = dataUrl('ventas-manzano.json')+'?t='+_ts;
       return fetch(urlJson)
         .then(function(r){ if(!r.ok) throw new Error('no-json'); return r.json(); })
         .then(function(json){
@@ -7456,7 +7470,7 @@ function vadmCargarLineas(){
     })
     .catch(function(){
       // Fallback: JSON actual sin meta
-      fetch('/data/ventas-manzano.json?t='+_ts)
+      fetch(dataUrl('ventas-manzano.json')+'?t='+_ts)
         .then(function(r){ if(!r.ok) throw new Error('no-json'); return r.json(); })
         .then(function(json){
           _vadmAplicarDatos(json.registros||[], status, 'local · '+(json.generado||''));
@@ -8370,7 +8384,7 @@ function venAdmCargar(){
   }
 
   // 2. Intentar cargar desde el JSON estático
-  fetch('/data/ventas-manzano.json?t='+Date.now())
+  fetch(dataUrl('ventas-manzano.json')+'?t='+Date.now())
     .then(function(res){ if(!res.ok) throw new Error('no-json'); return res.json(); })
     .then(function(json){
       _vadmLineas = json.registros || [];
@@ -10210,9 +10224,9 @@ function vadmRenderBajaRot(){
   if(needsReload){
     if(st){ st.textContent='⏳ Cargando datos de '+desdeYear+'…'; st.style.color='#9ca3af'; }
     if(bd) bd.innerHTML='<div class="ven-adm-loading">Cargando datos de ventas de '+desdeYear+'…</div>';
-    fetch('/data/ventas-manzano-'+desdeYear+'.json?t='+_ts2)
+    fetch(dataUrl('ventas-manzano-'+desdeYear+'.json')+'?t='+_ts2)
       .then(function(r){
-        if(!r.ok) return fetch('/data/ventas-manzano.json?t='+_ts2).then(function(r2){ if(!r2.ok) throw new Error('404'); return r2.json(); });
+        if(!r.ok) return fetch(dataUrl('ventas-manzano.json')+'?t='+_ts2).then(function(r2){ if(!r2.ok) throw new Error('404'); return r2.json(); });
         return r.json();
       })
       .then(function(json){
@@ -11740,7 +11754,7 @@ function vadmRenderSector(){
   if(_vadmLineas.length && (!desde || desde.substring(0,7)>=_minPer)){ _render(); return; }
   var yr=desde?desde.substring(0,4):hoyS.getFullYear().toString();
   if(st) st.textContent='Cargando datos '+yr+'...';
-  fetch('/data/ventas-manzano-'+yr+'.json?t='+Math.floor(Date.now()/3600000))
+  fetch(dataUrl('ventas-manzano-'+yr+'.json')+'?t='+Math.floor(Date.now()/3600000))
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(function(json){ _vadmLineas=json.registros||[]; _render(); })
     .catch(function(){ _render(); });
@@ -11868,7 +11882,7 @@ function _vadmFechaToISO(ddmmyyyy){
 var _vadmXlsmAnioCache = {};
 function _vadmCargarXlsmAnio(anio, cb){
   if(_vadmXlsmAnioCache[anio]){ cb(_vadmXlsmAnioCache[anio]); return; }
-  fetch('/data/ventas-xlsm-'+anio+'.json?t='+Math.floor(Date.now()/3600000))
+  fetch(dataUrl('ventas-xlsm-'+anio+'.json')+'?t='+Math.floor(Date.now()/3600000))
     .then(function(r){ if(!r.ok) throw new Error('404'); return r.json(); })
     .then(function(json){ _vadmXlsmAnioCache[anio] = json; cb(json); })
     .catch(function(){ cb(null); });
@@ -12232,7 +12246,7 @@ function vadmRenderPrecioDiff(){
     if(bd) bd.innerHTML = '<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows+'</tbody></table></div>';
   }
   if(_vadmPrecioDiffData){ _render(_vadmPrecioDiffData); return; }
-  fetch('/data/precios-diff.json?t='+Math.floor(Date.now()/3600000))
+  fetch(dataUrl('precios-diff.json')+'?t='+Math.floor(Date.now()/3600000))
     .then(function(r){ if(!r.ok) throw new Error('404'); return r.json(); })
     .then(function(json){ _vadmPrecioDiffData = json; _render(json); })
     .catch(function(){
@@ -15762,7 +15776,7 @@ var _reqStockParams = null;  // {codigo:{min,max,critico,repo,disp}} desde stock
 function reqStockPrellenar(){
   // Cargar parametros ERP (ST_MIN/ST_MAX/ST_REPOSICION desde SQL) una vez, luego re-ejecutar
   if(_reqStockParams === null){
-    fetch('/data/stock-critico.json?t='+Math.floor(Date.now()/3600000))
+    fetch(dataUrl('stock-critico.json')+'?t='+Math.floor(Date.now()/3600000))
       .then(function(r){ return r.ok ? r.json() : {}; })
       .then(function(j){ _reqStockParams = (j && j.productos) || {}; reqStockPrellenar(); })
       .catch(function(){ _reqStockParams = {}; reqStockPrellenar(); });
@@ -16078,11 +16092,11 @@ function vadmRenderBodFem(){
   var promesas=[];
   var ts='?_='+Date.now();
   function _f(url){ return fetch(url+ts).then(function(r){ return r.ok?r.json():{registros:[]}; }).catch(function(){ return {registros:[]}; }); }
-  if(chkIEM&&chkIEM.checked) promesas.push(_f('/data/bod-iem-registros.json'));
-  if(chkRCE&&chkRCE.checked) promesas.push(_f('/data/bod-rce-registros.json'));
-  if(chkCEM&&chkCEM.checked) promesas.push(_f('/data/bod-cem-registros.json'));
+  if(chkIEM&&chkIEM.checked) promesas.push(_f(dataUrl('bod-iem-registros.json')));
+  if(chkRCE&&chkRCE.checked) promesas.push(_f(dataUrl('bod-rce-registros.json')));
+  if(chkCEM&&chkCEM.checked) promesas.push(_f(dataUrl('bod-cem-registros.json')));
   var chkICD=document.getElementById('bfChkICD');
-  if(chkICD&&chkICD.checked) promesas.push(_f('/data/bod-icd-registros.json'));
+  if(chkICD&&chkICD.checked) promesas.push(_f(dataUrl('bod-icd-registros.json')));
   if(!promesas.length){ _bfDatos=[]; vadmFiltrarBodFem(); return; }
   Promise.all(promesas)
     .then(function(res){
@@ -17107,9 +17121,9 @@ window.isbGenerar = function(){
   var ts='?_='+Date.now();
   // V37.9: informe-stock.json (SSRS St_Bod + St_DVen+St_Ped todas las sucursales)
   Promise.all([
-    fetch('/data/informe-stock.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
-    fetch('/data/pedidos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
-    fetch('/data/despachos-detalle.json'+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; })
+    fetch(dataUrl('informe-stock.json')+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
+    fetch(dataUrl('pedidos-detalle.json')+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; }),
+    fetch(dataUrl('despachos-detalle.json')+ts).then(function(r){ return r.ok?r.json():{}; }).catch(function(){ return {}; })
   ]).then(function(res){
     _isbRaw=res[0]||{};
     _isbPedidosDetalle=res[1]||{};
@@ -17531,7 +17545,7 @@ window.dpRenderPendientes = function(){
   Promise.all([
     _dpDetalleRaw !== null
       ? Promise.resolve(_dpDetalleRaw)
-      : fetch('/data/despachos-detalle.json?_='+Date.now())
+      : fetch(dataUrl('despachos-detalle.json')+'?_='+Date.now())
           .then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; }),
     new Promise(function(resolve){
       if(Object.keys(_vadmStockMap||{}).length){ resolve(); return; }
@@ -17622,7 +17636,7 @@ window.rpRenderPendientes = function(){
   if(window._rpCargando) return;
   window._rpCargando = true;
   _rpStatus('Cargando…');
-  fetch('/data/recepciones-pendientes.json?_='+Date.now())
+  fetch(dataUrl('recepciones-pendientes.json')+'?_='+Date.now())
     .then(function(r){
       if(!r.ok) throw new Error('HTTP '+r.status);
       return r.json();

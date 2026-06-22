@@ -4,7 +4,7 @@
 // BUILD_DATE se actualiza automáticamente al hacer deploy
 // ============================================================
 
-const BUILD_DATE = '2026-06-21 03:12:44'; // ← actualizado por update-sw-version.js
+const BUILD_DATE = '2026-06-21 23:58:27'; // ← actualizado por update-sw-version.js
 const CACHE_NAME = 'oviedo-' + BUILD_DATE.replace(/[^0-9]/g,'').slice(0,12);
 
 // Assets estáticos que se cachean en instalación (NO incluir HTML)
@@ -14,7 +14,13 @@ const PRECACHE_ASSETS = [
   '/logo_oviedo_white.jpg',
   '/manifest.json',
   '/manifest-admin.json',
-  '/manifest-cliente.json'
+  '/manifest-cliente.json',
+  '/icons/admin-192.png',
+  '/icons/admin-512.png',
+  '/icons/cliente-192.png',
+  '/icons/cliente-512.png',
+  '/icons/vendedor-192.png',
+  '/icons/vendedor-512.png'
 ];
 
 // Extensiones que se sirven desde caché (Cache-First)
