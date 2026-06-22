@@ -130,18 +130,27 @@ NO TOCO:     [lista explícita con razón de cada una]
 ## RUTAS CRÍTICAS — NO BUSCAR, USAR DIRECTAMENTE
 
 ```
-Proyecto activo:     E:\ferreteria-oviedo\
-Git sync (solo):     E:\git-sync\        (NO es el proyecto — solo copia para git)
-Archivados:          E:\ferreteria-oviedo\_HISTORICO\
-Bodegas XLSM:        E:\ferreteria-oviedo\BODEGAS\
-Memory Claude:       W:\claude-config\projects\E--ferreteria-oviedo\memory\
-                     (acceso via junction C:\Users\Ferreteria Oviedo\.claude → W:\claude-config\)
-CLAUDE.md global:    W:\claude-config\CLAUDE.md
-Git config:          E:\config\gitconfig  (GIT_CONFIG_GLOBAL apunta aquí)
-Tokens GitHub:       E:\config\gcm-store  (DPAPI cifrado, transparente via GCM)
-Herramientas W:      W:\herramientas\seguridad\
-Docs backup W:       W:\proyecto-docs\   (AGENTS.md, MEMORY.md — copia de emergencia)
-Backup .claude orig: C:\Users\Ferreteria Oviedo\.claude-bak-20260604  (NO borrar)
+Proyecto activo:     PROYECTO_E:\ferreteria-oviedo\   (letra real variable — identificar SIEMPRE por etiqueta de volumen)
+Git sync (solo):     PROYECTO_E:\git-sync\        (NO es el proyecto — solo copia para git)
+Archivados:          PROYECTO_E:\ferreteria-oviedo\_HISTORICO\
+Bodegas XLSM:        PROYECTO_E:\ferreteria-oviedo\BODEGAS\
+Memory Claude:       CONFIG_W:\claude-config\projects\E--ferreteria-oviedo\memory\
+                     (acceso via junction C:\Users\<usuario>\.claude → CONFIG_W:\claude-config\)
+CLAUDE.md global:    CONFIG_W:\claude-config\CLAUDE.md
+Git config:          PROYECTO_E:\config\gitconfig  (GIT_CONFIG_GLOBAL apunta aquí)
+Tokens GitHub:       PROYECTO_E:\config\gcm-store  (DPAPI cifrado, transparente via GCM)
+Herramientas:        CONFIG_W:\herramientas\seguridad\
+Docs backup (plan B, solo lectura): CONFIG_W:\proyecto-docs\ y <Windows-alterno>:\ferreteria-docs\
+                     (AGENTS.md, MEMORY.md, CLAUDE.md, README.md, MAPA_FLUJO_PROYECTOS.md,
+                      IDS_REFERENCIA.md, ESTADO_PROYECTO.md, rule.json — copia de emergencia,
+                      no se usa para la memoria de Claude, solo para humanos)
+                     NUNCA mantener esta copia en C: — ver regla mas abajo.
+
+**Etiquetas de volumen (no usar letras fijas en scripts ni docs nuevos):**
+- **PROYECTO_E** → contiene ferreteria-oviedo\, git-sync\, config\, npm-global\, herramientas portables
+- **CONFIG_W** → contiene claude-config\ (memoria Claude, settings, skills), proyecto-docs\
+Detectar con `Get-Volume -FileSystemLabel "PROYECTO_E"` / `"CONFIG_W"`. Ver CONFIG_W:\MONTAR_CLAUDE.ps1
+y CONFIG_W:\SETUP_PC_NUEVO.md para el detalle completo y el procedimiento en PC nuevo.
 
 MD activos raíz:
   AGENTS.md:               E:\ferreteria-oviedo\AGENTS.md         (este archivo)
@@ -154,44 +163,53 @@ MD activos raíz:
 
 ## ARQUITECTURA DE DISCOS
 
-| Disco | Tipo | Contenido |
-|---|---|---|
-| Disk 0 — NVMe 256GB | C: (121GB) | Windows activo + Python + Node.js + Git for Windows |
-| Disk 0 — NVMe 256GB | D: (116GB) | RESPALDO — backups, copia emergencia scripts |
-| Disk 1 — TOSHIBA USB 1.8TB | W: (128GB) | Claude config + herramientas seguridad |
-| Disk 1 — TOSHIBA USB 1.8TB | E: (1.7TB) | Proyecto + herramientas portables |
-| Disk 2 — JMicron USB 932GB | F: (874GB) | Windows boot alternativo (KMS activo) + 4.6GB updates pendientes |
-| Disk 2 — JMicron USB 932GB | L: (40GB) | PROYECTO_E — respaldo npm-global |
-| Disk 2 — JMicron USB 932GB | M: (15GB) | CONFIG_W — respaldo claude-config |
+**Principio (desde 2026-06-17, reafirmado 2026-06-22): las letras de disco CAMBIAN segun el PC
+y segun desde que disco arranca Windows. Identificar SIEMPRE por etiqueta de volumen, nunca
+por letra fija.** Ver CONFIG_W:\MONTAR_CLAUDE.ps1 (detecta por etiqueta) y
+CONFIG_W:\SETUP_PC_NUEVO.md (guia completa + snapshot de la maquina mas reciente).
 
-**W: y E: son el mismo disco físico USB (TOSHIBA).** La partición W: es más estable (menos actividad).
-**F:, L:, M: son el mismo disco físico USB (JMicron).** F: es un Windows-To-Go alternativo; activar con F:\ACTIVAR_WINDOWS.bat al primer boot.
+| Etiqueta de volumen | Contenido | Notas |
+|---|---|---|
+| **PROYECTO_E** | ferreteria-oviedo\, git-sync\, config\, npm-global\, herramientas portables | letra variable, tipicamente E: |
+| **CONFIG_W** | claude-config\ (memoria/settings/skills Claude), proyecto-docs\, herramientas\ | letra variable, tipicamente F: o W: |
+| (sin etiqueta fija) | Windows local del PC en uso | siempre se llama C: en el disco de arranque activo |
+| Disco(s) con otro Windows instalado (boot alternativo) | — | si se arranca desde ahi, ESE disco pasa a ser C: — asignarle su propia etiqueta de volumen para identificarlo, no asumir una letra |
+
+**Regla:** ningun archivo del proyecto (.md de referencia, copias, datos) debe vivir de forma
+permanente en C: — C: es siempre "el Windows que esta corriendo ahora", cambia de disco fisico
+segun el PC y no es portable. Las unicas excepciones documentadas y deliberadas se anotan en
+CONFIG_W:\SETUP_PC_NUEVO.md (ej. el caso especial de `claude-config` en una maquina puntual,
+seccion "CUTOVER claude-config" — pendiente de corregir, no replicar ese patron).
 
 ### Junction Claude Code
 ```
-C:\Users\Ferreteria Oviedo\.claude  ──junction──►  W:\claude-config\
+C:\Users\<usuario>\.claude  ──junction──►  CONFIG_W:\claude-config\
 ```
-Claude busca su config en C:, Windows redirige a W: transparentemente.
-**Backup de rollback:** `C:\Users\Ferreteria Oviedo\.claude-bak-20260604` (NO borrar).
+Claude busca su config en C:, Windows redirige a CONFIG_W transparentemente (letra real
+detectada por MONTAR_CLAUDE.ps1, no hardcodeada).
+**Backup de rollback:** ver seccion ROLLBACK en CONFIG_W:\SETUP_PC_NUEVO.md.
 
 ### Variables de entorno (HKCU)
 ```
-GIT_CONFIG_GLOBAL    = E:\config\gitconfig
-NPM_CONFIG_PREFIX    = E:\npm-global
-NPM_CONFIG_CACHE     = E:\npm-cache
-NPM_CONFIG_USERCONFIG= E:\config\.npmrc
-XDG_CONFIG_HOME      = E:\config
-GH_CONFIG_DIR        = E:\config\gh
-PIP_CACHE_DIR        = E:\pip-cache
+GIT_CONFIG_GLOBAL    = PROYECTO_E:\config\gitconfig
+NPM_CONFIG_PREFIX    = PROYECTO_E:\npm-global
+NPM_CONFIG_CACHE     = PROYECTO_E:\npm-cache
+NPM_CONFIG_USERCONFIG= PROYECTO_E:\config\.npmrc
+XDG_CONFIG_HOME      = PROYECTO_E:\config
+GH_CONFIG_DIR        = PROYECTO_E:\config\gh
+PIP_CACHE_DIR        = PROYECTO_E:\pip-cache
 ```
+(Configuradas automaticamente por MONTAR_CLAUDE.ps1 — no editar manualmente.)
 
 ---
 
-## EMERGENCIA DISCO E: / W:
+## EMERGENCIA DISCO PROYECTO_E / CONFIG_W
 
-**Causa raíz confirmada:** `FortiUSBmon.exe` (C:\Users\Ferreteria Oviedo\Desktop\FortiUSBmon.exe)
+**Causa raíz confirmada:** `FortiUSBmon.exe` (en el Desktop del usuario de Windows activo)
 re-adhiere FortiShield/fortimon3 al volumen USB inmediatamente al remontar, impidiendo que NTFS monte.
 Historial: 6 ocurrencias (2026-06-03, 2026-06-04 tarde, 2026-06-04 noche, 2026-06-06, 2026-06-09, 2026-06-10).
+Nota: las letras E:/W:/F:/L:/M: mencionadas en el historial abajo correspondian a PCs antiguos —
+hoy identificar siempre PROYECTO_E y CONFIG_W por etiqueta, ajustar letras segun corresponda en este PC.
 
 - 2026-06-06: ocurrencia #4 — pipeline test post-auditoria.
   Code perdio acceso a W:\claude-appdata\ccd-environment-config.json.
@@ -230,14 +248,12 @@ Copias de emergencia (v3, idénticas — mismo hash):
 REGLA: W:\, D:\ y M:\ deben mantenerse sincronizadas.
 Script busca USBDeview en: D:\ → E:\herramientas\ → W:\
 
-### Rollback de junction si W: falla
-```powershell
-cmd /c "rd ""C:\Users\Ferreteria Oviedo\.claude"""
-Rename-Item "C:\Users\Ferreteria Oviedo\.claude-bak-20260604" ".claude"
-```
+### Rollback de junction si CONFIG_W falla
+Ver seccion ROLLBACK completa en `CONFIG_W:\SETUP_PC_NUEVO.md` (busca el backup
+`.claude-bak-YYYYMMDD-HHmm` mas reciente en el perfil del usuario actual).
 
 ### GitHub como respaldo final
-Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
+Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde GitHub:
 `https://github.com/oviedoem/ferreteria-oviedo/blob/main/AGENTS.md`
 
 ---
@@ -245,7 +261,9 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
 ## PROYECTO
 
 - Stack: HTML/CSS/JS Vanilla + Firebase Hosting (JSON estáticos) + Python pipeline ERP
-- Directorio activo: `E:\ferreteria-oviedo\` — NO trabajar en D:\ ni en E:\git-sync\
+- Directorio activo: `PROYECTO_E:\ferreteria-oviedo\` (identificar el disco por etiqueta PROYECTO_E,
+  no por letra) — NUNCA trabajar directamente en `PROYECTO_E:\git-sync\` ni en discos sin la
+  etiqueta PROYECTO_E (ej. el disco con Windows 10 alterno, identificado en 2026-06-22)
 - Versión activa: V37.22
 
 ### Historial de deploys (desde 2026-06-01)
@@ -273,6 +291,16 @@ Si no puedes acceder a W: ni a E:, dar a Claude el AGENTS.md desde GitHub:
   Backups .bak-20260606 generados. Dialogos al abrir Claude eliminados.
 
 - Sesiones 2026-06-12 y 2026-06-13: pipeline descarga ERP — completado en proyecto separado.
+
+- Sesion 2026-06-22: V37.28 deploy completo (token rotativo dataAccessToken via firestore.rules,
+  fix WhatsApp 4 vendedores + scroll, limpieza referencias Storage no usado, hash transparente
+  passwords legado cliente). Infra multi-PC: 8 docs de referencia resincronizados PROYECTO_E→
+  CONFIG_W:\proyecto-docs y disco Windows-alterno:\ferreteria-docs; eliminada copia obsoleta en
+  C:\ferreteria-docs; AGENTS.md/CLAUDE.md actualizados a notación PROYECTO_E/CONFIG_W por etiqueta
+  (ya no W:/M:/L:/TOSHIBA/JMicron hardcodeados); MONTAR_CLAUDE.ps1 ahora avisa si CONFIG_W:\claude-config
+  no es carpeta real; SETUP_PC_NUEVO.md y "paso a paso.txt" actualizados con snapshot de discos y
+  plan de cutover pendiente (ver memoria de Claude: seguridad-carpeta-aleatoria-datos,
+  pendiente-passwords-texto-plano).
 
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
@@ -305,7 +333,7 @@ e. Si hay duda, detenerse y reportar antes de continuar.
 ### ORDEN DE LECTURA OBLIGATORIO AL INICIO DE CADA SESIÓN:
 1. MEMORY.md
 2. AGENTS.md
-3. CLAUDE.md (en W:\claude-config\CLAUDE.md)
+3. CLAUDE.md (en CONFIG_W:\claude-config\CLAUDE.md)
 4. Recién después ejecutar cualquier tarea
 
 ---
