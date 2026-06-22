@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.28 (en curso) · Última actualización: 2026-06-21
+# Versión activa: V37.28 (en curso) · Última actualización: 2026-06-22
 
 ---
 
@@ -301,6 +301,16 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   no es carpeta real; SETUP_PC_NUEVO.md y "paso a paso.txt" actualizados con snapshot de discos y
   plan de cutover pendiente (ver memoria de Claude: seguridad-carpeta-aleatoria-datos,
   pendiente-passwords-texto-plano).
+
+- Sesion 2026-06-22 (tarde): fix ACTUALIZAR_TODO.bat — PASO 1K (enriquecimiento ventas)
+  abortaba todo el pipeline con "No se esperaba . en este momento" por comentarios `::`
+  dentro de un bloque if/else parentizado (bug clasico de cmd.exe). Cambiados a `REM`.
+  Tras el fix, pipeline corrido completo manualmente (cable directo, sin VPN): ERP+SQL
+  actualizados, ventas-manzano.json 45722 registros, token rotado, deploy hosting OK.
+  Infra adicional: Justime en disco C reparado (reg.bat con path en espanol roto -> COM/OCX
+  fix; bloqueo de Windows Defender Network Protection -> excepcion agregada); cutover
+  claude-config C/W/D cerrado (ver memoria de Claude: justime-c-fix-com-y-defender,
+  cutover-claude-config-completado).
 
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
