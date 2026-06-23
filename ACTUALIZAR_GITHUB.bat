@@ -75,6 +75,7 @@ robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
   AGENTS.md MEMORY.md ESTADO_PROYECTO.md CLAUDE.md ^
   RESUMEN_TECNICO_MIGRACION_E.md MAPA_FLUJO_PROYECTOS.md ^
   .gitignore OCR_REVIEW.bat ^
+  ACTUALIZAR_GITHUB.bat ACTUALIZAR_TODO.bat ACTUALIZAR_TODO_AUTO.bat PUBLICAR.bat ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo\.opencodereview" "E:\git-sync\.opencodereview" ^
@@ -105,6 +106,18 @@ set FECHA=%date:~6,4%-%date:~3,2%-%date:~0,2%
 echo [INFO] Abriendo navegador para login GitHub...
 echo [INFO] Inicia sesion con: ferreteriaoviedo.elmanzano@gmail.com
 "E:\git-portable\mingw64\bin\git-credential-manager.exe" github login
+
+:: Verificar que la cuenta autenticada sea 'oviedoem' (ferreteriaoviedo.elmanzano)
+:: Evita pushear con una sesion de navegador equivocada (ej. alejandrog45)
+cmdkey /list | findstr /i "oviedoem" >nul
+if errorlevel 1 (
+    echo.
+    echo BLOQUEADO: no se detecto la cuenta 'oviedoem' en las credenciales de GitHub.
+    echo Verifica con: cmdkey /list  ^(target git:https://github.com^)
+    echo Vuelve a iniciar sesion con ferreteriaoviedo.elmanzano antes de pushear.
+    pause
+    exit /b 1
+)
 
 "%GIT_EXE%" push
 
