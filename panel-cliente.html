@@ -452,6 +452,9 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;height:18px" alt="">
         Continuar con Google
       </button>
+      <div style="text-align:center;margin-top:14px">
+        <span class="login-link" onclick="entrarComoInvitado()" style="cursor:pointer;font-size:12.5px;color:var(--gris)">Ver catálogo sin cuenta →</span>
+      </div>
     </div>
 
     <!-- ── FORMULARIO DE REGISTRO ── -->
@@ -474,6 +477,11 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 
 <!-- MAIN APP -->
 <div id="mainApp" style="display:none">
+
+<div id="guestBanner" style="display:none;align-items:center;justify-content:space-between;gap:10px;background:#fff3cd;color:#7a5b00;padding:8px 14px;font-size:12.5px;font-weight:600;border-bottom:1px solid #f0c14b">
+  <span id="guestBannerTxt"></span>
+  <button onclick="_guestForzarRegistro()" style="background:#1565c0;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">Crear cuenta</button>
+</div>
 
 <header>
   <img src="logo_oviedo.jpg" alt="Ferreterías Oviedo" style="height:40px;width:auto;flex-shrink:0;display:block">
@@ -1051,6 +1059,58 @@ var currentUser = null;
 var PRODUCTOS   = [];
 var filtrados   = [];
 var carrito     = [];
+
+// ── MODO INVITADO (sin cuenta) ───────────────────────────────────────────────
+// Límite: 10 cotizaciones PDF generadas sin cuenta, luego se exige registro.
+// GUEST_PDF_KEY es una clave FIJA — nunca renombrar en futuras mejoras, eso
+// reiniciaría el conteo de todos los invitados en curso. Vive en localStorage:
+// sobrevive recargas/cierres/nuevas visitas/deploys, pero NO sobrevive borrado
+// de datos del sitio o modo incógnito — limitación esperada (invitado sin
+// cuenta no tiene identidad verificable en servidor).
+var GUEST_PDF_KEY   = 'ov_cli_guestPdfUses';
+var GUEST_PDF_LIMIT = 10;
+var esInvitado = false;
+
+function _guestUsosActuales(){
+  return parseInt(localStorage.getItem(GUEST_PDF_KEY)||'0')||0;
+}
+function _guestRegistrarUsoPDF(){
+  var n = _guestUsosActuales() + 1;
+  try{ localStorage.setItem(GUEST_PDF_KEY, String(n)); }catch(e){}
+  return n;
+}
+function _guestActualizarBanner(){
+  var b = document.getElementById('guestBanner');
+  if(!b) return;
+  if(!esInvitado){ b.style.display='none'; return; }
+  var usados = _guestUsosActuales();
+  b.style.display = 'flex';
+  document.getElementById('guestBannerTxt').textContent =
+    'Modo invitado — cotización ' + usados + ' de ' + GUEST_PDF_LIMIT + ' · Crea tu cuenta para precios y uso ilimitado';
+}
+function _guestForzarRegistro(){
+  esInvitado = false;
+  document.getElementById('mainApp').style.display    = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  toggleRegistroForm(true);
+}
+function entrarComoInvitado(){
+  if(_guestUsosActuales() >= GUEST_PDF_LIMIT){
+    var err = document.getElementById('loginError');
+    if(err){ err.style.color='#c62828'; err.textContent='Alcanzaste el límite de cotizaciones sin cuenta. Crea tu cuenta para seguir.'; }
+    toggleRegistroForm(true);
+    return;
+  }
+  esInvitado = true;
+  currentUser = null;
+  window._mostrarPrecio = false; // invitado: precio SIEMPRE bloqueado, sin excepción
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display     = 'block';
+  document.getElementById('adminBtn').style.display    = 'none';
+  cargarBannerDinamico();
+  iniciarApp();
+  _guestActualizarBanner();
+}
 window._waNumEmpresa  = '56938623488'; // número empresa — se actualiza desde Firestore
 window._mostrarPrecio = false;         // precios ocultos por defecto — admin activa manualmente
 
@@ -1569,7 +1629,7 @@ function doLogout(){
   if(_cuponListener){ try{ _cuponListener(); }catch(e){} _cuponListener=null; }
   // Firebase Auth sign out
   if(window.auth){ try{ window.auth.signOut(); }catch(e){} }
-  currentUser=null; PRODUCTOS=[]; filtrados=[]; carrito=[];
+  currentUser=null; esInvitado=false; PRODUCTOS=[]; filtrados=[]; carrito=[];
   document.getElementById('mainApp').style.display    = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   // Limpiar campos
@@ -2471,6 +2531,15 @@ function registrarCotizacionResumen(total, nroCotiz){
 // ── PDF ───────────────────────────────────────────────────────────────────────
 function generarPDF(){
   if(!carrito.length){ toast('Agrega productos primero','warn'); return; }
+  if(esInvitado){
+    if(_guestUsosActuales() >= GUEST_PDF_LIMIT){
+      toast('Límite de cotizaciones sin cuenta alcanzado. Crea tu cuenta para continuar.','warn');
+      _guestForzarRegistro();
+      return;
+    }
+    _guestRegistrarUsoPDF();
+    _guestActualizarBanner();
+  }
   // Obtener correlativo atómico desde Firestore (o fallback local)
   var _genPDF = typeof obtenerSiguienteCorrelativo === 'function'
     ? obtenerSiguienteCorrelativo
