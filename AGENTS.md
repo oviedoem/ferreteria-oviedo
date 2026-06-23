@@ -401,6 +401,18 @@ Al terminar CUALQUIER modificación de código, ejecutar SIN EXCEPCIÓN:
 - Descripción: máximo 5 palabras, minúsculas, sin tildes
 - Si falla por red: reportar el error pero NO omitir el intento
 
+### Cuenta GitHub obligatoria: oviedoem (ferreteriaoviedo.elmanzano)
+- `ACTUALIZAR_GITHUB.bat` rechaza la credencial guardada y reabre login en cada corrida
+  (línea ~102-107) — riesgo: si el navegador tiene otra sesión activa (ej. alejandrog45,
+  cuenta de Firebase Auth de los paneles, NO de GitHub) se puede autorizar el push con
+  la cuenta equivocada sin darse cuenta.
+- Mitigación V37.28: el bat ahora valida con `cmdkey /list | findstr /i "oviedoem"` antes
+  del `git push` y aborta con `BLOQUEADO` si no detecta esa cuenta.
+- Si el bat bloquea: revisar `cmdkey /list` (target `git:https://github.com`), re-loguear
+  manualmente con `ferreteriaoviedo.elmanzano@gmail.com` y reintentar.
+- Verificación post-push: confirmar en `https://github.com/oviedoem/ferreteria-oviedo/commits`
+  que el commit aparece como autor `oviedoem`, no otra cuenta.
+
 ---
 
 ## REGLA: Sincronización de UI con cada deploy
