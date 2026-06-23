@@ -117,6 +117,16 @@ service cloud.firestore {
       allow read, write: if esAdmin();
     }
 
+    // ── PRECIOS (1 doc — split seguro V37.28) ─────────────────
+    // precios/catalogo: mapa {codigo: {p: precioIVA, s: stock}} para todos los productos.
+    // Solo usuarios autenticados NO anónimos pueden leer.
+    // Escritura: exclusiva del pipeline vía Admin SDK (bypassa estas reglas).
+    match /precios/{docId} {
+      allow read: if request.auth != null
+                  && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      allow write: if false;
+    }
+
     // ── BLOQUEO POR DEFECTO ───────────────────────────────────
     // Todo lo que no esté listado arriba → denegado
     // Incluye: productos, solicitudes_cupon, sessions (obsoletas)

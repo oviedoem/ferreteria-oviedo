@@ -40,30 +40,34 @@ Historial reciente (desde 2026-06-01):
 ## 3. RUTAS CRÍTICAS LOCALES
 
 ```
-Proyecto activo:     E:\ferreteria-oviedo\
-Git sync (solo):     E:\git-sync\        (solo copia sanitizada para GitHub)
+Proyecto activo:     E:\ferreteria-oviedo\        (E: = particion PROYECTO_E — letra puede variar)
+Git sync (solo):     E:\git-sync\                 (copia sanitizada para GitHub, NO trabajar aqui)
 Historico:           E:\ferreteria-oviedo\_HISTORICO\
-Utilidades equipo:   E:\ferreteria-oviedo\_utilidades\   (encriptar_credenciales, EXPULSAR_DISCO, ACTIVAR, etc.)
-Archivo historico:   E:\_ARCHIVO_FERRETERIA\   (FUERA del proyecto — backups/deprecados/temporales, no se sube)
+Utilidades equipo:   E:\ferreteria-oviedo\_utilidades\
+Archivo historico:   E:\_ARCHIVO_FERRETERIA\      (FUERA del proyecto — no se sube a git/firebase)
 Bodegas XLSM:        E:\ferreteria-oviedo\BODEGAS\
 Pipeline ventas:     E:\ferreteria-oviedo\VENTAS EL MANZANO\
-Catálogo scripts:    E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\
+Catalogo scripts:    E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\
 APP-INVENTARIO:      E:\APP-INVENTARIO\
 
-Memory Claude:       W:\claude-config\projects\E--ferreteria-oviedo\memory\
-                     (junction C:\Users\Ferreteria Oviedo\.claude → W:\claude-config\)
-CLAUDE.md global:    W:\claude-config\CLAUDE.md
+Memory Claude:       CONFIG_W:\claude-config\projects\E--ferreteria-oviedo\memory\
+                     (junction C:\Users\<usuario>\.claude → CONFIG_W:\claude-config\)
+                     Crear/actualizar junction: CONFIG_W:\MONTAR_CLAUDE.ps1
 Git config:          E:\config\gitconfig   (GIT_CONFIG_GLOBAL)
 Git tokens:          E:\config\gcm-store   (DPAPI cifrado)
-Backup .claude orig: C:\Users\Ferreteria Oviedo\.claude-bak-20260604  (NO borrar)
+OCR config:          E:\config\opencodereview\config.json
+                     (junction C:\Users\<usuario>\.opencodereview → E:\config\opencodereview\)
 
-MD activos raíz:
+MD activos raiz:
   AGENTS.md               E:\ferreteria-oviedo\AGENTS.md
   MEMORY.md               E:\ferreteria-oviedo\MEMORY.md  (este archivo)
   MAPA_FLUJO_PROYECTOS.md E:\ferreteria-oviedo\MAPA_FLUJO_PROYECTOS.md
 ```
 
-REGLA: Nunca trabajar en D:\ ni en E:\git-sync\ directamente.
+NOTA DISCOS: Las letras de particion varian segun el PC. Identificar siempre por etiqueta:
+- PROYECTO_E → proyecto + config + herramientas portables
+- CONFIG_W   → claude-config (memoria, settings, skills)
+REGLA: Nunca trabajar en E:\git-sync\ directamente.
 
 ---
 
