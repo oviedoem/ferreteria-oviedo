@@ -1676,7 +1676,7 @@ function iniciarApp(){
         SocioIVA: num(it.SocioIVA||it.socioiva||it.SOCIO_IVA||it.socioiva||it.socio_iva||'0'),
         Stock: parseInt(it.Stock||it.stock||it.STOCK||0)||(parseInt(it.pem||0)+parseInt(it.sem||0)+parseInt(it.cem||0)+parseInt(it.mem||0))
       };
-    }).filter(function(p){ return p.Codigo && (p.PrecioIVA||p.SocioIVA); });
+    }).filter(function(p){ return p.Codigo && p.Descripcion; });
   }
   function tryFetch(url){
     return fetch(url).then(function(r){
