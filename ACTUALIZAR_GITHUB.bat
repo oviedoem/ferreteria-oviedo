@@ -99,13 +99,16 @@ set FECHA=%date:~6,4%-%date:~3,2%-%date:~0,2%
 "%GIT_EXE%" commit -m "V37 %FECHA% %HORA% -- actualizacion automatica"
 "%GIT_EXE%" pull --rebase
 
-:: Limpiar credenciales viejas de GitHub
-(echo protocol=https& echo host=github.com) | "%GIT_EXE%" credential reject >nul 2>&1
-
-:: Abrir navegador para login GitHub y guardar credenciales nuevas
-echo [INFO] Abriendo navegador para login GitHub...
-echo [INFO] Inicia sesion con: ferreteriaoviedo.elmanzano@gmail.com
-"E:\git-portable\mingw64\bin\git-credential-manager.exe" github login
+:: Verificar credencial de GitHub ya guardada ANTES de pedir login.
+:: Solo se abre navegador si NO hay credencial valida de 'oviedoem' cacheada
+:: (evita pedir autenticacion en cada commit, una vez logueado correctamente).
+cmdkey /list | findstr /i "oviedoem" >nul
+if errorlevel 1 (
+    echo [INFO] No se detecto credencial de GitHub para 'oviedoem'.
+    echo [INFO] Abriendo navegador para login GitHub...
+    echo [INFO] Inicia sesion con: ferreteriaoviedo.elmanzano@gmail.com
+    "E:\git-portable\mingw64\bin\git-credential-manager.exe" github login
+)
 
 :: Verificar que la cuenta autenticada sea 'oviedoem' (ferreteriaoviedo.elmanzano)
 :: Evita pushear con una sesion de navegador equivocada (ej. alejandrog45)
