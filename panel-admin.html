@@ -1893,6 +1893,11 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <div class="card-title"><span>🏆</span> Productos más cotizados</div>
         <div id="topProductosCotiz"><p style="color:#9ca3af;font-size:13px">Sin datos aún.</p></div>
       </div>
+      <div class="card">
+        <div class="card-title"><span>👤</span> Modo invitado — seguimiento</div>
+        <p style="font-size:12px;color:#6b7280;margin-bottom:10px">Actividad de visitantes sin cuenta (identificados por deviceId local, no es identidad verificada). Límite: 10 cotizaciones antes de exigir registro.</p>
+        <div id="tablaInvitadosLog"><p style="color:#9ca3af;font-size:13px">Cargando...</p></div>
+      </div>
     </div>
 
     <!-- ── PRECIOS ── -->
@@ -3856,7 +3861,7 @@ function showTab(id, btn){
   if(id==='precios')      loadPrecios();
   if(id==='mejoras'){ renderMejoras(); cargarSesionTipoUI(); cargarAuditLog(); try{ quotaActualizar(); }catch(e){} try{ cacheActualizarInfo(); }catch(e){} }
   if(id==='notificaciones'){ renderNotifTab(); marcarNotifLeidas(); }
-  if(id==='cotizaciones'){ renderCotizaciones(); renderGraficoCotiz(_chartPeriodo); }
+  if(id==='cotizaciones'){ renderCotizaciones(); renderGraficoCotiz(_chartPeriodo); renderInvitadosLog(); }
   if(id==='url'){
     document.getElementById('urlPub').value   = URL_PUB;
     document.getElementById('urlProxy').value = URL_PROXY;
@@ -3932,7 +3937,7 @@ function initApp(){
           cotizFS.sort(function(a,b){ return b._tsNum - a._tsNum; });
           localStorage.setItem('ov_cotizaciones', JSON.stringify(cotizFS));
           renderDashboard();
-          if(document.getElementById('tab-cotizaciones').classList.contains('active')){ renderCotizaciones(); renderGraficoCotiz(_chartPeriodo); }
+          if(document.getElementById('tab-cotizaciones').classList.contains('active')){ renderCotizaciones(); renderGraficoCotiz(_chartPeriodo); renderInvitadosLog(); }
           if(!cotizPrimerLoad && _notifCfg.cotiz){
             snap.docChanges().forEach(function(change){
               if(change.type!=='added') return;
@@ -4116,7 +4121,7 @@ function renderTopProductos(elId, cotiz){
     var pct = Math.round((p.qty/max)*100);
     return '<div class="bar-row">'+
       '<div style="width:22px;text-align:right;color:#9ca3af;font-size:11px;flex-shrink:0">'+(i+1)+'°</div>'+
-      '<div class="bar-label" title="'+p.desc+'">'+p.desc+'</div>'+
+      '<div class="bar-label" title="'+venAdmEsc(p.desc)+'">'+venAdmEsc(p.desc)+'</div>'+
       '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+
       '<div class="bar-count">'+p.qty+'</div>'+
       '<div style="width:72px;text-align:right;font-size:11px;color:#6b7280;flex-shrink:0">'+fmtCLP(p.total)+'</div>'+
@@ -4192,6 +4197,39 @@ function setTopLimit(n){
   renderTopProductos('topProductos', cotiz);
 }
 
+// ── INVITADOS (modo sin cuenta) ───────────────────────
+var _invitadosLogCache = null;
+function renderInvitadosLog(){
+  var cont = document.getElementById('tablaInvitadosLog');
+  if(!cont || !window.db) return;
+  if(_invitadosLogCache){ _pintarInvitadosLog(_invitadosLogCache); return; }
+  window.db.collection('invitadosLog').orderBy('ts','desc').limit(50).get()
+    .then(function(snap){
+      var rows = [];
+      snap.forEach(function(doc){ rows.push(doc.data()); });
+      _invitadosLogCache = rows;
+      _pintarInvitadosLog(rows);
+    })
+    .catch(function(){ cont.innerHTML = '<p style="color:#9ca3af;font-size:13px">Sin datos o sin permiso de lectura.</p>'; });
+}
+function _pintarInvitadosLog(rows){
+  var cont = document.getElementById('tablaInvitadosLog');
+  if(!cont) return;
+  if(!rows.length){ cont.innerHTML = '<p style="color:#9ca3af;font-size:13px">Sin actividad de invitados aún.</p>'; return; }
+  var html = '<table style="width:100%;font-size:12.5px;border-collapse:collapse">'
+    + '<tr style="text-align:left;color:#6b7280;border-bottom:1px solid var(--border)">'
+    + '<th style="padding:6px 8px">DeviceId</th><th style="padding:6px 8px">Cotización Nº</th><th style="padding:6px 8px">Fecha</th></tr>';
+  rows.forEach(function(r){
+    var fecha = r.ts && r.ts.toDate ? r.ts.toDate().toLocaleString('es-CL') : '-';
+    html += '<tr style="border-bottom:1px solid var(--border)">'
+      + '<td style="padding:6px 8px;font-family:monospace">' + venAdmEsc((r.deviceId||'-').slice(0,24)) + '</td>'
+      + '<td style="padding:6px 8px">' + (r.usados||'-') + ' / 10</td>'
+      + '<td style="padding:6px 8px">' + fecha + '</td></tr>';
+  });
+  html += '</table>';
+  cont.innerHTML = html;
+}
+
 // ── COTIZACIONES ─────────────────────────────────────
 function renderCotizaciones(){
   var cotiz = JSON.parse(localStorage.getItem('ov_cotizaciones') || '[]').sort(function(a,b){ return (b._tsNum||0)-(a._tsNum||0); });
@@ -4224,7 +4262,7 @@ function renderCotizaciones(){
         var itemCount = Array.isArray(c.items) ? c.items.reduce(function(a,it){return a+(it.qty||1);},0) : (c.items||0);
         var nro = c.nroCotiz || c.correlativo || ('#'+(filtradas.length - i));
         return '<tr class="cotiz-row" onclick="toggleCotizRow(this,'+i+')">'+
-          '<td style="font-weight:700;color:var(--naranja);white-space:nowrap">'+nro+'</td>'+
+          '<td style="font-weight:700;color:var(--naranja);white-space:nowrap">'+venAdmEsc(nro)+'</td>'+
           '<td style="white-space:nowrap">'+fmtFecha(c._tsNum||c.ts)+'</td>'+
           '<td><b>'+venAdmEsc(c.user||c.nombre||'?')+'</b></td>'+
           '<td><span class="badge '+(c.app==='Vendedor'?'badge-azul':'badge-naranja')+'">'+venAdmEsc(c.app)+'</span></td>'+
@@ -4265,8 +4303,8 @@ function toggleCotizRow(tr, idx){
     : detalle.map(function(it){
         var pu = it.PrecioIVA||it.precio||0;
         return '<tr>'+
-          '<td>'+(it.Codigo||'—')+'</td>'+
-          '<td>'+(it.Descripcion||it.Desc||'—')+'</td>'+
+          '<td>'+venAdmEsc(it.Codigo||'—')+'</td>'+
+          '<td>'+venAdmEsc(it.Descripcion||it.Desc||'—')+'</td>'+
           '<td style="text-align:center">'+(it.qty||0)+'</td>'+
           '<td style="text-align:right">'+fmtCLP(pu)+'</td>'+
           '<td style="text-align:right;font-weight:700;color:var(--naranja)">'+fmtCLP(pu*(it.qty||0))+'</td>'+

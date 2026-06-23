@@ -42,7 +42,15 @@ service cloud.firestore {
     match /cotizaciones/{cotId} {
       allow read: if esAdmin() || esVendedor() ||
                     (estaAutenticado() && resource.data.clienteUid == request.auth.uid);
-      allow create: if estaAutenticado();
+      allow create: if estaAutenticado() ||
+                    // Invitado sin cuenta: esquema acotado, sin leer nada de vuelta
+                    (request.resource.data.app == 'Invitado'
+                      && request.resource.data.user == 'Invitado'
+                      && request.resource.data.deviceId is string
+                      && request.resource.data.deviceId.size() < 80
+                      && request.resource.data.detalle is list
+                      && request.resource.data.detalle.size() <= 30
+                      && request.resource.data.total is number);
       allow update, delete: if esAdmin();
     }
 
@@ -79,6 +87,21 @@ service cloud.firestore {
     match /auditLog/{docId} {
       allow read: if esAdmin();
       allow create: if esAdmin();
+    }
+
+    // ── LOG MODO INVITADO (panel-cliente sin cuenta) ──────────
+    // Escritura abierta (el invitado no está autenticado) pero validada por
+    // esquema estricto — solo 3 campos, sin precios, sin datos de productos.
+    // Lectura solo admin (seguimiento de uso en panel-admin).
+    match /invitadosLog/{docId} {
+      allow read: if esAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['deviceId','usados','ts'])
+                    && request.resource.data.deviceId is string
+                    && request.resource.data.deviceId.size() < 80
+                    && request.resource.data.usados is int
+                    && request.resource.data.usados >= 1 && request.resource.data.usados <= 10
+                    && request.resource.data.ts == request.time;
+      allow update, delete: if false;
     }
 
     // ── TOKEN DE ACCESO A data/ (mitigación V37.28 — ruta oculta) ──

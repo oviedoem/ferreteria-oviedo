@@ -453,7 +453,10 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
         Continuar con Google
       </button>
       <div style="text-align:center;margin-top:14px">
-        <span class="login-link" onclick="entrarComoInvitado()" style="cursor:pointer;font-size:12.5px;color:var(--gris)">Ver catálogo sin cuenta →</span>
+        <button onclick="entrarComoInvitado()" type="button"
+          style="width:100%;padding:11px;border:1.5px dashed #DA0000;border-radius:10px;background:#fff5f5;cursor:pointer;font-size:13.5px;font-weight:700;color:#DA0000;font-family:inherit">
+          👀 Ver catálogo sin cuenta →
+        </button>
       </div>
     </div>
 
@@ -1069,14 +1072,45 @@ var carrito     = [];
 // cuenta no tiene identidad verificable en servidor).
 var GUEST_PDF_KEY   = 'ov_cli_guestPdfUses';
 var GUEST_PDF_LIMIT = 10;
+var GUEST_DEVICE_KEY = 'ov_cli_deviceId';
 var esInvitado = false;
 
+// deviceId: solo para que el panel admin pueda ver actividad de invitados en
+// el log (no es la fuente del conteo, que sigue siendo el contador local).
+// Se guarda en localStorage Y en cookie (1 año) — si se borra uno, se
+// reconstruye desde el otro. Sigue siendo evadible borrando todo o usando
+// incógnito/otro navegador — limitación aceptada, no es medida antifraude.
+function _guestCookieGet(name){
+  var m = document.cookie.match(new RegExp('(?:^|; )'+name+'=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function _guestCookieSet(name, val){
+  try{ document.cookie = name+'='+encodeURIComponent(val)+';max-age='+(365*24*3600)+';path=/;SameSite=Lax'; }catch(e){}
+}
+function _guestDeviceId(){
+  var id = null;
+  try{ id = localStorage.getItem(GUEST_DEVICE_KEY); }catch(e){}
+  if(!id) id = _guestCookieGet(GUEST_DEVICE_KEY);
+  if(!id){
+    id = 'g-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10);
+  }
+  try{ localStorage.setItem(GUEST_DEVICE_KEY, id); }catch(e){}
+  _guestCookieSet(GUEST_DEVICE_KEY, id);
+  return id;
+}
 function _guestUsosActuales(){
   return parseInt(localStorage.getItem(GUEST_PDF_KEY)||'0')||0;
 }
 function _guestRegistrarUsoPDF(){
   var n = _guestUsosActuales() + 1;
   try{ localStorage.setItem(GUEST_PDF_KEY, String(n)); }catch(e){}
+  if(window.db){
+    window.db.collection('invitadosLog').add({
+      deviceId: _guestDeviceId(),
+      usados: n,
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(){});
+  }
   return n;
 }
 function _guestActualizarBanner(){
@@ -2507,13 +2541,14 @@ function registrarCotizacionResumen(total, nroCotiz){
     });
     var cot = {
       ts:        Date.now(),
-      user:      currentUser ? currentUser.nombre : 'Cliente',
-      app:       'Cliente',
+      user:      esInvitado ? 'Invitado' : (currentUser ? currentUser.nombre : 'Cliente'),
+      app:       esInvitado ? 'Invitado' : 'Cliente',
       items:     carrito.reduce(function(a,c){return a+(c.qty||0);},0),
       total:     total,
-      detalle:   detalle,
+      detalle:   detalle.slice(0,30),
       nroCotiz:  nroCotiz || ''  // correlativo visible del PDF
     };
+    if(esInvitado) cot.deviceId = _guestDeviceId();
     // Guardar en localStorage
     var lista = JSON.parse(localStorage.getItem('ov_cotizaciones')||'[]');
     lista.push(cot);
