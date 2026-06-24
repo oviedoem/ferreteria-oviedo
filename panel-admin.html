@@ -2191,6 +2191,80 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <button onclick="waCopiarEnlace()" style="margin-top:8px;width:100%;padding:7px;background:#25D366;color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📋 Copiar enlace</button>
           </div>
         </div>
+
+        <!-- ── AUTOMATIZACIÓN WA BUSINESS ─────────────────────── -->
+        <div style="margin-top:20px;border-top:2px solid #25D36622;padding-top:18px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">🤖 Automatización WA Business</div>
+            <span style="font-size:10px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:2px 8px;border-radius:10px;font-weight:700">Gratis · Sin API</span>
+          </div>
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:14px;line-height:1.5">
+            Gestiona los textos acá → cópialos a <strong>WA Business app → Ajustes → Herramientas para la empresa</strong>.
+            Funciona sin API, sin costo, sin riesgo de baneo.
+          </div>
+
+          <!-- Mensaje de Bienvenida -->
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <label style="font-size:12px;font-weight:700;color:#374151">👋 Mensaje de bienvenida</label>
+              <span style="font-size:10px;color:#6b7280">Primer contacto o +14 días sin actividad</span>
+            </div>
+            <textarea id="waMsgBienvenida" class="finput" rows="4" placeholder="Ej: Hola, bienvenido a Ferreterías Oviedo..." style="resize:vertical;font-size:12px;line-height:1.5"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button onclick="waAutoPreset('bienvenida')" style="padding:5px 10px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-family:inherit">Usar plantilla</button>
+              <button onclick="waAutoGuardar('bienvenida')" style="padding:5px 10px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-family:inherit">💾 Guardar</button>
+              <button onclick="waAutoCopiar('bienvenida')" style="padding:5px 14px;font-size:11px;font-weight:700;background:#25D366;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit">Copiar</button>
+            </div>
+          </div>
+
+          <!-- Mensaje de Ausencia -->
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <label style="font-size:12px;font-weight:700;color:#374151">🌙 Mensaje de ausencia</label>
+              <span style="font-size:10px;color:#6b7280">Fuera de horario comercial</span>
+            </div>
+            <textarea id="waMsgAusencia" class="finput" rows="3" placeholder="Ej: Estamos fuera de horario. Te respondemos pronto..." style="resize:vertical;font-size:12px;line-height:1.5"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button onclick="waAutoPreset('ausencia')" style="padding:5px 10px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-family:inherit">Usar plantilla</button>
+              <button onclick="waAutoGuardar('ausencia')" style="padding:5px 10px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-family:inherit">💾 Guardar</button>
+              <button onclick="waAutoCopiar('ausencia')" style="padding:5px 14px;font-size:11px;font-weight:700;background:#25D366;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit">Copiar</button>
+            </div>
+          </div>
+
+          <!-- Respuestas Rápidas /slash -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <label style="font-size:12px;font-weight:700;color:#374151">⚡ Respuestas rápidas <span style="font-weight:400;color:#9ca3af">(atajo /)</span></label>
+              <span style="font-size:10px;color:#6b7280" id="waRapidasCount">0 / 50</span>
+            </div>
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:8px">
+              En WA Business: escribe <strong>/atajo</strong> → aparece el texto completo. Máx. 50 respuestas.
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <input id="waRapidaAtajo" class="finput" placeholder="/atajo (sin espacios)" style="width:150px;font-size:12px">
+              <textarea id="waRapidaTexto" class="finput" rows="2" placeholder="Texto completo de la respuesta..." style="flex:1;resize:none;font-size:12px"></textarea>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+              <button onclick="waRapidaAgregar()" style="padding:5px 14px;font-size:11px;font-weight:700;background:#25D366;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit">+ Agregar</button>
+              <button onclick="waRapidaPresets()" style="padding:5px 10px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-family:inherit">Cargar sugeridas</button>
+            </div>
+            <div id="waRapidasLista" style="display:flex;flex-direction:column;gap:6px"></div>
+            <div id="waAutoFeedback" style="font-size:11px;color:#059669;font-weight:600;min-height:16px;margin-top:6px"></div>
+          </div>
+
+          <!-- Instrucciones de cómo cargar en el celular -->
+          <div style="margin-top:16px;padding:12px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px">
+            <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">📱 Cómo cargar en WA Business app (celular)</div>
+            <ol style="font-size:11px;color:#78350f;line-height:2;padding-left:16px;margin:0">
+              <li>Abre <strong>WhatsApp Business</strong> en tu celular</li>
+              <li>Toca los 3 puntos → <strong>Ajustes → Herramientas para la empresa</strong></li>
+              <li><strong>Mensaje de bienvenida</strong>: activa el interruptor → toca el lápiz → pega el texto copiado</li>
+              <li><strong>Mensaje de ausencia</strong>: igual → configura el horario de ausencia (ej: 18:01 a 08:29)</li>
+              <li><strong>Respuestas rápidas</strong>: toca el icono + → escribe el atajo (sin /) → pega el texto → Guardar</li>
+              <li>Para usar en chat: escribe <strong>/</strong> → aparecen todas las respuestas → toca la que necesitas → Enviar</li>
+            </ol>
+          </div>
+        </div>
       </div>
       <div id="redModal" style="display:none" class="card">
         <div class="card-title"><span>📋</span> Instrucciones de vinculación</div>
@@ -5544,6 +5618,142 @@ function mktCopiarFeedback(btn){
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── AUTOMATIZACIÓN WA BUSINESS ────────────────────────────────────────────────
+var _waRapidasData = [];
+
+var _WA_AUTO_PRESETS = {
+  bienvenida: 'Hola! 👋 Bienvenido a Ferreterías Oviedo · El Manzano.\n\n¿En qué podemos ayudarte?\n• Precios y disponibilidad de productos\n• Cotizaciones\n• Horario y ubicación\n\nTambién podés ver nuestro catálogo completo:\n👉 ferreteria-oviedo.web.app/panel-cliente',
+  ausencia: 'Hola! 🌙 En este momento estamos fuera de horario de atención.\n\nHorario: Lun–Vie 8:30–18:00 · Sáb 9:00–13:00\n\nTe respondemos al próximo día hábil.\nMientras tanto, consultá nuestro catálogo:\n👉 ferreteria-oviedo.web.app/panel-cliente'
+};
+
+var _WA_RAPIDAS_SUGERIDAS = [
+  { atajo: 'catalogo', texto: '🔧 Catálogo Ferreterías Oviedo:\n👉 ferreteria-oviedo.web.app/panel-cliente\n\n+9.000 productos · Precios actualizados · Cotización en PDF' },
+  { atajo: 'horario',  texto: '🕐 Horario de atención:\nLunes a Viernes: 8:30 – 18:00\nSábado: 9:00 – 13:00\nDomingo: Cerrado\n\nSucursal El Manzano – Red MTS' },
+  { atajo: 'ubicacion',texto: '📍 Ferreterías Oviedo · El Manzano\nCarretera H66 Km 60, El Manzano, Las Cabras\n\n¿Necesitas cómo llegar? ¡Con gusto te ayudamos!' },
+  { atajo: 'app',      texto: '📲 Instala nuestra app gratis:\n👉 ferreteria-oviedo.web.app/panel-cliente\n\nChrome o Safari → 3 puntos → "Agregar a pantalla de inicio"\n✅ Catálogo · Precios · Cotizaciones · Sin descargar nada' },
+  { atajo: 'precio',   texto: 'Para darte el precio actualizado necesito:\n• Código o descripción del producto\n• Cantidad aproximada\n\nBusca el código en: ferreteria-oviedo.web.app/panel-cliente' },
+  { atajo: 'cotizar',  texto: '📋 Para generar tu cotización:\n1. Entra a ferreteria-oviedo.web.app/panel-cliente\n2. Busca los productos y agrégalos al carrito\n3. Genera el PDF con un clic\n\n¿Preferís que lo hagamos nosotros? Envíanos la lista de productos.' }
+];
+
+function waAutoPreset(tipo){
+  var el = document.getElementById(tipo === 'bienvenida' ? 'waMsgBienvenida' : 'waMsgAusencia');
+  if(el && _WA_AUTO_PRESETS[tipo]) el.value = _WA_AUTO_PRESETS[tipo];
+}
+
+function waAutoGuardar(tipo){
+  var el = document.getElementById(tipo === 'bienvenida' ? 'waMsgBienvenida' : 'waMsgAusencia');
+  if(!el || !window.db) return;
+  var val = el.value.trim();
+  if(!val){ toast('Escribe un mensaje primero','warn'); return; }
+  var data = { waAuto: {} };
+  data.waAuto[tipo] = val;
+  window.db.collection('config').doc('redes').set(data, { merge:true })
+    .then(function(){ toast('Guardado','ok'); })
+    .catch(function(){ toast('Error al guardar','err'); });
+}
+
+function waAutoCopiar(tipo){
+  var el = document.getElementById(tipo === 'bienvenida' ? 'waMsgBienvenida' : 'waMsgAusencia');
+  if(!el) return;
+  var texto = el.value.trim();
+  if(!texto){ toast('El campo está vacío','warn'); return; }
+  var fb = document.getElementById('waAutoFeedback');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto).then(function(){
+      toast('Copiado — pégalo en WA Business app','ok');
+      if(fb){ fb.textContent = '✓ Copiado — ahora pégalo en WA Business → Ajustes → Herramientas para la empresa'; setTimeout(function(){ fb.textContent=''; }, 4000); }
+    }).catch(function(){ waAutoCopiarFallback(texto, fb); });
+  } else {
+    waAutoCopiarFallback(texto, fb);
+  }
+}
+
+function waAutoCopiarFallback(texto, fb){
+  var ta = document.createElement('textarea');
+  ta.value = texto; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy');
+    toast('Copiado','ok');
+    if(fb){ fb.textContent = '✓ Copiado — pégalo en WA Business app'; setTimeout(function(){ fb.textContent=''; }, 4000); }
+  }catch(e){ toast('No se pudo copiar','err'); }
+  document.body.removeChild(ta);
+}
+
+function waRapidaAgregar(){
+  var atajoEl = document.getElementById('waRapidaAtajo');
+  var textoEl = document.getElementById('waRapidaTexto');
+  if(!atajoEl || !textoEl) return;
+  var atajo = atajoEl.value.trim().replace(/^\/+/,'').replace(/\s+/g,'');
+  var texto  = textoEl.value.trim();
+  if(!atajo){ toast('Escribe un atajo (ej: catalogo)','warn'); return; }
+  if(!texto){ toast('Escribe el texto de la respuesta','warn'); return; }
+  if(_waRapidasData.length >= 50){ toast('Límite de 50 respuestas rápidas alcanzado','warn'); return; }
+  var existe = _waRapidasData.findIndex(function(r){ return r.atajo === atajo; });
+  if(existe >= 0){ _waRapidasData[existe] = { atajo:atajo, texto:texto }; }
+  else { _waRapidasData.push({ atajo:atajo, texto:texto }); }
+  atajoEl.value = ''; textoEl.value = '';
+  _waRapidasGuardar();
+  renderWaRapidas();
+}
+
+function waRapidaEliminar(atajo){
+  _waRapidasData = _waRapidasData.filter(function(r){ return r.atajo !== atajo; });
+  _waRapidasGuardar();
+  renderWaRapidas();
+}
+
+function waRapidaCopiar(atajo){
+  var r = _waRapidasData.find(function(r){ return r.atajo === atajo; });
+  if(!r) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(r.texto).then(function(){ toast('/'+r.atajo+' copiado','ok'); })
+    .catch(function(){ waAutoCopiarFallback(r.texto, null); });
+  } else { waAutoCopiarFallback(r.texto, null); }
+}
+
+function waRapidaPresets(){
+  var agregados = 0;
+  _WA_RAPIDAS_SUGERIDAS.forEach(function(s){
+    if(_waRapidasData.length >= 50) return;
+    var existe = _waRapidasData.findIndex(function(r){ return r.atajo === s.atajo; });
+    if(existe < 0){ _waRapidasData.push({ atajo:s.atajo, texto:s.texto }); agregados++; }
+  });
+  if(agregados){ _waRapidasGuardar(); renderWaRapidas(); toast(agregados+' respuestas sugeridas cargadas','ok'); }
+  else { toast('Las sugeridas ya están cargadas','warn'); }
+}
+
+function _waRapidasGuardar(){
+  if(!window.db) return;
+  window.db.collection('config').doc('redes')
+    .set({ waRapidas: _waRapidasData }, { merge:true })
+    .catch(function(){});
+}
+
+function renderWaRapidas(){
+  var lista = document.getElementById('waRapidasLista');
+  var count = document.getElementById('waRapidasCount');
+  if(!lista) return;
+  if(count) count.textContent = _waRapidasData.length + ' / 50';
+  if(!_waRapidasData.length){
+    lista.innerHTML = '<div style="font-size:11px;color:#9ca3af;padding:8px 0">Sin respuestas rápidas. Agrega una o carga las sugeridas.</div>';
+    return;
+  }
+  lista.innerHTML = _waRapidasData.map(function(r){
+    var esc = r.atajo.replace(/'/g,"\\'");
+    var atajoHtml = _esc(r.atajo);
+    var preview = _esc(r.texto.substring(0,100) + (r.texto.length>100?'…':''));
+    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">'
+      +'<span style="font-size:11px;font-weight:700;color:#059669;min-width:80px;padding-top:1px">/'+atajoHtml+'</span>'
+      +'<span style="font-size:11px;color:#374151;flex:1;line-height:1.4;white-space:pre-wrap">'+preview+'</span>'
+      +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
+        +'<button onclick="waRapidaCopiar(\''+esc+'\')" style="padding:3px 8px;font-size:10px;font-weight:700;background:#25D366;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit">Copiar</button>'
+        +'<button onclick="waRapidaEliminar(\''+esc+'\')" style="padding:3px 8px;font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:5px;cursor:pointer;font-family:inherit">Borrar</button>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── REDES SOCIALES ───────────────────────────────────
 function loadRedes(){
   var ig=localStorage.getItem('ov_ig');
@@ -5563,6 +5773,14 @@ function loadRedes(){
       var embedsList = document.getElementById('igEmbedsList');
       if(embedsList) embedsList.innerHTML = '';
       if(Array.isArray(d.igEmbeds)) d.igEmbeds.forEach(_igPintarEmbed);
+      if(d.waAuto){
+        if(d.waAuto.bienvenida && document.getElementById('waMsgBienvenida'))
+          document.getElementById('waMsgBienvenida').value = d.waAuto.bienvenida;
+        if(d.waAuto.ausencia && document.getElementById('waMsgAusencia'))
+          document.getElementById('waMsgAusencia').value = d.waAuto.ausencia;
+      }
+      if(Array.isArray(d.waRapidas)) _waRapidasData = d.waRapidas.slice();
+      renderWaRapidas();
     }).catch(function(){});
   }
 }
@@ -5579,7 +5797,11 @@ var _WA_PLANTILLAS = [
   { icono:'💰', titulo:'Solicitar precio',
     texto:'Hola! Para darte el precio actualizado necesito:\n\n• Código o descripción del producto\n• Cantidad aproximada\n\nBusca el código en nuestro catálogo: https://ferreteria-oviedo.web.app/panel-cliente' },
   { icono:'📄', titulo:'Seguimiento cotización',
-    texto:'Hola! Te escribo para hacer seguimiento de la cotización que te enviamos.\n\n¿Tienes alguna consulta sobre los productos o precios? Estoy aquí para ayudarte 🔧' }
+    texto:'Hola! Te escribo para hacer seguimiento de la cotización que te enviamos.\n\n¿Tienes alguna consulta sobre los productos o precios? Estoy aquí para ayudarte 🔧' },
+  { icono:'📲', titulo:'Instalar la app',
+    texto:'Hola! Te cuento que tenemos app gratuita instalable en tu celular 📲\n\nEntra desde Chrome o Safari:\n👉 ferreteria-oviedo.web.app/panel-cliente\n\nToca los 3 puntos → "Agregar a pantalla de inicio" → ¡listo!\n\nVas a poder ver precios, stock y generar cotizaciones al instante.' },
+  { icono:'✅', titulo:'Confirmar pedido',
+    texto:'✅ Perfecto! Tu pedido está confirmado.\n\nCualquier cambio o consulta, escríbenos acá.\nTambién podés revisar el estado de tu cotización en nuestra app:\n👉 ferreteria-oviedo.web.app/panel-cliente\n\nFerretería Oviedo · El Manzano 🔩' }
 ];
 
 function renderWaPlantillas(){
@@ -5720,7 +5942,7 @@ function showRedInstrucciones(tipo){
   var textos={
     ig:'<ol style="font-size:13px;line-height:2;padding-left:18px"><li>Ve a Instagram y copia tu nombre de usuario</li><li>Pégalo en el campo "Nombre de usuario (@)"</li><li>Haz clic en "Vincular"</li><li>Aparecerá en el pie de página de las apps</li></ol>',
     fb:'<ol style="font-size:13px;line-height:2;padding-left:18px"><li>Abre tu página en Facebook</li><li>Copia la URL completa desde el navegador</li><li>Pégala en "URL de página Facebook"</li><li>Haz clic en "Vincular"</li></ol>',
-    wa:'<ol style="font-size:13px;line-height:2;padding-left:18px"><li>Ingresa el número de WhatsApp Business con código de país</li><li>Ejemplo: +56912345678</li><li>Haz clic en "Vincular"</li><li>Se generará un botón directo en las apps</li></ol>'
+    wa:'<div style="font-size:12px;color:#6b7280;margin-bottom:10px">Configura el número que aparece en el botón de contacto de las apps cliente y vendedor.</div><ol style="font-size:13px;line-height:2.2;padding-left:18px"><li>Ingresa el número con código de país (ej: +56912345678)</li><li>Haz clic en <strong>Vincular</strong></li><li>El botón de WhatsApp en las apps apunta a ese número</li></ol><div style="margin-top:12px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#166534"><strong>Respuestas automáticas:</strong> Usa la sección "Automatización WA Business" más abajo para gestionar los textos y luego cópialos a la app WhatsApp Business en tu celular: Ajustes → Herramientas para la empresa.</div>'
   };
   document.getElementById('redInstrContent').innerHTML = textos[tipo]||'';
 }

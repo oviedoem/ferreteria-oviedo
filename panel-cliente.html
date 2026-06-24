@@ -145,6 +145,14 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
   border-bottom:2px solid #DA0000;background:#1a1a1a;
   flex-shrink:0;
 }
+.bnr-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:10}
+.bnr-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);transition:background .3s}
+.bnr-dot-activo{background:#DA0000}
+.bnr-promo-overlay{position:absolute;inset:0;background:linear-gradient(135deg,#1a1a1a 60%,#2a0000);display:none;flex-direction:column;justify-content:center;padding:14px 16px;z-index:5}
+.bnr-promo-tag{display:inline-block;background:#DA0000;color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;align-self:flex-start}
+.bnr-promo-titulo{font-size:15px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:4px}
+.bnr-promo-desc{font-size:11px;color:rgba(255,255,255,.7);line-height:1.4;margin-bottom:4px}
+.bnr-promo-precio{font-size:20px;font-weight:800;color:#DA0000;line-height:1}
 .sucursal-bg{
   position:absolute;inset:0;
   background:url('FONDO3.jpg') center 40%/cover no-repeat;
@@ -2301,10 +2309,43 @@ document.addEventListener('click', function(e){
 
 // ── BANNER: pinta un slide (imagen + ajustes + link) en el fondo del header ──
 function _bnrPintarSlide(d){
+  var banner = document.querySelector('.sucursal-banner');
+  var bg     = document.querySelector('.sucursal-bg');
+
+  if(d.tipo === 'promo'){
+    if(bg){
+      bg.style.backgroundImage = 'none';
+      bg.style.opacity = '1';
+      bg.style.filter  = 'none';
+    }
+    if(banner){
+      banner.style.cursor  = '';
+      banner.onclick       = null;
+      var promoOverlay = banner.querySelector('.bnr-promo-overlay');
+      if(!promoOverlay){
+        promoOverlay = document.createElement('div');
+        promoOverlay.className = 'bnr-promo-overlay';
+        banner.appendChild(promoOverlay);
+      }
+      var tagEsc    = (d.tag||'OFERTA').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var tituloEsc = (d.titulo||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var descEsc   = (d.desc||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var precioEsc = (d.precio||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      promoOverlay.innerHTML =
+        '<div class="bnr-promo-tag">'+tagEsc+'</div>'+
+        '<div class="bnr-promo-titulo">'+tituloEsc+'</div>'+
+        (descEsc ? '<div class="bnr-promo-desc">'+descEsc+'</div>' : '')+
+        (precioEsc ? '<div class="bnr-promo-precio">'+precioEsc+'</div>' : '');
+      promoOverlay.style.display = 'flex';
+    }
+    return;
+  }
+
+  var promoOverlay = banner && banner.querySelector('.bnr-promo-overlay');
+  if(promoOverlay) promoOverlay.style.display = 'none';
+
   var imgSrc = d.imageData || d.url || null;
   if(!imgSrc) return;
-  var bg     = document.querySelector('.sucursal-bg');
-  var banner = document.querySelector('.sucursal-banner');
   if(bg){
     bg.style.backgroundImage    = "url('" + imgSrc + "')";
     bg.style.backgroundPosition = (d.posX||50) + '% ' + (d.posY||40) + '%';
@@ -2325,17 +2366,64 @@ function _bnrPintarSlide(d){
 }
 
 // ── BANNER: rota entre varios slides activos (carrusel, Prompt 10c) ─────────
+var _promosData = [];
+var _bnrSlidesImagenes = null;
+
+function _bnrSlideDePromo(p){
+  return {
+    tipo:    'promo',
+    titulo:  p.titulo  || '',
+    desc:    p.desc    || '',
+    precio:  p.precio  || '',
+    tag:     p.tag     || 'OFERTA'
+  };
+}
+
+function _bnrTryFusion(){
+  if(_bnrSlidesImagenes === null) return;
+  var slidesFusion = _bnrSlidesImagenes.slice();
+  _promosData.forEach(function(p){
+    if(p.titulo) slidesFusion.push(_bnrSlideDePromo(p));
+  });
+  if(slidesFusion.length > 0) _bnrIniciarRotacion(slidesFusion);
+  else _bnrCargarBannerUnico();
+}
+
 var _bnrRotacionTimer = null;
 function _bnrIniciarRotacion(slides){
   if(_bnrRotacionTimer){ clearInterval(_bnrRotacionTimer); _bnrRotacionTimer = null; }
   var idx = 0;
   _bnrPintarSlide(slides[idx]);
+  _bnrActualizarDots(slides.length, idx);
   if(slides.length > 1){
     _bnrRotacionTimer = setInterval(function(){
       idx = (idx + 1) % slides.length;
       _bnrPintarSlide(slides[idx]);
+      _bnrActualizarDots(slides.length, idx);
     }, 6000);
   }
+}
+
+function _bnrActualizarDots(total, actual){
+  var banner = document.querySelector('.sucursal-banner');
+  if(!banner || total <= 1) return;
+  var contenedor = banner.querySelector('.bnr-dots');
+  if(!contenedor){
+    contenedor = document.createElement('div');
+    contenedor.className = 'bnr-dots';
+    banner.appendChild(contenedor);
+  }
+  if(contenedor.children.length !== total){
+    contenedor.innerHTML = '';
+    for(var i = 0; i < total; i++){
+      var dot = document.createElement('span');
+      dot.className = 'bnr-dot';
+      contenedor.appendChild(dot);
+    }
+  }
+  Array.from(contenedor.children).forEach(function(dot, i){
+    dot.classList.toggle('bnr-dot-activo', i === actual);
+  });
 }
 
 // ── BANNER: fallback al doc único config/banner (sin carrusel todavía) ──────
@@ -2377,9 +2465,12 @@ function cargarBannerDinamico(){
       slides.push(d);
     });
     slides.sort(function(a,b){ return (a.orden||0) - (b.orden||0); });
-    if(slides.length > 0) _bnrIniciarRotacion(slides);
-    else _bnrCargarBannerUnico();
-  }).catch(function(){ _bnrCargarBannerUnico(); });
+    _bnrSlidesImagenes = slides;
+    _bnrTryFusion();
+  }).catch(function(){
+    _bnrSlidesImagenes = [];
+    _bnrTryFusion();
+  });
 }
 
 // ── Sanitizar inputs de cotización ───────────────────────────────────────────
@@ -2744,11 +2835,13 @@ function cargarPromosFirestore(){
       var promos = [];
       snap.forEach(function(d){ promos.push(Object.assign({_id:d.id}, d.data())); });
       renderPromosCliente(promos);
+      _bnrTryFusion();
     })
     .catch(function(){ });
 }
 
 function renderPromosCliente(promos){
+  _promosData = (promos && promos.length) ? promos.slice() : [];
   var section = document.getElementById('promoSection');
   var list    = document.getElementById('promoList');
   if(!section || !list) return;
