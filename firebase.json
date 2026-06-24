@@ -24,6 +24,7 @@
       "**/*.ini",
       "update-sw-version.js",
       "pipeline-datos-mapa.html",
+      "marketing-pwa.html",
       "VENTAS EL MANZANO/**",
       "VENTAS EL MANZANO LOCAL/**",
       "SERVIDOR2_DATOS_AYER/**",

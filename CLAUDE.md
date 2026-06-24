@@ -96,13 +96,20 @@ foreach ($v in 'E:','F:','W:','L:','M:') { fltmc detach FortiShield $v; fltmc de
 ```
 Dura hasta reboot. Integrado en `REMONTAR_DISCO_E.ps1` v3. Detalle en AGENTS.md → "EMERGENCIA DISCO PROYECTO_E / CONFIG_W".
 
-### Sin copia de docs en C:
+### Sin copia de docs en C: — regla del Windows Empresa (ahora en disco D:)
 Los 8 documentos de referencia (AGENTS.md, MEMORY.md, CLAUDE.md, README.md, MAPA_FLUJO_PROYECTOS.md,
 IDS_REFERENCIA.md, ESTADO_PROYECTO.md, rule.json) viven en `PROYECTO_E:\ferreteria-oviedo\` (fuente
 real) y se espejan como respaldo de solo lectura en `CONFIG_W:\proyecto-docs\` y en el disco con
-Windows alterno de esta máquina (`<letra>:\ferreteria-docs\`). **Nunca en C:** — ver
-`CONFIG_W:\SETUP_PC_NUEVO.md` sección "PLAN B" y "CUTOVER claude-config" (caso especial pendiente,
-no replicar).
+Windows alterno de esta máquina (`<letra>:\ferreteria-docs\`).
+
+**Esta restricción aplica al Windows Empresa, que ahora vive en disco `D:`** — ahí nunca debe
+quedar una copia de estos docs en su propio C:.
+
+**NO aplica a este PC (Windows 10 personal, disco externo, CONFIG_W por USB).** En este PC el
+duplicado `C:\claude-config` es intencional y documentado — ver memoria `cutover-claude-config-completado`:
+`W:\claude-config` es la fuente canónica, `C:\claude-config` es respaldo deliberado sincronizado
+manualmente W→C con `SYNC_W_A_C.bat` (Escritorio). No es el mismo caso ni la misma regla que la de
+arriba — no confundir "Windows Empresa nunca en C" con "este PC sí puede tener duplicado en C".
 
 ---
 

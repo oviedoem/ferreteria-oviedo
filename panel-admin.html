@@ -292,6 +292,11 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 /* IMPROVED TUT */
 .tut-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:4px}
 .tut-card-v2{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);text-decoration:none;color:inherit}
+.mkt-tab-btn{flex:0 0 auto;padding:8px 16px;background:none;border:none;border-radius:8px;font-size:13px;font-weight:600;color:var(--gris);cursor:pointer;white-space:nowrap;font-family:inherit;transition:.15s}
+.mkt-tab-active{background:#fff0f0;color:#DA0000;font-weight:700}
+.mkt-pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;background:#f9fafb;border:1px solid #eee;border-radius:10px;padding:14px;font-size:13px;line-height:1.6;margin:8px 0 10px;color:#1f2937}
+.mkt-copy-btn{background:#DA0000;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;transition:.15s}
+.mkt-copy-btn:hover{background:#b50000}
 .tut-card-v2:hover{box-shadow:0 4px 14px rgba(218,0,0,.12);border-color:rgba(218,0,0,.25);transform:translateY(-1px)}
 .tc-icon{width:44px;height:44px;border-radius:12px;background:var(--naranja);color:white;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .tc-title{font-size:13px;font-weight:700;color:var(--dark)}
@@ -771,6 +776,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Marketing <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('marketing',this)">📣 Difusión</button>
         <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
         <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
         <button class="nav-btn" id="cuponNavBtn" onclick="showTab('cupones',this)">🏷️ Cupones <span id="cuponNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
@@ -2265,7 +2271,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           </div>
           <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('inventario');setTimeout(function(){vadmSubTab('quiebre');},200);},300)">
             <div class="tc-icon">📊</div>
-            <div class="tc-title">Informe Stock V37.8</div>
+            <div class="tc-title">Informe Stock V37.28</div>
             <div class="tc-desc">22 columnas: Disp/Fís/Ped/Dif × 4 bodegas. Clic en Ped → pedidos comprometidos (NVM/VMN/VMP). Clic en Dif → despachos BVE/FVE pendientes.</div>
             <div class="tc-link">Ir a Inventario →</div>
           </div>
@@ -2274,6 +2280,18 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             <div class="tc-title">WhatsApp Business</div>
             <div class="tc-desc">Flujo completo: cómo usan el canal el cliente, el vendedor y el admin. Configuración paso a paso.</div>
             <div class="tc-link" style="color:#25D366">Ver manual →</div>
+          </div>
+          <div class="tut-card-v2" onclick="showTab('redes',document.querySelector('[onclick*=\'redes\']'))" style="border-color:#E1306C">
+            <div class="tc-icon" style="background:#E1306C">📱</div>
+            <div class="tc-title">Redes Sociales</div>
+            <div class="tc-desc">Vincula Instagram, Facebook y WhatsApp. Los íconos aparecen en el pie de la App Clientes en tiempo real.</div>
+            <div class="tc-link" style="color:#E1306C">Ir a Redes →</div>
+          </div>
+          <div class="tut-card-v2" onclick="showTab('marketing',document.querySelector('[onclick*=\'marketing\']'))" style="border-color:#DA0000">
+            <div class="tc-icon" style="background:#DA0000">📣</div>
+            <div class="tc-title">Difusión y Marketing</div>
+            <div class="tc-desc">Textos listos para WhatsApp e Instagram, guión para Reels y plan de lanzamiento de 7 días de la app cliente.</div>
+            <div class="tc-link" style="color:#DA0000">Ir a Marketing →</div>
           </div>
         </div>
       </div>
@@ -2316,6 +2334,247 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         </div>
       </div>
     </div>
+
+    <!-- ── MARKETING / DIFUSIÓN ── -->
+    <div class="tab-pane" id="tab-marketing">
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#DA0000,#b50000);border-radius:14px;padding:20px 22px;margin-bottom:18px;color:#fff">
+        <div style="font-size:17px;font-weight:800;margin-bottom:4px">📣 Difusión — App Clientes</div>
+        <div style="font-size:12px;opacity:.88">El Manzano · Textos listos para copiar en WhatsApp e Instagram · Sin costo</div>
+      </div>
+
+      <!-- Tabs internos -->
+      <div id="mktTabBar" style="display:flex;gap:2px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:4px;margin-bottom:18px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <button onclick="mktTab(0,this)" id="mktBtn0" class="mkt-tab-btn mkt-tab-active">📲 WhatsApp</button>
+        <button onclick="mktTab(1,this)" id="mktBtn1" class="mkt-tab-btn">📸 Instagram</button>
+        <button onclick="mktTab(2,this)" id="mktBtn2" class="mkt-tab-btn">🎬 Video Reels</button>
+        <button onclick="mktTab(3,this)" id="mktBtn3" class="mkt-tab-btn">🚀 Lanzamiento</button>
+      </div>
+
+      <!-- Pane 0 — WhatsApp -->
+      <div class="mkt-pane" id="mktPane0">
+        <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:10px 14px;font-size:12px;color:#1b5e20;margin-bottom:16px">
+          <strong>3 Estados de WhatsApp — rotar cada 2 días.</strong> Copiar → WhatsApp → Mi estado → Texto.
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title"><span>📲</span> Estado A — Directo</div>
+          <pre id="mktWaA" class="mkt-pre">📲 ¿Sabías que podemos instalarnos como app en tu celular?
+
+👉 ferreteria-oviedo.web.app/panel-cliente
+
+✅ Catálogo completo
+✅ Precios actualizados
+✅ Cotización al instante
+✅ Sin descargar nada
+
+Ferreterías Oviedo · El Manzano 🔩</pre>
+          <button class="mkt-copy-btn" onclick="mktCopiar('mktWaA',this)">Copiar</button>
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title"><span>🔩</span> Estado B — Beneficio</div>
+          <pre id="mktWaB" class="mkt-pre">🔩 Tu ferretería en el bolsillo.
+
+Instala nuestra app GRATIS directo desde el navegador:
+ferreteria-oviedo.web.app/panel-cliente
+
+Sin Play Store. Sin App Store. Solo entra y toca "Agregar a inicio".
+
+Ferreterías Oviedo · El Manzano 💪</pre>
+          <button class="mkt-copy-btn" onclick="mktCopiar('mktWaB',this)">Copiar</button>
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title"><span>⚡</span> Estado C — Urgencia</div>
+          <pre id="mktWaC" class="mkt-pre">⚡ Consulta precios y genera cotizaciones desde donde estés.
+
+👉 ferreteria-oviedo.web.app/panel-cliente
+
+Instalable en Android e iPhone. Sin costo. Sin pasos complicados.
+
+Ferreterías Oviedo 🏪</pre>
+          <button class="mkt-copy-btn" onclick="mktCopiar('mktWaC',this)">Copiar</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>📨</span> Mensaje Masivo <span style="font-size:10px;font-weight:600;background:#25D366;color:#fff;padding:2px 8px;border-radius:10px;margin-left:6px">Para clientes frecuentes</span></div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:8px">Reemplaza <strong>[nombre]</strong> antes de enviar. Enviar de a uno para mayor tasa de respuesta.</div>
+          <pre id="mktWaMasivo" class="mkt-pre">Hola [nombre] 👋
+
+Te cuento que *Ferreterías Oviedo* ya tiene app instalable en celulares, completamente gratis.
+
+Desde ella puedes:
+📦 Ver el catálogo completo con stock
+💰 Consultar precios actualizados
+📋 Generar cotizaciones al instante
+💬 Contactarnos directo por WhatsApp
+
+Entra desde tu celular:
+👉 *ferreteria-oviedo.web.app/panel-cliente*
+
+Cuando abras el link, Chrome te va a ofrecer instalarlo como app. ¡Es un solo toque!
+
+Cualquier duda me avisas 🙌
+Ferreterías Oviedo · El Manzano</pre>
+          <button class="mkt-copy-btn" onclick="mktCopiar('mktWaMasivo',this)">Copiar</button>
+        </div>
+      </div>
+
+      <!-- Pane 1 — Instagram -->
+      <div class="mkt-pane" id="mktPane1" style="display:none">
+        <div style="background:#fce4ec;border:1px solid #f48fb1;border-radius:10px;padding:10px 14px;font-size:12px;color:#880e4f;margin-bottom:16px">
+          <strong>3 Posts + 4 Historias para la primera semana.</strong> Diseño: fondo rojo #DA0000, logo blanco, tipografía Inter.
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title"><span>🚀</span> Post 1 — Lanzamiento <span style="font-size:10px;background:#E1306C;color:#fff;padding:2px 8px;border-radius:10px;margin-left:6px">Feed / Carrusel</span></div>
+          <pre id="mktIg1" class="mkt-pre">🚀 ¡Nuestra app ya está disponible — y es gratis!
+
+Consulta precios, revisa stock y genera cotizaciones desde tu celular, sin descargar nada desde ninguna tienda.
+
+Solo entra desde Chrome o Safari:
+🔗 ferreteria-oviedo.web.app/panel-cliente
+
+👉 Toca los tres puntos del navegador → "Agregar a pantalla de inicio"
+👉 ¡Listo! La app queda en tu inicio como cualquier otra.
+
+📦 Más de 9.000 productos disponibles
+💰 Precios con IVA incluido
+📋 Cotizaciones en PDF al instante
+
+#FerreteriasOviedo #Ferreteria #ElManzano #Chile #Construccion #Remodelacion #App #Gratis #Cotizacion #Stock</pre>
+          <button class="mkt-copy-btn" onclick="mktCopiar('mktIg1',this)">Copiar</button>
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title"><span>📖</span> Post 2 — Tutorial <span style="font-size:10px;background:#E1306C;color:#fff;padding:2px 8px;border-radius:10px;margin-left:6px">Carrusel educativo</span></div>
+          <pre id="mktIg2" class="mkt-pre">¿Cómo instalar nuestra app? Son 3 pasos 👇
+
+[Ver carrusel →]
+
+Sin Play Store. Sin App Store. Funciona en Android e iPhone.
+
+🔗 ferreteria-oviedo.web.app/panel-cliente
+
+#FerreteriasOviedo #Tutorial #App #Ferreteria #Chile</pre>
+          <button class="mkt-copy-btn" onclick="mktCopiar('mktIg2',this)">Copiar</button>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title"><span>🔩</span> Post 3 — Beneficios <span style="font-size:10px;background:#E1306C;color:#fff;padding:2px 8px;border-radius:10px;margin-left:6px">Imagen estática</span></div>
+          <pre id="mktIg3" class="mkt-pre">Tu ferretería siempre disponible 🔩
+
+✅ Catálogo completo con más de 9.000 productos
+✅ Precios actualizados diariamente
+✅ Genera cotizaciones en PDF
+✅ Consulta stock en tiempo real
+✅ Contacto directo por WhatsApp
+
+Todo desde tu celular, gratis, sin apps que descargar.
+
+👉 ferreteria-oviedo.web.app/panel-cliente
+
+#FerreteriasOviedo #Ferreteria #Construccion #ElManzano #Remodelacion</pre>
+          <button class="mkt-copy-btn" onclick="mktCopiar('mktIg3',this)">Copiar</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>📖</span> Guión de Historias — Primera semana</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:#DA0000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">1</div>
+              <div style="font-size:12px;color:#374151;line-height:1.5">Fondo rojo Oviedo. Texto blanco grande: «¿Sabías que tenemos app?» Sticker: Link ferreteria-oviedo.web.app/panel-cliente</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:#DA0000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">2</div>
+              <div style="font-size:12px;color:#374151;line-height:1.5">Pantalla del celular mostrando el catálogo. Texto: «9.000+ productos al alcance de tu mano». Sticker: «Desliza arriba»</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:#DA0000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">3</div>
+              <div style="font-size:12px;color:#374151;line-height:1.5">GIF o video: tap en Chrome → Agregar a inicio → ícono aparece. Texto: «3 segundos y ya está instalada». CTA: «Pruébala gratis»</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+              <div style="min-width:24px;height:24px;border-radius:50%;background:#DA0000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">4</div>
+              <div style="font-size:12px;color:#374151;line-height:1.5">Poll: «¿Ya la instalaste?» Opciones: ✅ Sí / ⏳ Lo hago ahora</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pane 2 — Video Reels -->
+      <div class="mkt-pane" id="mktPane2" style="display:none">
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:16px">
+          Filmar con celular vertical (9:16). Voz natural, sin efectos. Música libre de derechos en CapCut o InShot.
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title"><span>🎬</span> Guión Reels — 30 segundos</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:8px 10px;background:#1a1a1a;color:#fff;border-radius:8px;font-size:11px;font-weight:700">
+              <span>Tiempo</span><span>Tipo</span><span>Descripción</span>
+            </div>
+            <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:8px 10px;background:#f9fafb;border-radius:8px;font-size:12px;border:1px solid #f3f4f6">
+              <span style="color:#DA0000;font-weight:700">0–3 seg</span><span style="font-weight:600">Hook</span><span>Plano del celular en mano. Voz: «¿Sabías que Ferreterías Oviedo tiene app gratis?»</span>
+            </div>
+            <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:8px 10px;background:#f9fafb;border-radius:8px;font-size:12px;border:1px solid #f3f4f6">
+              <span style="color:#DA0000;font-weight:700">3–8 seg</span><span style="font-weight:600">Problema</span><span>Pantalla de WhatsApp con mensajes de cotizaciones. Voz: «Sin más idas y vueltas para consultar precios.»</span>
+            </div>
+            <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:8px 10px;background:#f9fafb;border-radius:8px;font-size:12px;border:1px solid #f3f4f6">
+              <span style="color:#DA0000;font-weight:700">8–15 seg</span><span style="font-weight:600">Demo</span><span>Manos reales: entrar a ferreteria-oviedo.web.app/panel-cliente, buscar un producto, ver precio y stock.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:8px 10px;background:#f9fafb;border-radius:8px;font-size:12px;border:1px solid #f3f4f6">
+              <span style="color:#DA0000;font-weight:700">15–22 seg</span><span style="font-weight:600">Instalación</span><span>Tap en Chrome → «Agregar a pantalla de inicio» → ícono aparece. Voz: «Se instala en un solo toque, sin descargar nada.»</span>
+            </div>
+            <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:8px 10px;background:#f9fafb;border-radius:8px;font-size:12px;border:1px solid #f3f4f6">
+              <span style="color:#DA0000;font-weight:700">22–27 seg</span><span style="font-weight:600">Beneficios</span><span>Texto animado sobre fondo rojo: «9.000 productos · Precios actualizados · Cotización en PDF · Gratis»</span>
+            </div>
+            <div style="display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:8px 10px;background:#f9fafb;border-radius:8px;font-size:12px;border:1px solid #f3f4f6">
+              <span style="color:#DA0000;font-weight:700">27–30 seg</span><span style="font-weight:600">CTA</span><span>Logo Oviedo. Texto: «Entra desde tu celular → ferreteria-oviedo.web.app/panel-cliente». Voz: «Ferreterías Oviedo, siempre cerca.»</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px 18px">
+          <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">💡 Tips de producción</div>
+          <ul style="margin:0;padding-left:16px;font-size:12px;color:#78350f;line-height:1.8">
+            <li>Grabar en un solo take si es posible — autenticidad &gt; producción</li>
+            <li>Subtítulos automáticos con CapCut (gratis) mejoran el alcance hasta 40%</li>
+            <li>Publicar entre 18:00–21:00 hrs para mayor alcance orgánico</li>
+            <li>Guardar en borrador primero y revisar con audio apagado</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Pane 3 — Lanzamiento -->
+      <div class="mkt-pane" id="mktPane3" style="display:none">
+        <div style="background:linear-gradient(135deg,#DA0000,#b50000);color:#fff;border-radius:14px;padding:18px 20px;margin-bottom:16px">
+          <div style="font-size:15px;font-weight:800;margin-bottom:4px">🗓 Plan de lanzamiento — 7 días</div>
+          <div style="font-size:12px;opacity:.9">WhatsApp + Instagram · Sin publicidad pagada · Costo $0</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">📱</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 1</span><span style="font-size:10px;font-weight:700;color:#fff;background:#25D366;padding:2px 8px;border-radius:10px">WhatsApp</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Publicar Estado A en tu perfil personal y el de la ferretería</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">📸</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 1</span><span style="font-size:10px;font-weight:700;color:#fff;background:#E1306C;padding:2px 8px;border-radius:10px">Instagram</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Post 1 (lanzamiento) + Historias 1 y 2</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">📨</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 2</span><span style="font-size:10px;font-weight:700;color:#fff;background:#25D366;padding:2px 8px;border-radius:10px">WhatsApp</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Enviar mensaje masivo a clientes frecuentes (copiar de tab WhatsApp)</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">🗳️</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 2</span><span style="font-size:10px;font-weight:700;color:#fff;background:#E1306C;padding:2px 8px;border-radius:10px">Instagram</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Historia 3 (demo instalación) + Historia 4 (Poll)</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">🎬</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 3</span><span style="font-size:10px;font-weight:700;color:#fff;background:#E1306C;padding:2px 8px;border-radius:10px">Instagram</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Publicar video Reels 30 seg con el guión del tab Video</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">🔄</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 4</span><span style="font-size:10px;font-weight:700;color:#fff;background:#25D366;padding:2px 8px;border-radius:10px">WhatsApp</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Estado B — cambiar cada 2 días rotando los 3 estados</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">📖</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 5</span><span style="font-size:10px;font-weight:700;color:#fff;background:#E1306C;padding:2px 8px;border-radius:10px">Instagram</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Post 2 (carrusel tutorial paso a paso)</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">✅</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Día 7</span><span style="font-size:10px;font-weight:700;color:#fff;background:#E1306C;padding:2px 8px;border-radius:10px">Instagram</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Post 3 (beneficios) + compartir en Historias</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px"><span style="font-size:1.2rem">⭐</span><span style="font-weight:700;font-size:12px;min-width:72px;color:#DA0000">Semana 2+</span><span style="font-size:10px;font-weight:700;color:#fff;background:#111827;padding:2px 8px;border-radius:10px">Ambos</span><span style="font-size:12px;color:#374151;flex:1;margin-left:6px">Estado C y posts de testimonios de clientes que ya la usen</span></div>
+        </div>
+        <div style="background:#111827;border-radius:14px;padding:18px 20px;color:#fff">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">📊 Métricas a seguir</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="background:#ffffff0d;border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:#DA0000;font-weight:700;text-transform:uppercase;margin-bottom:4px">Visitas panel cliente</div><div style="font-size:13px;color:#e5e7eb;font-weight:600">Meta: 100+ primera semana</div></div>
+            <div style="background:#ffffff0d;border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:#DA0000;font-weight:700;text-transform:uppercase;margin-bottom:4px">Instalaciones PWA</div><div style="font-size:13px;color:#e5e7eb;font-weight:600">Meta: 30+ usuarios</div></div>
+            <div style="background:#ffffff0d;border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:#DA0000;font-weight:700;text-transform:uppercase;margin-bottom:4px">Registros nuevos</div><div style="font-size:13px;color:#e5e7eb;font-weight:600">Meta: 10+ usuarios nuevos</div></div>
+            <div style="background:#ffffff0d;border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:#DA0000;font-weight:700;text-transform:uppercase;margin-bottom:4px">Consultas WA</div><div style="font-size:13px;color:#e5e7eb;font-weight:600">Comparar vs semana anterior</div></div>
+          </div>
+          <div style="font-size:11px;color:#9ca3af;border-top:1px solid #374151;padding-top:10px">Firebase Console → Analytics muestra instalaciones PWA. WhatsApp Business → Estadísticas de estado (vistas / clics).</div>
+        </div>
+      </div>
+
+    </div><!-- /tab-marketing -->
 
     <!-- ── MEJORAS ── -->
     <div class="tab-pane" id="tab-mejoras">
@@ -2430,13 +2689,32 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
             </div>
           </div>
         </div>
+        <div class="mejora-card">
+          <div class="mejora-card-icon" style="background:#fff0f0">📣</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Módulo Marketing — Difusión App Cliente</span>
+              <span class="mejora-status wip">En curso V37.28</span>
+            </div>
+            <div style="font-size:12px;color:#6b7280;line-height:1.6;margin-bottom:8px">
+              Tab integrado en el panel con textos listos para copiar en WhatsApp e Instagram,
+              guión para video Reels de 30 segundos y plan de lanzamiento de 7 días.
+              Objetivo: llevar la App Clientes de 1–2 usuarios activos a 30+ en 2 semanas.
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span style="font-size:10px;padding:2px 8px;background:#fff0f0;border-radius:8px;color:#991b1b;font-weight:600">Costo: $0</span>
+              <span style="font-size:10px;padding:2px 8px;background:#f0fdf4;border-radius:8px;color:#166534;font-weight:600">Sin Firebase — solo clipboard</span>
+              <span style="font-size:10px;padding:2px 8px;background:#f9fafb;border-radius:8px;color:#374151;font-weight:600">Fase 1 de 3</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Encabezado con stats -->
       <div class="card" style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.8</div>
-          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-05-28</span>
+          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.28</div>
+          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-06-23</span>
         </div>
         <div id="mejorasStats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
         <div id="listaMejoras"></div>
@@ -3869,6 +4147,7 @@ function showTab(id, btn){
   }
   if(id==='promociones')  renderPromos();
   if(id==='redes')        loadRedes();
+  if(id==='marketing')    loadMarketing();
   if(id==='precios')      cargarConfigPrecios();
   if(id==='tutoriales')   renderTutVendTable();
   if(id==='adquisiciones') renderReqStock();
@@ -5215,6 +5494,55 @@ function wamCopiarTexto(el){
     toast('Texto copiado','ok');
   });
 }
+
+// ── MARKETING / DIFUSIÓN ─────────────────────────────────────────────────────
+function loadMarketing(){
+  // Sin carga externa — el contenido está en el HTML
+  // Solo asegura que el primer pane esté visible
+  mktTab(0, document.getElementById('mktBtn0'));
+}
+function mktTab(idx, btn){
+  document.querySelectorAll('.mkt-pane').forEach(function(p, i){
+    p.style.display = i === idx ? 'block' : 'none';
+  });
+  document.querySelectorAll('.mkt-tab-btn').forEach(function(b){
+    b.classList.remove('mkt-tab-active');
+  });
+  if(btn) btn.classList.add('mkt-tab-active');
+}
+function mktCopiar(id, btn){
+  var el = document.getElementById(id);
+  if(!el) return;
+  var texto = el.textContent || el.innerText;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto).then(function(){
+      mktCopiarFeedback(btn);
+    }).catch(function(){ mktCopiarFallback(texto, btn); });
+  } else {
+    mktCopiarFallback(texto, btn);
+  }
+}
+function mktCopiarFallback(texto, btn){
+  var ta = document.createElement('textarea');
+  ta.value = texto;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); mktCopiarFeedback(btn); }catch(e){}
+  document.body.removeChild(ta);
+}
+function mktCopiarFeedback(btn){
+  if(!btn) return;
+  var orig = btn.textContent;
+  btn.textContent = '✓ Copiado';
+  btn.style.background = '#059669';
+  setTimeout(function(){
+    btn.textContent = orig;
+    btn.style.background = '';
+  }, 2000);
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ── REDES SOCIALES ───────────────────────────────────
 function loadRedes(){
