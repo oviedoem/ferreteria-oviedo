@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Oviedo Admin">
 <link rel="manifest" href="manifest-admin.json">
+<link rel="icon" href="icons/admin-192.png">
 <link rel="apple-touch-icon" href="logo_oviedo.jpg">
 <title>Ferretería Oviedo — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
@@ -7966,8 +7967,6 @@ function _vadmCargarStockMap(cb){
   // Dos URLs: primero Firebase CDN, fallback ruta relativa (funciona en localhost/deploy)
   var _ts=Date.now();
   var _urls=[
-    'https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/catalogo-dinamico.json?t='+_ts,
-    '/CATALOGO%20PRODUCTOS/catalogo-dinamico.json?t='+_ts,
     'https://ferreteria-oviedo.web.app/CATALOGO%20PRODUCTOS/Datos.json?t='+_ts,
     '/CATALOGO%20PRODUCTOS/Datos.json?t='+_ts
   ];
@@ -9811,8 +9810,9 @@ function _vadmVPArmarPDF(v){
   });
 
   y+=4;
+  if(y>273) { doc.addPage(); y=20; }
   doc.setFontSize(8); doc.setTextColor(150,150,150);
-  doc.text('Generado desde panel.ferreteria-oviedo.web.app · VendedorPRO · '+new Date().toLocaleDateString('es-CL'), margin, 280);
+  doc.text('Generado desde panel.ferreteria-oviedo.web.app · VendedorPRO · '+new Date().toLocaleDateString('es-CL'), margin, Math.max(y,273));
   return doc;
 }
 
@@ -9822,18 +9822,111 @@ function vadmVPDescargarPDF(nombreEnc){
   _vadmVPArmarPDF(v).save('VendedorPRO_'+nombre.replace(/[^a-z0-9]/gi,'_')+'.pdf');
 }
 
+// HTML del correo de VendedorPRO — mismo contenido que ve el usuario en el modal
+// (tarjetas Factura/Boleta + diagnóstico IA si ya se generó + diagnóstico por reglas fijas).
+window._vadmHtmlEmailVendedorPRO = function(nombre){
+  var v=_vadmVPData[nombre];
+  if(!v) return '<p style="color:#9ca3af;font-family:Arial,sans-serif;padding:24px">Sin datos de este vendedor.</p>';
+  var hoy=new Date().toLocaleDateString('es-CL');
+  var ia=_vadmVPIA[nombre];
+
+  function tarjeta(titulo, color, bg, datos){
+    return '<td style="width:50%;padding:0 6px;vertical-align:top">'
+      +'<div style="background:'+bg+';border-radius:8px;padding:12px">'
+      +'<div style="font-weight:700;color:'+color+';font-size:12px;margin-bottom:6px">'+titulo+'</div>'
+      +datos.map(function(d){ return '<div style="font-size:11px;color:#374151;margin-bottom:2px">'+d+'</div>'; }).join('')
+      +'</div></td>';
+  }
+  var tarjetas='<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tr>'
+    +tarjeta('Factura (PRO)', '#DA0000', '#fef2f2', [
+      'Boletas: <b>'+v.docsFactura+'</b> &nbsp; Venta: <b>'+venAdmFmt(v.factura.neto)+'</b>',
+      'Ticket prom.: <b>'+venAdmFmt(v.ticketFactura)+'</b> &nbsp; Líneas/boleta: <b>'+v.lineasPorBoletaFactura.toFixed(2)+'</b>',
+      'Margen: <b>'+v.margenPctFactura.toFixed(0)+'%</b>'
+    ])
+    +tarjeta('Boleta (mostrador)', '#1e1b4b', '#eef2ff', [
+      'Boletas: <b>'+v.docsBoleta+'</b> &nbsp; Venta: <b>'+venAdmFmt(v.boleta.neto)+'</b>',
+      'Ticket prom.: <b>'+venAdmFmt(v.ticketBoleta)+'</b> &nbsp; Líneas/boleta: <b>'+v.lineasPorBoletaBoleta.toFixed(2)+'</b>',
+      'Margen: <b>'+v.margenPctBoleta.toFixed(0)+'%</b>'
+    ])
+    +'</tr></table>';
+
+  var seccionIA='';
+  if(ia){
+    var fort=(ia.fortalezas||[]).map(function(f){ return '<li style="margin-bottom:4px">'+venAdmEsc(f)+'</li>'; }).join('');
+    var cons=(ia.consejos||[]).map(function(c){ return '<li style="margin-bottom:6px">'+venAdmEsc(c)+'</li>'; }).join('');
+    var ejs=(ia.ejemplos||[]).map(function(e){
+      return '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:8px">'
+        +'<div style="font-weight:700;font-size:11px;color:#92400e">'+venAdmEsc(e.canal||'')+' · N° '+venAdmEsc(String(e.boleta||''))+' · '+venAdmEsc(e.cliente||'')+'</div>'
+        +'<div style="font-size:11px;margin-top:4px"><b>Vendió:</b> '+venAdmEsc(e.vendio||'')+'</div>'
+        +'<div style="font-size:11px;margin-top:4px"><b>Pudo sumar:</b> '+venAdmEsc(e.recomendacion||'')+'</div>'
+      +'</div>';
+    }).join('');
+    seccionIA='<div style="font-size:13px;font-weight:700;margin-bottom:4px">🤖 Diagnóstico IA</div>'
+      +'<div style="font-size:12px;line-height:1.5;margin-bottom:10px;color:#374151">'+venAdmEsc(ia.resumen||'')+'</div>'
+      +(fort? '<div style="font-size:12px;font-weight:700;margin-bottom:4px">✅ Lo que está haciendo bien</div><ul style="font-size:12px;line-height:1.5;padding-left:18px;margin-bottom:10px">'+fort+'</ul>' : '')
+      +(ia.oportunidad_principal? '<div style="background:#fef2f2;border-left:3px solid #DA0000;padding:8px 10px;font-size:12px;margin-bottom:10px"><b>Tu mayor oportunidad —</b> '+venAdmEsc(ia.oportunidad_principal)+'</div>' : '')
+      +(ejs? '<div style="font-size:12px;font-weight:700;margin-bottom:6px">📋 Ejemplos de su propia venta</div>'+ejs : '')
+      +(cons? '<div style="font-size:12px;font-weight:700;margin-bottom:4px">💡 Consejos para esta semana</div><ul style="font-size:12px;line-height:1.6;padding-left:18px;margin-bottom:10px">'+cons+'</ul>' : '')
+      +(ia.meta? '<div style="background:#eef2ff;border-left:3px solid #1e1b4b;padding:8px 10px;font-size:12px;margin-bottom:14px"><b>Meta sugerida —</b> '+venAdmEsc(ia.meta)+'</div>' : '');
+  }
+
+  var avisos=_vadmVPDiagnostico(v).map(function(a){ return '<li style="margin-bottom:6px">'+venAdmEsc(a)+'</li>'; }).join('');
+
+  return '<div style="max-width:680px;margin:0 auto;font-family:Arial,sans-serif">'
+    +'<div style="background:#DA0000;padding:20px 24px;border-radius:10px 10px 0 0">'
+    +'<div style="font-size:18px;font-weight:800;color:#fff">🤖 VendedorPRO — '+venAdmEsc(nombre)+'</div>'
+    +'<div style="font-size:12px;color:#fecaca;margin-top:4px">'+hoy+' · '+v.docsTotal+' boletas+facturas · '+venAdmFmt(v.netoTotal)+'</div>'
+    +'</div>'
+    +'<div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;padding:18px">'
+    +tarjetas+seccionIA
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:6px">⚠️ Diagnóstico automático (reglas fijas)</div>'
+    +'<ul style="font-size:12px;line-height:1.6;padding-left:18px;color:#374151">'+avisos+'</ul>'
+    +'</div></div>';
+};
+
 function vadmVPEnviarCorreo(nombreEnc){
   var nombre=decodeURIComponent(nombreEnc), v=_vadmVPData[nombre];
-  if(!v||!window.jspdf) return;
-  // 1) Descarga el PDF profesional con lo mismo que ve el usuario en pantalla
-  _vadmVPArmarPDF(v).save('VendedorPRO_'+nombre.replace(/[^a-z0-9]/gi,'_')+'.pdf');
-  // 2) Abre el cliente de correo con un resumen corto — el mailto: del navegador no
-  //    soporta HTML ni adjuntos automáticos, así que se pide adjuntar el PDF recién descargado.
-  var asunto='VendedorPRO — Reporte '+nombre;
-  var cuerpo='Adjunto el reporte de coaching de '+nombre+' (PDF recién descargado — ábrelo desde Descargas y adjúntalo a este correo).\n\n'+
-    'Resumen: '+v.docsTotal+' boletas+facturas, venta neta '+venAdmFmt(v.netoTotal)+'.\n\n'+
-    '--- Generado desde panel.ferreteria-oviedo.web.app · VendedorPRO ---';
-  window.open('mailto:?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo), '_self');
+  if(!v) return;
+  _vadmEmailInventarioData = {tab:'vendedorpro', vendedor:nombre};
+  var asunto='VendedorPRO — Reporte '+nombre+' — '+new Date().toLocaleDateString('es-CL');
+  if(document.getElementById('vadmEmailAsunto'))
+    document.getElementById('vadmEmailAsunto').value = asunto;
+  var lbl = document.getElementById('vadmEmailTabLabel');
+  if(lbl) lbl.textContent = 'Reporte: 🤖 VendedorPRO · '+nombre;
+  var prev = document.getElementById('vadmEmailPreview');
+  if(prev) prev.innerHTML = window._vadmHtmlEmailVendedorPRO(nombre);
+  // table-layout:fixed evita que las celdas se expandan al pegar en Outlook/Gmail
+  prev.querySelectorAll('table').forEach(function(t){
+    t.style.tableLayout='fixed'; t.style.borderCollapse='collapse'; t.style.width='100%';
+  });
+  prev.querySelectorAll('td,th').forEach(function(c){
+    c.style.overflow='hidden'; c.style.wordBreak='break-word'; c.style.boxSizing='border-box';
+  });
+  // Envolver en tabla exterior de ancho fijo para que Outlook respete el layout
+  var outerHtml = '<table width="680" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr><td>' + prev.innerHTML + '</td></tr></table>';
+  var htmlArea = document.getElementById('vadmEmailHtmlArea');
+  if(htmlArea) htmlArea.value = _vadmEmailFullDoc(outerHtml);
+  if(document.getElementById('vadmEmailFeedback'))
+    document.getElementById('vadmEmailFeedback').textContent = '';
+  if(window.vadmCambiarTabEmail) vadmCambiarTabEmail('vista');
+  var modal = document.getElementById('vadmEmailModal');
+  if(modal) modal.style.display = 'flex';
+  // Auto-copiar como rich HTML al abrir (mismo patrón que Despachos/Adquisiciones)
+  var plainText = asunto+'\n\nGenerado desde panel.ferreteria-oviedo.web.app';
+  if(window.ClipboardItem){
+    navigator.clipboard.write([new ClipboardItem({
+      'text/html':  new Blob([outerHtml],  {type:'text/html'}),
+      'text/plain': new Blob([plainText], {type:'text/plain'})
+    })]).then(function(){
+      if(document.getElementById('vadmEmailFeedback'))
+        document.getElementById('vadmEmailFeedback').textContent='✅ HTML copiado — pegá directo en Outlook o Gmail (Ctrl+V)';
+    }).catch(function(){
+      navigator.clipboard.writeText(plainText).then(function(){
+        if(document.getElementById('vadmEmailFeedback'))
+          document.getElementById('vadmEmailFeedback').textContent='📋 Texto copiado — pegá en tu cliente de correo';
+      }).catch(function(){});
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
