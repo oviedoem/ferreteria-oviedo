@@ -1119,3 +1119,26 @@ Contiene todo lo que NO es flujo activo:
 ### Próxima sesión debe empezar por
 - Si se va a usar Automatización WA Business en producción: abrir panel-admin → Redes → cargar/ajustar bienvenida y ausencia reales, copiar a la app WhatsApp Business del celular siguiendo las instrucciones en pantalla
 - Si se cargan promos en Firestore (`promos` collection): confirmar visualmente en panel-cliente que aparecen rotando en el carrusel del banner, no solo en la barra horizontal
+
+---
+
+## HISTORIAL SESIÓN 2026-06-27 — VendedorPRO con IA real (Gemini) + fixes panel-admin
+
+### Hecho
+- **IA real conectada a VendedorPRO**: nuevo backend serverless en `E:\ferreteria-oviedo\_utilidades\vendedorpro-coach\` (Netlify Function `coach.js`), desplegado en `https://vendedorpro-coach.netlify.app/.netlify/functions/coach`. Proxea a la API de Google Gemini (`gemini-2.5-flash`, capa gratis, `thinkingBudget:0` para evitar que el modo "thinking" consuma el límite de tokens sin generar texto). La `GEMINI_API_KEY` vive solo en Netlify (env var marcada como secreta), nunca en el repo ni en este chat. CORS restringido a `ferreteria-oviedo.web.app`/`.firebaseapp.com`.
+- **Cuenta Netlify**: proyecto creado bajo `ferreteriaoviedo.elmanzano@gmail.com` (team `oviedoem`), consistente con GitHub/Firebase. Login del CLI persistido en el perfil de Windows (no en el proyecto).
+- **Hallazgo importante**: la key de Gemini creada con la cuenta de negocio (`ferreteriaoviedo.elmanzano`) y luego con `alejandrog45@gmail.com` ambas dieron `429 RESOURCE_EXHAUSTED, limit:0` en `gemini-2.0-flash` y `gemini-1.5-flash` (modelo deprecado, 404). La causa real no fue cuenta Workspace vs personal — fue el modelo: `gemini-2.5-flash` sí tiene cuota gratis activa. Si se vuelve a topar con `limit:0`, probar otro modelo antes de asumir problema de cuenta/región.
+- `panel-admin.html` → `vadmVPDetalle()`: agregado botón "🤖 Generar consejos con IA" que llama al endpoint real, cachea el resultado en `_vadmVPIA[nombre]` (sesión) y lo renderiza (resumen, fortalezas, oportunidad principal, ejemplos reales de boletas con producto vendido + recomendación, consejos, meta). El payload (`_vadmVPPayload`) incluye benchmark del equipo (`_vadmVPBenchmarkEquipo`) y ejemplos extraídos de las líneas reales del vendedor (`_vadmVPEjemplos`, agrupando por N° documento).
+- `_vadmVPArmarPDF()` y el correo (`vadmVPEnviarCorreo`) ahora incluyen la sección de diagnóstico IA cuando ya fue generada en pantalla — antes solo mandaban el diagnóstico de reglas fijas en texto plano.
+- **Fix bug real**: `sesionesAdminRenderizar()` solo clasificaba sesiones con `app` conteniendo "cliente" o "vendedor" — las sesiones tipo `"Cooperador"` (ingreso de Emerson Acevedo, confirmado por notificación) no aparecían en ninguna pestaña de Sesiones aunque sí estaban activas en Firestore. Agregada 3ª pestaña "🔒 Cooperadores" con su propio listado y botón "Cerrar todas".
+- **Fix UX**: tab "🤖 VendedorPRO" en sub-tabs de Rankings se cortaba fuera de la vista (7 tabs en la fila, sin indicio de scroll) — reordenado a 2ª posición y agregado fade visual (`mask-image`) en el borde derecho de todas las filas de sub-tabs para indicar cuando hay más contenido.
+- **Causa raíz resuelta**: la instalación de `netlify-cli` fallaba con `ECONNRESET` repetido — era Windows Defender **Network Protection** (`EnableNetworkProtection=1`) bloqueando la descarga grande de `registry.npmjs.org` (mismo patrón que el incidente previo con Justime, ver `justime-c-fix-com-y-defender`). Se puso en modo Audit temporalmente (con aprobación UAC), se instaló, y se restauró a Enabled al terminar.
+- Deploy `firebase deploy --only hosting` ✅ + commit `361b6e3` ✅ (vía `ACTUALIZAR_GITHUB.bat`, bloqueos de seguridad intactos, sin tokens/credenciales en el diff).
+
+### Pendiente
+- Validar en producción real (con datos reales, no el payload de prueba) que el botón "Generar consejos con IA" funciona end-to-end desde panel-admin.html — solo se probó la función vía `curl` directo, no desde el navegador con sesión real.
+- El sitio `vendedorpro-coach.netlify.app` quedó fuera del flujo de `ACTUALIZAR_GITHUB.bat` (vive en `_utilidades/`, no se sincroniza a `E:\git-sync\`) — si se quiere versionar ese código en GitHub también, hay que decidir si entra al mismo repo o uno aparte.
+- Capa gratis de Gemini tiene límites de requests/día — si el uso real de VendedorPRO los supera, evaluar plan de pago de Google AI o cachear resultados por vendedor+período en Firestore para no regenerar si no cambiaron los datos.
+
+### Próxima sesión debe empezar por
+- Probar "Generar consejos con IA" en el navegador real (no curl) con un vendedor con datos reales, confirmar que el JSON se renderiza bien en el modal y que el PDF/correo lo incluye correctamente.
