@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.28 (en curso) · Última actualización: 2026-06-22
+# Versión activa: V37.28 (en curso) · Última actualización: 2026-06-23
 
 ---
 
@@ -1093,3 +1093,29 @@ Contiene todo lo que NO es flujo activo:
 ### Próxima sesión debe empezar por
 - Confirmar commit hecho
 - Si se va a usar el carrusel en producción: reemplazar los 3 slides de prueba (oviedo.cl) por banners reales de Ferretería Oviedo desde el admin
+
+---
+
+## HISTORIAL SESIÓN 2026-06-23 — Marketing PWA + Automatización WA Business + Carrusel promos
+
+### Hecho
+- `marketing-pwa.html` (NUEVO, standalone, sin Firebase): 4 tabs (WhatsApp/Instagram/Video Reels/Lanzamiento) con textos copiables para difusión de la app cliente. Agregado a `ignore[]` de `firebase.json` (no había regla genérica `*.html` que lo excluyera del hosting)
+- Tab Tutoriales (panel-admin.html): fix versión hardcodeada "Informe Stock V37.8"→"V37.28", agregadas 2 tarjetas (Redes Sociales, Difusión y Marketing) → 15 tarjetas totales
+- Tab Marketing nuevo en panel-admin.html (`#tab-marketing`): mismo contenido que marketing-pwa.html pero integrado al panel — 4 sub-tabs internos, botones copiar con clipboard API + fallback `execCommand` (compat iOS Safari), nav-btn "📣 Difusión" en sidebar grupo Marketing, `showTab()` extendido con callback `loadMarketing()`
+- Tab #tab-mejoras: versión/fecha corregida (V37.8→V37.28, 2026-05-28→2026-06-23), agregado item "Módulo Marketing" en Mejoras planificadas (badge "En curso V37.28")
+- Automatización WA Business (panel-admin.html, dentro del red-card de WhatsApp en tab Redes): gestión de Mensaje de Bienvenida, Mensaje de Ausencia y Respuestas Rápidas `/atajo` (máx 50) — todo para configurar MANUALMENTE en la app WA Business del celular (sin API, sin costo, sin riesgo de baneo). Guarda en `config/redes.waAuto{bienvenida,ausencia}` y `config/redes.waRapidas[]` (merge:true). 6 respuestas sugeridas precargables. `_WA_PLANTILLAS` ampliado de 6→8 items (instalar app, confirmar pedido)
+- Fix seguridad aplicado durante revisión (`/revisar-codigo` detectó FO-002): `renderWaRapidas()` insertaba atajo/texto en innerHTML sin escapar — corregido con `_esc()` (helper ya existente en el panel)
+- Carrusel de banners + promos (panel-cliente.html): las promociones activas (`promos` collection) ahora rotan como slides adicionales dentro del mismo carrusel del banner (`.sucursal-banner`), sin lecturas extra a Firestore — fusión en memoria vía `_bnrTryFusion()` cuando ambas fuentes (`cargarBannerDinamico()` y `cargarPromosFirestore()`) ya resolvieron. Slide de promo es 100% CSS (sin imagen base64): overlay oscuro con tag/título/desc/precio. Agregados dots de navegación (`.bnr-dots`) cuando hay 2+ slides. `#promoSection` (barra horizontal bajo el banner) sigue funcionando igual, sin cambios visuales
+- Fix de sintaxis aplicado durante implementación: el prompt original de `renderWaRapidas()` traía continuaciones de línea `'\` inválidas en JS (fuera de string) — reescrito con concatenación `+` normal
+- `/revisar-codigo` corrido 3 veces (una por cada deploy) contra `.opencodereview/rule.json` — 0 ERRORes, 0 WARNINGs en cada pasada tras los fixes aplicados
+- 2 deploys + 2 commits: `02c6416` (marketing-pwa + tab tutoriales/marketing/mejoras) y `3860a9e` (automatización WA + carrusel promos)
+- Badge de versión sigue en V37.28 (sin bump) — los 3 paneles ya lo tenían
+
+### Pendiente
+- `marketing-pwa.html` NO quedó sincronizado a `E:\git-sync\` (el script `ACTUALIZAR_GITHUB.bat` usa robocopy con lista de inclusión selectiva que no lo contempla) — el archivo vive solo en `E:\ferreteria-oviedo\`, no está en GitHub. No es crítico (no es parte de la app, es material de difusión externo) pero revisar si se quiere versionarlo
+- Verificación manual pendiente en dispositivo real: tab Redes → Automatización WA Business (guardar/copiar bienvenida/ausencia, agregar/borrar/copiar respuestas rápidas) y panel-cliente → carrusel con promos activas + dots visibles con 2+ slides
+- Las 6 respuestas rápidas sugeridas y los presets de bienvenida/ausencia son textos genéricos — revisar que el horario/ubicación coincida con la sucursal real antes de cargarlos en WA Business
+
+### Próxima sesión debe empezar por
+- Si se va a usar Automatización WA Business en producción: abrir panel-admin → Redes → cargar/ajustar bienvenida y ausencia reales, copiar a la app WhatsApp Business del celular siguiendo las instrucciones en pantalla
+- Si se cargan promos en Firestore (`promos` collection): confirmar visualmente en panel-cliente que aparecen rotando en el carrusel del banner, no solo en la barra horizontal

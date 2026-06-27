@@ -301,6 +301,7 @@ echo [%time%] PASO 3.5 - Rotando proteccion de datos sensibles... >> "%LOGFILE%"
 echo. >> "%LOGFILE%"
 echo [%time%] PASO 4 - Firebase deploy... >> "%LOGFILE%"
 "%NODE_EXE%" update-sw-version.js >> "%LOGFILE%" 2>&1
+if exist "E:\nodejs-portable" set PATH=E:\nodejs-portable;%PATH%
 call "%FIREBASE_CMD%" deploy --only hosting >> "%LOGFILE%" 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] firebase deploy fallo - revisar autenticacion >> "%LOGFILE%"
