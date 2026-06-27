@@ -1173,7 +1173,7 @@ function startApp(){
         CP:     num(it.CP || it.cp || it.COSTO_PROMEDIO || it.costopromedio || it.costo_promedio || it.costo || '0'),
         PIva:   num(it.PIva || it.piva || it.PRECIO_IVA || it.precioiva || it.precio_iva || it.precio || '0'),
         SIva:   num(it.SIva || it.siva || it.SOCIO_IVA || it.socioiva || it.socio_iva || '0'),
-        Stk:    parseInt(it.Stk||it.stk||it.Stock||it.stock||it.STOCK||0)||(parseInt(it.pem||0)+parseInt(it.sem||0)+parseInt(it.cem||0)+parseInt(it.mem||0))
+        Stk:    parseInt(it.Stk||it.stk||it.Stock||it.stock||it.STOCK||0)||(parseInt(it.pem||0)+parseInt(it.sem||0))
       };
     }).filter(function(p){ return p.Codigo && (p.PIva||p.SIva); });
   }
