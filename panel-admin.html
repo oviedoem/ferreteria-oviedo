@@ -527,7 +527,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 .vadm-group .vgrp-icon{display:block;font-size:16px;margin-bottom:2px}
 /* ── Subtabs — ya tienen scroll, solo asegurar touch ─────────────────────── */
 .vadm-subtabs{display:flex;gap:0;border-bottom:2px solid #f3f4f6;padding:0 10px;margin-bottom:0;
-  background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
+  background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;
+  position:relative;mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+  -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%)}
 .vadm-subtabs::-webkit-scrollbar{display:none}
 /* Nota de Crédito badge */
 .ven-doc-nc{background:#fef3c7;color:#92400e}
@@ -907,13 +909,13 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
         <!-- RANKINGS -->
         <div class="vadm-subtabs vadm-subtabs-rank" id="vstabs-rankings" style="display:none">
           <button class="vadm-stab vadm-stab-rank active" id="vstab-top"          onclick="vadmSubTab('top')">🏆 Top Productos</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-vendpro"      onclick="vadmSubTab('vendpro')">🤖 VendedorPRO</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-vendrank"     onclick="vadmSubTab('vendrank')">👥 Vendedores</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-rankingmarca" onclick="vadmSubTab('rankingmarca')">🏷️ Por Marca</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-pagorankings" onclick="vadmSubTab('pagorankings')">💳 Por Pago</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-nc"           onclick="vadmSubTab('nc')">🔴 NC Vendedor</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-marcavend2"   onclick="vadmSubTab('marcavend2')">🏷️ Vend × Marca</button>
           <button class="vadm-stab vadm-stab-rank"        id="vstab-preciodiff"   onclick="vadmSubTab('preciodiff')">💲 Diff Precios</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-vendpro"      onclick="vadmSubTab('vendpro')">🤖 VendedorPRO</button>
         </div>
         <!-- TEMPORAL -->
         <div class="vadm-subtabs" id="vstabs-temporal" style="display:none">
@@ -3234,7 +3236,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
       <div class="card" style="margin-bottom:16px">
         <div class="card-title"><span>🔒</span> Gestión de Sesiones Remotas</div>
         <p style="font-size:12px;color:#6b7280;margin-bottom:14px">
-          Visualiza las sesiones activas en Panel Cliente y Panel Vendedor. Puedes cerrar una sesión individualmente o todas a la vez.
+          Visualiza las sesiones activas en Panel Cliente, Panel Vendedor y Cooperadores. Puedes cerrar una sesión individualmente o todas a la vez.
         </p>
 
         <!-- Pestañas por tipo de panel -->
@@ -3247,15 +3249,21 @@ Todo desde tu celular, gratis, sin apps que descargar.
             style="padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;border:none;border-bottom:2.5px solid transparent;background:none;color:#6b7280;font-family:inherit">
             💼 Panel Vendedor
           </button>
+          <button id="sesTabCoop" onclick="sesionesTabSwitch('coop')"
+            style="padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;border:none;border-bottom:2.5px solid transparent;background:none;color:#6b7280;font-family:inherit">
+            🔒 Cooperadores
+          </button>
         </div>
 
         <div id="sesListaCli"></div>
         <div id="sesListaVend" style="display:none"></div>
+        <div id="sesListaCoop" style="display:none"></div>
 
         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-danger" onclick="sesionesRefrescar()">🔄 Refrescar</button>
           <button class="btn" style="background:#fee2e2;color:#dc2626" onclick="adminCerrarTodasSesiones('Cliente')">🔒 Cerrar todas — Cliente</button>
           <button class="btn" style="background:#fee2e2;color:#dc2626" onclick="adminCerrarTodasSesiones('Vendedor')">🔒 Cerrar todas — Vendedor</button>
+          <button class="btn" style="background:#fee2e2;color:#dc2626" onclick="adminCerrarTodasSesiones('Cooperador')">🔒 Cerrar todas — Cooperador</button>
         </div>
       </div>
 
@@ -7455,8 +7463,9 @@ function adminSesionesCargar() {
 }
 
 function sesionesAdminRenderizar() {
-  var clientes  = _sesionesAdminCache.filter(function(s){ return (s.data.app||'').toLowerCase().includes('cliente'); });
-  var vendedores= _sesionesAdminCache.filter(function(s){ return (s.data.app||'').toLowerCase().includes('vendedor'); });
+  var clientes   = _sesionesAdminCache.filter(function(s){ return (s.data.app||'').toLowerCase().includes('cliente'); });
+  var vendedores = _sesionesAdminCache.filter(function(s){ return (s.data.app||'').toLowerCase().includes('vendedor'); });
+  var cooperadores = _sesionesAdminCache.filter(function(s){ return (s.data.app||'').toLowerCase().includes('cooperador'); });
 
   function renderizarGrupo(items, contenedorId) {
     var el = document.getElementById(contenedorId);
@@ -7488,27 +7497,22 @@ function sesionesAdminRenderizar() {
         '</tr>';
       }).join('') + '</tbody></table>';
   }
-  renderizarGrupo(clientes,   'sesListaCli');
-  renderizarGrupo(vendedores, 'sesListaVend');
+  renderizarGrupo(clientes,     'sesListaCli');
+  renderizarGrupo(vendedores,   'sesListaVend');
+  renderizarGrupo(cooperadores, 'sesListaCoop');
 }
 
 function sesionesTabSwitch(tab) {
   _sesionTabActiva = tab;
-  var elCli    = document.getElementById('sesListaCli');
-  var elVend   = document.getElementById('sesListaVend');
-  var btnCli   = document.getElementById('sesTabCli');
-  var btnVend  = document.getElementById('sesTabVend');
-  if (tab === 'cli') {
-    if (elCli)  elCli.style.display  = 'block';
-    if (elVend) elVend.style.display = 'none';
-    if (btnCli)  { btnCli.style.borderBottomColor='#DA0000';  btnCli.style.color='#DA0000'; }
-    if (btnVend) { btnVend.style.borderBottomColor='transparent'; btnVend.style.color='#6b7280'; }
-  } else {
-    if (elCli)  elCli.style.display  = 'none';
-    if (elVend) elVend.style.display = 'block';
-    if (btnCli)  { btnCli.style.borderBottomColor='transparent';  btnCli.style.color='#6b7280'; }
-    if (btnVend) { btnVend.style.borderBottomColor='#DA0000'; btnVend.style.color='#DA0000'; }
-  }
+  var els  = { cli: document.getElementById('sesListaCli'), vend: document.getElementById('sesListaVend'), coop: document.getElementById('sesListaCoop') };
+  var btns = { cli: document.getElementById('sesTabCli'),   vend: document.getElementById('sesTabVend'),   coop: document.getElementById('sesTabCoop') };
+  Object.keys(els).forEach(function(k) {
+    if (els[k])  els[k].style.display = (k === tab) ? 'block' : 'none';
+    if (btns[k]) {
+      btns[k].style.borderBottomColor = (k === tab) ? '#DA0000' : 'transparent';
+      btns[k].style.color             = (k === tab) ? '#DA0000' : '#6b7280';
+    }
+  });
 }
 
 function sesionesRefrescar() {
@@ -9595,12 +9599,96 @@ function _vadmVPDiagnostico(v){
   return avisos;
 }
 
+var COACH_API_URL = 'https://vendedorpro-coach.netlify.app/.netlify/functions/coach';
+var _vadmVPIA = {}; // cache del resultado IA por nombre de vendedor, esta sesión
+
+function _vadmVPBenchmarkEquipo(){
+  var arr = Object.values(_vadmVPData);
+  if(!arr.length) return null;
+  function avg(sel){ var vs=arr.map(sel).filter(function(n){ return isFinite(n); }); return vs.length ? vs.reduce(function(a,b){return a+b;},0)/vs.length : 0; }
+  return {
+    ticketFactura: Math.round(avg(function(x){return x.ticketFactura;})),
+    ticketBoleta:  Math.round(avg(function(x){return x.ticketBoleta;})),
+    margenPctBoleta: +avg(function(x){return x.margenPctBoleta;}).toFixed(1),
+    lineasPorBoletaBoleta: +avg(function(x){return x.lineasPorBoletaBoleta;}).toFixed(2),
+    pctFactura: +avg(function(x){return x.pctFactura;}).toFixed(1)
+  };
+}
+
+function _vadmVPEjemplos(v){
+  var porDoc={};
+  (v.lineasAll||[]).forEach(function(r){
+    var k=r.numero||('sin-'+r.documento+'-'+Math.random());
+    if(!porDoc[k]) porDoc[k]={numero:r.numero, cliente:r.cliente||'', documento:r.documento, items:[], neto:0};
+    porDoc[k].items.push(r.descripcion||r.codigo||'?');
+    porDoc[k].neto += r.valorNeto||0;
+  });
+  var docs=Object.values(porDoc).filter(function(d){ return d.items.length>=1 && d.items.length<=3 && d.neto>0; });
+  docs.sort(function(a,b){ return b.neto-a.neto; });
+  return docs.slice(0,6).map(function(d){
+    return { boleta:d.numero, canal:(vadmFPago(d.documento).label==='Factura'?'FACTURA':'BOLETA'), cliente:d.cliente, vendio:d.items.join(', ') };
+  });
+}
+
+function _vadmVPPayload(v){
+  return {
+    nombre: v.nombre,
+    pctFactura: +v.pctFactura.toFixed(1), pctBoleta: +v.pctBoleta.toFixed(1),
+    docsFactura: v.docsFactura, docsBoleta: v.docsBoleta,
+    ticketFactura: Math.round(v.ticketFactura), ticketBoleta: Math.round(v.ticketBoleta),
+    margenPctFactura: +v.margenPctFactura.toFixed(1), margenPctBoleta: +v.margenPctBoleta.toFixed(1),
+    lineasPorBoletaFactura: +v.lineasPorBoletaFactura.toFixed(2), lineasPorBoletaBoleta: +v.lineasPorBoletaBoleta.toFixed(2),
+    boletasMultiItemPct: +v.boletasMultiItemPct.toFixed(1),
+    benchmarkEquipo: _vadmVPBenchmarkEquipo(),
+    ejemplosBoletas: _vadmVPEjemplos(v)
+  };
+}
+
+function _vadmVPRenderIA(ia){
+  var fort=(ia.fortalezas||[]).map(function(f){ return '<li style="margin-bottom:4px">'+venAdmEsc(f)+'</li>'; }).join('');
+  var cons=(ia.consejos||[]).map(function(c){ return '<li style="margin-bottom:6px">'+venAdmEsc(c)+'</li>'; }).join('');
+  var ejs=(ia.ejemplos||[]).map(function(e){
+    return '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:8px">'+
+      '<div style="font-weight:700;font-size:11px;color:#92400e">'+venAdmEsc(e.canal||'')+' · N° '+venAdmEsc(String(e.boleta||''))+' · '+venAdmEsc(e.cliente||'')+'</div>'+
+      '<div style="font-size:11px;margin-top:4px"><b>Vendió:</b> '+venAdmEsc(e.vendio||'')+'</div>'+
+      '<div style="font-size:11px;margin-top:4px"><b>Pudo sumar:</b> '+venAdmEsc(e.recomendacion||'')+'</div>'+
+    '</div>';
+  }).join('');
+  return '<div style="font-size:12px;font-weight:700;margin-bottom:4px">🤖 Diagnóstico IA</div>'+
+    '<div style="font-size:12px;line-height:1.5;margin-bottom:10px">'+venAdmEsc(ia.resumen||'')+'</div>'+
+    (fort? '<div style="font-size:12px;font-weight:700;margin-bottom:4px">✅ Lo que está haciendo bien</div><ul style="font-size:12px;line-height:1.5;padding-left:18px;margin-bottom:10px">'+fort+'</ul>' : '')+
+    (ia.oportunidad_principal? '<div style="background:#fef2f2;border-left:3px solid #DA0000;padding:8px 10px;font-size:12px;margin-bottom:10px"><b>Tu mayor oportunidad —</b> '+venAdmEsc(ia.oportunidad_principal)+'</div>' : '')+
+    (ejs? '<div style="font-size:12px;font-weight:700;margin-bottom:6px">📋 Ejemplos de su propia venta</div>'+ejs : '')+
+    (cons? '<div style="font-size:12px;font-weight:700;margin-bottom:4px">💡 Consejos para esta semana</div><ul style="font-size:12px;line-height:1.6;padding-left:18px;margin-bottom:10px">'+cons+'</ul>' : '')+
+    (ia.meta? '<div style="background:#eef2ff;border-left:3px solid #1e1b4b;padding:8px 10px;font-size:12px"><b>Meta sugerida —</b> '+venAdmEsc(ia.meta)+'</div>' : '');
+}
+
+function vadmVPGenerarIA(nombreEnc){
+  var nombre=decodeURIComponent(nombreEnc), v=_vadmVPData[nombre];
+  var cont=document.getElementById('vadmVPIAResultado');
+  if(!v||!cont) return;
+  cont.innerHTML='<div style="font-size:12px;color:#6b7280;padding:10px">⏳ VendedorPRO está analizando la venta de '+venAdmEsc(nombre)+'...</div>';
+  fetch(COACH_API_URL, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(_vadmVPPayload(v)) })
+    .then(function(r){
+      if(!r.ok) return r.text().then(function(t){ throw new Error(t||('HTTP '+r.status)); });
+      return r.json();
+    })
+    .then(function(ia){
+      _vadmVPIA[nombre]=ia;
+      cont.innerHTML=_vadmVPRenderIA(ia);
+    })
+    .catch(function(e){
+      cont.innerHTML='<div style="font-size:12px;color:#dc2626;padding:10px">⚠️ No se pudo generar el consejo con IA: '+venAdmEsc(e.message||'')+'</div>';
+    });
+}
+
 function vadmVPDetalle(nombreEnc){
   var nombre=decodeURIComponent(nombreEnc);
   var v=_vadmVPData[nombre];
   if(!v) return;
   document.getElementById('vadmVPModalTitulo').textContent=nombre;
   var avisos=_vadmVPDiagnostico(v).map(function(a){return '<li style="margin-bottom:6px">'+a+'</li>';}).join('');
+  var iaCache=_vadmVPIA[nombre];
   document.getElementById('vadmVPModalBody').innerHTML=
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
       '<div style="background:#fef2f2;border-radius:8px;padding:10px"><div style="font-weight:700;color:#DA0000;font-size:12px;margin-bottom:6px">Factura (PRO)</div>'+
@@ -9612,7 +9700,11 @@ function vadmVPDetalle(nombreEnc){
         '<div style="font-size:11px">Ticket prom.: <b>'+venAdmFmt(v.ticketBoleta)+'</b></div><div style="font-size:11px">Líneas/boleta: <b>'+v.lineasPorBoletaBoleta.toFixed(2)+'</b></div>'+
         '<div style="font-size:11px">Margen: <b>'+v.margenPctBoleta.toFixed(0)+'%</b></div></div>'+
     '</div>'+
-    '<div style="font-weight:700;font-size:12px;margin-bottom:6px">⚠️ Diagnóstico automático (reglas fijas — IA pendiente de definir)</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
+      '<button class="ven-adm-btn" style="background:#1e1b4b" onclick="vadmVPGenerarIA(\''+encodeURIComponent(nombre)+'\')">🤖 Generar consejos con IA</button>'+
+    '</div>'+
+    '<div id="vadmVPIAResultado" style="margin-bottom:10px">'+(iaCache? _vadmVPRenderIA(iaCache) : '')+'</div>'+
+    '<div style="font-weight:700;font-size:12px;margin-bottom:6px">⚠️ Diagnóstico automático (reglas fijas)</div>'+
     '<ul style="font-size:12px;line-height:1.6;padding-left:18px;margin-bottom:14px">'+avisos+'</ul>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
       '<button class="ven-adm-btn" onclick="vadmVPDescargarPDF(\''+encodeURIComponent(nombre)+'\')">📄 Descargar PDF</button>'+
@@ -9633,25 +9725,115 @@ function _vadmVPTexto(v){
   return t;
 }
 
+// Construye el PDF profesional (mismo contenido que ve el usuario en el modal:
+// tarjetas Factura/Boleta + diagnóstico). doc=null → crea uno nuevo y lo retorna sin guardar.
+function _vadmVPArmarPDF(v){
+  var jsPDF=window.jspdf.jsPDF, doc=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  var pageW=doc.internal.pageSize.getWidth(), margin=14, y=18;
+
+  // Encabezado marca
+  doc.setFillColor(218,0,0); doc.rect(0,0,pageW,14,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont(undefined,'bold');
+  doc.text('VendedorPRO — Ferretería Oviedo', margin, 9.5);
+  doc.setTextColor(20,20,20); y=24;
+
+  doc.setFontSize(15); doc.setFont(undefined,'bold');
+  doc.text(v.nombre, margin, y); y+=6;
+  doc.setFontSize(10); doc.setFont(undefined,'normal'); doc.setTextColor(90,90,90);
+  doc.text(v.docsTotal+' boletas+facturas · Venta neta '+venAdmFmt(v.netoTotal), margin, y); y+=9;
+  doc.setTextColor(20,20,20);
+
+  // Tarjetas Factura / Boleta lado a lado
+  var colW=(pageW-margin*2-6)/2, colH=38, y0=y;
+  doc.setFillColor(254,242,242); doc.roundedRect(margin, y0, colW, colH, 2, 2, 'F');
+  doc.setFillColor(238,242,255); doc.roundedRect(margin+colW+6, y0, colW, colH, 2, 2, 'F');
+
+  function bloqueCanal(x, titulo, color, datos){
+    var yy=y0+6;
+    doc.setFontSize(10.5); doc.setFont(undefined,'bold'); doc.setTextColor(color[0],color[1],color[2]);
+    doc.text(titulo, x+4, yy); yy+=6;
+    doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(40,40,40);
+    datos.forEach(function(d){ doc.text(d, x+4, yy); yy+=5; });
+  }
+  bloqueCanal(margin, 'FACTURA (PRO)', [218,0,0], [
+    'Boletas: '+v.docsFactura+'   Venta: '+venAdmFmt(v.factura.neto),
+    'Ticket prom.: '+venAdmFmt(v.ticketFactura),
+    'Líneas/boleta: '+v.lineasPorBoletaFactura.toFixed(2)+'   Margen: '+v.margenPctFactura.toFixed(0)+'%'
+  ]);
+  bloqueCanal(margin+colW+6, 'BOLETA (mostrador)', [30,27,75], [
+    'Boletas: '+v.docsBoleta+'   Venta: '+venAdmFmt(v.boleta.neto),
+    'Ticket prom.: '+venAdmFmt(v.ticketBoleta),
+    'Líneas/boleta: '+v.lineasPorBoletaBoleta.toFixed(2)+'   Margen: '+v.margenPctBoleta.toFixed(0)+'%'
+  ]);
+  y=y0+colH+10;
+
+  // Diagnóstico IA (si ya se generó en pantalla)
+  var ia=_vadmVPIA[v.nombre];
+  if(ia){
+    function parrafoIA(titulo, texto, negrita){
+      if(!texto) return;
+      if(y>260){ doc.addPage(); y=20; }
+      doc.setFontSize(10.5); doc.setFont(undefined,'bold'); doc.setTextColor(20,20,20);
+      doc.text(titulo, margin, y); y+=5.5;
+      doc.setFontSize(9.5); doc.setFont(undefined, negrita?'bold':'normal'); doc.setTextColor(40,40,40);
+      doc.splitTextToSize(texto, pageW-margin*2).forEach(function(l){
+        if(y>270){ doc.addPage(); y=20; }
+        doc.text(l, margin, y); y+=5;
+      });
+      y+=4;
+    }
+    doc.setFontSize(12); doc.setFont(undefined,'bold'); doc.setTextColor(20,20,20);
+    if(y>260){ doc.addPage(); y=20; }
+    doc.text('🤖 Diagnóstico IA', margin, y); y+=6;
+    parrafoIA('Resumen', ia.resumen);
+    parrafoIA('Lo que está haciendo bien', (ia.fortalezas||[]).map(function(f){return '• '+f;}).join('\n'));
+    parrafoIA('Tu mayor oportunidad', ia.oportunidad_principal, true);
+    (ia.ejemplos||[]).forEach(function(e){
+      parrafoIA((e.canal||'')+' · N° '+(e.boleta||'')+' · '+(e.cliente||''), 'Vendió: '+(e.vendio||'')+'\nPudo sumar: '+(e.recomendacion||''));
+    });
+    parrafoIA('Consejos para esta semana', (ia.consejos||[]).map(function(c){return '• '+c;}).join('\n'));
+    parrafoIA('Meta sugerida', ia.meta, true);
+    y+=2;
+  }
+
+  // Diagnóstico por reglas fijas
+  doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(20,20,20);
+  if(y>260){ doc.addPage(); y=20; }
+  doc.text('⚠ Diagnóstico automático (reglas fijas)', margin, y); y+=6;
+  doc.setFontSize(9.5); doc.setFont(undefined,'normal');
+  _vadmVPDiagnostico(v).forEach(function(a){
+    var lineas=doc.splitTextToSize('•  '+a, pageW-margin*2);
+    lineas.forEach(function(l){
+      if(y>270){ doc.addPage(); y=20; }
+      doc.text(l, margin, y); y+=5;
+    });
+    y+=1.5;
+  });
+
+  y+=4;
+  doc.setFontSize(8); doc.setTextColor(150,150,150);
+  doc.text('Generado desde panel.ferreteria-oviedo.web.app · VendedorPRO · '+new Date().toLocaleDateString('es-CL'), margin, 280);
+  return doc;
+}
+
 function vadmVPDescargarPDF(nombreEnc){
   var nombre=decodeURIComponent(nombreEnc), v=_vadmVPData[nombre];
   if(!v||!window.jspdf) return;
-  var jsPDF=window.jspdf.jsPDF, doc=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
-  var y=20;
-  doc.setFontSize(16); doc.text('VendedorPRO — '+nombre, 14, y); y+=10;
-  doc.setFontSize(10);
-  _vadmVPTexto(v).split('\n').forEach(function(line){
-    if(y>270){ doc.addPage(); y=20; }
-    doc.text(line, 14, y); y+=5.5;
-  });
-  doc.save('VendedorPRO_'+nombre.replace(/[^a-z0-9]/gi,'_')+'.pdf');
+  _vadmVPArmarPDF(v).save('VendedorPRO_'+nombre.replace(/[^a-z0-9]/gi,'_')+'.pdf');
 }
 
 function vadmVPEnviarCorreo(nombreEnc){
   var nombre=decodeURIComponent(nombreEnc), v=_vadmVPData[nombre];
-  if(!v) return;
-  var mailto='mailto:?subject='+encodeURIComponent('VendedorPRO — Reporte '+nombre)+'&body='+encodeURIComponent(_vadmVPTexto(v));
-  window.open(mailto,'_self');
+  if(!v||!window.jspdf) return;
+  // 1) Descarga el PDF profesional con lo mismo que ve el usuario en pantalla
+  _vadmVPArmarPDF(v).save('VendedorPRO_'+nombre.replace(/[^a-z0-9]/gi,'_')+'.pdf');
+  // 2) Abre el cliente de correo con un resumen corto — el mailto: del navegador no
+  //    soporta HTML ni adjuntos automáticos, así que se pide adjuntar el PDF recién descargado.
+  var asunto='VendedorPRO — Reporte '+nombre;
+  var cuerpo='Adjunto el reporte de coaching de '+nombre+' (PDF recién descargado — ábrelo desde Descargas y adjúntalo a este correo).\n\n'+
+    'Resumen: '+v.docsTotal+' boletas+facturas, venta neta '+venAdmFmt(v.netoTotal)+'.\n\n'+
+    '--- Generado desde panel.ferreteria-oviedo.web.app · VendedorPRO ---';
+  window.open('mailto:?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo), '_self');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
