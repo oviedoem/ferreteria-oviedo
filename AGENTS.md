@@ -1204,3 +1204,9 @@ Contiene todo lo que NO es flujo activo:
 - **Feedback del dueño** tras ver la tabla real: mostraba códigos con CD=0 (nada que traspasar), la columna Marca quitaba espacio sin agregar valor a la decisión, y faltaba poder ordenar explícitamente por la ventana de rotación que más le interesa revisar.
 - **Fix** (`panel-admin.html`): `_tcdCalcular()` ahora solo agrega filas con `cd>0` (antes incluía códigos sin CD pero con venta en el rango, lo que generaba ruido). Columna Marca eliminada de la tabla y del CSV. Nuevo selector "Ordenar por" (`#tcdOrden` + `_tcdReordenar()`) con 3 opciones: rotación del rango elegido (default), 2 meses, 1 mes — reordena sin recalcular ventas.
 - V37.33.
+
+### Fix 2026-06-28 (sesión 3e) — Inconsistencia de rotación: Traspasos CD vs Quiebre no coincidían en el día de corte
+- **Pedido del dueño**: "revisa consistencia en rotación". Auditoría de todos los cortes de fecha tipo `cXX` en `panel-admin.html` (Quiebre línea ~10673-10675, Sobrestock línea ~9356, Tránsito línea ~11137): todos normalizan el corte a medianoche con `setHours(0,0,0,0)` — **excepto** `c2m`/`c1m` en `_tcdCalcular()` (Traspasos CD, agregados en la sesión 3c), que heredaban la hora actual del momento (ej. 14:07) en vez de medianoche.
+- **Efecto del bug**: para el mismo código y la misma ventana de 30/60 días, Quiebre incluía las ventas del día de corte completo (desde 00:00) pero Traspasos CD las excluía si ocurrían antes de la hora actual de ese día — los números de "Ranking 1 mes"/"Ranking 2 meses" podían diferir de los de Quiebre (`cob30`/`cob60`) en el mismo código.
+- **Fix**: agregado `c2m.setHours(0,0,0,0)` y `c1m.setHours(0,0,0,0)` en `_tcdCalcular()`, igual patrón que el resto del panel.
+- V37.34.
