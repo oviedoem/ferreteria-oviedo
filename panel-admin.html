@@ -790,6 +790,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Adquisiciones <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
         <button class="nav-btn" onclick="showTab('adquisiciones',this)">📋 Solicitud Stock</button>
+        <button class="nav-btn" onclick="showTab('traspasocd',this)">🚚 Traspasos CD</button>
       </div>
     </div>
     <div class="sidebar-group">
@@ -3535,6 +3536,46 @@ Todo desde tu celular, gratis, sin apps que descargar.
   </div>
 </div>
 
+<div class="tab-pane" id="tab-traspasocd">
+  <div class="card">
+    <div class="card-title"><span>🚚</span> Traspasos CD → PEM / SEM — El Manzano</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:14px">
+      Sugerencia de traspaso desde el Centro de Distribución a Patio (PEM) o Sala (SEM), usando el Máximo
+      (ST_MAX) configurado por Adquisiciones en el ERP para cada bodega — misma lógica que Solicitud Stock,
+      no se calcula por velocidad de venta.
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <button onclick="renderTraspasoCD(true)" style="background:#1a1d3a;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔄 Recalcular</button>
+      <button onclick="exportarTraspasoCDCsv()" style="background:#059669;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">📊 Exportar CSV</button>
+    </div>
+
+    <div id="tcdResumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
+
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1a1d3a;color:white">
+            <th style="padding:8px 10px;text-align:left">Código</th>
+            <th style="padding:8px 10px;text-align:left">Descripción</th>
+            <th class="r" style="padding:8px 10px">CD Disp.</th>
+            <th class="r" style="padding:8px 10px;background:#0e3a2b">Stock PEM</th>
+            <th class="r" style="padding:8px 10px;background:#0e3a2b">Máx PEM (ERP)</th>
+            <th class="r" style="padding:8px 10px;background:#0e3a2b;font-weight:700">Traspaso → PEM</th>
+            <th class="r" style="padding:8px 10px;background:#3a2b0e">Stock SEM</th>
+            <th class="r" style="padding:8px 10px;background:#3a2b0e">Máx SEM (ERP)</th>
+            <th class="r" style="padding:8px 10px;background:#3a2b0e;font-weight:700">Traspaso → SEM</th>
+            <th style="padding:8px 10px;text-align:center">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tcdBody">
+          <tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
   </div><!-- /content -->
   </div><!-- /main-content -->
   </div><!-- /app-body -->
@@ -3580,7 +3621,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.29<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.30<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -4259,6 +4300,7 @@ function showTab(id, btn){
   if(id==='precios')      cargarConfigPrecios();
   if(id==='tutoriales')   renderTutVendTable();
   if(id==='adquisiciones') renderReqStock();
+  if(id==='traspasocd')    renderTraspasoCD();
   if(id==='analisis')     vadmRenderBodFem();
 }
 
@@ -16891,6 +16933,126 @@ function cacheRecargarDuro(){
 
 
 // ── SOLICITUD SEMANAL DE STOCK ───────────────────────────────────────────────
+
+// ── TRASPASOS CD → PEM/SEM (El Manzano) ──────────────────────────────────
+// Usa ST_MAX por bodega configurado por Adquisiciones en el ERP (stock-critico.json -> porBodega),
+// NO velocidad de venta calculada por el panel. Mismo criterio que Solicitud Stock.
+var _tcdPorBodega = null; // {codigo:{PEM:{min,max,...}, SEM:{...}}} desde stock-critico.json
+var _tcdRows = [];        // filas calculadas para export CSV
+
+function renderTraspasoCD(forzar){
+  if(_tcdPorBodega === null || forzar){
+    fetch(dataUrl('stock-critico.json')+'?t='+Math.floor(Date.now()/3600000))
+      .then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(j){ _tcdPorBodega = (j && j.porBodega) || {}; _tcdCalcular(); })
+      .catch(function(){ _tcdPorBodega = {}; _tcdCalcular(); });
+    return;
+  }
+  _tcdCalcular();
+}
+
+function _tcdCalcular(){
+  var body = document.getElementById('tcdBody');
+  if(!_vadmStockMap || !Object.keys(_vadmStockMap).length){
+    body.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga inventario primero (abre cualquier tab de Inventario).</td></tr>';
+    return;
+  }
+
+  var rows = [];
+  Object.keys(_vadmStockMap).forEach(function(cod){
+    var sm = _vadmStockMap[cod];
+    var pb = _tcdPorBodega[cod];
+    if(!pb) return; // sin parametros ERP configurados para este codigo -> no hay Maximo de referencia
+    var maxPem = (pb.PEM && pb.PEM.max) || 0;
+    var maxSem = (pb.SEM && pb.SEM.max) || 0;
+    if(!maxPem && !maxSem) return;
+
+    var stockPem = sm.pem || 0, stockSem = sm.sem || 0, cdDisp = sm.cd || 0;
+    var brechaPem = Math.max(0, maxPem - stockPem);
+    var brechaSem = Math.max(0, maxSem - stockSem);
+    if(!brechaPem && !brechaSem) return;
+
+    // Repartir el CD disponible priorizando la brecha mayor primero (ver reglas-negocio-stock: CD abastece primero)
+    var cdRestante = cdDisp;
+    var traspasoPem = 0, traspasoSem = 0;
+    var ordenPemPrimero = brechaPem >= brechaSem;
+    if(ordenPemPrimero){
+      traspasoPem = Math.min(brechaPem, cdRestante); cdRestante -= traspasoPem;
+      traspasoSem = Math.min(brechaSem, cdRestante);
+    } else {
+      traspasoSem = Math.min(brechaSem, cdRestante); cdRestante -= traspasoSem;
+      traspasoPem = Math.min(brechaPem, cdRestante);
+    }
+    if(!traspasoPem && !traspasoSem) return;
+
+    var insuficiente = (brechaPem + brechaSem) > cdDisp;
+    rows.push({
+      codigo:cod, desc:sm.desc||'', cd:cdDisp,
+      stockPem:stockPem, maxPem:maxPem, traspasoPem:traspasoPem,
+      stockSem:stockSem, maxSem:maxSem, traspasoSem:traspasoSem,
+      insuficiente:insuficiente
+    });
+  });
+
+  rows.sort(function(a,b){ return (b.traspasoPem+b.traspasoSem) - (a.traspasoPem+a.traspasoSem); });
+  _tcdRows = rows;
+  _tcdRenderResumen(rows);
+  _tcdRenderTabla(rows);
+}
+
+function _tcdRenderResumen(rows){
+  var totalUnid = rows.reduce(function(s,r){ return s + r.traspasoPem + r.traspasoSem; }, 0);
+  var insuf = rows.filter(function(r){ return r.insuficiente; }).length;
+  var html =
+    '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#166534">'+rows.length+'</div><div style="font-size:11px;color:#15803d">Traspasos a realizar</div></div>'+
+    '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#1e40af">'+totalUnid.toLocaleString('es-CL')+'</div><div style="font-size:11px;color:#2563eb">Unidades a trasladar</div></div>'+
+    '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#991b1b">'+insuf+'</div><div style="font-size:11px;color:#dc2626">SKU(s) con CD insuficiente</div></div>';
+  document.getElementById('tcdResumen').innerHTML = html;
+}
+
+function _tcdRenderTabla(rows){
+  var body = document.getElementById('tcdBody');
+  if(!rows.length){
+    body.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Sin traspasos sugeridos — todos los códigos están dentro del Máximo ERP en PEM/SEM.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(function(r){
+    var estado = r.insuficiente
+      ? '<span title="El CD no tiene suficiente stock para cubrir toda la brecha" style="font-size:11px;color:#dc2626;font-weight:700">⚠️ CD insuf.</span>'
+      : '<span style="font-size:11px;color:#16a34a">✓ OK</span>';
+    return '<tr style="border-bottom:1px solid #e5e7eb">'+
+      '<td style="padding:6px 10px;font-family:monospace">'+r.codigo+'</td>'+
+      '<td style="padding:6px 10px">'+(r.desc||'').slice(0,60)+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+r.cd.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+r.stockPem.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+r.maxPem.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+(r.traspasoPem?'#166534':'#9ca3af')+'">'+(r.traspasoPem||'—')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+r.stockSem.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+r.maxSem.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+(r.traspasoSem?'#166534':'#9ca3af')+'">'+(r.traspasoSem||'—')+'</td>'+
+      '<td style="padding:6px 10px;text-align:center">'+estado+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function exportarTraspasoCDCsv(){
+  if(!_tcdRows || !_tcdRows.length){ toast('Sin traspasos para exportar','warn'); return; }
+  var rows = [['Código','Descripción','CD Disponible','Stock PEM','Máx PEM (ERP)','Traspaso a PEM','Stock SEM','Máx SEM (ERP)','Traspaso a SEM','CD insuficiente']];
+  _tcdRows.forEach(function(r){
+    rows.push([r.codigo, r.desc, r.cd, r.stockPem, r.maxPem, r.traspasoPem, r.stockSem, r.maxSem, r.traspasoSem, r.insuficiente?'SI':'NO']);
+  });
+  var csv = rows.map(function(r){
+    return r.map(function(x){ return '"'+String(x).replace(/"/g,'""')+'"'; }).join(',');
+  }).join('\n');
+  var blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href=url;
+  a.download='Traspasos_CD_'+new Date().toLocaleDateString('es-CL').replace(/\//g,'-')+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('🚚 Traspasos CD exportado a CSV','ok');
+}
 
 function renderReqStock(){
   var rd = document.getElementById('reqDesde');
