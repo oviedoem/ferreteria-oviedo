@@ -1198,4 +1198,9 @@ Contiene todo lo que NO es flujo activo:
   - Tabla: Código, Marca, Descripción, PEM, SEM, RCE, CD, Ranking principal, Ranking 2m, Ranking 1m, Embalaje, **Solicitar** (input numérico editable, prellenado con `Math.ceil(rankingPrincipal/embalaje)*embalaje`, el dueño puede sobreescribirlo a mano antes de exportar).
   - `exportarTraspasoCDCsv()` ahora lee el valor actual de cada input (no el sugerido original) al exportar, para respetar ajustes manuales.
   - Resumen: códigos listados, con venta en el rango, unidades sugeridas totales, SKUs donde la sugerencia excede el CD disponible (marcados ⚠️ en la columna CD).
-- V37.32. Deploy + commit pendientes de cerrar al final de este bloque.
+- V37.32.
+
+### Fix 2026-06-28 (sesión 3d) — Traspasos CD: filtrar CD=0, quitar columna Marca, ordenar por rotación
+- **Feedback del dueño** tras ver la tabla real: mostraba códigos con CD=0 (nada que traspasar), la columna Marca quitaba espacio sin agregar valor a la decisión, y faltaba poder ordenar explícitamente por la ventana de rotación que más le interesa revisar.
+- **Fix** (`panel-admin.html`): `_tcdCalcular()` ahora solo agrega filas con `cd>0` (antes incluía códigos sin CD pero con venta en el rango, lo que generaba ruido). Columna Marca eliminada de la tabla y del CSV. Nuevo selector "Ordenar por" (`#tcdOrden` + `_tcdReordenar()`) con 3 opciones: rotación del rango elegido (default), 2 meses, 1 mes — reordena sin recalcular ventas.
+- V37.33.

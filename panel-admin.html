@@ -3554,6 +3554,13 @@ Todo desde tu celular, gratis, sin apps que descargar.
       <label style="font-size:12px;font-weight:600;color:#374151">hasta
         <input type="date" id="tcdHasta" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
       </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">Ordenar por
+        <select id="tcdOrden" onchange="_tcdReordenar()" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+          <option value="rankPrincipal">Mayor rotación — rango elegido</option>
+          <option value="rank2m">Mayor rotación — 2 meses</option>
+          <option value="rank1m">Mayor rotación — 1 mes</option>
+        </select>
+      </label>
       <button onclick="renderTraspasoCD(true)" style="background:#1a1d3a;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔄 Recalcular</button>
       <button onclick="exportarTraspasoCDCsv()" style="background:#059669;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">📊 Exportar CSV</button>
     </div>
@@ -3565,7 +3572,6 @@ Todo desde tu celular, gratis, sin apps que descargar.
         <thead>
           <tr style="background:#1a1d3a;color:white">
             <th style="padding:8px 10px;text-align:left">Código</th>
-            <th style="padding:8px 10px;text-align:left">Marca</th>
             <th style="padding:8px 10px;text-align:left">Descripción</th>
             <th class="r" style="padding:8px 10px">PEM</th>
             <th class="r" style="padding:8px 10px">SEM</th>
@@ -3579,7 +3585,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
           </tr>
         </thead>
         <tbody id="tcdBody">
-          <tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Cargando...</td></tr>
+          <tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -3631,7 +3637,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.32<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.33<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -16972,11 +16978,11 @@ function renderTraspasoCD(forzar){
 function _tcdCalcular(){
   var body = document.getElementById('tcdBody');
   if(!_vadmStockMap || !Object.keys(_vadmStockMap).length){
-    body.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga inventario primero (abre cualquier tab de Inventario).</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga inventario primero (abre cualquier tab de Inventario).</td></tr>';
     return;
   }
   if(!_vadmLineas || !_vadmLineas.length){
-    body.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga ventas primero (abre cualquier tab de Ventas).</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga ventas primero (abre cualquier tab de Ventas).</td></tr>';
     return;
   }
 
@@ -17010,22 +17016,27 @@ function _tcdCalcular(){
     var sm = _vadmStockMap[cod];
     var v = venta[cod] || {principal:0,m2:0,m1:0};
     var cd = sm.cd||0, pem = sm.pem||0, sem = sm.sem||0, rce = sm.rce||0;
-    // Solo interesa si hay algo en CD para traspasar, o venta registrada en el rango principal
-    if(!cd && !v.principal) return;
+    // Solo interesa si hay stock disponible en CD para traspasar (sin CD no hay nada que mover)
+    if(!cd) return;
     var embalaje = _tcdParseEmbalaje(sm.desc);
     var sugerido = v.principal>0 ? Math.ceil(v.principal/embalaje)*embalaje : 0;
     rows.push({
-      codigo:cod, marca:sm.marca||'', desc:sm.desc||'',
+      codigo:cod, desc:sm.desc||'',
       pem:pem, sem:sem, rce:rce, cd:cd,
       rankPrincipal:Math.round(v.principal), rank2m:Math.round(v.m2), rank1m:Math.round(v.m1),
       embalaje:embalaje, sugerido:sugerido
     });
   });
 
-  rows.sort(function(a,b){ return b.rankPrincipal - a.rankPrincipal; });
   _tcdRows = rows;
-  _tcdRenderResumen(rows);
-  _tcdRenderTabla(rows);
+  _tcdReordenar();
+}
+
+function _tcdReordenar(){
+  var campo = (document.getElementById('tcdOrden')||{}).value || 'rankPrincipal';
+  _tcdRows.sort(function(a,b){ return b[campo] - a[campo]; });
+  _tcdRenderResumen(_tcdRows);
+  _tcdRenderTabla(_tcdRows);
 }
 
 function _tcdRenderResumen(rows){
@@ -17043,14 +17054,13 @@ function _tcdRenderResumen(rows){
 function _tcdRenderTabla(rows){
   var body = document.getElementById('tcdBody');
   if(!rows.length){
-    body.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Sin códigos con CD o venta en el rango seleccionado.</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Sin códigos con CD o venta en el rango seleccionado.</td></tr>';
     return;
   }
   body.innerHTML = rows.map(function(r,i){
     var cdInsuf = r.sugerido>r.cd;
     return '<tr style="border-bottom:1px solid #e5e7eb">'+
       '<td style="padding:6px 10px;font-family:monospace">'+r.codigo+'</td>'+
-      '<td style="padding:6px 10px">'+(r.marca||'').slice(0,18)+'</td>'+
       '<td style="padding:6px 10px">'+(r.desc||'').slice(0,55)+'</td>'+
       '<td class="r" style="padding:6px 10px;'+(r.pem<=0?'color:#dc2626':'')+'">'+r.pem.toLocaleString('es-CL')+'</td>'+
       '<td class="r" style="padding:6px 10px;'+(r.sem<=0?'color:#dc2626':'')+'">'+r.sem.toLocaleString('es-CL')+'</td>'+
@@ -17067,11 +17077,11 @@ function _tcdRenderTabla(rows){
 
 function exportarTraspasoCDCsv(){
   if(!_tcdRows || !_tcdRows.length){ toast('Sin datos para exportar','warn'); return; }
-  var rows = [['Código','Marca','Descripción','PEM','SEM','RCE','CD','Ranking principal','Ranking 2 meses','Ranking 1 mes','Embalaje','Solicitar']];
+  var rows = [['Código','Descripción','PEM','SEM','RCE','CD','Ranking principal','Ranking 2 meses','Ranking 1 mes','Embalaje','Solicitar']];
   _tcdRows.forEach(function(r,i){
     var inp = document.getElementById('tcdSol_'+i);
     var solicitar = inp ? (parseInt(inp.value,10)||0) : r.sugerido;
-    rows.push([r.codigo, r.marca, r.desc, r.pem, r.sem, r.rce, r.cd, r.rankPrincipal, r.rank2m, r.rank1m, 'E('+r.embalaje+')', solicitar]);
+    rows.push([r.codigo, r.desc, r.pem, r.sem, r.rce, r.cd, r.rankPrincipal, r.rank2m, r.rank1m, 'E('+r.embalaje+')', solicitar]);
   });
   var csv = rows.map(function(r){
     return r.map(function(x){ return '"'+String(x).replace(/"/g,'""')+'"'; }).join(',');
