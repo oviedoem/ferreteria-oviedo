@@ -223,6 +223,20 @@ if exist "BODEGAS\descargar_stock_critico.py" (
     echo [AVISO] descargar_stock_critico.py no encontrado - saltando >> "%LOGFILE%"
 )
 
+:: -- PASO 1M: Tiempo de transito proveedor (OC -> GRC/GRT/GIB desde SQL) -----
+echo. >> "%LOGFILE%"
+echo [%time%] PASO 1M - Tiempo transito proveedor (OC->recepcion) SQL... >> "%LOGFILE%"
+if exist "BODEGAS\descargar_oc_leadtime.py" (
+    "%PYTHON_EXE%" "BODEGAS\descargar_oc_leadtime.py" >> "%LOGFILE%" 2>&1
+    if %errorlevel% neq 0 (
+        echo [AVISO] descargar_oc_leadtime.py fallo - Consulta de Stock usara oc-leadtime.json anterior >> "%LOGFILE%"
+    ) else (
+        echo [OK] descargar_oc_leadtime.py >> "%LOGFILE%"
+    )
+) else (
+    echo [AVISO] descargar_oc_leadtime.py no encontrado - saltando >> "%LOGFILE%"
+)
+
 :: -- PASO 1H: Recepciones pendientes + Despachos ERP (Blazor Intranet) ------
 echo. >> "%LOGFILE%"
 echo [%time%] PASO 1H - Recepciones y Despachos ERP (Blazor)... >> "%LOGFILE%"

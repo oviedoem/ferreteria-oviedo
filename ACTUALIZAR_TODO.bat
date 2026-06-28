@@ -288,6 +288,30 @@ if exist "%~dp0BODEGAS\descargar_stock_critico.py" (
 echo.
 timeout /t 2 /nobreak >nul
 
+:: -- PASO 1M: Tiempo de transito proveedor (OC -> GRC/GRT/GIB desde SQL) ---------
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 1M - Tiempo transito proveedor (OC->recepcion) SQL ^|
+echo  +----------------------------------------------------------+
+echo.
+echo  Generando oc-leadtime.json (dias OC -> GRC/GRT/GIB por codigo/proveedor)...
+echo  (usado en tab Consulta de Stock)
+echo.
+if exist "%~dp0BODEGAS\descargar_oc_leadtime.py" (
+    "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_oc_leadtime.py"
+    if %errorlevel% neq 0 (
+        color 0C
+        echo  [AVISO] descargar_oc_leadtime.py fallo. Consulta de Stock usara oc-leadtime.json anterior.
+        color 0A
+    ) else (
+        echo  [OK] oc-leadtime.json generado.
+    )
+) else (
+    echo  [AVISO] descargar_oc_leadtime.py no encontrado -- saltando paso.
+)
+echo.
+timeout /t 2 /nobreak >nul
+
 :: -- PASO 1H+1I: Blazor Bodegas -- Por Recepcionar + Por Despachar (1 sesion) ---
 echo.
 echo  +----------------------------------------------------------+
