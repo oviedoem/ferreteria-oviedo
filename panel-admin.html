@@ -3540,14 +3540,20 @@ Todo desde tu celular, gratis, sin apps que descargar.
   <div class="card">
     <div class="card-title"><span>🚚</span> Traspasos CD → PEM / SEM — El Manzano</div>
     <div style="font-size:12px;color:#6b7280;margin-bottom:14px">
-      Sugerencia de traspaso desde el Centro de Distribución a Patio (PEM) o Sala (SEM), usando el Máximo
-      (ST_MAX) configurado por Adquisiciones en el ERP para cada bodega — misma lógica que Solicitud Stock,
-      no se calcula por velocidad de venta. Los códigos <b>sin ST_MAX configurado</b> en el ERP (Adquisiciones
-      no les asignó parámetro) igual se muestran si hay stock en CD y la tienda está en cero — marcados
-      "⚠️ Sin ERP" con sugerencia automática igualando al CD disponible.
+      Mismo criterio que se usa manualmente en Excel para pedir a Santiago: ranking de ventas en el rango de
+      fechas elegido (más los rankings automáticos de los últimos 2 y 1 mes para comparar tendencia), redondeado
+      al <b>embalaje cerrado</b> de cada producto — código <span class="code" style="font-family:monospace">E(n)</span>
+      en la descripción (pallet o caja cerrada, ej. venta=80 y embalaje=100 → se sugiere 100). La columna
+      <b>Solicitar</b> queda editable: la sugerencia es el punto de partida, la decisión final la toma quien revisa.
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <label style="font-size:12px;font-weight:600;color:#374151">Ranking desde
+        <input type="date" id="tcdDesde" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#374151">hasta
+        <input type="date" id="tcdHasta" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
+      </label>
       <button onclick="renderTraspasoCD(true)" style="background:#1a1d3a;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔄 Recalcular</button>
       <button onclick="exportarTraspasoCDCsv()" style="background:#059669;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">📊 Exportar CSV</button>
     </div>
@@ -3559,19 +3565,21 @@ Todo desde tu celular, gratis, sin apps que descargar.
         <thead>
           <tr style="background:#1a1d3a;color:white">
             <th style="padding:8px 10px;text-align:left">Código</th>
+            <th style="padding:8px 10px;text-align:left">Marca</th>
             <th style="padding:8px 10px;text-align:left">Descripción</th>
-            <th class="r" style="padding:8px 10px">CD Disp.</th>
-            <th class="r" style="padding:8px 10px;background:#0e3a2b">Stock PEM</th>
-            <th class="r" style="padding:8px 10px;background:#0e3a2b">Máx PEM (ERP)</th>
-            <th class="r" style="padding:8px 10px;background:#0e3a2b;font-weight:700">Traspaso → PEM</th>
-            <th class="r" style="padding:8px 10px;background:#3a2b0e">Stock SEM</th>
-            <th class="r" style="padding:8px 10px;background:#3a2b0e">Máx SEM (ERP)</th>
-            <th class="r" style="padding:8px 10px;background:#3a2b0e;font-weight:700">Traspaso → SEM</th>
-            <th style="padding:8px 10px;text-align:center">Estado</th>
+            <th class="r" style="padding:8px 10px">PEM</th>
+            <th class="r" style="padding:8px 10px">SEM</th>
+            <th class="r" style="padding:8px 10px">RCE</th>
+            <th class="r" style="padding:8px 10px;background:#92400e">CD</th>
+            <th class="r" style="padding:8px 10px" id="tcdColRankPrincipal">Ranking</th>
+            <th class="r" style="padding:8px 10px">Ranking 2 meses</th>
+            <th class="r" style="padding:8px 10px">Ranking 1 mes</th>
+            <th class="r" style="padding:8px 10px">Embalaje</th>
+            <th style="padding:8px 10px;background:#fde047;color:#1a1d3a;font-weight:700">Solicitar</th>
           </tr>
         </thead>
         <tbody id="tcdBody">
-          <tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Cargando...</td></tr>
+          <tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -3623,7 +3631,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.31<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.32<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -16937,18 +16945,26 @@ function cacheRecargarDuro(){
 // ── SOLICITUD SEMANAL DE STOCK ───────────────────────────────────────────────
 
 // ── TRASPASOS CD → PEM/SEM (El Manzano) ──────────────────────────────────
-// Usa ST_MAX por bodega configurado por Adquisiciones en el ERP (stock-critico.json -> porBodega),
-// NO velocidad de venta calculada por el panel. Mismo criterio que Solicitud Stock.
-var _tcdPorBodega = null; // {codigo:{PEM:{min,max,...}, SEM:{...}}} desde stock-critico.json
-var _tcdRows = [];        // filas calculadas para export CSV
+// Rediseñado 2026-06-28 a pedido del dueño para igualar el proceso manual que ya usa en Excel
+// ("Solicitudes Santiago"): ranking de ventas por rango de fechas elegido + rankings automáticos
+// de 2 y 1 mes para comparar tendencia, sugerencia redondeada al embalaje cerrado E(n) de la
+// descripción (pallet/caja, ej. venta=80 y E(100) -> se sugiere 100). La columna Solicitar queda
+// editable: la sugerencia es punto de partida, no remplaza la decisión de quien revisa.
+var _tcdRows = []; // filas calculadas para export CSV
+
+function _tcdParseEmbalaje(desc){
+  var m = /\(E-?\s*(\d+)\)/i.exec(desc||'');
+  return m ? Math.max(1, parseInt(m[1],10)) : 1;
+}
 
 function renderTraspasoCD(forzar){
-  if(_tcdPorBodega === null || forzar){
-    fetch(dataUrl('stock-critico.json')+'?t='+Math.floor(Date.now()/3600000))
-      .then(function(r){ return r.ok ? r.json() : {}; })
-      .then(function(j){ _tcdPorBodega = (j && j.porBodega) || {}; _tcdCalcular(); })
-      .catch(function(){ _tcdPorBodega = {}; _tcdCalcular(); });
-    return;
+  var rd = document.getElementById('tcdDesde');
+  var rh = document.getElementById('tcdHasta');
+  if(rd && !rd.value){
+    var hoy = new Date();
+    var ini = new Date(hoy); ini.setMonth(hoy.getMonth()-4);
+    rd.value = ini.toISOString().slice(0,10);
+    rh.value = hoy.toISOString().slice(0,10);
   }
   _tcdCalcular();
 }
@@ -16956,116 +16972,106 @@ function renderTraspasoCD(forzar){
 function _tcdCalcular(){
   var body = document.getElementById('tcdBody');
   if(!_vadmStockMap || !Object.keys(_vadmStockMap).length){
-    body.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga inventario primero (abre cualquier tab de Inventario).</td></tr>';
+    body.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga inventario primero (abre cualquier tab de Inventario).</td></tr>';
     return;
   }
+  if(!_vadmLineas || !_vadmLineas.length){
+    body.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga ventas primero (abre cualquier tab de Ventas).</td></tr>';
+    return;
+  }
+
+  var desde = document.getElementById('tcdDesde').value;
+  var hasta = document.getElementById('tcdHasta').value;
+  var dDesde = desde ? new Date(desde) : null;
+  var dHasta = hasta ? new Date(new Date(hasta).getTime()+86399999) : new Date();
+  var diasPrincipal = dDesde ? Math.max(1, Math.round((dHasta-dDesde)/86400000)) : 120;
+  var lblPrincipal = diasPrincipal>=56 ? Math.round(diasPrincipal/30)+' meses' : diasPrincipal+' días';
+  var colP = document.getElementById('tcdColRankPrincipal'); if(colP) colP.textContent = 'Ranking '+lblPrincipal;
+
+  var hoy = new Date();
+  var c2m = new Date(hoy); c2m.setDate(c2m.getDate()-60);
+  var c1m = new Date(hoy); c1m.setDate(c1m.getDate()-30);
+
+  function parseFR(s){ var p=(s||'').split('/'); return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null; }
+
+  var venta = {}; // cod -> {principal, m2, m1}
+  _vadmLineas.forEach(function(r){
+    var cod = r.codigo||''; if(!cod) return;
+    var d = parseFR(r.fecha||''); if(!d) return;
+    var v = venta[cod] || (venta[cod]={principal:0,m2:0,m1:0});
+    if(dDesde && d>=dDesde && d<=dHasta) v.principal += (r.cantidad||0);
+    if(!dDesde) v.principal = 0; // sin rango valido no se sugiere por principal
+    if(d>=c2m && d<=hoy) v.m2 += (r.cantidad||0);
+    if(d>=c1m && d<=hoy) v.m1 += (r.cantidad||0);
+  });
 
   var rows = [];
   Object.keys(_vadmStockMap).forEach(function(cod){
     var sm = _vadmStockMap[cod];
-    var pb = _tcdPorBodega[cod];
-    var maxPem = (pb && pb.PEM && pb.PEM.max) || 0;
-    var maxSem = (pb && pb.SEM && pb.SEM.max) || 0;
-    var stockPem = sm.pem || 0, stockSem = sm.sem || 0, cdDisp = sm.cd || 0;
-
-    if(maxPem || maxSem){
-      // ── Caso normal: hay Máximo ERP configurado (Adquisiciones) ──
-      var brechaPem = Math.max(0, maxPem - stockPem);
-      var brechaSem = Math.max(0, maxSem - stockSem);
-      if(!brechaPem && !brechaSem) return;
-
-      // Repartir el CD disponible priorizando la brecha mayor primero (ver reglas-negocio-stock: CD abastece primero)
-      var cdRestante = cdDisp;
-      var traspasoPem = 0, traspasoSem = 0;
-      var ordenPemPrimero = brechaPem >= brechaSem;
-      if(ordenPemPrimero){
-        traspasoPem = Math.min(brechaPem, cdRestante); cdRestante -= traspasoPem;
-        traspasoSem = Math.min(brechaSem, cdRestante);
-      } else {
-        traspasoSem = Math.min(brechaSem, cdRestante); cdRestante -= traspasoSem;
-        traspasoPem = Math.min(brechaPem, cdRestante);
-      }
-      if(!traspasoPem && !traspasoSem) return;
-
-      rows.push({
-        codigo:cod, desc:sm.desc||'', cd:cdDisp,
-        stockPem:stockPem, maxPem:maxPem, traspasoPem:traspasoPem,
-        stockSem:stockSem, maxSem:maxSem, traspasoSem:traspasoSem,
-        insuficiente:(brechaPem + brechaSem) > cdDisp, sinErp:false
-      });
-    } else {
-      // ── Caso sin parámetro ERP configurado: Adquisiciones no le definió min/max a este código.
-      // Si hay stock en CD y la tienda está en cero, igual se sugiere para que no quede invisible
-      // (ver conversación 2026-06-28: META005 tenía CD>0 y no aparecía por falta de ST_MAX en el ERP).
-      if(!cdDisp) return;
-      var faltaPem = stockPem<=0, faltaSem = stockSem<=0;
-      if(!faltaPem && !faltaSem) return;
-      var nTargets = (faltaPem?1:0) + (faltaSem?1:0);
-      var porTarget = Math.floor(cdDisp / nTargets);
-      var resto = cdDisp - porTarget*nTargets;
-      var tPem = faltaPem ? porTarget : 0;
-      var tSem = faltaSem ? porTarget : 0;
-      if(faltaPem) tPem += resto; else if(faltaSem) tSem += resto;
-      if(!tPem && !tSem) return;
-      rows.push({
-        codigo:cod, desc:sm.desc||'', cd:cdDisp,
-        stockPem:stockPem, maxPem:0, traspasoPem:tPem,
-        stockSem:stockSem, maxSem:0, traspasoSem:tSem,
-        insuficiente:false, sinErp:true
-      });
-    }
+    var v = venta[cod] || {principal:0,m2:0,m1:0};
+    var cd = sm.cd||0, pem = sm.pem||0, sem = sm.sem||0, rce = sm.rce||0;
+    // Solo interesa si hay algo en CD para traspasar, o venta registrada en el rango principal
+    if(!cd && !v.principal) return;
+    var embalaje = _tcdParseEmbalaje(sm.desc);
+    var sugerido = v.principal>0 ? Math.ceil(v.principal/embalaje)*embalaje : 0;
+    rows.push({
+      codigo:cod, marca:sm.marca||'', desc:sm.desc||'',
+      pem:pem, sem:sem, rce:rce, cd:cd,
+      rankPrincipal:Math.round(v.principal), rank2m:Math.round(v.m2), rank1m:Math.round(v.m1),
+      embalaje:embalaje, sugerido:sugerido
+    });
   });
 
-  rows.sort(function(a,b){ return (b.traspasoPem+b.traspasoSem) - (a.traspasoPem+a.traspasoSem); });
+  rows.sort(function(a,b){ return b.rankPrincipal - a.rankPrincipal; });
   _tcdRows = rows;
   _tcdRenderResumen(rows);
   _tcdRenderTabla(rows);
 }
 
 function _tcdRenderResumen(rows){
-  var totalUnid = rows.reduce(function(s,r){ return s + r.traspasoPem + r.traspasoSem; }, 0);
-  var insuf = rows.filter(function(r){ return r.insuficiente; }).length;
-  var sinErp = rows.filter(function(r){ return r.sinErp; }).length;
+  var conVenta = rows.filter(function(r){ return r.rankPrincipal>0; }).length;
+  var sugeridoTot = rows.reduce(function(s,r){ return s+r.sugerido; }, 0);
+  var sinCdSuficiente = rows.filter(function(r){ return r.sugerido>r.cd; }).length;
   var html =
-    '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#166534">'+rows.length+'</div><div style="font-size:11px;color:#15803d">Traspasos a realizar</div></div>'+
-    '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#1e40af">'+totalUnid.toLocaleString('es-CL')+'</div><div style="font-size:11px;color:#2563eb">Unidades a trasladar</div></div>'+
-    '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#991b1b">'+insuf+'</div><div style="font-size:11px;color:#dc2626">SKU(s) con CD insuficiente</div></div>'+
-    '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#92400e">'+sinErp+'</div><div style="font-size:11px;color:#b45309">SKU(s) sin ST_MAX en ERP (sugerencia auto.)</div></div>';
+    '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#166534">'+rows.length+'</div><div style="font-size:11px;color:#15803d">Códigos listados</div></div>'+
+    '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#1e40af">'+conVenta+'</div><div style="font-size:11px;color:#2563eb">Con venta en el rango</div></div>'+
+    '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#854d0e">'+sugeridoTot.toLocaleString('es-CL')+'</div><div style="font-size:11px;color:#a16207">Unidades sugeridas (Solicitar)</div></div>'+
+    '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#991b1b">'+sinCdSuficiente+'</div><div style="font-size:11px;color:#dc2626">SKU(s) con CD insuficiente</div></div>';
   document.getElementById('tcdResumen').innerHTML = html;
 }
 
 function _tcdRenderTabla(rows){
   var body = document.getElementById('tcdBody');
   if(!rows.length){
-    body.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Sin traspasos sugeridos — todos los códigos están dentro del Máximo ERP en PEM/SEM.</td></tr>';
+    body.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Sin códigos con CD o venta en el rango seleccionado.</td></tr>';
     return;
   }
-  body.innerHTML = rows.map(function(r){
-    var estado = r.sinErp
-      ? '<span title="Adquisiciones no configuró ST_MAX para este código en el ERP — sugerencia automática igualando al CD disponible" style="font-size:11px;color:#b45309;font-weight:700">⚠️ Sin ERP</span>'
-      : r.insuficiente
-      ? '<span title="El CD no tiene suficiente stock para cubrir toda la brecha" style="font-size:11px;color:#dc2626;font-weight:700">⚠️ CD insuf.</span>'
-      : '<span style="font-size:11px;color:#16a34a">✓ OK</span>';
-    return '<tr style="border-bottom:1px solid #e5e7eb'+(r.sinErp?';background:#fffbeb':'')+'">'+
+  body.innerHTML = rows.map(function(r,i){
+    var cdInsuf = r.sugerido>r.cd;
+    return '<tr style="border-bottom:1px solid #e5e7eb">'+
       '<td style="padding:6px 10px;font-family:monospace">'+r.codigo+'</td>'+
-      '<td style="padding:6px 10px">'+(r.desc||'').slice(0,60)+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+r.cd.toLocaleString('es-CL')+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+r.stockPem.toLocaleString('es-CL')+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+(r.maxPem?r.maxPem.toLocaleString('es-CL'):'—')+'</td>'+
-      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+(r.traspasoPem?'#166534':'#9ca3af')+'">'+(r.traspasoPem||'—')+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+r.stockSem.toLocaleString('es-CL')+'</td>'+
-      '<td class="r" style="padding:6px 10px">'+(r.maxSem?r.maxSem.toLocaleString('es-CL'):'—')+'</td>'+
-      '<td class="r" style="padding:6px 10px;font-weight:700;color:'+(r.traspasoSem?'#166534':'#9ca3af')+'">'+(r.traspasoSem||'—')+'</td>'+
-      '<td style="padding:6px 10px;text-align:center">'+estado+'</td>'+
+      '<td style="padding:6px 10px">'+(r.marca||'').slice(0,18)+'</td>'+
+      '<td style="padding:6px 10px">'+(r.desc||'').slice(0,55)+'</td>'+
+      '<td class="r" style="padding:6px 10px;'+(r.pem<=0?'color:#dc2626':'')+'">'+r.pem.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px;'+(r.sem<=0?'color:#dc2626':'')+'">'+r.sem.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+r.rce.toLocaleString('es-CL')+'</td>'+
+      '<td class="r" style="padding:6px 10px;background:#fef3c7;font-weight:700;color:'+(cdInsuf?'#dc2626':'#92400e')+'" title="'+(cdInsuf?'CD insuficiente para cubrir la sugerencia':'')+'">'+r.cd.toLocaleString('es-CL')+(cdInsuf?' ⚠️':'')+'</td>'+
+      '<td class="r" style="padding:6px 10px;font-weight:700">'+(r.rankPrincipal||'—')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+(r.rank2m||'—')+'</td>'+
+      '<td class="r" style="padding:6px 10px">'+(r.rank1m||'—')+'</td>'+
+      '<td class="r" style="padding:6px 10px">E('+r.embalaje+')</td>'+
+      '<td style="padding:4px 6px;background:#fefce8"><input type="number" min="0" step="1" value="'+r.sugerido+'" id="tcdSol_'+i+'" data-cod="'+r.codigo+'" style="width:80px;padding:4px 6px;border:1px solid #fde047;border-radius:4px;font-size:12px;font-weight:700;text-align:right"></td>'+
     '</tr>';
   }).join('');
 }
 
 function exportarTraspasoCDCsv(){
-  if(!_tcdRows || !_tcdRows.length){ toast('Sin traspasos para exportar','warn'); return; }
-  var rows = [['Código','Descripción','CD Disponible','Stock PEM','Máx PEM (ERP)','Traspaso a PEM','Stock SEM','Máx SEM (ERP)','Traspaso a SEM','CD insuficiente','Sin ST_MAX ERP']];
-  _tcdRows.forEach(function(r){
-    rows.push([r.codigo, r.desc, r.cd, r.stockPem, r.maxPem, r.traspasoPem, r.stockSem, r.maxSem, r.traspasoSem, r.insuficiente?'SI':'NO', r.sinErp?'SI':'NO']);
+  if(!_tcdRows || !_tcdRows.length){ toast('Sin datos para exportar','warn'); return; }
+  var rows = [['Código','Marca','Descripción','PEM','SEM','RCE','CD','Ranking principal','Ranking 2 meses','Ranking 1 mes','Embalaje','Solicitar']];
+  _tcdRows.forEach(function(r,i){
+    var inp = document.getElementById('tcdSol_'+i);
+    var solicitar = inp ? (parseInt(inp.value,10)||0) : r.sugerido;
+    rows.push([r.codigo, r.marca, r.desc, r.pem, r.sem, r.rce, r.cd, r.rankPrincipal, r.rank2m, r.rank1m, 'E('+r.embalaje+')', solicitar]);
   });
   var csv = rows.map(function(r){
     return r.map(function(x){ return '"'+String(x).replace(/"/g,'""')+'"'; }).join(',');

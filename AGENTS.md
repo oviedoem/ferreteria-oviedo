@@ -1186,4 +1186,16 @@ Contiene todo lo que NO es flujo activo:
 ### Fix 2026-06-28 (sesión 3b) — Traspasos CD ocultaba códigos sin ST_MAX configurado en el ERP
 - **Bug real reportado por el dueño**: META005 tiene stock en CD pero no aparecía en Traspasos CD. Verificado contra `data/stock-critico.json`: META005 no tiene NINGÚN parámetro ERP configurado (ni ST_MIN ni ST_MAX, en ninguna bodega) — Adquisiciones nunca le asignó umbral. La lógica anterior (`if(!pb) return;`) descartaba silenciosamente cualquier código sin parámetro ERP, aunque hubiera una oportunidad obvia (CD>0, tienda en 0).
 - **Fix** (`panel-admin.html`, `_tcdCalcular()`): cuando no hay `maxPem`/`maxSem` del ERP para el código, ahora se evalúa un caso alterno: si `cd>0` y (`pem<=0` o `sem<=0`), se sugiere igualar al CD disponible repartido entre las bodegas en cero, marcado con `sinErp:true` — badge "⚠️ Sin ERP" (fondo amarillo en la fila), columna Máx muestra "—", y nueva tarjeta resumen "SKU(s) sin ST_MAX en ERP". Confirmado con el dueño: se debe mostrar la sugerencia automática en vez de dejarlo invisible.
-- V37.31. Deploy + commit pendientes de cerrar al final de este bloque.
+- V37.31.
+
+### Fix 2026-06-28 (sesión 3c) — Traspasos CD rediseñado completo: del criterio ERP al criterio manual real (ranking + embalaje)
+- **Contexto**: el dueño mostró su Excel real de trabajo (`SOLICITUDES SANTIAGO_SEM.XLSM`) y dijo explícitamente "no me gustó la lógica y diseño, debes editarla al igual que lo hago yo manual". Su proceso real: columnas PEM/SEM/RCE/CD (stock por bodega) + Ranking Ventas en 3 ventanas (rango elegido, 2 meses, 1 mes) + columna Solicitar manual, donde **siempre se pide en embalaje cerrado** (pallet o caja) — el código `(E12)`, `(E-50)`, `(E1)` etc. en la descripción indica el tamaño de empaque; ej. venta=80 y empaque=100 → se solicita 100, no 80.
+- **Decisión**: se descartó por completo el criterio ST_MAX del ERP para este tab (se mantiene solo para Solicitud Stock, que es un proceso distinto). `BODEGAS\descargar_stock_critico.py` y su campo `porBodega` quedan sin uso en este tab (no se revirtieron, podrían servir a futuro, pero `panel-admin.html` ya no los consume aquí).
+- **Verificado antes de implementar**: el patrón `(E-?\d+)` en `descripcion` solo cubre 51% del catálogo (3.085/6.022) — para el resto se usa embalaje=1 (sin redondeo) por defecto.
+- **Rediseño completo de `panel-admin.html` `#tab-traspasocd`**:
+  - Filtro de fechas `tcdDesde`/`tcdHasta` (default: últimos 4 meses) define el "Ranking principal"; además se calculan automáticamente Ranking 2 meses y Ranking 1 mes (ventana fija desde hoy, sin importar el filtro principal) — los 3 desde `_vadmLineas` agrupados por código y fecha.
+  - Nueva función `_tcdParseEmbalaje(desc)` extrae el número de `(E12)`/`(E-50)` etc., default 1 si no hay match.
+  - Tabla: Código, Marca, Descripción, PEM, SEM, RCE, CD, Ranking principal, Ranking 2m, Ranking 1m, Embalaje, **Solicitar** (input numérico editable, prellenado con `Math.ceil(rankingPrincipal/embalaje)*embalaje`, el dueño puede sobreescribirlo a mano antes de exportar).
+  - `exportarTraspasoCDCsv()` ahora lee el valor actual de cada input (no el sugerido original) al exportar, para respetar ajustes manuales.
+  - Resumen: códigos listados, con venta en el rango, unidades sugeridas totales, SKUs donde la sugerencia excede el CD disponible (marcados ⚠️ en la columna CD).
+- V37.32. Deploy + commit pendientes de cerrar al final de este bloque.
