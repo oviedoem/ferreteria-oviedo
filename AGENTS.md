@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.28 (en curso) · Última actualización: 2026-06-23
+# Versión activa: V37.29 · Última actualización: 2026-06-28
 
 ---
 
@@ -1147,12 +1147,29 @@ Contiene todo lo que NO es flujo activo:
 - **Bug**: `_vadmVPFiltrar()` solo filtraba por fecha, ignorando los 2 selects de vendedor de la barra global (`VENTAEM` y `Ver todos`, comparten `_vadmVendSel`) y el de bodega (`_vadmBodSel`). Además `vadmReRenderTabActivo()` no tenía rama para `vendpro`, así que cambiar esos filtros no refrescaba la pestaña.
 - **Fix**: agregado el mismo patrón de filtro usado en otras pestañas (`_vadmVendSel`/`_vadmBodSel`) dentro de `_vadmVPFiltrar()`, y agregada la rama `else if(id==='vendpro') setTimeout(vadmRenderVendPro, 0);` en `vadmReRenderTabActivo()`.
 - Validado con datos mock vía `preview_eval` (sin login real, Firebase Auth bloquea `localhost:8799` por dominio no autorizado — esperado): combinaciones vendedor solo, vendedor+bodega, sin filtro, todas correctas.
-- Deploy `firebase deploy --only hosting` ✅. Commit pendiente.
+- Deploy `firebase deploy --only hosting` ✅ + commit `d5297ed` ✅.
+
+### Fix 2026-06-28 — VendedorPRO: candidatos de producto reales (co-compra) en vez de inventados por la IA
+- **Bug real encontrado**: la IA (Gemini) inventaba productos que Oviedo no vende (ej. "Cutter profesional", "membrana asfáltica") porque el prompt de `coach.js` le permitía "estimar precios razonables" sin darle ningún dato real de catálogo.
+- **Bug de consistencia encontrado**: `_vadmVPBenchmarkEquipo()` nunca calculaba `margenPctFactura` ni `lineasPorBoletaFactura` del equipo (solo Boleta) — por eso no se podía comparar margen Factura vs equipo. Agregados ambos promedios.
+- **Fix arquitectura (panel-admin.html)**: nuevas funciones `_vadmVPBuildCoCompraIdx()` / `_vadmVPCandidatosReales()` — calculan, sobre `_vadmLineas` real (todo el equipo, no solo el vendedor), qué códigos aparecen junto a cada producto vendido en el mismo N° de documento. Se cruzan con `_vadmStockMap` (catálogo real) para traer código+descripción+precio reales; cualquier código sin match en catálogo se descarta automáticamente (nunca llega a la IA). `_vadmVPEjemplos()` ahora adjunta `candidatosReales` a cada ejemplo, y `vadmRenderVendPro()` invalida la caché de co-compra y fuerza carga del catálogo si falta.
+- **Fix render**: `_vadmVPRenderIA()` no convertía `\n` en `<br>` (texto de la IA se veía "todo junto" en pantalla) — agregada `_vadmVPNl2br()`. También se agregó tarjeta visual por producto real citado (`productosUsados`) con código+precio.
+- **Fix prompt (`coach.js`, proyecto separado en `_utilidades/vendedorpro-coach`)**: regla no negociable — la IA solo puede citar productos del array `candidatosReales` de cada ejemplo (código y precio exactos, sin inventar ni redondear); si no hay candidatos reales, omite la recomendación de producto en ese ejemplo. Nuevo campo `productosUsados` en la respuesta JSON.
+- Validado con datos mock (3 documentos simulados con co-compra real conocida): detectó correctamente el complemento esperado, descartó un código sin match de catálogo (simulando "FLETE") y un candidato sin evidencia de co-compra real.
+- Revisión `/revisar-codigo` (14 reglas FO-001 a FO-014): 0 errores, 0 warnings.
+- Deploy Netlify `coach.js` ✅ (`netlify deploy --prod`, sitio `vendedorpro-coach`) + Deploy Firebase Hosting ✅ + commit `ea1fd92` ✅.
+
+### Fix 2026-06-28 (sesión 2) — IA fallaba en producción tras el cambio anterior: JSON truncado
+- **Bug real visto en producción** (no en testing local): "Fallo generando coaching: Expected ',' or ']' after array element in JSON at position 6720" — el payload con `candidatosReales` agrandó la respuesta de Gemini y se cortaba a mitad del JSON por `maxOutputTokens: 4000` (límite fijado antes del cambio).
+- **Fix**: `maxOutputTokens` subido a 8000 en `coach.js`; agregado log de `finishReason==='MAX_TOKENS'` para diagnosticar truncamiento sin ambigüedad si vuelve a pasar.
+- Validado con `curl` directo al endpoint en vivo (`https://vendedorpro-coach.netlify.app/.netlify/functions/coach`) simulando el payload real de ricpobletev (4 ejemplos, candidatosReales reales) — JSON válido, citó exactamente los códigos/precios provistos, omitió el ejemplo sin candidatos (set de puntas Einhell) tal como pide el prompt.
+- Deploy Netlify `coach.js` ✅ (`netlify deploy --prod`, deployId `6a40b12a`).
 
 ### Pendiente
-- Validar en producción real (con datos reales, no el payload de prueba) que el botón "Generar consejos con IA" funciona end-to-end desde panel-admin.html en el navegador del dueño — el fix de CSP fue confirmado por consola real, pero falta una pasada completa post-fix (generar IA → ver modal → descargar PDF → enviar correo) de punta a punta.
-- El sitio `vendedorpro-coach.netlify.app` quedó fuera del flujo de `ACTUALIZAR_GITHUB.bat` (vive en `_utilidades/`, no se sincroniza a `E:\git-sync\`) — si se quiere versionar ese código en GitHub también, hay que decidir si entra al mismo repo o uno aparte.
+- Validar en producción real (con datos reales, no el payload de prueba) que el botón "Generar consejos con IA" funciona end-to-end desde panel-admin.html en el navegador del dueño, ahora con candidatos reales — el fix de CSP fue confirmado por consola real, pero falta una pasada completa post-fix (generar IA → ver modal con productos reales → descargar PDF → enviar correo) de punta a punta.
+- El sitio `vendedorpro-coach.netlify.app` (carpeta `_utilidades/vendedorpro-coach`) no tiene repo git propio — queda fuera del flujo de `ACTUALIZAR_GITHUB.bat`. Pendiente decidir si se versiona en GitHub (mismo repo o uno aparte).
 - Capa gratis de Gemini tiene límites de requests/día — si el uso real de VendedorPRO los supera, evaluar plan de pago de Google AI o cachear resultados por vendedor+período en Firestore para no regenerar si no cambiaron los datos.
+- Notas de Crédito (devoluciones) del vendedor aún NO se envían a la IA — solo se usan para el total del equipo en el dashboard. Diseño del reporte interactivo (mockup HTML con logo+gráfico de horas+tabla Excel) quedó aprobado por el dueño pero solo implementado parcialmente (candidatos reales + fix benchmark); faltan: gráfico de ventas por hora dentro del modal real, tabla comparativa Factura/Boleta con bordes en el render real, y el diagnóstico de NC.
 
 ### Próxima sesión debe empezar por
-- Probar el flujo completo de VendedorPRO en el navegador real: Generar IA → revisar que se vea bien → Descargar PDF (confirmar que el pie de página ya no se corta) → Enviar por correo (confirmar que pega bien con Ctrl+V en Outlook/Gmail con el formato HTML real, no texto plano).
+- Probar el flujo completo de VendedorPRO en el navegador real con login: Generar IA → confirmar que los productos citados son reales (código+precio) → Descargar PDF → Enviar por correo.
