@@ -9490,7 +9490,10 @@ function _vadmVPFiltrar(){
   var datos=_vadmLineas.filter(function(r){
     if(r.bodegaCorta==='EXH') return false;
     var d=parseFR(r.fecha||'');
-    return d && d>=dDesde && d<=dHasta;
+    if(!(d && d>=dDesde && d<=dHasta)) return false;
+    if(_vadmVendSel.length>0 && !_vadmVendSel.some(function(v){ return r.gmailUser===v||r.vendedor===v||r.vendedorErp===v; })) return false;
+    if(_vadmBodSel.length>0 && _vadmBodSel.indexOf(r.bodegaCorta)<0) return false;
+    return true;
   });
   return {datos:datos, desde:desde, hasta:hasta};
 }
@@ -12603,6 +12606,7 @@ function vadmReRenderTabActivo(){
   else if(id==='marcas')   setTimeout(vadmRenderMarcas, 0);
   else if(id==='comparativa') vadmRenderComparativa();
   else if(id==='vendrank') setTimeout(vadmRenderVendRank, 0);
+  else if(id==='vendpro') setTimeout(vadmRenderVendPro, 0);
   else if(id==='marcavend') setTimeout(vadmRenderMarcaVend, 0);
   else if(id==='clientes') setTimeout(vadmRenderClientes, 0);
   else if(id==='tipodoc')  vadmRenderTipoDoc();

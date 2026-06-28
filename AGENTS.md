@@ -1143,6 +1143,12 @@ Contiene todo lo que NO es flujo activo:
 - **Fix bug real en PDF**: el pie de página (`_vadmVPArmarPDF`) se escribía en posición fija `y=280mm`, pero el formato "letter" mide 279.4mm de alto — esa línea quedaba fuera del área imprimible. Corregido para usar la posición real del cursor con tope de seguridad en 273mm.
 - Deploy + commit `9ad98e4` con todos los fixes de este bloque.
 
+### Fix 2026-06-27 (sesión 2) — VendedorPRO no respetaba filtros globales de vendedor/bodega
+- **Bug**: `_vadmVPFiltrar()` solo filtraba por fecha, ignorando los 2 selects de vendedor de la barra global (`VENTAEM` y `Ver todos`, comparten `_vadmVendSel`) y el de bodega (`_vadmBodSel`). Además `vadmReRenderTabActivo()` no tenía rama para `vendpro`, así que cambiar esos filtros no refrescaba la pestaña.
+- **Fix**: agregado el mismo patrón de filtro usado en otras pestañas (`_vadmVendSel`/`_vadmBodSel`) dentro de `_vadmVPFiltrar()`, y agregada la rama `else if(id==='vendpro') setTimeout(vadmRenderVendPro, 0);` en `vadmReRenderTabActivo()`.
+- Validado con datos mock vía `preview_eval` (sin login real, Firebase Auth bloquea `localhost:8799` por dominio no autorizado — esperado): combinaciones vendedor solo, vendedor+bodega, sin filtro, todas correctas.
+- Deploy `firebase deploy --only hosting` ✅. Commit pendiente.
+
 ### Pendiente
 - Validar en producción real (con datos reales, no el payload de prueba) que el botón "Generar consejos con IA" funciona end-to-end desde panel-admin.html en el navegador del dueño — el fix de CSP fue confirmado por consola real, pero falta una pasada completa post-fix (generar IA → ver modal → descargar PDF → enviar correo) de punta a punta.
 - El sitio `vendedorpro-coach.netlify.app` quedó fuera del flujo de `ACTUALIZAR_GITHUB.bat` (vive en `_utilidades/`, no se sincroniza a `E:\git-sync\`) — si se quiere versionar ese código en GitHub también, hay que decidir si entra al mismo repo o uno aparte.
