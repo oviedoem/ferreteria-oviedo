@@ -3370,10 +3370,14 @@ Todo desde tu celular, gratis, sin apps que descargar.
             <th style="padding:7px 12px;text-align:left">Código</th>
             <th style="padding:7px 12px;text-align:left">Descripción</th>
             <th style="padding:7px 12px;text-align:left">Marca</th>
-            <th style="padding:7px 12px;text-align:right">PEM</th>
-            <th style="padding:7px 12px;text-align:right">SEM</th>
-            <th style="padding:7px 12px;text-align:right">CEM</th>
-            <th style="padding:7px 12px;text-align:right">MEM</th>
+            <th style="padding:7px 12px;text-align:right;background:#14532d">PEM</th>
+            <th style="padding:7px 12px;text-align:right;background:#0f4c75">SEM</th>
+            <th style="padding:7px 12px;text-align:right;background:#14532d">CEM</th>
+            <th style="padding:7px 12px;text-align:right;background:#0f4c75">MEM</th>
+            <th style="padding:7px 12px;text-align:right;background:#374151">IEM</th>
+            <th style="padding:7px 12px;text-align:right;background:#374151">TEM</th>
+            <th style="padding:7px 12px;text-align:right;background:#374151">RCE</th>
+            <th style="padding:7px 12px;text-align:right;background:#92400e">CD</th>
             <th style="padding:7px 12px;text-align:right">Total Comercial</th>
           </tr>
         </thead>
@@ -3408,7 +3412,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
             <span id="csFCosto" style="font-weight:700;color:#1a1d3a"></span>
             <span style="color:#9ca3af;font-size:12px">Precio c/IVA</span>
             <span id="csFPrecio" style="font-weight:700;color:#059669"></span>
-            <span style="color:#9ca3af;font-size:12px">Markup</span>
+            <span style="color:#9ca3af;font-size:12px">Margen ERP (ventas reales)</span>
             <span id="csFMarkup" style="font-weight:700"></span>
           </div>
         </div>
@@ -3637,7 +3641,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.35<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.36<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -17745,6 +17749,10 @@ function vadmBuscarStock(){
         '<td style="padding:6px 12px;text-align:right">'+p.sem+'</td>'+
         '<td style="padding:6px 12px;text-align:right">'+p.cem+'</td>'+
         '<td style="padding:6px 12px;text-align:right">'+p.mem+'</td>'+
+        '<td style="padding:6px 12px;text-align:right;color:#6b7280">'+p.iem+'</td>'+
+        '<td style="padding:6px 12px;text-align:right;color:#6b7280">'+p.tem+'</td>'+
+        '<td style="padding:6px 12px;text-align:right;color:#6b7280">'+p.rce+'</td>'+
+        '<td style="padding:6px 12px;text-align:right;'+(p.cd>0?'color:#92400e;font-weight:700':'color:#9ca3af')+'">'+p.cd+'</td>'+
         '<td style="padding:6px 12px;text-align:right;'+totalCol+'">'+p.stock+'</td>'+
       '</tr>';
     }).join('');
@@ -17771,10 +17779,17 @@ function vadmRenderStockConsulta(cod){
   document.getElementById('csFCosto').textContent  = p.costo  > 0 ? venAdmFmt(p.costo)  : '—';
   document.getElementById('csFPrecio').textContent = p.precio > 0 ? venAdmFmt(p.precio) : '—';
 
-  var markupVal = (p.costo > 0 && p.precio > 0) ? p.precio / p.costo : 0;
+  // Margen real del ERP: promedio de "Margen (%)" tal como lo reporta el ERP en cada venta real
+  // de este código (campo r.margenPct, mismo dato que ya usa el resto del panel) — NO se calcula
+  // un markup propio (precio/costo) porque el ERP no expone ese concepto a nivel de catálogo,
+  // solo a nivel de transacción de venta. Ver conversación 2026-06-28: "saca lógica markup, debe ser igual que el ERP".
+  var ventasCod = (_vadmLineas||[]).filter(function(r){ return r.codigo===cod && r.margenPct; });
+  var margenPctProm = ventasCod.length
+    ? ventasCod.reduce(function(s,r){ return s+r.margenPct; },0) / ventasCod.length
+    : 0;
   var markupEl  = document.getElementById('csFMarkup');
-  markupEl.textContent = markupVal > 0 ? markupVal.toFixed(2) + 'x' : '—';
-  markupEl.style.color = markupVal > 5 ? '#dc2626' : markupVal > 3 ? '#d97706' : '#374151';
+  markupEl.textContent = ventasCod.length ? margenPctProm.toFixed(1)+'% ('+ventasCod.length+' ventas)' : '— (sin ventas registradas)';
+  markupEl.style.color = margenPctProm>25 ? '#059669' : margenPctProm>10 ? '#d97706' : '#dc2626';
 
   var totalDisp = 0, totalFis = 0, totalTrans = 0, totalPed = 0;
   var pedMap = _isbPedidosComprometidos[cod] || {};  // best-effort: poblado si Informe Stock fue cargado

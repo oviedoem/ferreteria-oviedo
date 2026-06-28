@@ -1223,3 +1223,11 @@ Contiene todo lo que NO es flujo activo:
   - `window.tcdEnviarEmail()` / `window.tcdExportExcel()` / `window.tcdExportPdf()`: HTML con `_emailHdr`/`_emailTbl` (helpers ya existentes, mismo estilo visual que el resto de reportes), Excel vía SheetJS (`XLSX.utils.aoa_to_sheet`), PDF vía jsPDF+autoTable (orientación landscape, fila roja si `solicitar>cd`).
   - `exportarTraspasoCDCsv()` eliminada por completo (reemplazada).
 - V37.35.
+
+### Fix 2026-06-28 (sesión 3g) — Consulta de Stock: todas las bodegas + margen real del ERP (sin markup propio)
+- **Pedido del dueño**: "debe tener todas las bodegas que trabajamos, incluyendo todos los datos de cada código en columnas, saca lógica markup, debe ser igual que el ERP, busca el módulo en memorias o archivos".
+- **Investigación**: `_csBodegas` (ficha detalle, abajo) ya tenía las 8 bodegas (PEM/SEM/CEM/MEM/IEM/TEM/RCE/CD) desde que se creó el tab — lo que faltaba era la **tabla de resultados de búsqueda** (arriba), que solo mostraba PEM/SEM/CEM/MEM/Total Comercial. Sobre el markup: confirmado contra `erp-reportes-mapeados` (memoria) y `descargar_erp.py`/`descargar_ventas_erp.py` que el ERP **no tiene un campo de markup a nivel de catálogo** (precio/costo) — el único margen real del ERP es transaccional, vía las columnas `Margen`/`Margen(%)` que trae cada venta (`descargar_ventas_erp.py` líneas 205/252, calculado por el pipeline desde `margen`/`neto` reales de cada documento ERP).
+- **Fix** (`panel-admin.html`):
+  - Tabla de resultados de búsqueda (`#csTablaResult`/`vadmBuscarStock()`): agregadas columnas IEM/TEM/RCE/CD (antes solo PEM/SEM/CEM/MEM/Total Comercial) — ahora muestra las 8 bodegas igual que la ficha de abajo.
+  - Campo "Markup" (calculado como `precio/costo`, invención del panel sin respaldo en el ERP) reemplazado por **"Margen ERP (ventas reales)"**: promedio de `margenPct` de las ventas reales de ese código en `_vadmLineas` — mismo campo que ya usa el resto del panel (`vadmRenderStockConsulta()`), no un cálculo nuevo. Sin ventas registradas para el código → muestra "— (sin ventas registradas)" en vez de un número inventado.
+- V37.36.
