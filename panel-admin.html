@@ -9499,6 +9499,8 @@ function _vadmVPFiltrar(){
 }
 
 function vadmRenderVendPro(){
+  _vadmVPCoCompraIdx=null; _vadmVPDocsConCodigo=null; // invalida caché: _vadmLineas pudo cambiar desde el último render
+  if(!_vadmStockMap) _vadmCargarStockMap(vadmRenderVendPro); // candidatos reales necesitan el catálogo; reintenta cuando cargue
   var f=_vadmVPFiltrar();
   var st=document.getElementById('vadmVPStatus'), bd=document.getElementById('vadmVPBody');
   if(!f){ st.textContent='⚠️ Selecciona ambas fechas'; st.style.color='#d97706'; return; }
@@ -9611,24 +9613,86 @@ function _vadmVPBenchmarkEquipo(){
   return {
     ticketFactura: Math.round(avg(function(x){return x.ticketFactura;})),
     ticketBoleta:  Math.round(avg(function(x){return x.ticketBoleta;})),
+    margenPctFactura: +avg(function(x){return x.margenPctFactura;}).toFixed(1),
     margenPctBoleta: +avg(function(x){return x.margenPctBoleta;}).toFixed(1),
+    lineasPorBoletaFactura: +avg(function(x){return x.lineasPorBoletaFactura;}).toFixed(2),
     lineasPorBoletaBoleta: +avg(function(x){return x.lineasPorBoletaBoleta;}).toFixed(2),
     pctFactura: +avg(function(x){return x.pctFactura;}).toFixed(1)
   };
+}
+
+// ── Co-compra real: qué códigos aparecen en el mismo N° de documento, en toda la venta del equipo ──
+// Reemplaza la práctica anterior de dejar que la IA "estime" productos complementarios típicos de
+// ferretería (terminaba inventando productos que Oviedo no vende, ej. "cutter profesional").
+var _vadmVPCoCompraIdx = null;     // {codigo: {otroCodigo: vecesJunto}}
+var _vadmVPDocsConCodigo = null;   // {codigo: totalDocumentosQueLoLlevan}
+
+function _vadmVPBuildCoCompraIdx(){
+  var porDoc={};
+  _vadmLineas.forEach(function(r){
+    if(!r.numero || !r.codigo) return;
+    (porDoc[r.numero]=porDoc[r.numero]||[]).push(r.codigo);
+  });
+  var idx={}, docsCon={};
+  Object.keys(porDoc).forEach(function(num){
+    var uniq=porDoc[num].filter(function(c,i){ return porDoc[num].indexOf(c)===i; });
+    uniq.forEach(function(c1){
+      docsCon[c1]=(docsCon[c1]||0)+1;
+      uniq.forEach(function(c2){
+        if(c1===c2) return;
+        idx[c1]=idx[c1]||{};
+        idx[c1][c2]=(idx[c1][c2]||0)+1;
+      });
+    });
+  });
+  _vadmVPCoCompraIdx=idx; _vadmVPDocsConCodigo=docsCon;
+}
+
+// Devuelve candidatos reales (código+descripción+precio del catálogo) para complementar `codigos`,
+// rankeados por frecuencia de co-compra real. Descarta cualquier código sin match en el catálogo
+// (ej. líneas de "FLETE") para que la IA nunca reciba un candidato que no se pueda verificar.
+function _vadmVPCandidatosReales(codigos, max){
+  if(!_vadmVPCoCompraIdx) _vadmVPBuildCoCompraIdx();
+  var acumulado={};
+  codigos.forEach(function(c1){
+    var co=_vadmVPCoCompraIdx[c1]||{};
+    Object.keys(co).forEach(function(c2){
+      if(codigos.indexOf(c2)>=0) return; // ya viene en el mismo documento
+      acumulado[c2]=(acumulado[c2]||0)+co[c2];
+    });
+  });
+  return Object.keys(acumulado)
+    .sort(function(a,b){ return acumulado[b]-acumulado[a]; })
+    .map(function(c){
+      var cat=_vadmStockMap && _vadmStockMap[c];
+      if(!cat || !cat.desc) return null; // sin match real en catálogo -> se descarta, nunca se inventa
+      return {
+        codigo:c, descripcion:cat.desc, precioiva:cat.precio,
+        vecesJunto:acumulado[c],
+        totalDocsBase: codigos.reduce(function(s,c1){ return Math.max(s, _vadmVPDocsConCodigo[c1]||0); }, 0)
+      };
+    })
+    .filter(Boolean)
+    .slice(0, max||6);
 }
 
 function _vadmVPEjemplos(v){
   var porDoc={};
   (v.lineasAll||[]).forEach(function(r){
     var k=r.numero||('sin-'+r.documento+'-'+Math.random());
-    if(!porDoc[k]) porDoc[k]={numero:r.numero, cliente:r.cliente||'', documento:r.documento, items:[], neto:0};
+    if(!porDoc[k]) porDoc[k]={numero:r.numero, cliente:r.cliente||'', documento:r.documento, items:[], codigos:[], neto:0};
     porDoc[k].items.push(r.descripcion||r.codigo||'?');
+    if(r.codigo) porDoc[k].codigos.push(r.codigo);
     porDoc[k].neto += r.valorNeto||0;
   });
   var docs=Object.values(porDoc).filter(function(d){ return d.items.length>=1 && d.items.length<=3 && d.neto>0; });
   docs.sort(function(a,b){ return b.neto-a.neto; });
   return docs.slice(0,6).map(function(d){
-    return { boleta:d.numero, canal:(vadmFPago(d.documento).label==='Factura'?'FACTURA':'BOLETA'), cliente:d.cliente, vendio:d.items.join(', ') };
+    return {
+      boleta:d.numero, canal:(vadmFPago(d.documento).label==='Factura'?'FACTURA':'BOLETA'),
+      cliente:d.cliente, vendio:d.items.join(', '),
+      candidatosReales: d.codigos.length ? _vadmVPCandidatosReales(d.codigos, 6) : []
+    };
   });
 }
 
@@ -9646,23 +9710,31 @@ function _vadmVPPayload(v){
   };
 }
 
+function _vadmVPNl2br(s){ return venAdmEsc(s||'').replace(/\n/g,'<br>'); } // la IA a veces devuelve listas con \n; sin esto, HTML las colapsa en un solo bloque
+
 function _vadmVPRenderIA(ia){
   var fort=(ia.fortalezas||[]).map(function(f){ return '<li style="margin-bottom:4px">'+venAdmEsc(f)+'</li>'; }).join('');
   var cons=(ia.consejos||[]).map(function(c){ return '<li style="margin-bottom:6px">'+venAdmEsc(c)+'</li>'; }).join('');
   var ejs=(ia.ejemplos||[]).map(function(e){
+    var cand=(e.productosUsados||[]).map(function(p){
+      return '<div style="display:flex;justify-content:space-between;font-size:11px;background:#fff;border:1px solid #fef3c7;border-radius:6px;padding:4px 7px;margin-top:3px">'+
+        '<span><b>'+venAdmEsc(p.codigo||'')+'</b> · '+venAdmEsc(p.descripcion||'')+'</span>'+
+        '<span style="color:#92400e;font-weight:700;white-space:nowrap;margin-left:8px">'+venAdmFmt(p.precioiva||0)+'</span></div>';
+    }).join('');
     return '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:8px">'+
       '<div style="font-weight:700;font-size:11px;color:#92400e">'+venAdmEsc(e.canal||'')+' · N° '+venAdmEsc(String(e.boleta||''))+' · '+venAdmEsc(e.cliente||'')+'</div>'+
       '<div style="font-size:11px;margin-top:4px"><b>Vendió:</b> '+venAdmEsc(e.vendio||'')+'</div>'+
-      '<div style="font-size:11px;margin-top:4px"><b>Pudo sumar:</b> '+venAdmEsc(e.recomendacion||'')+'</div>'+
+      '<div style="font-size:11px;margin-top:4px;line-height:1.45"><b>Pudo sumar:</b> '+_vadmVPNl2br(e.recomendacion)+'</div>'+
+      cand+
     '</div>';
   }).join('');
   return '<div style="font-size:12px;font-weight:700;margin-bottom:4px">🤖 Diagnóstico IA</div>'+
-    '<div style="font-size:12px;line-height:1.5;margin-bottom:10px">'+venAdmEsc(ia.resumen||'')+'</div>'+
+    '<div style="font-size:12px;line-height:1.5;margin-bottom:10px">'+_vadmVPNl2br(ia.resumen)+'</div>'+
     (fort? '<div style="font-size:12px;font-weight:700;margin-bottom:4px">✅ Lo que está haciendo bien</div><ul style="font-size:12px;line-height:1.5;padding-left:18px;margin-bottom:10px">'+fort+'</ul>' : '')+
-    (ia.oportunidad_principal? '<div style="background:#fef2f2;border-left:3px solid #DA0000;padding:8px 10px;font-size:12px;margin-bottom:10px"><b>Tu mayor oportunidad —</b> '+venAdmEsc(ia.oportunidad_principal)+'</div>' : '')+
+    (ia.oportunidad_principal? '<div style="background:#fef2f2;border-left:3px solid #DA0000;padding:8px 10px;font-size:12px;margin-bottom:10px"><b>Tu mayor oportunidad —</b> '+_vadmVPNl2br(ia.oportunidad_principal)+'</div>' : '')+
     (ejs? '<div style="font-size:12px;font-weight:700;margin-bottom:6px">📋 Ejemplos de su propia venta</div>'+ejs : '')+
     (cons? '<div style="font-size:12px;font-weight:700;margin-bottom:4px">💡 Consejos para esta semana</div><ul style="font-size:12px;line-height:1.6;padding-left:18px;margin-bottom:10px">'+cons+'</ul>' : '')+
-    (ia.meta? '<div style="background:#eef2ff;border-left:3px solid #1e1b4b;padding:8px 10px;font-size:12px"><b>Meta sugerida —</b> '+venAdmEsc(ia.meta)+'</div>' : '');
+    (ia.meta? '<div style="background:#eef2ff;border-left:3px solid #1e1b4b;padding:8px 10px;font-size:12px"><b>Meta sugerida —</b> '+_vadmVPNl2br(ia.meta)+'</div>' : '');
 }
 
 function vadmVPGenerarIA(nombreEnc){

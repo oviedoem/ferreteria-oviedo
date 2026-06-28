@@ -49,7 +49,8 @@ Un prompt = una función tocada. Si el fix requiere 2 funciones → dos prompts 
 1. `firebase deploy` si hay archivos HTML/JS/JSON más nuevos que el último deploy
 2. `ACTUALIZAR_GITHUB.bat` para commitear
 3. Actualizar versión en AGENTS.md
-4. Guardar `estado-sesion-YYYYMMDD.md` en memory/ (ver formato abajo)
+4. Actualizar el badge visual `.version-badge` en panel-admin.html (texto `AG ● VXX.XX ● DD-MM-YYYY`, buscar `version-badge` en el HTML) — **SOLO en este paso de cierre de sesión, nunca después de cada mejora/fix individual dentro de la sesión**
+5. Guardar `estado-sesion-YYYYMMDD.md` en memory/ (ver formato abajo)
 
 ### Formato estado-sesion (OBLIGATORIO al cerrar sesión con cambios)
 ```
