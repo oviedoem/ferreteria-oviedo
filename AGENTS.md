@@ -1210,3 +1210,16 @@ Contiene todo lo que NO es flujo activo:
 - **Efecto del bug**: para el mismo código y la misma ventana de 30/60 días, Quiebre incluía las ventas del día de corte completo (desde 00:00) pero Traspasos CD las excluía si ocurrían antes de la hora actual de ese día — los números de "Ranking 1 mes"/"Ranking 2 meses" podían diferir de los de Quiebre (`cob30`/`cob60`) en el mismo código.
 - **Fix**: agregado `c2m.setHours(0,0,0,0)` y `c1m.setHours(0,0,0,0)` en `_tcdCalcular()`, igual patrón que el resto del panel.
 - V37.34.
+
+### Fix 2026-06-28 (sesión 3f) — Traspasos CD: exportar en PDF/Excel/HTML + correo (igual modelo que el resto del panel)
+- **Pedido del dueño**: "exportar en csv no sirve, debe ser en pdf, excel y html... copia mismo modelo [de Solicitud Stock], debe descargar lo que ve el usuario en tiempo real".
+- **Investigación**: Solicitud Stock tiene su propio modal bespoke (`#reqEmailModal`) con copiar HTML + mailto, pero el patrón más completo y reutilizable del panel es el modal genérico `#vadmEmailModal` (usado por Quiebre/Sobrestock/Tránsito/Merma/Despachos) que ya soporta Copiar HTML + Descargar .html + Descargar Excel, alimentado por `_vadmEmailInventarioData={tab:'...', items:[...]}`. PDF no existía en ese modal genérico (solo VendedorPRO lo tenía, con su propio jsPDF). jsPDF+autoTable y SheetJS XLSX ya están cargados globalmente en el `<head>`.
+- **Decisión de arquitectura**: en vez de enganchar Traspasos CD al dispatcher global `vadmAbrirEmailModal()`/`_vadmTabActiva()` (que depende de la convención `.vsec-` de los tabs de Ventas y no aplica a los tabs `tab-pane` de Adquisiciones), se creó un flujo autocontenido: botón local en el tab (`tcdEnviarEmail()`) que llena `_vadmEmailInventarioData` y abre el modal genérico directamente — el resto de los botones del modal (Excel, PDF, Copiar HTML, Descargar .html) lo detectan por `_vadmEmailInventarioData.tab==='traspasocd'` sin tocar el dispatcher de Ventas.
+- **Cambios (`panel-admin.html`)**:
+  - Botón "Exportar CSV" reemplazado por "📧 Enviar / Exportar (PDF · Excel · HTML)" → `tcdEnviarEmail()`.
+  - Nuevo botón "📄 Descargar PDF" agregado al modal genérico `#vadmEmailModal` (antes solo tenía Copiar HTML/Descargar .html/Descargar Excel) → dispatcher `vadmDescargarPdf()` (genérico, hoy solo implementado para `traspasocd`; otras pestañas muestran "PDF no disponible para esta pestaña todavía", no rompe nada existente).
+  - `_vadmExcelInventario()`: nueva rama `if(inv.tab==='traspasocd')` → `window.tcdExportExcel()`.
+  - Nueva función `_tcdLiveRows()`: lee `_tcdRows` + el valor ACTUAL de cada input `tcdSol_<i>` en pantalla — los 3 formatos de export reflejan exactamente lo que el dueño ve/edita en el momento, no el valor sugerido original.
+  - `window.tcdEnviarEmail()` / `window.tcdExportExcel()` / `window.tcdExportPdf()`: HTML con `_emailHdr`/`_emailTbl` (helpers ya existentes, mismo estilo visual que el resto de reportes), Excel vía SheetJS (`XLSX.utils.aoa_to_sheet`), PDF vía jsPDF+autoTable (orientación landscape, fila roja si `solicitar>cd`).
+  - `exportarTraspasoCDCsv()` eliminada por completo (reemplazada).
+- V37.35.

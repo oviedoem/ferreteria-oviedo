@@ -3562,7 +3562,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
         </select>
       </label>
       <button onclick="renderTraspasoCD(true)" style="background:#1a1d3a;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔄 Recalcular</button>
-      <button onclick="exportarTraspasoCDCsv()" style="background:#059669;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">📊 Exportar CSV</button>
+      <button onclick="tcdEnviarEmail()" style="background:#059669;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">📧 Enviar / Exportar (PDF · Excel · HTML)</button>
     </div>
 
     <div id="tcdResumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
@@ -3637,7 +3637,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.34<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.35<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -11758,6 +11758,7 @@ function _vadmExcelInventario(inv){
     '<Style ss:ID="tot"><Alignment ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/></Style>'+
     '<Style ss:ID="totn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>';
   if(inv.tab==='despachos'){ if(window.dpExportExcel) window.dpExportExcel(); return; }
+  if(inv.tab==='traspasocd'){ if(window.tcdExportExcel) window.tcdExportExcel(); return; }
   var rows=[], wsName='';
   // Extra styles for per-bodega columns
   XS+='<Style ss:ID="hG"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#14532D" ss:Pattern="Solid"/></Style>'+
@@ -16110,6 +16111,14 @@ function vadmDescargarHtml(){
   document.getElementById('vadmEmailFeedback').textContent='✅ Descargado: '+fname;
 }
 
+// ── PDF genérico del modal de correo — solo implementado por pestaña a medida que se necesita ──
+function vadmDescargarPdf(){
+  if(_vadmEmailInventarioData && _vadmEmailInventarioData.tab==='traspasocd' && window.tcdExportPdf){
+    window.tcdExportPdf(); return;
+  }
+  if(window.toast) toast('PDF no disponible para esta pestaña todavía','warn');
+}
+
 function _vadmEmailFullDoc(cuerpo){
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reporte Ventas El Manzano</title></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif">'+cuerpo+'</body></html>';
 }
@@ -17078,26 +17087,109 @@ function _tcdRenderTabla(rows){
   }).join('');
 }
 
-function exportarTraspasoCDCsv(){
-  if(!_tcdRows || !_tcdRows.length){ toast('Sin datos para exportar','warn'); return; }
-  var rows = [['Código','Descripción','PEM','SEM','RCE','CD','Ranking principal','Ranking 2 meses','Ranking 1 mes','Embalaje','Solicitar']];
-  _tcdRows.forEach(function(r,i){
+// Lee _tcdRows + el valor ACTUAL de cada input "Solicitar" en pantalla (incluye ediciones
+// manuales del dueño) — usado por email/Excel/PDF para que los 3 reflejen lo que se ve en tiempo real.
+function _tcdLiveRows(){
+  if(!_tcdRows) return [];
+  return _tcdRows.map(function(r,i){
     var inp = document.getElementById('tcdSol_'+i);
     var solicitar = inp ? (parseInt(inp.value,10)||0) : r.sugerido;
-    rows.push([r.codigo, r.desc, r.pem, r.sem, r.rce, r.cd, r.rankPrincipal, r.rank2m, r.rank1m, 'E('+r.embalaje+')', solicitar]);
+    return {codigo:r.codigo, desc:r.desc, pem:r.pem, sem:r.sem, rce:r.rce, cd:r.cd,
+      rankPrincipal:r.rankPrincipal, rank2m:r.rank2m, rank1m:r.rank1m, embalaje:r.embalaje, solicitar:solicitar};
   });
-  var csv = rows.map(function(r){
-    return r.map(function(x){ return '"'+String(x).replace(/"/g,'""')+'"'; }).join(',');
-  }).join('\n');
-  var blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href=url;
-  a.download='Traspasos_CD_'+new Date().toLocaleDateString('es-CL').replace(/\//g,'-')+'.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('🚚 Traspasos CD exportado a CSV','ok');
 }
+
+function _tcdHtmlReporte(rows){
+  var totalSol = rows.reduce(function(s,r){ return s+r.solicitar; }, 0);
+  var insuf = rows.filter(function(r){ return r.solicitar>r.cd; }).length;
+  var trs = rows.map(function(r,i){
+    var bg = i%2===0?'#fff':'#f9fafb';
+    var insufRow = r.solicitar>r.cd;
+    return '<tr style="background:'+bg+'">'+
+      '<td style="padding:6px 9px;font-size:11px;font-family:monospace;border:1px solid #e5e7eb">'+_emailEsc(r.codigo)+'</td>'+
+      '<td style="padding:6px 9px;font-size:11px;border:1px solid #e5e7eb">'+_emailEsc((r.desc||'').slice(0,50))+'</td>'+
+      '<td style="padding:6px 9px;font-size:11px;text-align:right;border:1px solid #e5e7eb">'+r.pem+'</td>'+
+      '<td style="padding:6px 9px;font-size:11px;text-align:right;border:1px solid #e5e7eb">'+r.sem+'</td>'+
+      '<td style="padding:6px 9px;font-size:11px;text-align:right;border:1px solid #e5e7eb;'+(insufRow?'color:#dc2626;font-weight:700':'')+'">'+r.cd+(insufRow?' ⚠️':'')+'</td>'+
+      '<td style="padding:6px 9px;font-size:11px;text-align:right;border:1px solid #e5e7eb">'+r.rankPrincipal+'</td>'+
+      '<td style="padding:6px 9px;font-size:11px;text-align:right;border:1px solid #e5e7eb">E('+r.embalaje+')</td>'+
+      '<td style="padding:6px 9px;font-size:11px;text-align:right;border:1px solid #e5e7eb;background:#fefce8;font-weight:700">'+r.solicitar+'</td>'+
+    '</tr>';
+  }).join('');
+  return _emailHdr('#92400e','🚚','Traspasos CD → PEM/SEM — El Manzano','Ranking de ventas + embalaje cerrado',[
+    ['Códigos',rows.length,'#92400e'],
+    ['Unidades a solicitar',totalSol.toLocaleString('es-CL'),'#166534'],
+    ['CD insuficiente',insuf,insuf?'#dc2626':'#166534']
+  ])+_emailTbl('Detalle de traspasos','#92400e',
+    [['Código',false],['Descripción',false],['PEM',true],['SEM',true],['CD',true],['Ranking',true],['Embalaje',true],['Solicitar',true]],trs)+'</div>';
+}
+
+window.tcdEnviarEmail = function(){
+  var rows = _tcdLiveRows();
+  if(!rows.length){ if(window.toast) toast('Sin datos para enviar — presiona Recalcular primero','warn'); return; }
+  _vadmEmailInventarioData = {tab:'traspasocd', items:rows};
+  var fechaHoy = new Date().toLocaleDateString('es-CL');
+  var asunto = 'Traspasos CD → PEM/SEM El Manzano — '+fechaHoy;
+  if(document.getElementById('vadmEmailAsunto')) document.getElementById('vadmEmailAsunto').value = asunto;
+  var lbl = document.getElementById('vadmEmailTabLabel');
+  if(lbl) lbl.textContent = 'Reporte: 🚚 Traspasos CD → PEM/SEM · '+rows.length+' códigos';
+  var html = _tcdHtmlReporte(rows);
+  var prev = document.getElementById('vadmEmailPreview');
+  if(prev) prev.innerHTML = html;
+  var htmlArea = document.getElementById('vadmEmailHtmlArea');
+  if(htmlArea) htmlArea.value = _vadmEmailFullDoc(html);
+  if(document.getElementById('vadmEmailFeedback')) document.getElementById('vadmEmailFeedback').textContent = '';
+  if(window.vadmCambiarTabEmail) vadmCambiarTabEmail('vista');
+  var modal = document.getElementById('vadmEmailModal');
+  if(modal) modal.style.display = 'flex';
+};
+
+window.tcdExportExcel = function(){
+  var rows = _tcdLiveRows();
+  if(!rows.length){ if(window.toast) toast('Sin datos para exportar','warn'); return; }
+  if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
+  var headers = ['Código','Descripción','PEM','SEM','RCE','CD','Ranking principal','Ranking 2 meses','Ranking 1 mes','Embalaje','Solicitar'];
+  var data = [headers];
+  rows.forEach(function(r){
+    data.push([r.codigo, r.desc, r.pem, r.sem, r.rce, r.cd, r.rankPrincipal, r.rank2m, r.rank1m, 'E('+r.embalaje+')', r.solicitar]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:12},{wch:45},{wch:8},{wch:8},{wch:8},{wch:8},{wch:14},{wch:14},{wch:12},{wch:10},{wch:11}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Traspasos CD');
+  XLSX.writeFile(wb, 'TraspasosCD_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  if(document.getElementById('vadmEmailFeedback')) document.getElementById('vadmEmailFeedback').textContent='✅ Excel descargado';
+  if(window.toast) toast('📊 Excel exportado','ok');
+};
+
+window.tcdExportPdf = function(){
+  var rows = _tcdLiveRows();
+  if(!rows.length){ if(window.toast) toast('Sin datos para exportar','warn'); return; }
+  if(typeof window.jspdf==='undefined'){ if(window.toast) toast('Librería PDF no disponible','err'); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({orientation:'landscape', unit:'mm', format:'letter'});
+  doc.setFontSize(13); doc.setTextColor(146,64,14);
+  doc.text('Traspasos CD → PEM/SEM — El Manzano', 14, 14);
+  doc.setFontSize(9); doc.setTextColor(100,100,100);
+  doc.text(new Date().toLocaleDateString('es-CL')+' · '+rows.length+' códigos', 14, 20);
+  doc.autoTable({
+    startY: 25,
+    head: [['Código','Descripción','PEM','SEM','RCE','CD','Ranking','Embalaje','Solicitar']],
+    body: rows.map(function(r){
+      return [r.codigo, (r.desc||'').slice(0,55), r.pem, r.sem, r.rce, r.cd, r.rankPrincipal, 'E('+r.embalaje+')', r.solicitar];
+    }),
+    styles:{fontSize:8}, headStyles:{fillColor:[146,64,14]},
+    didParseCell:function(d){
+      if(d.section==='body' && d.column.index===8){
+        var row = rows[d.row.index];
+        if(row && row.solicitar>row.cd){ d.cell.styles.textColor=[220,38,38]; d.cell.styles.fontStyle='bold'; }
+      }
+    }
+  });
+  doc.save('TraspasosCD_'+new Date().toISOString().slice(0,10)+'.pdf');
+  if(document.getElementById('vadmEmailFeedback')) document.getElementById('vadmEmailFeedback').textContent='✅ PDF descargado';
+  if(window.toast) toast('📄 PDF exportado','ok');
+};
 
 function renderReqStock(){
   var rd = document.getElementById('reqDesde');
@@ -18108,6 +18200,11 @@ Te respondemos a la brevedad.</div>
         style="display:flex;align-items:center;gap:6px;padding:9px 14px;background:#166534;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"
         title="Descarga todas las hojas en un solo Excel: Detalle, Vendedores, Productos, Clientes, Tipo Doc, Categorías">
         📊 Descargar Excel
+      </button>
+      <button onclick="vadmDescargarPdf()"
+        style="display:flex;align-items:center;gap:6px;padding:9px 14px;background:#991b1b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"
+        title="Descarga el reporte como PDF (disponible en Traspasos CD)">
+        📄 Descargar PDF
       </button>
       <div id="vadmEmailFeedback" style="font-size:12px;color:#059669;font-weight:600;flex:1;min-width:0"></div>
     </div>
