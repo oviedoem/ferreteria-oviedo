@@ -1253,3 +1253,9 @@ Contiene todo lo que NO es flujo activo:
   3. Eliminado el bloque duplicado de tiempo de tránsito que había quedado al final de la función desde el cambio anterior.
 - **Pendiente real**: si el error persiste después de este fix, el mensaje de error en pantalla (rojo, dentro de la tabla o el bloque de tránsito) dirá la causa exacta — pedir captura de ese mensaje en la próxima sesión si vuelve a pasar.
 - V37.38.
+
+### Fix 2026-06-28 (sesión 3j) — Causa real encontrada: ReferenceError `_isbPedidosComprometidos is not defined`
+- **El try/catch de V37.38 funcionó como diagnóstico**: mostró en pantalla "Error pintando stock por bodega: _isbPedidosComprometidos is not defined" — causa raíz real, no había que adivinar más.
+- **Causa**: `_isbPedidosComprometidos` se declara con `var` dentro de un IIFE `(function(){...})()` en la línea ~18422-18946 de `panel-admin.html`. Las variables `var` dentro de un IIFE quedan local a esa función — NO se filtran al scope global ni a `window`. `vadmRenderStockConsulta()`/`_csPintarFicha()` viven FUERA de ese IIFE (línea ~17796), así que nunca pudieron ver esa variable — **este bug ya existía antes de esta sesión** (la tabla "Stock por bodega" probablemente nunca tuvo datos de columna Pedido; antes sin try/catch fallaba en silencio y parecía solo recorte de pantalla, no un error real).
+- **Fix**: `var pedMap = (typeof _isbPedidosComprometidos!=='undefined' ? _isbPedidosComprometidos[cod] : null) || {};` — `typeof` es la única forma segura de comprobar un identificador que puede no estar declarado en el scope (referenciarlo directo lanza `ReferenceError` aunque sea dentro de un `||`).
+- V37.39.

@@ -3654,7 +3654,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.38<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.39<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -17868,7 +17868,9 @@ function _csPintarFicha(cod, p){
     var erpBod = (_csStockCritico && _csStockCritico[cod]) || {};
 
     var totalDisp = 0, totalFis = 0, totalTrans = 0, totalPed = 0, totalCostoTotal = 0;
-    var pedMap = _isbPedidosComprometidos[cod] || {};  // best-effort: poblado si Informe Stock fue cargado
+    // _isbPedidosComprometidos vive dentro de un IIFE (línea ~18422) y no es visible aquí —
+    // "typeof" es seguro contra identificadores no declarados, a diferencia de usarla directo.
+    var pedMap = (typeof _isbPedidosComprometidos!=='undefined' ? _isbPedidosComprometidos[cod] : null) || {};
     var rows = _csBodegas.map(function(b, idx){
       var disp   = p[b.key]  || 0;
       var fis    = p[b.key+'_bod'] || (disp + (b.trans ? (p[b.trans]||0) : 0));  // St_Bod si disponible
