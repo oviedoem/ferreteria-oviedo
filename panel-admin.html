@@ -3654,7 +3654,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.37<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.38<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -17828,91 +17828,102 @@ function _csPintarFicha(cod, p){
   markupEl.textContent = ventasCod.length ? margenPctProm.toFixed(1)+'% ('+ventasCod.length+' ventas)' : '— (sin ventas registradas)';
   markupEl.style.color = margenPctProm>25 ? '#059669' : margenPctProm>10 ? '#d97706' : '#dc2626';
 
-  // Rotación 90d por bodega: solo aplica a bodegas comerciales (PEM/SEM/CEM/MEM venden;
-  // IEM/TEM/RCE/CD son auxiliares/logísticas y no tienen ventas — ver AGENTS.md BODSTOCK)
-  var dh90 = typeof _vadmDiasHabilesN==='function' ? _vadmDiasHabilesN(90) : 90;
-  var qtyPorBodega = {};
-  (_vadmLineas||[]).forEach(function(r){
-    if(r.codigo!==cod || !r.bodegaCorta) return;
-    if(!venAdmParseFecha || !venAdmParseFecha(r.fecha)) return;
-    var hoyTs=Date.now(), d90=90*24*3600*1000;
-    if(hoyTs - venAdmParseFecha(r.fecha) > d90) return;
-    var bk=r.bodegaCorta.toUpperCase();
-    qtyPorBodega[bk]=(qtyPorBodega[bk]||0)+(r.cantidad||0);
-  });
-  var erpBod = (_csStockCritico && _csStockCritico[cod]) || {};
-
-  var totalDisp = 0, totalFis = 0, totalTrans = 0, totalPed = 0, totalCostoTotal = 0;
-  var pedMap = _isbPedidosComprometidos[cod] || {};  // best-effort: poblado si Informe Stock fue cargado
-  var rows = _csBodegas.map(function(b, idx){
-    var disp   = p[b.key]  || 0;
-    var fis    = p[b.key+'_bod'] || (disp + (b.trans ? (p[b.trans]||0) : 0));  // St_Bod si disponible
-    var trans  = b.trans ? (p[b.trans] || 0) : 0;
-    var ped    = pedMap[b.key] || 0;
-    var erp    = erpBod[b.key.toUpperCase()] || null; // {min,max,critico,repo,disp} — solo bodegas comerciales
-    var costoTotal = fis * (p.costo || 0);
-    totalDisp  += disp;
-    totalFis   += fis;
-    totalTrans += trans;
-    totalPed   += ped;
-    totalCostoTotal += costoTotal;
-    var bg         = idx % 2 === 0 ? '' : 'background:#f9fafb';
-    var dot        = disp > 0 ? '<span style="color:#059669">●</span>' : (fis > 0 ? '<span style="color:#d97706">●</span>' : '<span style="color:#d1d5db">●</span>');
-    var dispStyle  = disp  > 0 ? 'font-weight:700;color:#1a1d3a' : 'color:#9ca3af';
-    var transStyle = trans > 0 ? 'font-weight:600;color:#1d4ed8' : 'color:#9ca3af';
-    var pedStyle   = ped   > 0 ? 'font-weight:700;color:#d97706' : 'color:#9ca3af';
-    var tipoColor  = b.tipo === 'Comercial' ? '#059669' : '#6b7280';
-    var valorStock = disp * (p.costo || 0);
-    var qty90      = qtyPorBodega[b.key.toUpperCase()] || 0;
-    var rotacion   = b.tipo==='Comercial' ? (qty90>0 ? (qty90/dh90).toFixed(2)+'/día' : 'sin venta') : '—';
-    return '<tr style="'+bg+'">' +
-      '<td style="padding:7px 14px;font-weight:600">'+b.label+'</td>'+
-      '<td style="padding:7px 14px;font-size:11px;font-weight:600;color:'+tipoColor+'">'+b.tipo+'</td>'+
-      '<td style="padding:7px 14px;text-align:right;'+dispStyle+'">'+disp+'</td>'+
-      '<td style="padding:7px 14px;text-align:right">'+fis+'</td>'+
-      '<td style="padding:7px 14px;text-align:right;'+transStyle+'">'+trans+'</td>'+
-      '<td style="padding:7px 14px;text-align:right;'+pedStyle+'">'+ped+'</td>'+
-      '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.min?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.min:'—')+'</td>'+
-      '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.critico?'#dc2626':'#d1d5db')+'">'+(erp?erp.critico:'—')+'</td>'+
-      '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.max?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.max:'—')+'</td>'+
-      '<td style="padding:7px 14px;text-align:right">'+(costoTotal > 0 ? venAdmFmt(costoTotal) : '—')+'</td>'+
-      '<td style="padding:7px 14px;text-align:right">'+(valorStock > 0 ? venAdmFmt(valorStock) : '—')+'</td>'+
-      '<td style="padding:7px 14px;text-align:right;font-size:11px">'+rotacion+'</td>'+
-      '<td style="padding:7px 14px;text-align:center;font-size:16px">'+dot+'</td>'+
-    '</tr>';
-  });
-
-  document.getElementById('csBodTbody').innerHTML = rows.join('');
-
-  var totalValor = totalDisp * (p.costo || 0);
-  document.getElementById('csBodTfoot').innerHTML =
-    '<tr style="background:#1a1d3a;color:white;font-weight:700">' +
-    '<td colspan="2" style="padding:8px 14px">TOTAL</td>'+
-    '<td style="padding:8px 14px;text-align:right">'+totalDisp+'</td>'+
-    '<td style="padding:8px 14px;text-align:right">'+totalFis+'</td>'+
-    '<td style="padding:8px 14px;text-align:right">'+totalTrans+'</td>'+
-    '<td style="padding:8px 14px;text-align:right">'+totalPed+'</td>'+
-    '<td></td><td></td><td></td>'+
-    '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalCostoTotal)+'</td>'+
-    '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalValor)+'</td>'+
-    '<td></td><td></td></tr>';
-
-  // Tiempo de tránsito proveedor (OC -> GRC/GRT/GIB), desde oc-leadtime.json
-  var ltEl = document.getElementById('csFLeadTime');
-  if(ltEl){
-    var lt = (_csLeadTime||{})[cod];
-    if(!lt || !lt.nRecepciones){
-      ltEl.innerHTML = '<span style="color:#9ca3af">Sin recepciones de OC registradas para este código en los últimos 180 días.</span>';
-    } else {
-      var provHtml = lt.proveedores.slice(0,5).map(function(pv){
-        return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f3f4f6">'+
-          '<span>'+(pv.nombre||pv.rut)+' <span style="color:#9ca3af">('+pv.n+' recepciones)</span></span>'+
-          '<span style="font-weight:700">'+pv.diasProm+' días</span></div>';
-      }).join('');
-      ltEl.innerHTML =
-        '<div style="margin-bottom:8px"><span style="font-size:18px;font-weight:800;color:#1a1d3a">'+lt.diasProm+' días</span> '+
-        '<span style="color:#9ca3af">promedio general · '+lt.nRecepciones+' recepciones</span></div>'+provHtml;
+  // Tiempo de tránsito proveedor (OC -> GRC/GRT/GIB), desde oc-leadtime.json — se pinta primero
+  // y de forma aislada (try/catch) para que un error aquí no deje el resto de la ficha sin pintar.
+  try{
+    var ltEl = document.getElementById('csFLeadTime');
+    if(ltEl){
+      var lt = (_csLeadTime||{})[cod];
+      if(!lt || !lt.nRecepciones){
+        ltEl.innerHTML = '<span style="color:#9ca3af">Sin recepciones de OC registradas para este código en los últimos 180 días.</span>';
+      } else {
+        var provHtml = lt.proveedores.slice(0,5).map(function(pv){
+          return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f3f4f6">'+
+            '<span>'+(pv.nombre||pv.rut)+' <span style="color:#9ca3af">('+pv.n+' recepciones)</span></span>'+
+            '<span style="font-weight:700">'+pv.diasProm+' días</span></div>';
+        }).join('');
+        ltEl.innerHTML =
+          '<div style="margin-bottom:8px"><span style="font-size:18px;font-weight:800;color:#1a1d3a">'+lt.diasProm+' días</span> '+
+          '<span style="color:#9ca3af">promedio general · '+lt.nRecepciones+' recepciones</span></div>'+provHtml;
+      }
     }
+  } catch(e){
+    var ltEl2 = document.getElementById('csFLeadTime');
+    if(ltEl2) ltEl2.innerHTML = '<span style="color:#dc2626">Error cargando tiempo de tránsito: '+e.message+'</span>';
+  }
+
+  try{
+    // Rotación 90d por bodega: solo aplica a bodegas comerciales (PEM/SEM/CEM/MEM venden;
+    // IEM/TEM/RCE/CD son auxiliares/logísticas y no tienen ventas — ver AGENTS.md BODSTOCK)
+    var dh90 = typeof _vadmDiasHabilesN==='function' ? _vadmDiasHabilesN(90) : 90;
+    var qtyPorBodega = {};
+    (_vadmLineas||[]).forEach(function(r){
+      if(r.codigo!==cod || !r.bodegaCorta) return;
+      if(!venAdmParseFecha || !venAdmParseFecha(r.fecha)) return;
+      var hoyTs=Date.now(), d90=90*24*3600*1000;
+      if(hoyTs - venAdmParseFecha(r.fecha) > d90) return;
+      var bk=r.bodegaCorta.toUpperCase();
+      qtyPorBodega[bk]=(qtyPorBodega[bk]||0)+(r.cantidad||0);
+    });
+    var erpBod = (_csStockCritico && _csStockCritico[cod]) || {};
+
+    var totalDisp = 0, totalFis = 0, totalTrans = 0, totalPed = 0, totalCostoTotal = 0;
+    var pedMap = _isbPedidosComprometidos[cod] || {};  // best-effort: poblado si Informe Stock fue cargado
+    var rows = _csBodegas.map(function(b, idx){
+      var disp   = p[b.key]  || 0;
+      var fis    = p[b.key+'_bod'] || (disp + (b.trans ? (p[b.trans]||0) : 0));  // St_Bod si disponible
+      var trans  = b.trans ? (p[b.trans] || 0) : 0;
+      var ped    = pedMap[b.key] || 0;
+      var erp    = erpBod[b.key.toUpperCase()] || null; // {min,max,critico,repo,disp} — solo bodegas comerciales
+      var costoTotal = fis * (p.costo || 0);
+      totalDisp  += disp;
+      totalFis   += fis;
+      totalTrans += trans;
+      totalPed   += ped;
+      totalCostoTotal += costoTotal;
+      var bg         = idx % 2 === 0 ? '' : 'background:#f9fafb';
+      var dot        = disp > 0 ? '<span style="color:#059669">●</span>' : (fis > 0 ? '<span style="color:#d97706">●</span>' : '<span style="color:#d1d5db">●</span>');
+      var dispStyle  = disp  > 0 ? 'font-weight:700;color:#1a1d3a' : 'color:#9ca3af';
+      var transStyle = trans > 0 ? 'font-weight:600;color:#1d4ed8' : 'color:#9ca3af';
+      var pedStyle   = ped   > 0 ? 'font-weight:700;color:#d97706' : 'color:#9ca3af';
+      var tipoColor  = b.tipo === 'Comercial' ? '#059669' : '#6b7280';
+      var valorStock = disp * (p.costo || 0);
+      var qty90      = qtyPorBodega[b.key.toUpperCase()] || 0;
+      var rotacion   = b.tipo==='Comercial' ? (qty90>0 ? (qty90/dh90).toFixed(2)+'/día' : 'sin venta') : '—';
+      return '<tr style="'+bg+'">' +
+        '<td style="padding:7px 14px;font-weight:600">'+b.label+'</td>'+
+        '<td style="padding:7px 14px;font-size:11px;font-weight:600;color:'+tipoColor+'">'+b.tipo+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;'+dispStyle+'">'+disp+'</td>'+
+        '<td style="padding:7px 14px;text-align:right">'+fis+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;'+transStyle+'">'+trans+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;'+pedStyle+'">'+ped+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.min?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.min:'—')+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.critico?'#dc2626':'#d1d5db')+'">'+(erp?erp.critico:'—')+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.max?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.max:'—')+'</td>'+
+        '<td style="padding:7px 14px;text-align:right">'+(costoTotal > 0 ? venAdmFmt(costoTotal) : '—')+'</td>'+
+        '<td style="padding:7px 14px;text-align:right">'+(valorStock > 0 ? venAdmFmt(valorStock) : '—')+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;font-size:11px">'+rotacion+'</td>'+
+        '<td style="padding:7px 14px;text-align:center;font-size:16px">'+dot+'</td>'+
+      '</tr>';
+    });
+
+    document.getElementById('csBodTbody').innerHTML = rows.join('');
+
+    var totalValor = totalDisp * (p.costo || 0);
+    document.getElementById('csBodTfoot').innerHTML =
+      '<tr style="background:#1a1d3a;color:white;font-weight:700">' +
+      '<td colspan="2" style="padding:8px 14px">TOTAL</td>'+
+      '<td style="padding:8px 14px;text-align:right">'+totalDisp+'</td>'+
+      '<td style="padding:8px 14px;text-align:right">'+totalFis+'</td>'+
+      '<td style="padding:8px 14px;text-align:right">'+totalTrans+'</td>'+
+      '<td style="padding:8px 14px;text-align:right">'+totalPed+'</td>'+
+      '<td></td><td></td><td></td>'+
+      '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalCostoTotal)+'</td>'+
+      '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalValor)+'</td>'+
+      '<td></td><td></td></tr>';
+  } catch(e){
+    document.getElementById('csBodTbody').innerHTML =
+      '<tr><td colspan="13" style="padding:14px;color:#dc2626;text-align:center">Error pintando stock por bodega: '+e.message+'</td></tr>';
   }
 
   ficha.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

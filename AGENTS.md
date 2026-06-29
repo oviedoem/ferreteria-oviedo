@@ -1244,3 +1244,12 @@ Contiene todo lo que NO es flujo activo:
   - `vadmRenderStockConsulta()` ahora carga ambos JSON antes de pintar (`_csPintarFicha()`), sin bloquear si no están disponibles.
 - **Pendiente**: correr el pipeline completo (`ACTUALIZAR_TODO_AUTO.bat`) para que el PASO 1M quede integrado en la rutina diaria — hoy se ejecutó el script suelto para validar.
 - V37.37.
+
+### Fix 2026-06-28 (sesión 3i) — Consulta de Stock: bloque "Tiempo de tránsito" quedaba pegado en "Cargando..."
+- **Bug reportado por el dueño**: al buscar un código (ej. TORN0600), el bloque "Tiempo de tránsito proveedor" quedaba permanentemente en "Cargando..." y la tabla "Stock por bodega" no mostraba filas. Producto/Precios sí pintaban bien (incluye Margen ERP), lo que confirma que `_csPintarFicha()` se ejecutaba pero algo entre el bloque de margen y el final de la función impedía terminar — la causa exacta no se pudo reproducir en consola real (sin acceso a navegador del dueño), así que se aplicó una corrección defensiva en vez de adivinar.
+- **Fix** (`panel-admin.html`, `_csPintarFicha()`): 
+  1. El bloque de "Tiempo de tránsito proveedor" se movió ANTES del cálculo de la tabla por bodega (en vez de al final) — así pinta independientemente aunque el resto falle.
+  2. Ambos bloques (tiempo de tránsito y tabla por bodega) quedaron envueltos en `try/catch` — si algo lanza una excepción, se muestra el mensaje de error real en pantalla (`e.message`) en vez de quedar la UI silenciosamente colgada, y no bloquea el resto de la ficha.
+  3. Eliminado el bloque duplicado de tiempo de tránsito que había quedado al final de la función desde el cambio anterior.
+- **Pendiente real**: si el error persiste después de este fix, el mensaje de error en pantalla (rojo, dentro de la tabla o el bloque de tránsito) dirá la causa exacta — pedir captura de ese mensaje en la próxima sesión si vuelve a pasar.
+- V37.38.
