@@ -3683,7 +3683,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.41<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.42<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -17851,8 +17851,8 @@ function csDescargarExcel(){
 
 function _csTablaHtmlCompleto(){
   var p = _vadmStockMap[_csCodActual] || {};
-  var encabezado = '<h2 style="font-family:Arial,sans-serif">'+_csCodActual+' — '+(p.desc||'')+'</h2>'+
-    '<p style="font-family:Arial,sans-serif;font-size:13px;color:#555">Marca: '+(p.marca||'—')+' · Generado '+new Date().toLocaleString('es-CL')+'</p>';
+  var encabezado = '<h2 style="font-family:Arial,sans-serif">'+venAdmEsc(_csCodActual)+' — '+venAdmEsc(p.desc||'')+'</h2>'+
+    '<p style="font-family:Arial,sans-serif;font-size:13px;color:#555">Marca: '+venAdmEsc(p.marca||'—')+' · Generado '+new Date().toLocaleString('es-CL')+'</p>';
   var tabla = document.getElementById('csBodTabla');
   return encabezado + (tabla ? tabla.outerHTML : '');
 }
@@ -17927,10 +17927,10 @@ function csVerDesgloseMarca(){
 
   var rowsHtml = filas.map(function(f, i){
     var bg = i%2===0 ? '' : 'background:#f9fafb';
-    var provTxt = f.proveedores.slice(0,2).map(function(pv){ return pv.nombre||pv.rut; }).join(', ');
+    var provTxt = f.proveedores.slice(0,2).map(function(pv){ return venAdmEsc(pv.nombre||pv.rut); }).join(', ');
     return '<tr style="'+bg+'">'+
-      '<td style="padding:6px 10px;font-family:monospace;border:1px solid #e5e7eb">'+f.cod+'</td>'+
-      '<td style="padding:6px 10px;border:1px solid #e5e7eb">'+f.desc.slice(0,50)+'</td>'+
+      '<td style="padding:6px 10px;font-family:monospace;border:1px solid #e5e7eb">'+venAdmEsc(f.cod)+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #e5e7eb">'+venAdmEsc(f.desc.slice(0,50))+'</td>'+
       '<td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280;font-size:11px">'+provTxt+'</td>'+
       '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:right;font-weight:700">'+f.diasProm+' días</td>'+
       '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:right">'+f.n+'</td>'+
@@ -17994,7 +17994,7 @@ function _csPintarFicha(cod, p){
       } else {
         var provHtml = lt.proveedores.slice(0,5).map(function(pv){
           return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f3f4f6">'+
-            '<span>'+(pv.nombre||pv.rut)+' <span style="color:#9ca3af">('+pv.n+' recepciones)</span></span>'+
+            '<span>'+venAdmEsc(pv.nombre||pv.rut)+' <span style="color:#9ca3af">('+pv.n+' recepciones)</span></span>'+
             '<span style="font-weight:700">'+pv.diasProm+' días</span></div>';
         }).join('');
         ltEl.innerHTML =
