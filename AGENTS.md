@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.29 · Última actualización: 2026-06-28
+# Versión activa: V37.44 · Última actualización: 2026-06-28
 
 ---
 
@@ -301,6 +301,14 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   no es carpeta real; SETUP_PC_NUEVO.md y "paso a paso.txt" actualizados con snapshot de discos y
   plan de cutover pendiente (ver memoria de Claude: seguridad-carpeta-aleatoria-datos,
   pendiente-passwords-texto-plano).
+
+- Deploy V37.44: 2026-06-28 — validar_jsons.py (bloquea deploy si JSON roto, insertado en
+  ACTUALIZAR_TODO.bat antes de rotar_token_data.py); TTL 8h en token rotativo dataAccessToken
+  (expires_at en rotar_token_data.py, chequeo+logout en panel-admin.html/index.html, panel-cliente.html
+  no aplica — no usa el token); paginación 50/pág (Anterior/Siguiente, Vanilla JS) en Quiebre,
+  Sobre-Stock y Baja Rotación de panel-admin.html — antes renderizaban hasta ~6000 filas de golpe;
+  Baja Rotación además corrige totales de tfoot para reflejar el filtrado completo, no solo la
+  página visible (efecto secundario de quitar el MAX_ROWS=150 que truncaba sin paginar) ✅
 
 - Sesion 2026-06-22 (tarde): fix ACTUALIZAR_TODO.bat — PASO 1K (enriquecimiento ventas)
   abortaba todo el pipeline con "No se esperaba . en este momento" por comentarios `::`

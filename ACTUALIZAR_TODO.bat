@@ -423,6 +423,16 @@ if %errorlevel% neq 0 (
 echo.
 timeout /t 2 /nobreak >nul
 
+:: -- VALIDACION: JSONs de salida antes de rotar token y deploy -----------------
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  VALIDACION - Verificando integridad de JSONs generados ^|
+echo  +----------------------------------------------------------+
+echo.
+"%PYTHON_EXE%" "%~dp0validar_jsons.py" || goto :error
+echo.
+timeout /t 2 /nobreak >nul
+
 :: -- PASO 3: Visibilidad precios -----------------------------------------------
 echo.
 echo  +----------------------------------------------------------+
@@ -496,3 +506,16 @@ echo   [OK] Deploy Firebase
 echo  ============================================================
 echo.
 pause
+exit /b 0
+
+:error
+color 0C
+echo.
+echo  ============================================================
+echo   [ERROR] VALIDACION DE JSONs FALLO -- DEPLOY BLOQUEADO
+echo   Revisa el detalle de validar_jsons.py arriba.
+echo   El deploy NO se ejecuto. Los JSONs anteriores siguen activos.
+echo  ============================================================
+echo.
+pause
+exit /b 1
