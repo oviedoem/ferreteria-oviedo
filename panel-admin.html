@@ -3444,6 +3444,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
               <th style="padding:8px 14px;text-align:right">Costo Total</th>
               <th style="padding:8px 14px;text-align:right">Valor Stock</th>
               <th style="padding:8px 14px;text-align:right">Rotación 90d</th>
+              <th style="padding:8px 14px;text-align:right;background:#7c2d12">Días tránsito OC</th>
               <th style="padding:8px 14px;text-align:center">Estado</th>
             </tr>
           </thead>
@@ -3654,7 +3655,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.39<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.40<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -17866,6 +17867,7 @@ function _csPintarFicha(cod, p){
       qtyPorBodega[bk]=(qtyPorBodega[bk]||0)+(r.cantidad||0);
     });
     var erpBod = (_csStockCritico && _csStockCritico[cod]) || {};
+    var ltBod  = ((_csLeadTime && _csLeadTime[cod]) || {}).porBodega || {}; // {'PEM':{diasProm,n}, ...} — bodega receptora real de OC
 
     var totalDisp = 0, totalFis = 0, totalTrans = 0, totalPed = 0, totalCostoTotal = 0;
     // _isbPedidosComprometidos vive dentro de un IIFE (línea ~18422) y no es visible aquí —
@@ -17892,6 +17894,8 @@ function _csPintarFicha(cod, p){
       var valorStock = disp * (p.costo || 0);
       var qty90      = qtyPorBodega[b.key.toUpperCase()] || 0;
       var rotacion   = b.tipo==='Comercial' ? (qty90>0 ? (qty90/dh90).toFixed(2)+'/día' : 'sin venta') : '—';
+      var lt         = ltBod[b.key.toUpperCase()] || null; // tiempo real OC->recepción para ESTA bodega especifica
+      var transitoTxt= lt ? lt.diasProm+' días ('+lt.n+')' : '—';
       return '<tr style="'+bg+'">' +
         '<td style="padding:7px 14px;font-weight:600">'+b.label+'</td>'+
         '<td style="padding:7px 14px;font-size:11px;font-weight:600;color:'+tipoColor+'">'+b.tipo+'</td>'+
@@ -17905,6 +17909,7 @@ function _csPintarFicha(cod, p){
         '<td style="padding:7px 14px;text-align:right">'+(costoTotal > 0 ? venAdmFmt(costoTotal) : '—')+'</td>'+
         '<td style="padding:7px 14px;text-align:right">'+(valorStock > 0 ? venAdmFmt(valorStock) : '—')+'</td>'+
         '<td style="padding:7px 14px;text-align:right;font-size:11px">'+rotacion+'</td>'+
+        '<td style="padding:7px 14px;text-align:right;font-size:11px;'+(lt?'font-weight:700;color:#92400e':'color:#d1d5db')+'">'+transitoTxt+'</td>'+
         '<td style="padding:7px 14px;text-align:center;font-size:16px">'+dot+'</td>'+
       '</tr>';
     });
@@ -17922,10 +17927,10 @@ function _csPintarFicha(cod, p){
       '<td></td><td></td><td></td>'+
       '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalCostoTotal)+'</td>'+
       '<td style="padding:8px 14px;text-align:right">'+venAdmFmt(totalValor)+'</td>'+
-      '<td></td><td></td></tr>';
+      '<td></td><td></td><td></td></tr>';
   } catch(e){
     document.getElementById('csBodTbody').innerHTML =
-      '<tr><td colspan="13" style="padding:14px;color:#dc2626;text-align:center">Error pintando stock por bodega: '+e.message+'</td></tr>';
+      '<tr><td colspan="14" style="padding:14px;color:#dc2626;text-align:center">Error pintando stock por bodega: '+e.message+'</td></tr>';
   }
 
   ficha.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
