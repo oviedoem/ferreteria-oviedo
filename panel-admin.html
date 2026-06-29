@@ -3427,30 +3427,58 @@ Todo desde tu celular, gratis, sin apps que descargar.
       </div>
 
       <!-- Tabla stock por bodega -->
-      <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Stock por bodega</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.6px">Stock por bodega</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="csDescargarExcel()" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#166534;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>
+          <button onclick="csDescargarHtml()" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🌐 HTML</button>
+          <button onclick="csDescargarPdf()" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#991b1b;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>
+        </div>
+      </div>
+      <style>
+        .cs-xls{border-collapse:collapse;width:100%;font-size:12px}
+        .cs-xls th,.cs-xls td{border:1px solid #94a3b8}
+        .cs-xls thead th{background:#1a1d3a;color:#fff;padding:7px 10px}
+        .cs-xls tbody td{padding:6px 10px}
+      </style>
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <table class="cs-xls" id="csBodTabla">
           <thead>
-            <tr style="background:#1a1d3a;color:white">
-              <th style="padding:8px 14px;text-align:left">Bodega</th>
-              <th style="padding:8px 14px;text-align:left">Tipo</th>
-              <th style="padding:8px 14px;text-align:right">Disp.</th>
-              <th style="padding:8px 14px;text-align:right">Físico</th>
-              <th style="padding:8px 14px;text-align:right">Tránsito</th>
-              <th style="padding:8px 14px;text-align:right">Pedido</th>
-              <th style="padding:8px 14px;text-align:right;background:#7c2d12">Mínimo (ERP)</th>
-              <th style="padding:8px 14px;text-align:right;background:#7c2d12">Crítico (ERP)</th>
-              <th style="padding:8px 14px;text-align:right;background:#7c2d12">Máximo (ERP)</th>
-              <th style="padding:8px 14px;text-align:right">Costo Total</th>
-              <th style="padding:8px 14px;text-align:right">Valor Stock</th>
-              <th style="padding:8px 14px;text-align:right">Rotación 90d</th>
-              <th style="padding:8px 14px;text-align:right;background:#7c2d12">Días tránsito OC</th>
-              <th style="padding:8px 14px;text-align:center">Estado</th>
+            <tr>
+              <th style="text-align:left" title="PEM=Patio · SEM=Sala · CEM=Calzada · MEM=Mermas · IEM=Ingreso · TEM=Tránsito · RCE=Recepción · CD=Centro Distribución (El Manzano)">BOD</th>
+              <th style="text-align:right">Disp.</th>
+              <th style="text-align:right">Físico</th>
+              <th style="text-align:right">Tránsito</th>
+              <th style="text-align:right">Pedido</th>
+              <th style="text-align:right;background:#7c2d12">Mínimo (ERP)</th>
+              <th style="text-align:right;background:#7c2d12">Crítico (ERP)</th>
+              <th style="text-align:right;background:#7c2d12">Máximo (ERP)</th>
+              <th style="text-align:right">Costo Total</th>
+              <th style="text-align:right">Valor Stock</th>
+              <th style="text-align:right">Rotación 90d</th>
+              <th style="text-align:right;background:#7c2d12">Días tránsito OC</th>
+              <th style="text-align:center">Estado</th>
             </tr>
           </thead>
           <tbody id="csBodTbody"></tbody>
           <tfoot id="csBodTfoot"></tfoot>
         </table>
+      </div>
+
+      <!-- Desglose tiempo de tránsito por marca -->
+      <div style="margin-top:22px;background:#f9fafb;border-radius:8px;padding:14px 16px;border:1px solid #e5e7eb">
+        <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">
+          Desglose tiempo de tránsito por marca — a veces no llega todo junto, distintas OC pueden tardar distinto
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+          <label style="font-size:12px;font-weight:600;color:#374151">Marca
+            <select id="csMarcaSel" style="margin-left:6px;font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;min-width:200px">
+              <option value="">Selecciona una marca...</option>
+            </select>
+          </label>
+          <button onclick="csVerDesgloseMarca()" style="background:#1a1d3a;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Ver desglose</button>
+        </div>
+        <div id="csMarcaDesglose" style="font-size:12px;color:#9ca3af">Elige una marca y presiona "Ver desglose" para comparar los tiempos de tránsito de todos sus códigos.</div>
       </div>
     </div>
   </div>
@@ -3655,7 +3683,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.40<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.41<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
 
 <script>
 
@@ -17720,14 +17748,14 @@ function _csCargarLeadTime(cb){
 }
 
 var _csBodegas = [
-  { key:'pem', trans:'pem_trans', label:'PEM · Patio El Manzano',     tipo:'Comercial' },
-  { key:'sem', trans:null,        label:'SEM · Sala El Manzano',      tipo:'Comercial' },
-  { key:'cem', trans:null,        label:'CEM · Calzada El Manzano',   tipo:'Comercial' },
-  { key:'mem', trans:null,        label:'MEM · Mermas El Manzano',    tipo:'Auxiliar'  },
-  { key:'iem', trans:'iem_trans', label:'IEM · Ingreso El Manzano',   tipo:'Auxiliar'  },
-  { key:'tem', trans:'tem_trans', label:'TEM · Tránsito El Manzano',  tipo:'Auxiliar'  },
-  { key:'rce', trans:null,        label:'RCE · Recepción El Manzano', tipo:'Auxiliar'  },
-  { key:'cd',  trans:'cd_trans',  label:'CD  · Centro Distribución',  tipo:'Auxiliar'  }
+  { key:'pem', trans:'pem_trans', label:'PEM', nombre:'Patio El Manzano',          tipo:'Comercial' },
+  { key:'sem', trans:null,        label:'SEM', nombre:'Sala El Manzano',           tipo:'Comercial' },
+  { key:'cem', trans:null,        label:'CEM', nombre:'Calzada El Manzano',        tipo:'Comercial' },
+  { key:'mem', trans:null,        label:'MEM', nombre:'Mermas El Manzano',         tipo:'Auxiliar'  },
+  { key:'iem', trans:'iem_trans', label:'IEM', nombre:'Ingreso El Manzano',        tipo:'Auxiliar'  },
+  { key:'tem', trans:'tem_trans', label:'TEM', nombre:'Tránsito El Manzano',       tipo:'Auxiliar'  },
+  { key:'rce', trans:null,        label:'RCE', nombre:'Recepción El Manzano',      tipo:'Auxiliar'  },
+  { key:'cd',  trans:'cd_trans',  label:'CD',  nombre:'Centro Distribución',       tipo:'Auxiliar'  }
 ];
 
 function vadmBuscarStock(){
@@ -17794,14 +17822,135 @@ function vadmBuscarStock(){
   });
 }
 
+var _csCodActual = null; // código actualmente mostrado en la ficha — usado por los botones de export
+
 function vadmRenderStockConsulta(cod){
   if(!_vadmStockMap) return;
   var p = _vadmStockMap[cod];
   if(!p) return;
+  _csCodActual = cod;
   // Carga lazy de parámetros ERP por bodega + tiempo de tránsito proveedor antes de pintar la ficha
   _csCargarStockCritico(function(){
     _csCargarLeadTime(function(){ _csPintarFicha(cod, p); });
   });
+}
+
+// ── Export Stock por bodega: Excel / HTML / PDF — siempre lee la tabla EN PANTALLA en ese momento ──
+function _csNombreArchivo(ext){
+  return 'StockBodega_'+(_csCodActual||'producto')+'_'+new Date().toISOString().slice(0,10)+'.'+ext;
+}
+
+function csDescargarExcel(){
+  var tabla = document.getElementById('csBodTabla');
+  if(!tabla || !_csCodActual){ if(window.toast) toast('Selecciona un producto primero','warn'); return; }
+  if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
+  var wb = XLSX.utils.table_to_book(tabla, {sheet:'Stock por bodega'});
+  XLSX.writeFile(wb, _csNombreArchivo('xlsx'));
+  if(window.toast) toast('📊 Excel exportado','ok');
+}
+
+function _csTablaHtmlCompleto(){
+  var p = _vadmStockMap[_csCodActual] || {};
+  var encabezado = '<h2 style="font-family:Arial,sans-serif">'+_csCodActual+' — '+(p.desc||'')+'</h2>'+
+    '<p style="font-family:Arial,sans-serif;font-size:13px;color:#555">Marca: '+(p.marca||'—')+' · Generado '+new Date().toLocaleString('es-CL')+'</p>';
+  var tabla = document.getElementById('csBodTabla');
+  return encabezado + (tabla ? tabla.outerHTML : '');
+}
+
+function csDescargarHtml(){
+  if(!_csCodActual){ if(window.toast) toast('Selecciona un producto primero','warn'); return; }
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stock por bodega — '+_csCodActual+'</title></head><body>'+_csTablaHtmlCompleto()+'</body></html>';
+  var a = document.createElement('a');
+  a.href = 'data:text/html;charset=utf-8,'+encodeURIComponent(html);
+  a.download = _csNombreArchivo('html');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if(window.toast) toast('🌐 HTML exportado','ok');
+}
+
+function csDescargarPdf(){
+  if(!_csCodActual){ if(window.toast) toast('Selecciona un producto primero','warn'); return; }
+  if(typeof window.jspdf==='undefined'){ if(window.toast) toast('Librería PDF no disponible','err'); return; }
+  var p = _vadmStockMap[_csCodActual] || {};
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({orientation:'landscape', unit:'mm', format:'letter'});
+  doc.setFontSize(13); doc.setTextColor(26,29,58);
+  doc.text(_csCodActual+' — '+(p.desc||''), 14, 14);
+  doc.setFontSize(9); doc.setTextColor(100,100,100);
+  doc.text('Marca: '+(p.marca||'—')+' · '+new Date().toLocaleDateString('es-CL'), 14, 20);
+  var tabla = document.getElementById('csBodTabla');
+  doc.autoTable({ html:'#csBodTabla', startY:25, styles:{fontSize:7}, headStyles:{fillColor:[26,29,58]} });
+  doc.save(_csNombreArchivo('pdf'));
+  if(window.toast) toast('📄 PDF exportado','ok');
+}
+
+// ── Desglose de tiempo de tránsito por marca ──────────────────────────────────
+var _csMarcasPobladas = false;
+function _csPoblarMarcasSel(){
+  if(_csMarcasPobladas || !_vadmStockMap) return;
+  var sel = document.getElementById('csMarcaSel');
+  if(!sel) return;
+  var marcas = {};
+  Object.keys(_vadmStockMap).forEach(function(cod){
+    var m = _vadmStockMap[cod].marca;
+    if(m) marcas[m] = true;
+  });
+  Object.keys(marcas).sort().forEach(function(m){
+    var o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o);
+  });
+  _csMarcasPobladas = true;
+}
+
+function csVerDesgloseMarca(){
+  var sel = document.getElementById('csMarcaSel');
+  var marca = sel ? sel.value : '';
+  var out = document.getElementById('csMarcaDesglose');
+  if(!marca){ out.innerHTML = '<span style="color:#dc2626">Selecciona una marca.</span>'; return; }
+  if(!_vadmStockMap || !_csLeadTime){ out.innerHTML = 'Cargando datos...'; return; }
+
+  var filas = [];
+  Object.keys(_vadmStockMap).forEach(function(cod){
+    var p = _vadmStockMap[cod];
+    if(p.marca !== marca) return;
+    var lt = _csLeadTime[cod];
+    if(!lt || !lt.nRecepciones) return;
+    filas.push({cod:cod, desc:p.desc||'', diasProm:lt.diasProm, n:lt.nRecepciones, proveedores:lt.proveedores});
+  });
+
+  if(!filas.length){
+    out.innerHTML = '<span style="color:#9ca3af">Sin recepciones de OC registradas para códigos de "'+marca+'" en los últimos 180 días.</span>';
+    return;
+  }
+  filas.sort(function(a,b){ return b.diasProm - a.diasProm; });
+
+  var min = Math.min.apply(null, filas.map(function(f){ return f.diasProm; }));
+  var max = Math.max.apply(null, filas.map(function(f){ return f.diasProm; }));
+
+  var rowsHtml = filas.map(function(f, i){
+    var bg = i%2===0 ? '' : 'background:#f9fafb';
+    var provTxt = f.proveedores.slice(0,2).map(function(pv){ return pv.nombre||pv.rut; }).join(', ');
+    return '<tr style="'+bg+'">'+
+      '<td style="padding:6px 10px;font-family:monospace;border:1px solid #e5e7eb">'+f.cod+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #e5e7eb">'+f.desc.slice(0,50)+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280;font-size:11px">'+provTxt+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:right;font-weight:700">'+f.diasProm+' días</td>'+
+      '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:right">'+f.n+'</td>'+
+    '</tr>';
+  }).join('');
+
+  out.innerHTML =
+    '<div style="margin-bottom:8px;font-size:12px;color:#374151">'+
+      '<b>'+filas.length+'</b> códigos con recepciones · rango '+min+'–'+max+' días '+
+      (max>min*1.5 ? '<span style="color:#dc2626;font-weight:700">⚠️ variación alta — no todas las OC de esta marca llegan en el mismo tiempo</span>' : '')+
+    '</div>'+
+    '<table style="border-collapse:collapse;width:100%;font-size:12px">'+
+      '<thead><tr style="background:#1a1d3a;color:#fff">'+
+        '<th style="padding:6px 10px;text-align:left;border:1px solid #1a1d3a">Código</th>'+
+        '<th style="padding:6px 10px;text-align:left;border:1px solid #1a1d3a">Descripción</th>'+
+        '<th style="padding:6px 10px;text-align:left;border:1px solid #1a1d3a">Proveedor(es)</th>'+
+        '<th style="padding:6px 10px;text-align:right;border:1px solid #1a1d3a">Días tránsito</th>'+
+        '<th style="padding:6px 10px;text-align:right;border:1px solid #1a1d3a">Recepciones</th>'+
+      '</tr></thead><tbody>'+rowsHtml+'</tbody>'+
+    '</table>';
 }
 
 function _csPintarFicha(cod, p){
@@ -17814,6 +17963,11 @@ function _csPintarFicha(cod, p){
   document.getElementById('csFFam').textContent   = p.fam   || '—';
   document.getElementById('csFSub').textContent   = p.subfam || '—';
   document.getElementById('csFMarca').textContent = p.marca || '—';
+  _csPoblarMarcasSel();
+  var marcaSel = document.getElementById('csMarcaSel');
+  if(marcaSel && p.marca) marcaSel.value = p.marca;
+  var marcaOut = document.getElementById('csMarcaDesglose');
+  if(marcaOut) marcaOut.innerHTML = 'Elige una marca y presiona "Ver desglose" para comparar los tiempos de tránsito de todos sus códigos.';
   document.getElementById('csFCosto').textContent  = p.costo  > 0 ? venAdmFmt(p.costo)  : '—';
   document.getElementById('csFPrecio').textContent = p.precio > 0 ? venAdmFmt(p.precio) : '—';
 
@@ -17897,20 +18051,19 @@ function _csPintarFicha(cod, p){
       var lt         = ltBod[b.key.toUpperCase()] || null; // tiempo real OC->recepción para ESTA bodega especifica
       var transitoTxt= lt ? lt.diasProm+' días ('+lt.n+')' : '—';
       return '<tr style="'+bg+'">' +
-        '<td style="padding:7px 14px;font-weight:600">'+b.label+'</td>'+
-        '<td style="padding:7px 14px;font-size:11px;font-weight:600;color:'+tipoColor+'">'+b.tipo+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;'+dispStyle+'">'+disp+'</td>'+
-        '<td style="padding:7px 14px;text-align:right">'+fis+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;'+transStyle+'">'+trans+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;'+pedStyle+'">'+ped+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.min?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.min:'—')+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.critico?'#dc2626':'#d1d5db')+'">'+(erp?erp.critico:'—')+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;color:'+(erp&&erp.max?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.max:'—')+'</td>'+
-        '<td style="padding:7px 14px;text-align:right">'+(costoTotal > 0 ? venAdmFmt(costoTotal) : '—')+'</td>'+
-        '<td style="padding:7px 14px;text-align:right">'+(valorStock > 0 ? venAdmFmt(valorStock) : '—')+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;font-size:11px">'+rotacion+'</td>'+
-        '<td style="padding:7px 14px;text-align:right;font-size:11px;'+(lt?'font-weight:700;color:#92400e':'color:#d1d5db')+'">'+transitoTxt+'</td>'+
-        '<td style="padding:7px 14px;text-align:center;font-size:16px">'+dot+'</td>'+
+        '<td style="font-weight:700;color:'+tipoColor+'" title="'+b.nombre+' ('+b.tipo+')">'+b.label+'</td>'+
+        '<td style="text-align:right;'+dispStyle+'">'+disp+'</td>'+
+        '<td style="text-align:right">'+fis+'</td>'+
+        '<td style="text-align:right;'+transStyle+'">'+trans+'</td>'+
+        '<td style="text-align:right;'+pedStyle+'">'+ped+'</td>'+
+        '<td style="text-align:right;color:'+(erp&&erp.min?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.min:'—')+'</td>'+
+        '<td style="text-align:right;color:'+(erp&&erp.critico?'#dc2626':'#d1d5db')+'">'+(erp?erp.critico:'—')+'</td>'+
+        '<td style="text-align:right;color:'+(erp&&erp.max?'#1a1d3a':'#d1d5db')+'">'+(erp?erp.max:'—')+'</td>'+
+        '<td style="text-align:right">'+(costoTotal > 0 ? venAdmFmt(costoTotal) : '—')+'</td>'+
+        '<td style="text-align:right">'+(valorStock > 0 ? venAdmFmt(valorStock) : '—')+'</td>'+
+        '<td style="text-align:right;font-size:11px">'+rotacion+'</td>'+
+        '<td style="text-align:right;font-size:11px;'+(lt?'font-weight:700;color:#92400e':'color:#d1d5db')+'">'+transitoTxt+'</td>'+
+        '<td style="text-align:center;font-size:16px">'+dot+'</td>'+
       '</tr>';
     });
 
@@ -17919,7 +18072,7 @@ function _csPintarFicha(cod, p){
     var totalValor = totalDisp * (p.costo || 0);
     document.getElementById('csBodTfoot').innerHTML =
       '<tr style="background:#1a1d3a;color:white;font-weight:700">' +
-      '<td colspan="2" style="padding:8px 14px">TOTAL</td>'+
+      '<td style="padding:8px 14px">TOTAL</td>'+
       '<td style="padding:8px 14px;text-align:right">'+totalDisp+'</td>'+
       '<td style="padding:8px 14px;text-align:right">'+totalFis+'</td>'+
       '<td style="padding:8px 14px;text-align:right">'+totalTrans+'</td>'+
@@ -17930,7 +18083,7 @@ function _csPintarFicha(cod, p){
       '<td></td><td></td><td></td></tr>';
   } catch(e){
     document.getElementById('csBodTbody').innerHTML =
-      '<tr><td colspan="14" style="padding:14px;color:#dc2626;text-align:center">Error pintando stock por bodega: '+e.message+'</td></tr>';
+      '<tr><td colspan="13" style="padding:14px;color:#dc2626;text-align:center">Error pintando stock por bodega: '+e.message+'</td></tr>';
   }
 
   ficha.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

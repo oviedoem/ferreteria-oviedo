@@ -1265,3 +1265,13 @@ Contiene todo lo que NO es flujo activo:
 - **Fix** (`BODEGAS\descargar_oc_leadtime.py`): la query ya traía `rec.IDBODEGA` disponible pero no se usaba — se agregó `BODEGAS_RECEPCION` (mapa IDBODEGA→símbolo, igual lista que `IDS_REFERENCIA.md`) y se agrupan los días de tránsito también por bodega destino. Nuevo campo `porBodega` en `oc-leadtime.json`: `{codigo: {... porBodega: {'PEM':{diasProm,n}, 'SEM':{...}, ...}}}`. Verificado con dato real: código `26302` → PEM 36.5 días (4 recepciones), CD 10.0 días (1 recepción) — confirma que SÍ varía por bodega, no es un solo promedio ciego.
 - **`panel-admin.html`**: nueva columna "Días tránsito OC" en la tabla "Stock por bodega" — responde directo a la pregunta por fila (PEM, SEM, etc.), en vez de solo el resumen agregado arriba.
 - V37.40.
+
+### Fix 2026-06-28 (sesión 3l) — Consulta de Stock: formato tipo Excel, export PDF/Excel/HTML, desglose por marca
+- **Pedido del dueño**: bordes tipo hoja Excel, mejor acomodo de columnas, columna "Bodega" → "BOD" con solo siglas (PEM/SEM/...), quitar columna "Tipo" (el dueño ya sabe para qué es cada bodega), botón de descarga Excel/HTML/PDF que descargue lo que se ve en pantalla en tiempo real, y un filtro por marca para ver los días de demora de todos los códigos de esa marca (porque distintas OC de la misma marca pueden tardar distinto, no llega todo junto).
+- **Tabla "Stock por bodega"** (`panel-admin.html`):
+  - Clase CSS nueva `.cs-xls` con `border:1px solid` en todas las celdas (estilo hoja de cálculo).
+  - Columna "Bodega" → "BOD", celda muestra solo la sigla (`b.label` ahora es `'PEM'` en vez de `'PEM · Patio El Manzano'`), con `title` (tooltip) mostrando el nombre completo al pasar el mouse — el dato completo no se pierde, solo deja de ocupar espacio.
+  - Columna "Tipo" eliminada (Comercial/Auxiliar ya no se muestra como columna, queda solo como color del texto de la sigla).
+  - 3 botones nuevos: `csDescargarExcel()` (vía `XLSX.utils.table_to_book` leyendo el DOM de `#csBodTabla` tal cual está en pantalla — incluye cualquier filtro/estado visible), `csDescargarHtml()`, `csDescargarPdf()` (jsPDF+autoTable con `html:'#csBodTabla'`, también lee el DOM en vivo). Los 3 leen la tabla en tiempo real, no recalculan nada por separado.
+- **Desglose por marca** (nuevo bloque debajo de la tabla): select de marca (poblado lazy desde `_vadmStockMap`, preseleccionada con la marca del producto actual) + botón "Ver desglose" → `csVerDesgloseMarca()` lista TODOS los códigos de esa marca con recepciones de OC en `oc-leadtime.json`, ordenados por días de tránsito descendente, con alerta visual si el rango (máx/mín) es mayor a 1.5× — confirma visualmente cuando "no llega todo junto".
+- V37.41.
