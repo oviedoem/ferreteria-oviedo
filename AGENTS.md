@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.44 · Última actualización: 2026-06-28
+# Versión activa: V37.46 · Última actualización: 2026-06-30
 
 ---
 

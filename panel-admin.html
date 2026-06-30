@@ -17116,7 +17116,13 @@ function _tcdCalcular(){
     body.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Carga ventas primero (abre cualquier tab de Ventas).</td></tr>';
     return;
   }
+  // Cargar porBodega del ERP (Existencias Clasificadas) para saber a qué bodega pertenece cada código
+  _csCargarStockCritico(function(){
+    _tcdCalcularConBodegas();
+  });
+}
 
+function _tcdCalcularConBodegas(){
   var desde = document.getElementById('tcdDesde').value;
   var hasta = document.getElementById('tcdHasta').value;
   var dDesde = desde ? new Date(desde) : null;
@@ -17126,9 +17132,7 @@ function _tcdCalcular(){
   var colP = document.getElementById('tcdColRankPrincipal'); if(colP) colP.textContent = 'Ranking '+lblPrincipal;
 
   var hoy = new Date();
-  // Cortes normalizados a medianoche — mismo patrón que vadmRenderQuiebre (c30/c60/c90) para que
-  // la rotación de Traspasos CD y Quiebre sean idénticas en el mismo código/ventana (sin esto el
-  // día de corte quedaba excluido aquí pero incluido en Quiebre por la hora actual del momento).
+  // Cortes normalizados a medianoche — mismo patrón que vadmRenderQuiebre (c30/c60/c90)
   var c2m = new Date(hoy); c2m.setDate(c2m.getDate()-60); c2m.setHours(0,0,0,0);
   var c1m = new Date(hoy); c1m.setDate(c1m.getDate()-30); c1m.setHours(0,0,0,0);
 
@@ -17140,7 +17144,7 @@ function _tcdCalcular(){
     var d = parseFR(r.fecha||''); if(!d) return;
     var v = venta[cod] || (venta[cod]={principal:0,m2:0,m1:0});
     if(dDesde && d>=dDesde && d<=dHasta) v.principal += (r.cantidad||0);
-    if(!dDesde) v.principal = 0; // sin rango valido no se sugiere por principal
+    if(!dDesde) v.principal = 0;
     if(d>=c2m && d<=hoy) v.m2 += (r.cantidad||0);
     if(d>=c1m && d<=hoy) v.m1 += (r.cantidad||0);
   });
@@ -17150,15 +17154,18 @@ function _tcdCalcular(){
     var sm = _vadmStockMap[cod];
     var v = venta[cod] || {principal:0,m2:0,m1:0};
     var cd = sm.cd||0, pem = sm.pem||0, sem = sm.sem||0, rce = sm.rce||0;
-    // Solo interesa si hay stock disponible en CD para traspasar (sin CD no hay nada que mover)
-    if(!cd) return;
+    if(!cd) return; // sin stock en CD no hay nada que mover
     var embalaje = _tcdParseEmbalaje(sm.desc);
     var sugerido = v.principal>0 ? Math.ceil(v.principal/embalaje)*embalaje : 0;
+    // erpBods: asignación de bodega desde ERP (Existencias Clasificadas / porBodega)
+    // Ejemplo: {SEM:{min,max,critico,repo,disp}, PEM:{...}}
+    var erpBods = (_csStockCritico && _csStockCritico[cod]) || null;
     rows.push({
       codigo:cod, desc:sm.desc||'',
       pem:pem, sem:sem, rce:rce, cd:cd,
       rankPrincipal:Math.round(v.principal), rank2m:Math.round(v.m2), rank1m:Math.round(v.m1),
-      embalaje:embalaje, sugerido:sugerido, solicitar:0
+      embalaje:embalaje, sugerido:sugerido, solicitar:0,
+      erpBods:erpBods  // null si PASO 1A aún no corrió
     });
   });
 
@@ -17190,13 +17197,27 @@ function _tcdRenderResumen(rows){
   document.getElementById('tcdResumen').innerHTML = html;
 }
 
-// ── Keywords de portabilidad — editar aquí para agregar términos sin tocar más código ──
-var _TCD_KW_SEM = ['TALADRO','ATORNILLADOR','ALICATE','ESMERIL','CINTA','HERRAMIENTA','BROCA',
-  'SET','CONECTOR','CANDADO','MANUAL','DISCO','LLAVE','ACCESORIO','PINZA','SIERRA','METRO',
-  'NIVEL','MARTILLO','CALIBRADOR','DESTORNILLADOR'];
-var _TCD_KW_PEM = ['ADHESIVO','POLVO','SIDING','FIBROCEMENTO','ZINC','ALUM','ACANALADO','OSB',
-  'FIBRA','FIERRO','MALLA','MADERA','PULGADAS','MM','KG','SACO','CEMENTO','MORTERO','YESO',
-  'ARENA','PIEDRA','TEJA','PLANCHA','TUBERIA','CAÑO','HORMIGON','CEMENTADO','CERAMICA'];
+// Filtro por bodega: usa porBodega del ERP (primario) o keywords (fallback sin datos ERP)
+// SEM = portables: herramientas, fijaciones, consumibles | PEM = no portables: materiales construcción
+var _TCD_KW_SEM = ['TALADRO','ATORNILLADOR','ALICATE','ESMERIL','HERRAMIENTA','BROCA',
+  'SET','CONECTOR','CANDADO','DISCO','LLAVE','ACCESORIO','PINZA','SIERRA','METRO',
+  'NIVEL','MARTILLO','CALIBRADOR','DESTORNILLADOR',
+  'CLAVO','GRAPA','TORNILLO','TUERCA','PERNO','REMACHE','TACO',
+  'SOLDADURA','ELECTRODO','VARILLA SOLDAR',
+  'LIJA','GUANTE','MASCARA','GAFAS','CASCO',
+  'SPRAY','LUBRICANTE','ACEITE','SELLANTE','TEFL','SILICON',
+  'CABLE','INTERRUPTOR','ENCHUFE','TOMA','PILA','LINTERNA',
+  'CERRADURA','BISAGRA','PICAPORTE'];
+var _TCD_KW_PEM = ['ADHESIVO','POLVO','SIDING','FIBROCEMENTO','ZINC','ACANALADO','OSB',
+  'FIBRA','FIERRO','MALLA','MADERA','SACO','CEMENTO','MORTERO','YESO',
+  'ARENA','PIEDRA','TEJA','PLANCHA','TUBERIA','HORMIGON','CERAMICA',
+  'VOLCANITA','DRYWALL','METALCON','PERFIL','VIGA','BARRA','CALAMINA',
+  'IMPERMEABILIZANTE','REVESTIMIENTO','PINTURA','ESMALTE','BARNIZ',
+  'PINCEL','RODILLO','BROCHA','DILUYENTE','TINNER','AGUARRAS',
+  'MANGUERA','CODO','VALVULA','UNION','MEMBRANA','GEOTEXTIL',
+  'ALAMBRE','CADENA',
+  'PANEL','PVC','PORCELANATO','BALDOSA','PISO','PUERTA','VENTANA',
+  'MARMOL','GRANITO','PIEDRA','MORTERO','FRAGUA','PORCELANA'];
 
 // Retorna 1 (URGENTE) a 4 (BAJA PRIORIDAD) según estado local de la bodega seleccionada.
 function _tcdPrioridad(r, localStock){
@@ -17243,9 +17264,13 @@ function _tcdRenderTabla(rows){
 
   var visible = rows.filter(function(r){
     if(_tcdBodega==='cd') return _tcdCdBuckets[_tcdGetBucket(rankMap[r.codigo]||0, r.rankPrincipal>0)];
-    // ── Filtro keyword portabilidad (vistas PEM / SEM) ────────────────────
+    // ── Filtro por bodega: 3 niveles ─────────────────────────────────────
+    var bod = _tcdBodega.toUpperCase(); // 'SEM' o 'PEM'
+    // 1) ERP tiene datos para este código → usar asignación de bodega (más exacto)
+    if(r.erpBods !== null) return !!(r.erpBods[bod]);
+    // 2) Sin datos ERP (PASO 1A no corrió o código no en porBodega) → keyword fallback
     var d = (r.desc||'').toUpperCase();
-    var kws = _tcdBodega==='sem' ? _TCD_KW_SEM : _TCD_KW_PEM;
+    var kws = bod==='SEM' ? _TCD_KW_SEM : _TCD_KW_PEM;
     return kws.some(function(k){ return d.indexOf(k) !== -1; });
   });
 

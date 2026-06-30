@@ -13,61 +13,10 @@ title FERRETERIA OVIEDO - Auto 18:00
 :: ============================================================
 
 :: ============================================================
-:: VERIFICACION VPN (FortiClient)
-:: Detecta si el adaptador VPN esta activo.
-:: Si no: importa perfil desde E: si falta, abre FortiClient
-:: y espera hasta 90s. Si no conecta: detiene el pipeline.
-:: No usa contrasenas en texto plano — solo el perfil encriptado.
+:: RED: Cable directo a red ferreteria -> sin VPN necesaria.
+:: WiFi (cualquier red) -> requiere VPN activa antes de correr.
+:: ERP SSRS + SQL Server accesibles por cable sin VPN.
 :: ============================================================
-echo.
-echo  Verificando VPN FortiClient...
-
-powershell -Command "if (Get-NetAdapter | Where-Object {$_.InterfaceDescription -like '*Fortinet*' -and $_.Status -eq 'Up'}) { exit 0 } else { exit 1 }" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo  [OK] VPN conectada.
-    goto :vpn_ok
-)
-
-echo  [AVISO] VPN no detectada.
-
-:: Verificar si el perfil Oviedo existe en el registro
-reg query "HKCU\Software\Fortinet\FortiClient\Sslvpn\Tunnels\Oviedo" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo  [INFO] Perfil VPN no encontrado en este equipo.
-    if exist "E:\Alejandro\VPN-FortiClient\RESTAURAR-VPN.ps1" (
-        echo  [INFO] Importando perfil desde E:\Alejandro\VPN-FortiClient\...
-        powershell -ExecutionPolicy Bypass -File "E:\Alejandro\VPN-FortiClient\RESTAURAR-VPN.ps1"
-    ) else (
-        echo  [ERROR] No se encuentra E:\Alejandro\VPN-FortiClient\
-        echo          Conecta el disco USB E: y vuelve a intentarlo.
-        pause
-        exit /b 1
-    )
-) else (
-    echo  [INFO] Perfil VPN encontrado. Abriendo FortiClient...
-    if exist "C:\Program Files\Fortinet\FortiClient\FortiClient.exe" (
-        start "" "C:\Program Files\Fortinet\FortiClient\FortiClient.exe"
-    ) else (
-        echo  [AVISO] FortiClient no encontrado. Conecta la VPN manualmente.
-    )
-)
-
-:: Modo no interactivo: sin VPN activa el pipeline se cancela con log de error
-set _VPNLOG=%~dp0logs\vpn_error_%date:~6,4%%date:~3,2%%date:~0,2%.log
-echo [ERROR] VPN no detectada. Pipeline cancelado sin interaccion. >> "%_VPNLOG%"
-echo [ERROR] VPN no activa - %date% %time% >> "%_VPNLOG%"
-exit /b 1
-
-:: Verificar que la VPN quedo conectada
-powershell -Command "if (Get-NetAdapter | Where-Object {$_.InterfaceDescription -like '*Fortinet*' -and $_.Status -eq 'Up'}) { exit 0 } else { exit 1 }" >nul 2>&1
-if !errorlevel! neq 0 (
-    echo [ERROR] VPN no detectada. Pipeline cancelado sin interaccion. >> "%_VPNLOG%"
-    exit /b 1
-)
-echo  [OK] VPN confirmada.
-
-:vpn_ok
-echo.
 
 cd /d "E:\ferreteria-oviedo"
 
