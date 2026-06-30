@@ -302,6 +302,12 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   plan de cutover pendiente (ver memoria de Claude: seguridad-carpeta-aleatoria-datos,
   pendiente-passwords-texto-plano).
 
+- Deploy V37.46: 2026-06-30 — Traspasos CD: prioridad inteligente 4 capas (P1 rojo=quiebre+demanda,
+  P2 amarillo=tendencia alza, P3 verde=estable, P4 gris=sin movimiento/sin CD) + filtro keyword
+  portabilidad por bodega (SEM=ligeros/herramientas, PEM=materiales pesados, CD=sin filtro) +
+  ordenamiento: prioridad como clave primaria, campo dropdown como secundaria dentro de cada grupo.
+  Keywords editables en _TCD_KW_SEM/_TCD_KW_PEM sin tocar más código. Badge emoji en col Código.
+
 - Deploy V37.45: 2026-06-30 — Traspasos CD: filtro por bodega (PEM/SEM/CD con botones),
   panel checkboxes ranking para vista CD (Top10/11-25/26-75/76-200/200+/Sin venta),
   columna Solicitar en blanco por defecto (manual), export PDF/Excel/HTML solo filas con
