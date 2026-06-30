@@ -302,6 +302,12 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   plan de cutover pendiente (ver memoria de Claude: seguridad-carpeta-aleatoria-datos,
   pendiente-passwords-texto-plano).
 
+- Deploy V37.45: 2026-06-30 — Traspasos CD: filtro por bodega (PEM/SEM/CD con botones),
+  panel checkboxes ranking para vista CD (Top10/11-25/26-75/76-200/200+/Sin venta),
+  columna Solicitar en blanco por defecto (manual), export PDF/Excel/HTML solo filas con
+  cantidad ingresada (_tcdExportRows), _tcdSaveInputs preserva valores al cambiar vista,
+  thead dinámico (oculta columna PEM en vista SEM y viceversa). Revisión OCR $0: 14/14 reglas OK.
+
 - Deploy V37.44: 2026-06-28 — validar_jsons.py (bloquea deploy si JSON roto, insertado en
   ACTUALIZAR_TODO.bat antes de rotar_token_data.py); TTL 8h en token rotativo dataAccessToken
   (expires_at en rotar_token_data.py, chequeo+logout en panel-admin.html/index.html, panel-cliente.html

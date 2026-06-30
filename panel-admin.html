@@ -3586,14 +3586,14 @@ Todo desde tu celular, gratis, sin apps que descargar.
   <div class="card">
     <div class="card-title"><span>🚚</span> Traspasos CD → PEM / SEM — El Manzano</div>
     <div style="font-size:12px;color:#6b7280;margin-bottom:14px">
-      Mismo criterio que se usa manualmente en Excel para pedir a Santiago: ranking de ventas en el rango de
-      fechas elegido (más los rankings automáticos de los últimos 2 y 1 mes para comparar tendencia), redondeado
-      al <b>embalaje cerrado</b> de cada producto — código <span class="code" style="font-family:monospace">E(n)</span>
-      en la descripción (pallet o caja cerrada, ej. venta=80 y embalaje=100 → se sugiere 100). La columna
-      <b>Solicitar</b> queda editable: la sugerencia es el punto de partida, la decisión final la toma quien revisa.
+      Ranking de ventas en el rango elegido (+ últimos 2 y 1 mes para tendencia), redondeado al
+      <b>embalaje cerrado</b> — código <span class="code" style="font-family:monospace">E(n)</span> en la descripción.
+      La columna <b>Solicitar</b> queda en blanco: el usuario ingresa la cantidad manualmente.
+      Al exportar solo se incluyen códigos con cantidad ingresada.
     </div>
 
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+    <!-- Fila 1: controles de fecha, orden y acciones -->
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
       <label style="font-size:12px;font-weight:600;color:#374151">Ranking desde
         <input type="date" id="tcdDesde" style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px">
       </label>
@@ -3611,27 +3611,46 @@ Todo desde tu celular, gratis, sin apps que descargar.
       <button onclick="tcdEnviarEmail()" style="background:#059669;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">📧 Enviar / Exportar (PDF · Excel · HTML)</button>
     </div>
 
+    <!-- Fila 2: filtro por bodega -->
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:700;color:#374151">Ver bodega:</span>
+      <button id="tcdBtn_pem" onclick="_tcdSetBodega('pem')" style="background:#1a1d3a;color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">📦 PEM</button>
+      <button id="tcdBtn_sem" onclick="_tcdSetBodega('sem')" style="background:#e5e7eb;color:#374151;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer">📦 SEM</button>
+      <div style="width:1px;background:#d1d5db;height:22px;margin:0 4px"></div>
+      <button id="tcdBtn_cd" onclick="_tcdSetBodega('cd')" style="background:#e5e7eb;color:#374151;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer">🏭 CD</button>
+      <!-- Panel checkboxes ranking — solo visible cuando bodega = cd -->
+      <div id="tcdCdPanel" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:6px 12px">
+        <span style="font-size:11px;font-weight:700;color:#92400e">Ranking:</span>
+        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="tcdCkB1" checked onchange="_tcdToggleBucket('b1',this.checked)"> Top 10</label>
+        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="tcdCkB2" checked onchange="_tcdToggleBucket('b2',this.checked)"> 11–25</label>
+        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="tcdCkB3" checked onchange="_tcdToggleBucket('b3',this.checked)"> 26–75</label>
+        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="tcdCkB4" checked onchange="_tcdToggleBucket('b4',this.checked)"> 76–200</label>
+        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="tcdCkB5" checked onchange="_tcdToggleBucket('b5',this.checked)"> 200+</label>
+        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="tcdCkB6" checked onchange="_tcdToggleBucket('b6',this.checked)"> Sin venta</label>
+      </div>
+    </div>
+
     <div id="tcdResumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
 
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead>
+        <thead id="tcdThead">
           <tr style="background:#1a1d3a;color:white">
             <th style="padding:8px 10px;text-align:left">Código</th>
             <th style="padding:8px 10px;text-align:left">Descripción</th>
-            <th class="r" style="padding:8px 10px">PEM</th>
-            <th class="r" style="padding:8px 10px">SEM</th>
+            <th id="tcdThPem" class="r" style="padding:8px 10px">PEM</th>
+            <th id="tcdThSem" class="r" style="padding:8px 10px;display:none">SEM</th>
             <th class="r" style="padding:8px 10px">RCE</th>
             <th class="r" style="padding:8px 10px;background:#92400e">CD</th>
             <th class="r" style="padding:8px 10px" id="tcdColRankPrincipal">Ranking</th>
             <th class="r" style="padding:8px 10px">Ranking 2 meses</th>
             <th class="r" style="padding:8px 10px">Ranking 1 mes</th>
             <th class="r" style="padding:8px 10px">Embalaje</th>
-            <th style="padding:8px 10px;background:#fde047;color:#1a1d3a;font-weight:700">Solicitar</th>
+            <th id="tcdThSolicitar" style="padding:8px 10px;background:#fde047;color:#1a1d3a;font-weight:700">Solicitar (PEM)</th>
           </tr>
         </thead>
         <tbody id="tcdBody">
-          <tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Cargando...</td></tr>
+          <tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -3683,7 +3702,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.44<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">28-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.45<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">30-06-2026</span></div>
 
 <script>
 
@@ -17139,7 +17158,7 @@ function _tcdCalcular(){
       codigo:cod, desc:sm.desc||'',
       pem:pem, sem:sem, rce:rce, cd:cd,
       rankPrincipal:Math.round(v.principal), rank2m:Math.round(v.m2), rank1m:Math.round(v.m1),
-      embalaje:embalaje, sugerido:sugerido
+      embalaje:embalaje, sugerido:sugerido, solicitar:0
     });
   });
 
@@ -17148,6 +17167,7 @@ function _tcdCalcular(){
 }
 
 function _tcdReordenar(){
+  _tcdSaveInputs();
   var campo = (document.getElementById('tcdOrden')||{}).value || 'rankPrincipal';
   _tcdRows.sort(function(a,b){ return b[campo] - a[campo]; });
   _tcdRenderResumen(_tcdRows);
@@ -17156,50 +17176,131 @@ function _tcdReordenar(){
 
 function _tcdRenderResumen(rows){
   var conVenta = rows.filter(function(r){ return r.rankPrincipal>0; }).length;
-  var sugeridoTot = rows.reduce(function(s,r){ return s+r.sugerido; }, 0);
-  var sinCdSuficiente = rows.filter(function(r){ return r.sugerido>r.cd; }).length;
+  var conSolicitar = rows.filter(function(r){
+    var inp = document.getElementById('tcdSol_'+r.codigo);
+    return inp ? (parseInt(inp.value,10)||0)>0 : (r.solicitar||0)>0;
+  }).length;
+  var sinCdSuficiente = rows.filter(function(r){
+    var inp = document.getElementById('tcdSol_'+r.codigo);
+    var sol = inp ? (parseInt(inp.value,10)||0) : (r.solicitar||0);
+    return sol>0 && sol>r.cd;
+  }).length;
   var html =
     '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#166534">'+rows.length+'</div><div style="font-size:11px;color:#15803d">Códigos listados</div></div>'+
     '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#1e40af">'+conVenta+'</div><div style="font-size:11px;color:#2563eb">Con venta en el rango</div></div>'+
-    '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#854d0e">'+sugeridoTot.toLocaleString('es-CL')+'</div><div style="font-size:11px;color:#a16207">Unidades sugeridas (Solicitar)</div></div>'+
+    '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#854d0e">'+conSolicitar+'</div><div style="font-size:11px;color:#a16207">Con cantidad ingresada</div></div>'+
     '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#991b1b">'+sinCdSuficiente+'</div><div style="font-size:11px;color:#dc2626">SKU(s) con CD insuficiente</div></div>';
   document.getElementById('tcdResumen').innerHTML = html;
 }
 
+function _tcdGetBucket(rankPos, hasVenta){
+  if(!hasVenta) return 'b6';
+  if(rankPos<=10) return 'b1';
+  if(rankPos<=25) return 'b2';
+  if(rankPos<=75) return 'b3';
+  if(rankPos<=200) return 'b4';
+  return 'b5';
+}
+
 function _tcdRenderTabla(rows){
+  var showPem = (_tcdBodega !== 'sem');
+  var showSem = (_tcdBodega !== 'pem');
+  var colLabel = _tcdBodega==='sem' ? 'Solicitar (SEM)' : _tcdBodega==='pem' ? 'Solicitar (PEM)' : 'Solicitar';
+
+  var thPem = document.getElementById('tcdThPem');
+  var thSem = document.getElementById('tcdThSem');
+  var thSol = document.getElementById('tcdThSolicitar');
+  if(thPem) thPem.style.display = showPem ? '' : 'none';
+  if(thSem) thSem.style.display = showSem ? '' : 'none';
+  if(thSol) thSol.textContent = colLabel;
+
+  // Para filtro CD: calcular rank posición de cada producto (1=mayor venta)
+  var rankMap = {};
+  if(_tcdBodega==='cd'){
+    var sorted = rows.slice().sort(function(a,b){ return b.rankPrincipal-a.rankPrincipal; });
+    var pos = 0;
+    sorted.forEach(function(r){ if(r.rankPrincipal>0) pos++; rankMap[r.codigo]=r.rankPrincipal>0?pos:0; });
+  }
+
+  var visible = rows.filter(function(r){
+    if(_tcdBodega!=='cd') return true;
+    return _tcdCdBuckets[_tcdGetBucket(rankMap[r.codigo]||0, r.rankPrincipal>0)];
+  });
+
+  var nCols = 9 + (showPem?1:0) + (showSem?1:0);
   var body = document.getElementById('tcdBody');
-  if(!rows.length){
-    body.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Sin códigos con CD o venta en el rango seleccionado.</td></tr>';
+  if(!visible.length){
+    body.innerHTML = '<tr><td colspan="'+nCols+'" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">Sin resultados con los filtros actuales.</td></tr>';
     return;
   }
-  body.innerHTML = rows.map(function(r,i){
-    var cdInsuf = r.sugerido>r.cd;
+
+  body.innerHTML = visible.map(function(r){
+    var solVal = r.solicitar>0 ? r.solicitar : '';
+    var pemTd = showPem ? '<td class="r" style="padding:6px 10px;'+(r.pem<=0?'color:#dc2626':'')+'">'+r.pem.toLocaleString('es-CL')+'</td>' : '';
+    var semTd = showSem ? '<td class="r" style="padding:6px 10px;'+(r.sem<=0?'color:#dc2626':'')+'">'+r.sem.toLocaleString('es-CL')+'</td>' : '';
     return '<tr style="border-bottom:1px solid #e5e7eb">'+
-      '<td style="padding:6px 10px;font-family:monospace">'+r.codigo+'</td>'+
-      '<td style="padding:6px 10px">'+(r.desc||'').slice(0,55)+'</td>'+
-      '<td class="r" style="padding:6px 10px;'+(r.pem<=0?'color:#dc2626':'')+'">'+r.pem.toLocaleString('es-CL')+'</td>'+
-      '<td class="r" style="padding:6px 10px;'+(r.sem<=0?'color:#dc2626':'')+'">'+r.sem.toLocaleString('es-CL')+'</td>'+
+      '<td style="padding:6px 10px;font-family:monospace">'+venAdmEsc(r.codigo)+'</td>'+
+      '<td style="padding:6px 10px">'+venAdmEsc((r.desc||'').slice(0,55))+'</td>'+
+      pemTd+semTd+
       '<td class="r" style="padding:6px 10px">'+r.rce.toLocaleString('es-CL')+'</td>'+
-      '<td class="r" style="padding:6px 10px;background:#fef3c7;font-weight:700;color:'+(cdInsuf?'#dc2626':'#92400e')+'" title="'+(cdInsuf?'CD insuficiente para cubrir la sugerencia':'')+'">'+r.cd.toLocaleString('es-CL')+(cdInsuf?' ⚠️':'')+'</td>'+
+      '<td class="r" style="padding:6px 10px;background:#fef3c7;font-weight:700;color:#92400e">'+r.cd.toLocaleString('es-CL')+'</td>'+
       '<td class="r" style="padding:6px 10px;font-weight:700">'+(r.rankPrincipal||'—')+'</td>'+
       '<td class="r" style="padding:6px 10px">'+(r.rank2m||'—')+'</td>'+
       '<td class="r" style="padding:6px 10px">'+(r.rank1m||'—')+'</td>'+
       '<td class="r" style="padding:6px 10px">E('+r.embalaje+')</td>'+
-      '<td style="padding:4px 6px;background:#fefce8"><input type="number" min="0" step="1" value="'+r.sugerido+'" id="tcdSol_'+i+'" data-cod="'+r.codigo+'" style="width:80px;padding:4px 6px;border:1px solid #fde047;border-radius:4px;font-size:12px;font-weight:700;text-align:right"></td>'+
+      '<td style="padding:4px 6px;background:#fefce8"><input type="number" min="0" step="1" value="'+solVal+'" id="tcdSol_'+r.codigo+'" data-cod="'+venAdmEsc(r.codigo)+'" style="width:80px;padding:4px 6px;border:1px solid #fde047;border-radius:4px;font-size:12px;font-weight:700;text-align:right" placeholder="0"></td>'+
     '</tr>';
   }).join('');
 }
 
-// Lee _tcdRows + el valor ACTUAL de cada input "Solicitar" en pantalla (incluye ediciones
-// manuales del dueño) — usado por email/Excel/PDF para que los 3 reflejen lo que se ve en tiempo real.
+// Guarda los valores actuales de los inputs en _tcdRows (antes de cualquier re-render).
+function _tcdSaveInputs(){
+  if(!_tcdRows) return;
+  _tcdRows.forEach(function(r){
+    var inp = document.getElementById('tcdSol_'+r.codigo);
+    if(inp) r.solicitar = parseInt(inp.value,10)||0;
+  });
+}
+
+// Cambia la bodega activa, actualiza botones y re-renderiza.
+var _tcdBodega = 'pem';
+var _tcdCdBuckets = {b1:true,b2:true,b3:true,b4:true,b5:true,b6:true};
+
+function _tcdSetBodega(bod){
+  _tcdSaveInputs();
+  _tcdBodega = bod;
+  ['pem','sem','cd'].forEach(function(b){
+    var btn = document.getElementById('tcdBtn_'+b);
+    if(!btn) return;
+    btn.style.background = b===bod ? '#1a1d3a' : '#e5e7eb';
+    btn.style.color = b===bod ? 'white' : '#374151';
+    btn.style.fontWeight = b===bod ? '700' : '400';
+  });
+  var panel = document.getElementById('tcdCdPanel');
+  if(panel) panel.style.display = bod==='cd' ? 'flex' : 'none';
+  if(_tcdRows) _tcdRenderTabla(_tcdRows);
+}
+
+function _tcdToggleBucket(bucket, checked){
+  _tcdCdBuckets[bucket] = checked;
+  _tcdSaveInputs();
+  if(_tcdRows) _tcdRenderTabla(_tcdRows);
+}
+
+// Lee _tcdRows + valores actuales de los inputs (incluye ediciones manuales).
 function _tcdLiveRows(){
   if(!_tcdRows) return [];
-  return _tcdRows.map(function(r,i){
-    var inp = document.getElementById('tcdSol_'+i);
-    var solicitar = inp ? (parseInt(inp.value,10)||0) : r.sugerido;
+  return _tcdRows.map(function(r){
+    var inp = document.getElementById('tcdSol_'+r.codigo);
+    var solicitar = inp ? (parseInt(inp.value,10)||0) : (r.solicitar||0);
     return {codigo:r.codigo, desc:r.desc, pem:r.pem, sem:r.sem, rce:r.rce, cd:r.cd,
       rankPrincipal:r.rankPrincipal, rank2m:r.rank2m, rank1m:r.rank1m, embalaje:r.embalaje, solicitar:solicitar};
   });
+}
+
+// Solo filas con cantidad ingresada — usado por todos los exportadores.
+function _tcdExportRows(){
+  return _tcdLiveRows().filter(function(r){ return r.solicitar>0; });
 }
 
 function _tcdHtmlReporte(rows){
@@ -17228,8 +17329,8 @@ function _tcdHtmlReporte(rows){
 }
 
 window.tcdEnviarEmail = function(){
-  var rows = _tcdLiveRows();
-  if(!rows.length){ if(window.toast) toast('Sin datos para enviar — presiona Recalcular primero','warn'); return; }
+  var rows = _tcdExportRows();
+  if(!rows.length){ if(window.toast) toast('Sin códigos con cantidad ingresada — completa la columna Solicitar primero','warn'); return; }
   _vadmEmailInventarioData = {tab:'traspasocd', items:rows};
   var fechaHoy = new Date().toLocaleDateString('es-CL');
   var asunto = 'Traspasos CD → PEM/SEM El Manzano — '+fechaHoy;
@@ -17248,8 +17349,8 @@ window.tcdEnviarEmail = function(){
 };
 
 window.tcdExportExcel = function(){
-  var rows = _tcdLiveRows();
-  if(!rows.length){ if(window.toast) toast('Sin datos para exportar','warn'); return; }
+  var rows = _tcdExportRows();
+  if(!rows.length){ if(window.toast) toast('Sin códigos con cantidad ingresada','warn'); return; }
   if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
   var headers = ['Código','Descripción','PEM','SEM','RCE','CD','Ranking principal','Ranking 2 meses','Ranking 1 mes','Embalaje','Solicitar'];
   var data = [headers];
@@ -17266,8 +17367,8 @@ window.tcdExportExcel = function(){
 };
 
 window.tcdExportPdf = function(){
-  var rows = _tcdLiveRows();
-  if(!rows.length){ if(window.toast) toast('Sin datos para exportar','warn'); return; }
+  var rows = _tcdExportRows();
+  if(!rows.length){ if(window.toast) toast('Sin códigos con cantidad ingresada','warn'); return; }
   if(typeof window.jspdf==='undefined'){ if(window.toast) toast('Librería PDF no disponible','err'); return; }
   var jsPDF = window.jspdf.jsPDF;
   var doc = new jsPDF({orientation:'landscape', unit:'mm', format:'letter'});
