@@ -605,17 +605,34 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 .vadm-rank-table tr.vadm-top1 td{background:#fffbeb}
 .vadm-rank-table tr.vadm-top2 td{background:#f9fafb}
 /* Encabezados de tabla "pegajosos" (2026-07-01) — no desaparecen al hacer scroll.
-   top:60px = altura de .topbar (sticky top:0, mismo offset ya usado en .sidebar).
-   Solo dentro de .tab-pane (contenido de menu): las tablas que viven dentro de modales
-   (scroll propio, ej. #vadmSEModalBody/#cotizModalContent/#vadmVPModalBody/#vadmDocModalBody)
-   se excluyen mas abajo con selectores mas especificos (top:0, relativos a su propio scroll). */
-.tab-pane .tbl th,
-.tab-pane .vtbl th,
-.tab-pane .vadm-rank-table th{position:sticky;top:60px;z-index:5}
-#vadmSEModalBody .tbl th,#vadmSEModalBody .vtbl th,#vadmSEModalBody .vadm-rank-table th,
-#cotizModalContent .tbl th,#cotizModalContent .vtbl th,#cotizModalContent .vadm-rank-table th,
-#vadmVPModalBody .tbl th,#vadmVPModalBody .vtbl th,#vadmVPModalBody .vadm-rank-table th,
-#vadmDocModalBody .tbl th,#vadmDocModalBody .vtbl th,#vadmDocModalBody .vadm-rank-table th{top:0}
+   CAUSA RAIZ real (encontrada tras reproducir el bug visual con scroll real, no solo
+   computed style): los wrappers ".ven-adm-table-wrap"/"overflow-x:auto" que envuelven
+   estas tablas quedan clasificados por el navegador como "contenedor con scroll" (la
+   regla CSS que dice: si overflow-x no es visible y overflow-y si lo es, overflow-y
+   pasa a ser 'auto' tambien) — eso los convierte en el contenedor de referencia para
+   position:sticky DE SUS HIJOS, en vez de la ventana/pagina. Como ese wrapper nunca
+   crece mas alla de su contenido (no tiene una altura acotada), nunca hace scroll el
+   solo, y el thead sticky (que solo reacciona al scroll DE SU contenedor de referencia)
+   nunca se activa — queda quieto y se va de pantalla junto con el resto al hacer scroll
+   de la pagina. Fix real: darle a esos wrappers una altura acotada (max-height) para que
+   sean ellos los que hacen scroll de verdad, y el thead sticky con top:0 (relativo a su
+   propio wrapper, no a la pagina).
+   IMPORTANTE: sticky va en el <thead> completo, NUNCA en los <th> individuales — poner
+   position:sticky en cada th por separado hace que el texto del header se desprenda
+   visualmente de su fila (otro bug real reproducido el mismo dia). */
+div:has(> table.tbl),
+div:has(> table.vtbl),
+div:has(> table.vadm-rank-table),
+div:has(> table#isbTabla),
+div:has(> table#dpTabla),
+div:has(> table#rpTabla),
+div:has(> table#bfTabla),
+div:has(> table#csTablaResult),
+div:has(> table#csBodTabla),
+div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
+.tbl thead,
+.vtbl thead,
+.vadm-rank-table thead{position:sticky;top:0;z-index:5}
 .vadm-margen-bar-wrap{display:inline-block;width:60px;height:6px;background:#f3f4f6;border-radius:3px;vertical-align:middle;margin-left:4px;overflow:hidden}
 .vadm-margen-bar-fill{height:6px;border-radius:3px;display:block}
 .vadm-anal-bar2{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:8px 18px;border-bottom:1px solid #f3f4f6;background:#fafafa}
@@ -1669,7 +1686,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <div id="isbStatus" style="font-size:12px;color:#9ca3af;padding:6px 16px"></div>
           <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px">
             <table id="isbTabla" style="display:none;width:100%;border-collapse:collapse;font-size:12px">
-              <thead style="position:sticky;top:60px;z-index:15">
+              <thead style="position:sticky;top:0;z-index:15">
                 <tr style="background:#f1f5f9;text-align:center">
                   <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px;white-space:nowrap">Código</th>
                   <th rowspan="2" style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:200px">Descripción</th>
@@ -1747,7 +1764,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <div id="dpStatus" style="font-size:12px;color:#9ca3af;padding:2px 16px 6px"></div>
           <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px">
             <table id="dpTabla" style="width:100%;border-collapse:collapse;font-size:12px">
-              <thead style="position:sticky;top:60px;z-index:15">
+              <thead style="position:sticky;top:0;z-index:15">
                 <tr style="background:#f1f5f9;font-size:11px">
                   <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:90px">Folio</th>
                   <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px">Documento</th>
@@ -1783,7 +1800,7 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
           <div id="rpStatus" style="font-size:12px;color:#9ca3af;padding:2px 16px 6px"></div>
           <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px">
             <table id="rpTabla" style="width:100%;border-collapse:collapse;font-size:12px">
-              <thead style="position:sticky;top:60px;z-index:15">
+              <thead style="position:sticky;top:0;z-index:15">
                 <tr style="background:#f1f5f9;font-size:11px">
                   <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0">Documento</th>
                   <th style="text-align:left;padding:6px 8px;border:1px solid #e2e8f0;min-width:80px">Número</th>
@@ -3343,7 +3360,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
     <div id="bfKpis" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
     <div style="overflow-x:auto">
       <table id="bfTabla" style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead style="position:sticky;top:60px;z-index:15">
+        <thead style="position:sticky;top:0;z-index:15">
           <tr style="background:#1a1d3a;color:white">
             <th style="padding:8px 10px;text-align:left">Bodega</th>
             <th style="padding:8px 10px;text-align:left">Tipo Doc</th>
@@ -3383,7 +3400,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
     <!-- Resultados de búsqueda -->
     <div style="overflow-x:auto;margin-bottom:16px">
       <table id="csTablaResult" style="width:100%;border-collapse:collapse;font-size:12px;display:none">
-        <thead style="position:sticky;top:60px;z-index:15">
+        <thead style="position:sticky;top:0;z-index:15">
           <tr style="background:#1a1d3a;color:white">
             <th style="padding:7px 12px;text-align:left">Código</th>
             <th style="padding:7px 12px;text-align:left">Descripción</th>
@@ -3461,7 +3478,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
       </style>
       <div style="overflow-x:auto">
         <table class="cs-xls" id="csBodTabla">
-          <thead style="position:sticky;top:60px;z-index:15">
+          <thead style="position:sticky;top:0;z-index:15">
             <tr>
               <th style="text-align:left" title="PEM=Patio · SEM=Sala · CEM=Calzada · MEM=Mermas · IEM=Ingreso · TEM=Tránsito · RCE=Recepción · CD=Centro Distribución (El Manzano)">BOD</th>
               <th style="text-align:right">Disp.</th>
@@ -3669,7 +3686,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead id="tcdThead" style="position:sticky;top:60px;z-index:15">
+        <thead id="tcdThead" style="position:sticky;top:0;z-index:15">
           <tr style="background:#1a1d3a;color:white">
             <th style="padding:8px 10px;text-align:left">Código</th>
             <th style="padding:8px 10px;text-align:left">Descripción</th>
@@ -3737,7 +3754,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.52<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.53<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
 
 <script>
 
