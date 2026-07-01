@@ -1367,3 +1367,15 @@ Contiene todo lo que NO es flujo activo:
 - **Playwright (PASO 1H) resuelto**: el navegador Chromium YA estaba instalado en `E:\playwright-browsers\chromium_headless_shell-1223\` (siguiendo la regla de no usar C:), pero faltaba la variable de entorno `PLAYWRIGHT_BROWSERS_PATH` (no existía). Seteada permanente a nivel Usuario. Probado: `chromium.launch()` OK.
 - **PASO 1A (descargar_erp.py) — causa raíz diagnosticada**: error real es `net::ERR_BLOCKED_BY_CLIENT` en `200.6.113.97` (mismo IP del ERP). Mismo patrón ya documentado y resuelto en Justime (`justime-c-fix-com-y-defender`): Windows Defender Network Protection (confirmado activo) bloquea por reputación de IP, de forma intermitente. El intento de aplicar la excepción vía PowerShell elevado fue bloqueado por el clasificador de seguridad de Claude Code (debilitar antivirus requiere aprobación explícita del usuario, no automatizable). Se generó `C:\Users\alejandro\Desktop\FIX_DEFENDER_PASO1A.bat` para que el dueño lo ejecute como Administrador.
 - Deploy V37.43: 2026-06-28 22:22 — fix XSS (vadmBuscarStock + csVerDesgloseMarca), deploy hecho con `firebase deploy --only hosting` directo (PUBLICAR.bat quedó descartado para uso headless: es interactivo, pregunta visibilidad de precios del catálogo — decisión de negocio que no corresponde automatizar).
+
+**Nota:** V37.44–V37.49 (2026-06-29 a 2026-07-01) no se documentaron aquí sesión a sesión — detalle completo en memory/estado-sesion-20260630*.md y memory/estado-sesion-20260701*.md (Traspasos CD, Consulta de Stock con tiempo de tránsito, Solicitud de Stock con base Firestore y tracking de envíos, fix logout por dataAccessToken vencido).
+
+### Fix 2026-07-01 (sesión 3o) — Análisis de Bodegas: agregar GEM y TEM
+- **Pedido del dueño**: agregar las bodegas GESTIÓN EL MANZANO y TRÁNSITO EL MANZANO al tab "Análisis de Bodegas" (antes solo IEM/RCE/CEM/ICD).
+- **Investigación**: confirmado en `IDS_REFERENCIA.md` — GEM = IDBODEGA SQL 28 (SUC=04, antes marcada "❌ no usado en pipeline"), TEM = IDBODEGA SQL 46 (SUC=04, ya usada en stock SSRS bloque 2 pero no en este análisis de antigüedad). Ambas van con `IDSUCURSAL='04'` igual que IEM/RCE/CEM (no como ICD que es SUC=08).
+- **Fix**:
+  - `BODEGAS\descargar_bod.py`: 2 tuplas nuevas en la lista `BODEGAS` → `('GEM', 28, 'bod-gem-registros.json', '04')` y `('TEM', 46, 'bod-tem-registros.json', '04')`. Ya estaba enganchado como PASO 1D del pipeline, no requirió cambios en los `.bat`.
+  - `panel-admin.html`: checkboxes `bfChkGEM`/`bfChkTEM`, fetch de los 2 JSON nuevos en `vadmRenderBodFem()`, colores KPI en el mapa `BC`, título del card actualizado.
+- **Verificado**: `descargar_bod.py` corrido en vivo (GEM 155 registros, TEM 5 registros). Preview local con `vadmRenderBodFem()` invocado directo confirma las 6 bodegas cargando (322 registros totales) sin errores de consola. Login real de admin no probado (requiere Google Auth, mismo límite documentado en sesiones anteriores).
+- Revisión $0 (`/revisar-codigo`) contra las 14 reglas: 0 ERRORes, 0 WARNINGs.
+- V37.50.

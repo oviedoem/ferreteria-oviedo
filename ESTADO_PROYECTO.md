@@ -1,7 +1,10 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.25
-# Fecha: 2026-06-14
+# Version activa: V37.50
+# Fecha: 2026-07-01
 # Versiones anteriores disponibles en _HISTORICO/
+# NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
+# V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
+# resume el salto de version y se retoma el mantenimiento sesion a sesion.
 
 ---
 
@@ -9,14 +12,21 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.25 |
-| Fecha | 2026-06-14 |
-| Deploy | 2026-06-13 23:04 (datos ventas con rut/sector/razon) |
-| Pendiente | commit V37.25 + badges 3 paneles (datos ya desplegados) |
+| Version | V37.50 |
+| Fecha | 2026-07-01 |
+| Deploy | pendiente en esta sesion (agregar GEM/TEM a Analisis de Bodegas) |
+| Pendiente | ninguno bloqueante — ver PENDIENTES CONOCIDOS |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.50 — 2026-07-01
+- **Analisis de Bodegas ampliado a 6 bodegas:** agregadas GEM (Gestion El Manzano, IDBODEGA SQL 28) y TEM (Transito El Manzano, IDBODEGA SQL 46) al tab `analisis` (antes solo IEM/RCE/CEM/ICD). Ambas SUC=04, confirmadas en `IDS_REFERENCIA.md`.
+- `BODEGAS\descargar_bod.py`: 2 entradas nuevas en `BODEGAS` → genera `bod-gem-registros.json` (155 registros) y `bod-tem-registros.json` (5 registros).
+- `panel-admin.html`: checkboxes `bfChkGEM`/`bfChkTEM`, fetch de los 2 JSON nuevos en `vadmRenderBodFem()`, colores KPI agregados al mapa `BC`. Titulo del card actualizado a "IEM / RCE / CEM / ICD / GEM / TEM".
+- Revision $0 (`/revisar-codigo`) contra las 14 reglas: 0 ERROREs, 0 WARNINGs.
+- Resumen de sesiones anteriores (V37.26–V37.49, no documentadas aqui hasta hoy): Solicitud de Stock (base Firestore PEM+SEM 797 codigos, historial de envios, fix guardado minimo/reposicion), fix logout silencioso por `dataAccessToken` vencido, Traspasos CD (prioridad 4 capas + export PDF/Excel/HTML), Consulta de Stock (8 bodegas, minimo/critico/maximo ERP, tiempo de transito por proveedor y por bodega, desglose por marca), fixes XSS (`vadmBuscarStock`, `csVerDesgloseMarca`), migracion mapa→subcoleccion Firestore. Detalle completo en `AGENTS.md`.
 
 ### V37.25 — 2026-06-13/14
 - **Enrich ventas migrado XLSM→SQL:** nuevo `BODEGAS\descargar_ventas_enrich.py` genera `xlsm-enrich.json` desde SQL Server (M_DOCUMENTOS_ENCABEZADO + M_ENTIDADES + Encabezado_Observacion, docs BVE/FVE/NCE). rut/razonSocial 0%→100%, sector 0%→~12% en todos los meses. PASO 1K (TODO) / 1J (AUTO), antes de main.py
@@ -93,7 +103,7 @@
 | descargar_ventas_erp.py | Actualizado V37.2 |
 | main.py | Actualizado V36.9 |
 | leer_xlsm.py | Actualizado V36.9 |
-| descargar_bod.py (BODEGAS/) | Actualizado V36.9k (CEM agregado) |
+| descargar_bod.py (BODEGAS/) | Actualizado V37.50 (GEM/TEM agregadas) |
 | procesar-actualizacion.py | Actualizado V36.6 |
 | csv_a_json.py | Actualizado V36.9c |
 | ACTUALIZAR_TODO.bat | Activo — unico punto de entrada |
@@ -149,7 +159,7 @@
 ### ANALISIS BODEGAS
 | Modulo | Tab | Estado |
 |---|---|---|
-| IEM / RCE / CEM / ICD | analisis | OK V37.24 — selector bfFuente (Todas/IEM/RCE/CEM/ICD) |
+| IEM / RCE / CEM / ICD / GEM / TEM | analisis | OK V37.50 — GEM y TEM agregadas (antes solo IEM/RCE/CEM/ICD) |
 
 ### RECEPCIONES / DESPACHOS (Blazor JustWeb)
 | Modulo | Tab | Estado |
@@ -172,11 +182,10 @@
 
 ## PENDIENTES CONOCIDOS
 
-- **Commit V37.25 + badges:** datos ya desplegados (2026-06-13); falta commit a GitHub y actualizar badge de versión en los 3 paneles
 - **RANKING.xlsm / PRECIOS.xlsm** siguen siendo manuales (tabs ranking-unidades y precios-diff) — migrar a SQL en sesión futura si se desea (igual que se hizo con VENTAS.xlsm→enrich SQL)
-- Tarea programada AutoUpdate18:00 no existe en Task Scheduler — crear si se quiere pipeline automático
 - descargar_erp.py falla silencioso: si falla agregar `await page.screenshot(path="debug.png")` antes del click
+- PASO 1A (descargar_erp.py) puede fallar por Windows Defender Network Protection bloqueando la IP del ERP de forma intermitente — ver `FIX_DEFENDER_PASO1A.bat` en el escritorio del dueño (requiere Administrador, no automatizable por Claude Code)
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.25 · 2026-06-14*
+*ESTADO_PROYECTO.md · Version V37.50 · 2026-07-01*
