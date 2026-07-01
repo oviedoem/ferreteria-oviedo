@@ -264,7 +264,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - Directorio activo: `PROYECTO_E:\ferreteria-oviedo\` (identificar el disco por etiqueta PROYECTO_E,
   no por letra) — NUNCA trabajar directamente en `PROYECTO_E:\git-sync\` ni en discos sin la
   etiqueta PROYECTO_E (ej. el disco con Windows 10 alterno, identificado en 2026-06-22)
-- Versión activa: V37.22
+- Versión activa: V37.46
 
 ### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
@@ -301,6 +301,13 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   no es carpeta real; SETUP_PC_NUEVO.md y "paso a paso.txt" actualizados con snapshot de discos y
   plan de cutover pendiente (ver memoria de Claude: seguridad-carpeta-aleatoria-datos,
   pendiente-passwords-texto-plano).
+
+- Sesion 2026-06-30 (sesión C): PASO 1H descargar_blazor_bodegas.py reescrito — token directo
+  sin login, selector botón correcto `button.e-boton:has-text('Exportar a Excel')` (sin atributo
+  title), tabs via `[role='tab']:has-text(...)`. TOKEN_RECEPCION en credenciales_erp.ini (visible en
+  perfil JustWeb → click avatar → TOKEN). Si expira → actualizar GUID en el ini.
+  Resultado: recepciones=21, despachos=25 docs. HTML de referencia guardado en
+  BODEGAS\Movimiento de bodega en revision.html.
 
 - Deploy V37.46: 2026-06-30 — Traspasos CD: prioridad inteligente 4 capas (P1 rojo=quiebre+demanda,
   P2 amarillo=tendencia alza, P3 verde=estable, P4 gris=sin movimiento/sin CD) + filtro keyword

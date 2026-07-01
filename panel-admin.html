@@ -3536,6 +3536,18 @@ Todo desde tu celular, gratis, sin apps que descargar.
           <span style="font-size:12px;color:#374151">Sin</span>
         </label>
       </div>
+      <!-- Parámetros ERP -->
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#374151">
+        Parámetros
+        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500" title="Mostrar solo códigos con ST_MIN configurado en ERP">
+          <input type="checkbox" id="reqConMin" checked>
+          <span style="font-size:12px;color:#374151">Con mínimo</span>
+        </label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500" title="Mostrar solo códigos con ST_REPOSICION configurado en ERP">
+          <input type="checkbox" id="reqConRepo" checked>
+          <span style="font-size:12px;color:#374151">Con repos.</span>
+        </label>
+      </div>
       <!-- N ítems -->
       <label style="font-size:12px;font-weight:600;color:#374151;display:flex;align-items:center;gap:6px">
         Mostrar
@@ -3545,6 +3557,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
       </label>
       <button class="btn btn-sm" onclick="reqStockPrellenar()">🔄 Pre-llenar</button>
       <button class="btn btn-sm" style="background:#059669;color:white" onclick="reqStockEnviarEmail()">📧 Enviar a Adquisiciones</button>
+      <button class="btn btn-sm" style="background:#4b5563;color:white" onclick="reqDescargarHistorial()" title="Descarga CSV con todos los códigos enviados y su fecha de envío">⬇️ Historial enviados</button>
     </div>
 
     <!-- Badge AYER -->
@@ -17484,6 +17497,7 @@ function renderReqStock(){
     rh.value = hoy.toISOString().slice(0,10);
   }
   _reqStockPoblarMarcas();
+  _reqCargarBaseMin();
 }
 
 function _reqStockPoblarMarcas(){
@@ -17501,6 +17515,8 @@ function _reqStockPoblarMarcas(){
 }
 
 var _reqStockParams = null;  // {codigo:{min,max,critico,repo,disp}} desde stock-critico.json (parametros ERP / Adquisiciones)
+var _reqBaseMin = null;      // {PEM:{codigos:{...}}, SEM:{codigos:{...}}} desde Firestore
+var _reqCodigosEnviados = []; // codigos de la ultima tabla lista para enviar
 function reqStockPrellenar(){
   // Cargar parametros ERP (ST_MIN/ST_MAX/ST_REPOSICION desde SQL) una vez, luego re-ejecutar
   if(_reqStockParams === null){
@@ -17518,14 +17534,42 @@ function reqStockPrellenar(){
   var catC     = document.getElementById('reqCatC') && document.getElementById('reqCatC').checked;
   var conTrans = document.getElementById('reqConTrans') ? document.getElementById('reqConTrans').checked : true;
   var sinTrans = document.getElementById('reqSinTrans') ? document.getElementById('reqSinTrans').checked : true;
+  var conMin   = document.getElementById('reqConMin')   ? document.getElementById('reqConMin').checked   : true;
+  var conRepo  = document.getElementById('reqConRepo')  ? document.getElementById('reqConRepo').checked  : true;
   var nItems   = Math.max(1, parseInt(document.getElementById('reqN').value) || 10);
-
-  if(!desde || !hasta){ alert('Selecciona rango de fechas.'); return; }
-  if(!_vadmLineas || !_vadmLineas.length){ alert('Carga ventas primero (abre cualquier tab de Ventas).'); return; }
-  if(!_vadmStockMap || !Object.keys(_vadmStockMap).length){ alert('Carga inventario primero (abre cualquier tab de Inventario).'); return; }
 
   _reqStockPoblarMarcas();
   var marcaSel  = document.getElementById('reqMarca').value;
+
+  function _reqMsgBloqueo(icono, titulo, detalle){
+    document.getElementById('reqStockBody').innerHTML =
+      '<tr><td colspan="10" style="padding:28px 18px;text-align:center;color:#6b7280;font-size:13px">'+
+        '<div style="font-size:22px;margin-bottom:6px">'+icono+'</div>'+
+        '<div style="font-weight:700;color:#374151;margin-bottom:4px">'+titulo+'</div>'+
+        '<div style="font-size:12px">'+detalle+'</div>'+
+      '</td></tr>';
+  }
+
+  if(!marcaSel){
+    _reqMsgBloqueo('🏷️','Selecciona una marca','Elige una marca en el filtro para ver todos sus códigos pendientes de envío.');
+    return;
+  }
+  if(!desde || !hasta){
+    _reqMsgBloqueo('📅','Selecciona el rango de fechas','Completa los campos Desde y Hasta para continuar.');
+    return;
+  }
+  if(!_vadmLineas || !_vadmLineas.length){
+    _reqMsgBloqueo('📊','Ventas no cargadas','Abre cualquier tab de Ventas primero para cargar los datos de rotación.');
+    return;
+  }
+  if(!_vadmStockMap || !Object.keys(_vadmStockMap).length){
+    _reqMsgBloqueo('📦','Inventario no cargado','Abre cualquier tab de Inventario primero para cargar el stock actual.');
+    return;
+  }
+  if(!_reqBaseMin || (!_reqBaseMin.PEM && !_reqBaseMin.SEM)){
+    _reqMsgBloqueo('⏳','Base de mínimos cargando','Espera un momento y vuelve a hacer clic en Pre-llenar.');
+    return;
+  }
   var desdeTs   = new Date(desde).getTime();
   var hastaTs   = new Date(hasta).getTime() + 86399999;
   var diasRango = Math.max(1, Math.round((hastaTs - desdeTs) / 86400000));
@@ -17552,7 +17596,7 @@ function reqStockPrellenar(){
     }
   }
 
-  // ── 1. Acumular qty y neto en el rango (sin filtro de marca, para ABC global) ──
+  // ── 1. Acumular qty y neto en el rango (para ABC y enriquecimiento) ──
   var qtyMap = {}, netoMap = {};
   _vadmLineas.forEach(function(r){
     if(!r.codigo) return;
@@ -17572,45 +17616,59 @@ function reqStockPrellenar(){
     abcMap[cod] = pct <= 0.80 ? 'A' : pct <= 0.95 ? 'B' : 'C';
   });
 
-  // ── 3. Filtrar por categoría + marca + tránsito ──
+  // ── 3. Fuente: códigos pendientes de envío desde base Firestore (PEM + SEM, enviado=false) ──
   var catsOk = [];
   if(catA) catsOk.push('A');
   if(catB) catsOk.push('B');
   if(catC) catsOk.push('C');
   if(!catsOk.length) catsOk = ['A','B','C'];
 
-  var lista = Object.keys(qtyMap).filter(function(cod){
-    var p = _vadmStockMap[cod] || {};
+  var baseCodigosTodos = {};
+  ['PEM','SEM'].forEach(function(bod){
+    var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
+    if(!base) return;
+    Object.keys(base).forEach(function(cod){
+      if(!base[cod].enviado) baseCodigosTodos[cod] = base[cod];
+    });
+  });
+
+  var lista = Object.keys(baseCodigosTodos).filter(function(cod){
+    var p    = _vadmStockMap[cod] || {};
+    var b    = baseCodigosTodos[cod];
+    var desc = (p.desc || b.descripcion || '').toUpperCase();
+    if(desc.indexOf('(DD)') >= 0) return false;
     if(marcaSel && (p.marca || '') !== marcaSel) return false;
     if(catsOk.indexOf(abcMap[cod] || 'C') < 0) return false;
     var trans = (p.pem_trans || 0) + (p.tem_trans || 0);
     if( conTrans && !sinTrans && !(trans > 0)) return false;
     if(!conTrans &&  sinTrans &&   trans > 0 ) return false;
+    if(conMin  && !(b.st_min  > 0)) return false;
+    if(conRepo && !(b.st_repos > 0)) return false;
     return true;
   })
 
-  // ── 4. Métricas: Mínimo/Reposición = parámetros ERP (R_STOCK_PRODUCTOS), misma lógica del ERP ──
-  // NO se calcula por velocidad de venta. 0 = producto sin parámetros configurados por Adquisiciones.
+  // ── 4. Métricas ──
   .map(function(cod){
     var p            = _vadmStockMap[cod] || {};
-    var qty          = qtyMap[cod];
+    var b            = baseCodigosTodos[cod];
     var erp          = _reqStockParams[cod] || {};
-    var minimoActual = erp.min  || 0;   // ERP ST_MIN
-    var reposicion   = erp.repo || 0;   // ERP ST_REPOSICION
+    var minimoActual = b.st_min   || erp.min  || 0;
+    var reposicion   = b.st_repos || erp.repo || 0;
     var transito     = (p.pem_trans || 0) + (p.tem_trans || 0);
-    // Stock actual = bodegas comerciales (vendibles) PEM+SEM+CEM+MEM. Excluye IEM/RCE/TEM/CD (recepcion/transito).
     var stockActual  = (p.pem || 0) + (p.sem || 0) + (p.cem || 0) + (p.mem || 0);
-    return { cod:cod, desc:p.desc||cod, marca:p.marca||'', abc:abcMap[cod]||'C',
-             qty:qty, minimoActual:minimoActual, transito:transito,
-             stockActual:stockActual, reposicion:reposicion };
+    var qty          = qtyMap[cod] || 0;
+    return { cod:cod, desc:p.desc || b.descripcion || cod, marca:p.marca||'',
+             abc:abcMap[cod]||'C', qty:qty, minimoActual:minimoActual,
+             transito:transito, stockActual:stockActual, reposicion:reposicion };
   })
 
-  // ── 5. Ordenar: más vendido DESC, luego 0 stock primero como desempate ──
+  // ── 5. Ordenar: más vendido DESC, sin ventas al fondo ──
   .sort(function(a,b){
     if(b.qty !== a.qty) return b.qty - a.qty;
     return (a.stockActual === 0 ? 0 : 1) - (b.stockActual === 0 ? 0 : 1);
   })
-  .slice(0, nItems);
+  // Con marca seleccionada: mostrar todos los pendientes de esa marca sin límite
+  .slice(0, marcaSel ? Infinity : nItems);
 
   if(!lista.length){ alert('Sin productos para los filtros seleccionados.'); return; }
 
@@ -17672,6 +17730,7 @@ function reqStockEnviarEmail(){
 
   // ── Leer filas de la tabla app y construir email ──
   var rowsHtml = '', plainLineas = [];
+  _reqCodigosEnviados = [];
   var idx = 0;
   filas.forEach(function(tr){
     var inps = tr.querySelectorAll('input');
@@ -17680,6 +17739,7 @@ function reqStockEnviarEmail(){
     var abc     = tr.getAttribute('data-abc') || 'C';
     var dc      = DOT_C[abc] || DOT_C['C'];
     var cod     = tr.cells[1].textContent.trim();
+    _reqCodigosEnviados.push(cod);
     var prod    = tr.cells[2].textContent.trim();
     var vta     = tr.cells[3].textContent.trim();
     var minAct  = tr.cells[4].textContent.trim();
@@ -17789,6 +17849,7 @@ function reqEmailCopiarHtml(){
       fb.textContent = '✅ HTML copiado — pega con Ctrl+V en Outlook o Gmail';
       document.getElementById('reqEmailBtnCopiar').textContent = '✅ Copiado';
       setTimeout(function(){ document.getElementById('reqEmailBtnCopiar').textContent = '📋 Copiar HTML (para Outlook / Gmail)'; }, 3000);
+      _reqGuardarEnvio(_reqCodigosEnviados);
     }).catch(function(){
       navigator.clipboard.writeText(_reqEmailPlain).then(function(){
         fb.textContent = '📋 Texto plano copiado (HTML no disponible en este navegador)';
@@ -17806,6 +17867,141 @@ function reqEmailAbrirCliente(){
 
 function reqEmailCerrar(){
   document.getElementById('reqEmailModal').style.display = 'none';
+}
+
+function _reqCargarBaseMin(){
+  if(_reqBaseMin !== null) return;
+  if(!window.db) return;
+  _reqBaseMin = {};
+  ['PEM','SEM'].forEach(function(bod){
+    window.db.collection('config').doc('baseStockMinimos_'+bod).get()
+      .then(function(snap){
+        if(snap.exists) _reqBaseMin[bod] = snap.data();
+      })
+      .catch(function(e){ console.warn('baseMin '+bod, e); });
+  });
+}
+
+function _reqGuardarEnvio(codigos){
+  if(!window.db || !codigos || !codigos.length) return;
+  var fechaISO = new Date().toISOString().slice(0,10);
+  var fechaStr = new Date().toLocaleDateString('es-CL');
+
+  // Registrar historial de este envío
+  window.db.collection('historialEnviosStock').add({
+    fecha: fechaISO,
+    fechaTexto: fechaStr,
+    codigos: codigos,
+    total: codigos.length
+  }).catch(function(e){ console.warn('historial envio', e); });
+
+  // Marcar cada código como enviado en su doc de base
+  ['PEM','SEM'].forEach(function(bod){
+    var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
+    if(!base) return;
+    var updates = {};
+    codigos.forEach(function(cod){
+      if(base[cod]){
+        updates['codigos.'+cod+'.enviado'] = true;
+        updates['codigos.'+cod+'.ultimoEnvio'] = fechaISO;
+        // Actualizar en memoria también
+        base[cod].enviado = true;
+        base[cod].ultimoEnvio = fechaISO;
+      }
+    });
+    if(Object.keys(updates).length){
+      window.db.collection('config').doc('baseStockMinimos_'+bod)
+        .update(updates)
+        .catch(function(e){ console.warn('update base '+bod, e); });
+    }
+  });
+  if(window.toast) toast('📧 Envío registrado en historial ('+codigos.length+' códigos)','ok');
+}
+
+function reqDescargarHistorial(){
+  if(typeof XLSX === 'undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
+  if(!_reqBaseMin || (!_reqBaseMin.PEM && !_reqBaseMin.SEM)){
+    if(window.toast) toast('Base aún cargando — espera un momento','warn'); return;
+  }
+
+  // Recopilar todos los enviados de PEM y SEM
+  var filas = [];
+  ['PEM','SEM'].forEach(function(bod){
+    var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
+    if(!base) return;
+    Object.keys(base).forEach(function(cod){
+      var b = base[cod];
+      if(!b.enviado) return;
+      var p = (_vadmStockMap && _vadmStockMap[cod]) || {};
+      filas.push({
+        bodega:      bod,
+        marca:       p.marca || b.marca || '',
+        codigo:      cod,
+        descripcion: p.desc  || b.descripcion || '',
+        st_critico:  b.st_critico || 0,
+        st_min:      b.st_min     || 0,
+        st_max:      b.st_max     || 0,
+        st_repos:    b.st_repos   || 0,
+        fecha:       b.ultimoEnvio || ''
+      });
+    });
+  });
+
+  if(!filas.length){
+    if(window.toast) toast('Sin códigos enviados aún','warn'); return;
+  }
+
+  // Ordenar: Marca ASC, luego Fecha DESC, luego Código ASC
+  filas.sort(function(a,b){
+    if(a.marca !== b.marca) return a.marca.localeCompare(b.marca);
+    if(b.fecha !== a.fecha) return b.fecha.localeCompare(a.fecha);
+    return a.codigo.localeCompare(b.codigo);
+  });
+
+  var hoy = new Date().toLocaleDateString('es-CL');
+  var data = [];
+
+  // Título
+  data.push(['Historial de Envíos de Stock — Ferretería Oviedo El Manzano', '', '', '', '', '', '', '', '']);
+  data.push(['Generado: '+hoy+'   |   Total enviados: '+filas.length, '', '', '', '', '', '', '', '']);
+  data.push([]);
+
+  // Cabecera (mismo orden que email de solicitud + Bodega + Marca + Fecha)
+  data.push(['Bodega','Marca','Código','Descripción','ST Crítico','ST Mínimo','ST Máximo','ST Repos.','Fecha Envío']);
+
+  // Filas de datos, con separador visual por marca
+  var marcaActual = null;
+  filas.forEach(function(f, i){
+    if(f.marca !== marcaActual){
+      if(marcaActual !== null) data.push([]);  // línea en blanco entre marcas
+      data.push(['— '+f.marca+' —', '', '', '', '', '', '', '', '']);
+      marcaActual = f.marca;
+    }
+    data.push([
+      f.bodega, f.marca, f.codigo, f.descripcion,
+      f.st_critico, f.st_min, f.st_max, f.st_repos, f.fecha
+    ]);
+  });
+
+  var ws = XLSX.utils.aoa_to_sheet(data);
+
+  // Ancho de columnas
+  ws['!cols'] = [
+    {wch:7},   // Bodega
+    {wch:20},  // Marca
+    {wch:13},  // Código
+    {wch:48},  // Descripción
+    {wch:10},  // ST Crítico
+    {wch:10},  // ST Mínimo
+    {wch:10},  // ST Máximo
+    {wch:10},  // ST Repos
+    {wch:12},  // Fecha
+  ];
+
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Historial Envíos');
+  XLSX.writeFile(wb, 'HistorialEnviosStock_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  if(window.toast) toast('📊 Excel descargado — '+filas.length+' códigos enviados','ok');
 }
 
 // ── ANÁLISIS BODEGAS IEM / RCE ────────────────────────────────────────────────

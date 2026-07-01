@@ -140,6 +140,13 @@ service cloud.firestore {
       allow read, write: if esAdmin();
     }
 
+    // ── HISTORIAL ENVÍOS STOCK ────────────────────────────────
+    // Registro inmutable de correos de solicitud de stock enviados desde panel-admin
+    match /historialEnviosStock/{docId} {
+      allow read, create: if esAdmin();
+      allow update, delete: if false;
+    }
+
     // ── PRECIOS (1 doc — split seguro V37.28) ─────────────────
     // precios/catalogo: mapa {codigo: {p: precioIVA, s: stock}} para todos los productos.
     // Solo usuarios autenticados NO anónimos pueden leer.

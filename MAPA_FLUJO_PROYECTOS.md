@@ -1,14 +1,15 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
-# Última actualización: 2026-06-14 · Versión activa: V37.25
+# Última actualización: 2026-06-30 · Versión activa: V37.46
 #
-# NOTA V37.25 — cambios al pipeline (ver MAPA 2):
-#   · xlsm-enrich.json (rut/sector/razón) ahora se genera desde SQL via descargar_ventas_enrich.py
-#     (PASO 1K), NO desde VENTAS.xlsm manual. leer_xlsm.py queda como fallback + ranking/precios.
-#   · descargar_blazor_bodegas.py (PASO 1H) → recepciones/despachos pendientes (Playwright Intranet).
-#   · fusionar_despachos.py (PASO 1I) → despachos-panel.json.
-#   · bod-icd-registros.json agregado (ICD=73). Para el detalle visual completo ver pipeline-datos-mapa.html (solo local).
-#   · Limpieza: respaldos/deprecados movidos a E:\_ARCHIVO_FERRETERIA (fuera del proyecto); utilidades a _utilidades\.
+# NOTA V37.46 — cambios al pipeline (ver MAPA 2):
+#   · PASO 1H (descargar_blazor_bodegas.py) reescrito: TOKEN_RECEPCION directo en credenciales_erp.ini,
+#     sin login. Blazor en http://200.6.113.97/ (root). Selector: button.e-boton:has-text('Exportar a Excel').
+#     Si token expira → JustWeb avatar → TOKEN → actualizar GUID en ini.
+#   · PASO 1M (descargar_oc_leadtime.py, V37.40): oc-leadtime.json — días OC→recepción por bodega/marca.
+#   · Traspasos CD (V37.45-46): filtro bodega, checkboxes ranking, prioridad 4 capas, keywords portabilidad.
+#   · Para el detalle visual completo ver pipeline-datos-mapa.html (solo local).
+# NOTA V37.25 (histórico): xlsm-enrich.json → SQL PASO 1K; fusionar_despachos.py PASO 1I; bod-icd ICD=73.
 
 ---
 
