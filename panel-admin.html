@@ -18142,19 +18142,22 @@ function vadmFiltrarBodFem(){
     var val=qty*(r.costo||0); totalVal+=val;
     var dif=(r.fisico||0)-(r.disp||0);
     var difSt=dif>0?'color:#d97706;font-weight:600':dif<0?'color:#dc2626;font-weight:700':'color:#9ca3af';
+    var dispSt=(r.disp||0)<0?'color:#dc2626;font-weight:700':'';
+    var fisSt=(r.fisico||0)<0?'color:#dc2626;font-weight:700':'font-weight:600';
+    var valSt=val<0?'color:#dc2626;font-weight:700':'font-weight:600';
     return '<tr style="'+bg+'">'
       +'<td style="padding:6px 10px;font-weight:600">'+_bfEsc(r.bodega||'')+'</td>'
       +'<td style="padding:6px 10px;font-weight:600">'+_bfEsc(r.tipoDoc||'')+'</td>'
       +'<td style="padding:6px 10px;text-align:right;font-family:monospace">'+_bfEsc(r.folio||'')+'</td>'
       +'<td style="padding:6px 10px;font-family:monospace;font-size:11px">'+_bfEsc(r.codigoTecnico||'')+'</td>'
       +'<td style="padding:6px 10px;max-width:220px">'+_bfEsc(r.descripcion||'')+'</td>'
-      +'<td style="padding:6px 10px;text-align:right">'+(r.disp||0)+'</td>'
-      +'<td style="padding:6px 10px;text-align:right;font-weight:600">'+(r.fisico||0)+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;'+dispSt+'">'+(r.disp||0)+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;'+fisSt+'">'+(r.fisico||0)+'</td>'
       +'<td style="padding:6px 10px;text-align:right;'+difSt+'">'+(dif===0?'—':dif)+'</td>'
       +'<td style="padding:6px 10px;text-align:right;color:#6b7280;font-size:11px">'+((r.costo||0)>0?venAdmFmt(r.costo):'—')+'</td>'
       +'<td style="padding:6px 10px;text-align:center;white-space:nowrap">'+_bfEsc(r.fechaRegistro||'')+'</td>'
       +'<td style="padding:6px 10px;text-align:right;'+dcol+'">'+dias+'</td>'
-      +'<td style="padding:6px 10px;text-align:right;font-weight:600">'+(val>0?venAdmFmt(val):'—')+'</td>'
+      +'<td style="padding:6px 10px;text-align:right;'+valSt+'">'+(val!==0?venAdmFmt(val):'—')+'</td>'
       +'<td style="padding:6px 10px;color:#6b7280;font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_bfEsc(r.observacion||'')+'">'+_bfEsc(r.observacion||'')+'</td>'
       +'</tr>';
   }).join('');
