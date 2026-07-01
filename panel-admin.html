@@ -8264,6 +8264,7 @@ function _vadmAplicarDatos(arr, status, fuente){
       // Modo JSON (pipeline ERP): drilldown = HIPERFAM → FAMILIA → SUBFAM → PRODUCTO
       data.push({
         gmailUser:  r.vendedor      ||'',
+        vendedor:   r.vendedor      ||'',
         nombre:     nombre,
         responsable:'',
         cliente:    (r.cliente||'').replace(/\s*\.\-\s*$/, '').trim(),
@@ -8298,6 +8299,7 @@ function _vadmAplicarDatos(arr, status, fuente){
       // Modo Firestore (HTM): drilldown = HIPERFAM → FAMILIA → SUBFAM → PRODUCTO
       data.push({
         gmailUser:  r.vendedor    ||'',
+        vendedor:   r.vendedor    ||'',
         nombre:     nombre,
         responsable:r.responsable ||'',
         cliente:    r.cliente     ||'',
