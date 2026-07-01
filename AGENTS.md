@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.48 · Última actualización: 2026-07-01
+# Versión activa: V37.49 · Última actualización: 2026-07-01
 
 ---
 
@@ -339,6 +339,22 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   (script vigente de migración/carga a subcolección). OCR $0: 1 WARNING corregido (try/except en
   script de carga). Pendiente: probar ciclo completo de envío sobre un código "Sin definir" recién
   agregado (completar valores → enviar → confirmar enviado:true en la subcolección).
+
+- Deploy V37.49: 2026-07-01 — Cerró el pendiente de V37.48: se probó el ciclo completo de envío en
+  vivo (TORN0602, Repos. solicitado 1000) y se detectaron 2 bugs de diseño en el botón "⬇️ Historial
+  enviados". (1) reqDescargarHistorial() solo exportaba códigos con enviado=true leyendo el flag de
+  _reqBaseMin — con historialEnviosStock vacío en producción (nadie había enviado aún) el botón
+  devolvía "Sin códigos enviados aún" en vez de la base completa recién cargada. Fix: ahora exporta
+  SIEMPRE los ~2.513 códigos de la base (PEM+SEM), con columna "Enviado" (Sí/No) y "Fecha Envío" en
+  vez de filtrar — reqDescargarHistorial() reescrito, XLSX ahora se genera en función separada
+  _reqExportarHistorialXlsx(filas). (2) _reqGuardarEnvio() marcaba enviado:true+fecha pero NUNCA
+  guardaba los valores de Mínimo/Reposición solicitados que Adquisiciones escribe en la tabla — el
+  Excel seguía mostrando los st_min/st_repos viejos del ERP (0 para "sin definir"). Fix:
+  reqStockEnviarEmail() ahora empuja {codigo,minSol,repSol} a _reqCodigosEnviados (antes solo el
+  código) y _reqGuardarEnvio() escribe st_min/st_repos junto con enviado/ultimoEnvio en el doc de la
+  subcolección (sin duplicar — doc id = código, mismo doc se actualiza en cada reenvío). Verificado
+  en vivo: email con Repos. solicitado=1000 → Excel muestra ST Repos=1000, Enviado=Sí, fecha
+  2026-07-01, sin filas duplicadas. OCR $0: 0 ERRORes, 0 WARNINGs en las 3 iteraciones del fix.
 
 - Deploy V37.46: 2026-06-30 — Traspasos CD: prioridad inteligente 4 capas (P1 rojo=quiebre+demanda,
   P2 amarillo=tendencia alza, P3 verde=estable, P4 gris=sin movimiento/sin CD) + filtro keyword
