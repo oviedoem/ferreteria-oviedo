@@ -3547,6 +3547,10 @@ Todo desde tu celular, gratis, sin apps que descargar.
           <input type="checkbox" id="reqConRepo" checked>
           <span style="font-size:12px;color:#374151">Con repos.</span>
         </label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500" title="Mostrar solo códigos SIN mínimo ni reposición configurados en ERP (a definir)">
+          <input type="checkbox" id="reqSoloSinDefinir">
+          <span style="font-size:12px;color:#374151">🆕 Sin definir</span>
+        </label>
       </div>
       <!-- N ítems -->
       <label style="font-size:12px;font-weight:600;color:#374151;display:flex;align-items:center;gap:6px">
@@ -3715,7 +3719,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.47<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">30-06-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.48<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
 
 <script>
 
@@ -17536,6 +17540,7 @@ function reqStockPrellenar(){
   var sinTrans = document.getElementById('reqSinTrans') ? document.getElementById('reqSinTrans').checked : true;
   var conMin   = document.getElementById('reqConMin')   ? document.getElementById('reqConMin').checked   : true;
   var conRepo  = document.getElementById('reqConRepo')  ? document.getElementById('reqConRepo').checked  : true;
+  var soloSinDefinir = document.getElementById('reqSoloSinDefinir') ? document.getElementById('reqSoloSinDefinir').checked : false;
   var nItems   = Math.max(1, parseInt(document.getElementById('reqN').value) || 10);
 
   _reqStockPoblarMarcas();
@@ -17642,8 +17647,12 @@ function reqStockPrellenar(){
     var trans = (p.pem_trans || 0) + (p.tem_trans || 0);
     if( conTrans && !sinTrans && !(trans > 0)) return false;
     if(!conTrans &&  sinTrans &&   trans > 0 ) return false;
-    if(conMin  && !(b.st_min  > 0)) return false;
-    if(conRepo && !(b.st_repos > 0)) return false;
+    if(soloSinDefinir){
+      if(b.st_min > 0 || b.st_repos > 0) return false;
+    } else {
+      if(conMin  && !(b.st_min  > 0)) return false;
+      if(conRepo && !(b.st_repos > 0)) return false;
+    }
     return true;
   })
 
@@ -17667,8 +17676,7 @@ function reqStockPrellenar(){
     if(b.qty !== a.qty) return b.qty - a.qty;
     return (a.stockActual === 0 ? 0 : 1) - (b.stockActual === 0 ? 0 : 1);
   })
-  // Con marca seleccionada: mostrar todos los pendientes de esa marca sin límite
-  .slice(0, marcaSel ? Infinity : nItems);
+  .slice(0, nItems);
 
   if(!lista.length){ alert('Sin productos para los filtros seleccionados.'); return; }
 
@@ -17873,10 +17881,13 @@ function _reqCargarBaseMin(){
   if(_reqBaseMin !== null) return;
   if(!window.db) return;
   _reqBaseMin = {};
+  // Los codigos viven en subcoleccion config/baseStockMinimos_{bod}/codigos/{codigo}
+  // (un mapa unico con miles de claves supera el limite de indices de Firestore)
   ['PEM','SEM'].forEach(function(bod){
-    window.db.collection('config').doc('baseStockMinimos_'+bod).get()
-      .then(function(snap){
-        if(snap.exists) _reqBaseMin[bod] = snap.data();
+    _reqBaseMin[bod] = { codigos: {} };
+    window.db.collection('config').doc('baseStockMinimos_'+bod).collection('codigos').get()
+      .then(function(qs){
+        qs.forEach(function(doc){ _reqBaseMin[bod].codigos[doc.id] = doc.data(); });
       })
       .catch(function(e){ console.warn('baseMin '+bod, e); });
   });
@@ -17895,25 +17906,23 @@ function _reqGuardarEnvio(codigos){
     total: codigos.length
   }).catch(function(e){ console.warn('historial envio', e); });
 
-  // Marcar cada código como enviado en su doc de base
+  // Marcar cada código como enviado en su doc de subcolección
   ['PEM','SEM'].forEach(function(bod){
     var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
     if(!base) return;
-    var updates = {};
+    var coleccion = window.db.collection('config').doc('baseStockMinimos_'+bod).collection('codigos');
+    var batch = window.db.batch();
+    var n = 0;
     codigos.forEach(function(cod){
       if(base[cod]){
-        updates['codigos.'+cod+'.enviado'] = true;
-        updates['codigos.'+cod+'.ultimoEnvio'] = fechaISO;
+        batch.update(coleccion.doc(cod), { enviado: true, ultimoEnvio: fechaISO });
+        n++;
         // Actualizar en memoria también
         base[cod].enviado = true;
         base[cod].ultimoEnvio = fechaISO;
       }
     });
-    if(Object.keys(updates).length){
-      window.db.collection('config').doc('baseStockMinimos_'+bod)
-        .update(updates)
-        .catch(function(e){ console.warn('update base '+bod, e); });
-    }
+    if(n) batch.commit().catch(function(e){ console.warn('update base '+bod, e); });
   });
   if(window.toast) toast('📧 Envío registrado en historial ('+codigos.length+' códigos)','ok');
 }

@@ -1,4 +1,10 @@
 {
   "indexes": [],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "config",
+      "fieldPath": "codigos",
+      "indexes": []
+    }
+  ]
 }

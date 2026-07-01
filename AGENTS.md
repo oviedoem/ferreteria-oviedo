@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.47 · Última actualización: 2026-06-30
+# Versión activa: V37.48 · Última actualización: 2026-07-01
 
 ---
 
@@ -316,6 +316,29 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   Al copiar email → _reqGuardarEnvio marca enviado+fecha en Firestore + historialEnviosStock.
   Botón "⬇️ Historial enviados" → Excel por marca con Bodega/Marca/Código/Desc/ST/Fecha.
   firestore.rules: regla historialEnviosStock (read+create admin, update+delete=false). OCR $0: 13/14 OK, 1 WARNING corregido (FO-007). Commit 9dd724e.
+
+- Deploy V37.48: 2026-07-01 — Testeo en vivo de Solicitud Stock reveló que la base de 797 códigos
+  excluía por diseño los productos SIN mínimo/reposición configurados en el ERP (justo los que
+  Adquisiciones necesita definir a mano). Base ampliada: +1.716 códigos (251 PEM + 1.465 SEM) con
+  venta histórica (ene-jun 2026) pero ST_MIN/MAX/CRITICO/REPOS=0 en ERP, excluye (DD), marca
+  DESCONTINUADOS/CALZADO/OUTLET/GARMENDIA, prefijos XX/VCA/CAL. Total base: PEM 475, SEM 2.038.
+  Checkbox nuevo "🆕 Sin definir" en Solicitud Stock filtra estos códigos. Límite "Mostrar N items"
+  ahora se respeta siempre (antes se ignoraba con marca seleccionada).
+  BUG + FIX arquitectura Firestore: script de carga inicial usó set(merge=True) con claves con punto
+  ("codigos.COD") → creó campos sueltos en vez de anidar en el mapa "codigos" (no soportado por set(),
+  solo por update()). Al corregir y reintentar, SEM (2.038 códigos) superó el límite de índices de
+  Firestore (INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED) por tener miles de claves en un solo campo mapa.
+  Fix definitivo: migración de arquitectura de "campo mapa único" a subcolección
+  (config/baseStockMinimos_{PEM,SEM}/codigos/{codigo}, un doc por código) — escala sin límite.
+  panel-admin.html: _reqCargarBaseMin() y _reqGuardarEnvio() reescritos para leer/escribir la
+  subcolección; _reqBaseMin en memoria mantiene la misma forma, así que reqStockPrellenar() y
+  reqDescargarHistorial() no se tocaron. Limpieza de 1.716 campos sueltos usando
+  FieldPath(...).to_api_repr() (único modo de apuntar a un nombre de campo con punto literal).
+  Scripts nuevos: BODEGAS/cargar_base_stock_minimos_ampliada.py (cálculo de candidatos, ya no
+  escribe directo — quedó como dependencia de import) y BODEGAS/migrar_base_stock_a_subcoleccion.py
+  (script vigente de migración/carga a subcolección). OCR $0: 1 WARNING corregido (try/except en
+  script de carga). Pendiente: probar ciclo completo de envío sobre un código "Sin definir" recién
+  agregado (completar valores → enviar → confirmar enviado:true en la subcolección).
 
 - Deploy V37.46: 2026-06-30 — Traspasos CD: prioridad inteligente 4 capas (P1 rojo=quiebre+demanda,
   P2 amarillo=tendencia alza, P3 verde=estable, P4 gris=sin movimiento/sin CD) + filtro keyword
