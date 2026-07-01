@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.46 · Última actualización: 2026-06-30
+# Versión activa: V37.47 · Última actualización: 2026-06-30
 
 ---
 
@@ -264,7 +264,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - Directorio activo: `PROYECTO_E:\ferreteria-oviedo\` (identificar el disco por etiqueta PROYECTO_E,
   no por letra) — NUNCA trabajar directamente en `PROYECTO_E:\git-sync\` ni en discos sin la
   etiqueta PROYECTO_E (ej. el disco con Windows 10 alterno, identificado en 2026-06-22)
-- Versión activa: V37.46
+- Versión activa: V37.47
 
 ### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
@@ -308,6 +308,14 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   perfil JustWeb → click avatar → TOKEN). Si expira → actualizar GUID en el ini.
   Resultado: recepciones=21, despachos=25 docs. HTML de referencia guardado en
   BODEGAS\Movimiento de bodega en revision.html.
+
+- Deploy V37.47: 2026-06-30 — Solicitud de Stock: base mínimos PEM(224)+SEM(573)=797 códigos en
+  Firestore (config/baseStockMinimos_PEM|SEM). Pre-llenar rediseñado: fuente = base Firestore
+  (enviado=false), marca OBLIGATORIA, sin marca muestra guía inline. Con marca = todos sus pendientes
+  sin límite N, orden ventas DESC, excluye (DD). Checkboxes "Con mínimo" / "Con repos." nuevos.
+  Al copiar email → _reqGuardarEnvio marca enviado+fecha en Firestore + historialEnviosStock.
+  Botón "⬇️ Historial enviados" → Excel por marca con Bodega/Marca/Código/Desc/ST/Fecha.
+  firestore.rules: regla historialEnviosStock (read+create admin, update+delete=false). OCR $0: 13/14 OK, 1 WARNING corregido (FO-007). Commit 9dd724e.
 
 - Deploy V37.46: 2026-06-30 — Traspasos CD: prioridad inteligente 4 capas (P1 rojo=quiebre+demanda,
   P2 amarillo=tendencia alza, P3 verde=estable, P4 gris=sin movimiento/sin CD) + filtro keyword
