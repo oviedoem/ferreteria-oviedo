@@ -4,7 +4,7 @@
 #
 # NOTA V37.46 — cambios al pipeline (ver MAPA 2):
 #   · PASO 1H (descargar_blazor_bodegas.py) reescrito: TOKEN_RECEPCION directo en credenciales_erp.ini,
-#     sin login. Blazor en http://200.6.113.97/ (root). Selector: button.e-boton:has-text('Exportar a Excel').
+#     sin login. Blazor en http://[ERP-IP]/ (root). Selector: button.e-boton:has-text('Exportar a Excel').
 #     Si token expira → JustWeb avatar → TOKEN → actualizar GUID en ini.
 #   · PASO 1M (descargar_oc_leadtime.py, V37.40): oc-leadtime.json — días OC→recepción por bodega/marca.
 #   · Traspasos CD (V37.45-46): filtro bodega, checkboxes ranking, prioridad 4 capas, keywords portabilidad.
