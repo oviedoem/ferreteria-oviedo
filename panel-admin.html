@@ -3725,7 +3725,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.50<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.51<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
 
 <script>
 
@@ -19285,10 +19285,19 @@ window.isbGenerar = function(){
   function tryRender(){
     if(!stockDone||!pedidosDone) return;
     // V37.9: merge St_Bod y Ped (SSRS, todas las sucursales) en _vadmStockMap
+    // V37.51: tambien St_Disp (SSRS, misma corrida) — antes Disponible se dejaba con el
+    // valor de Datos.json (Excel manual actualizar.xlsx), que puede quedar desactualizado
+    // mientras St_Bod/St_Ped ya se refrescaban con el dato SQL/SSRS del dia. Confirmado
+    // 2026-07-01: SIKA0310/SEM mostraba Disp=0 (Excel viejo) con Fis=14 ya correcto,
+    // generando un Dif=14 que no correspondia a ningun documento real.
     if(window._vadmStockMap){
       Object.keys(_isbRaw).forEach(function(cod){
         var d=_isbRaw[cod];
         if(window._vadmStockMap[cod]){
+          window._vadmStockMap[cod].pem=d.pem_disp||0;
+          window._vadmStockMap[cod].sem=d.sem_disp||0;
+          window._vadmStockMap[cod].cem=d.cem_disp||0;
+          window._vadmStockMap[cod].mem=d.mem_disp||0;
           window._vadmStockMap[cod].pem_bod=d.pem_bod||0;
           window._vadmStockMap[cod].sem_bod=d.sem_bod||0;
           window._vadmStockMap[cod].cem_bod=d.cem_bod||0;
