@@ -905,6 +905,9 @@ function _cargarDataToken(cb){
       if(expiraMs && Date.now() > expiraMs){
         window._dataToken = '';
         logout();
+        // logout() limpia #lerr — el mensaje se setea DESPUÉS para que quede visible
+        var errTok = document.getElementById('lerr');
+        if(errTok){ errTok.style.color='#c62828'; errTok.textContent='Sesión de datos vencida. Avisa al administrador para correr el pipeline y vuelve a ingresar.'; }
         return; // token vencido (TTL 8h) -- sesion cerrada, no se invoca cb
       }
       window._dataToken = d.token || '';
