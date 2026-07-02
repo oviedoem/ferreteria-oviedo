@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.49 · Última actualización: 2026-07-01
+# Versión activa: V37.54 · Última actualización: 2026-07-01
 
 ---
 
@@ -264,7 +264,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - Directorio activo: `PROYECTO_E:\ferreteria-oviedo\` (identificar el disco por etiqueta PROYECTO_E,
   no por letra) — NUNCA trabajar directamente en `PROYECTO_E:\git-sync\` ni en discos sin la
   etiqueta PROYECTO_E (ej. el disco con Windows 10 alterno, identificado en 2026-06-22)
-- Versión activa: V37.47
+- Versión activa: V37.54
 
 ### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
@@ -1436,3 +1436,28 @@ Contiene todo lo que NO es flujo activo:
 - **Verificado con scroll real + screenshot** (no solo computed style) en 3 casos distintos: `.vtbl` en el menú principal (Merma MEM, simulado con 40 filas), tabla estática `#isbTabla` con header de 2 filas (Informe Stock), y `.vtbl` dentro de un modal real (`#vadmSEModalBody`) — los 3 muestran el header fijo arriba de su propia caja mientras el contenido se desplaza debajo, con scrollbar propio visible, sin errores de consola. La barra horizontal (`overflow-x:auto`, para tablas anchas) se preserva sin cambios.
 - **Lección para el futuro**: `getComputedStyle` confirma que una propiedad CSS se aplicó, **no** que el comportamiento visual sea el esperado — para `position:sticky` en particular, siempre verificar con scroll real (`element.scrollTop = N` en el contenedor correcto) + captura de pantalla antes de dar un fix por confirmado.
 - V37.53.
+
+### Fix 2026-07-01 (sesión 3u, desde casa) — PASO 1H recuperado con 3 workarounds en cadena (CORS + getbase + SignalR)
+- **Contexto** (sesión 3l): el ERP JustTime se actualizó y rompió DOS cosas en el servidor: (1) el WsApi
+  `[ERP-WSAPI-HOST]:6969` dejó de enviar `Access-Control-Allow-Origin` → el navegador bloquea todos los
+  fetch del Blazor ("No existe conexión al WS"); (2) `login/getbase` empezó a responder que la API vive en
+  `localhost:6969` → desde cualquier PC que no sea el servidor da `ERR_CONNECTION_REFUSED`. El tab Por
+  Recepcionar quedó vacío (`recepciones-pendientes.json = []`).
+- **TOCO**: solo `BODEGAS\descargar_blazor_bodegas.py` (función `_ejecutar`). 3 parches en cadena:
+  1. **Workaround CORS**: Chromium se lanza con `--disable-web-security` +
+     `--disable-features=IsolateOrigins,site-per-process` (solo afecta a este browser de automatización;
+     Playwright usa user-data-dir temporal propio, requisito del flag).
+  2. **Workaround getbase/localhost**: `ctx.route("**://localhost:6969/**")` intercepta y reenvía cada
+     request a `[ERP-WSAPI-HOST]:6969` vía `ctx.request.fetch`, devolviendo la respuesta sin los headers
+     `content-encoding`/`content-length`/`transfer-encoding` (el body ya viene descomprimido).
+  3. **Espera robusta SignalR**: la app conecta con reintentos (puede tardar >30s) y a veces el menú
+     IdMenu=377 no se renderiza al conectar — ahora son 3 intentos de 45s esperando el botón Exportar,
+     con reload entre intentos.
+- **Resultado verificado**: `recepciones-pendientes.json` = 7 docs (antes `[]`), `despachos-pendientes-erp.json`
+  = 27 docs. `despachos-detalle.json` (SQL) recuperado desde la carpeta-token (la rotación de las 18:24 lo
+  había movido) → `fusionar_despachos.py` → `despachos-panel.json` = 35 docs (11 ERP+SQL completos, 16 solo
+  ERP, 8 solo SQL, 13 con atraso). Los 3 JSON copiados a la carpeta-token activa SIN re-rotar + deploy OK.
+- **NO se tocó**: fusionar_despachos.py, el panel, el resto del pipeline. Los workarounds 1 y 2 se deben
+  QUITAR cuando JustTime corrija CORS y getbase en el servidor (sigue pendiente reportarlo a soporte —
+  la intranet web del ERP en navegador normal sigue rota; el cliente nativo .exe no se ve afectado).
+- V37.54.

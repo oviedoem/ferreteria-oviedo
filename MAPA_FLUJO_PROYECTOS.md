@@ -1,7 +1,12 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
-# Última actualización: 2026-06-30 · Versión activa: V37.46
+# Última actualización: 2026-07-01 · Versión activa: V37.54
 #
+# NOTA V37.54 — PASO 1H con 3 workarounds temporales (actualización del ERP JustTime rompió el server):
+#   · El WsApi ([ERP-WSAPI-HOST]:6969) dejó de enviar CORS y getbase apunta a localhost:6969.
+#   · descargar_blazor_bodegas.py ahora lanza Chromium con --disable-web-security, reescribe las
+#     rutas localhost:6969 → host real (ctx.route) y espera el botón Exportar con 3 intentos + reload.
+#   · QUITAR los workarounds cuando JustTime corrija CORS/getbase. Detalle: AGENTS.md → "Fix 2026-07-01 (sesión 3u)".
 # NOTA V37.46 — cambios al pipeline (ver MAPA 2):
 #   · PASO 1H (descargar_blazor_bodegas.py) reescrito: TOKEN_RECEPCION directo en credenciales_erp.ini,
 #     sin login. Blazor en http://[ERP-SERVER-IP]/ (root). Selector: button.e-boton:has-text('Exportar a Excel').

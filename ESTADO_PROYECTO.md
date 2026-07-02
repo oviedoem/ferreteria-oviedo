@@ -1,5 +1,5 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.50
+# Version activa: V37.54
 # Fecha: 2026-07-01
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -12,14 +12,40 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.50 |
+| Version | V37.54 |
 | Fecha | 2026-07-01 |
-| Deploy | pendiente en esta sesion (agregar GEM/TEM a Analisis de Bodegas) |
-| Pendiente | ninguno bloqueante — ver PENDIENTES CONOCIDOS |
+| Deploy | hecho |
+| Pendiente | reportar a JustTime server ERP roto (CORS + getbase) — workarounds temporales activos en PASO 1H |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.54 — 2026-07-01 (PASO 1H recuperado — 3 workarounds por server ERP roto)
+- **Contexto:** la actualizacion del ERP JustTime rompio el servidor en dos frentes: el WsApi (`[ERP-WSAPI-HOST]:6969`) dejo de enviar `Access-Control-Allow-Origin` (el navegador bloquea todos los fetch del Blazor) y `login/getbase` responde que la API vive en `localhost:6969` (ERR_CONNECTION_REFUSED desde cualquier otro PC). Tab Por Recepcionar quedo vacio.
+- **Fix (solo `BODEGAS\descargar_blazor_bodegas.py`):** 3 workarounds en cadena — (1) Chromium con `--disable-web-security` + `--disable-features=IsolateOrigins,site-per-process`; (2) `ctx.route` reescribe requests `localhost:6969` → host real; (3) espera del boton Exportar con 3 intentos de 45s + reload (SignalR reconecta lento).
+- **Resultado:** recepciones-pendientes.json = 7 docs (antes `[]`), despachos-pendientes-erp.json = 27 docs, despachos-panel.json = 35 docs (11 ERP+SQL, 13 con atraso; `despachos-detalle.json` recuperado desde la carpeta-token). JSON copiados a la carpeta-token activa SIN re-rotar + deploy OK.
+- **TEMPORAL:** quitar workarounds 1 y 2 cuando JustTime corrija CORS/getbase. La intranet web del ERP en navegador normal sigue rota (el cliente nativo .exe no se afecta).
+
+### V37.53 — 2026-07-01 (cierre real sticky headers)
+- **El fix de sticky headers de V37.51/V37.52 NUNCA funciono de verdad** — solo se habia verificado con `getComputedStyle` (que el CSS se aplicaba), nunca con scroll real. El dueño reporto con screenshot que en Merma MEM el encabezado aparecia DEBAJO de la primera fila.
+- **Causa raiz real:** los wrappers `overflow-x:auto` que envuelven las tablas se convierten en el "containing block" del `position:sticky` (regla del spec CSS: si `overflow-x`≠`visible` y `overflow-y`=`visible`, el navegador computa `overflow-y:auto` igual). Ese wrapper nunca tiene altura acotada → nunca hace scroll propio → el `thead` sticky nunca se activa.
+- **Fix:** wrappers con `max-height:65vh;overflow-y:auto` explicito + `thead` sticky de `top:60px`→`top:0` (relativo al wrapper). Selector `:has()` para cubrir todos los wrappers dinamicos + 7 selectores puntuales para tablas estaticas por id. Ya no hacen falta las excepciones de modales de V37.52.
+- **Verificado con scroll real + screenshot** (no solo computed style) en 3 casos: `.vtbl` en menu, `#isbTabla` con header de 2 filas, `.vtbl` dentro de modal.
+- **Leccion permanente:** `getComputedStyle` confirma que una propiedad CSS se aplico, NO que el comportamiento visual sea el esperado. Para `position:sticky` verificar SIEMPRE con scroll real + screenshot.
+- Deploy hecho, commit `df962fc`.
+
+### V37.52 — 2026-07-01 (sticky headers extendidos — luego corregido en V37.53)
+- Encabezados sticky extendidos a TODOS los menus: 18 `.tab-pane` + 34 `.vadm-section` anidados, via 2 reglas CSS scoped por clase compartida (`.tbl`/`.vtbl`/`.vadm-rank-table`) + `position:sticky` directo en el `<thead>` de 7 tablas estaticas por id.
+- Excepciones para 4 modales con scroll propio (`top:0` en vez de `top:60px`).
+- **NOTA:** este enfoque resulto no funcionar visualmente (ver V37.53) — solo verificado con computed style.
+
+### V37.51 — 2026-07-01 (Informe Stock: Disp desactualizado generaba Dif fantasma)
+- **Problema:** en Informe Stock, "Disp" venia de `CATALOGO PRODUCTOS/Datos.json` (generado desde el Excel manual `actualizar.xlsx`), mientras "Fis" ya se refrescaba con datos SQL/SSRS del dia. Un "Disp" desactualizado producia una Dif fantasma clickeable (ej. SIKA0310/SEM: Disp=0, Fis=14, Dif=14) sin evento real detras.
+- **Decision del dueño:** priorizar el dato SQL/SSRS sobre el Excel manual (auto-corrige sin depender de reexportar el Excel).
+- **Fix:** `BODEGAS\generar_informe_stock.py` (V1.1) ahora lee tambien `St_Disp` del CSV y agrega `pem_disp/sem_disp/cem_disp/mem_disp` a `informe-stock.json`; `panel-admin.html` (`isbGenerar()`→`tryRender()`) sobreescribe `_vadmStockMap[cod].pem/sem/cem/mem` (Disponible) igual que ya hacia con `_bod` (Fisico).
+- **Escala:** 25 de 4.765 productos (~0.5%) con el mismo patron, concentrados en SEM.
+- Verificado en vivo (9.717 productos) + preview local. Redeploy de `informe-stock.json`.
 
 ### V37.50 — 2026-07-01
 - **Analisis de Bodegas ampliado a 6 bodegas:** agregadas GEM (Gestion El Manzano, IDBODEGA SQL 28) y TEM (Transito El Manzano, IDBODEGA SQL 46) al tab `analisis` (antes solo IEM/RCE/CEM/ICD). Ambas SUC=04, confirmadas en `IDS_REFERENCIA.md`.
@@ -159,7 +185,7 @@
 ### ANALISIS BODEGAS
 | Modulo | Tab | Estado |
 |---|---|---|
-| IEM / RCE / CEM / ICD / GEM / TEM | analisis | OK V37.50 — GEM y TEM agregadas (antes solo IEM/RCE/CEM/ICD) |
+| IEM / RCE / CEM / ICD / GEM / TEM | analisis | OK V37.51 — GEM/TEM agregadas + stock negativo visible en rojo (GEM/CEM aceptan negativo por diseño ERP) |
 
 ### RECEPCIONES / DESPACHOS (Blazor JustWeb)
 | Modulo | Tab | Estado |
@@ -188,4 +214,4 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.50 · 2026-07-01*
+*ESTADO_PROYECTO.md · Version V37.54 · 2026-07-01*
