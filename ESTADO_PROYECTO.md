@@ -40,6 +40,11 @@
   (token falso) → `cb` 1 vez, panel no se bloquea; thead 11 columnas; 0 errores consola; sintaxis JS 0 errores.
 - Revision /revisar-codigo $0: 0 ERROREs, 0 WARNINGs (14/14 reglas).
 - JSON copiados a carpeta-token activa SIN re-rotar. Deploy hecho. Commit: ver AGENTS.md.
+- **Adenda (misma noche):** consistencia de "Dias transito OC" en Consulta de Stock VERIFICADA con 3 trazas
+  SQL reales (TORN0600 14.3d, 600445 82d, TORN0100 28d — calzan al decimal; balanceo/venta excluidos por
+  join al documento padre OC). Fix: ICD(73) agregada a BODEGAS_RECEPCION de descargar_oc_leadtime.py
+  (recepciones OC en Santiago → desglose porBodega, 115 codigos) + linea "Llegada por bodega" en la ficha
+  de Consulta de Stock (bloque csFLeadTime). oc-leadtime.json regenerado + deploy 23:01.
 
 ### V37.54 — 2026-07-01 (PASO 1H recuperado — 3 workarounds por server ERP roto)
 - **Contexto:** la actualizacion del ERP JustTime rompio el servidor en dos frentes: el WsApi (`[ERP-WSAPI-HOST]:6969`) dejo de enviar `Access-Control-Allow-Origin` (el navegador bloquea todos los fetch del Blazor) y `login/getbase` responde que la API vive en `localhost:6969` (ERR_CONNECTION_REFUSED desde cualquier otro PC). Tab Por Recepcionar quedo vacio.

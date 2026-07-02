@@ -18538,9 +18538,21 @@ function _csPintarFicha(cod, p){
             '<span>'+venAdmEsc(pv.nombre||pv.rut)+' <span style="color:#9ca3af">('+pv.n+' recepciones)</span></span>'+
             '<span style="font-weight:700">'+pv.diasProm+' días</span></div>';
         }).join('');
+        // Desglose por bodega receptora real (V37.55): RCE/PEM=directo, ICD=recibido en Santiago
+        var bodHtml = '';
+        var ltPb = lt.porBodega || {};
+        var bodKeys = Object.keys(ltPb);
+        if(bodKeys.length){
+          bodHtml = '<div style="margin-top:8px;padding-top:6px;border-top:1px solid #f3f4f6;font-size:11px;color:#6b7280">Llegada por bodega: '+
+            bodKeys.map(function(bk){
+              var pb = ltPb[bk];
+              return '<span style="display:inline-block;margin-right:8px;padding:1px 7px;background:#f3f4f6;border-radius:8px;font-weight:600;color:#374151">'+
+                bk+' '+pb.diasProm+'d ('+pb.n+')</span>';
+            }).join('')+'</div>';
+        }
         ltEl.innerHTML =
           '<div style="margin-bottom:8px"><span style="font-size:18px;font-weight:800;color:#1a1d3a">'+lt.diasProm+' días</span> '+
-          '<span style="color:#9ca3af">promedio general · '+lt.nRecepciones+' recepciones</span></div>'+provHtml;
+          '<span style="color:#9ca3af">promedio general · '+lt.nRecepciones+' recepciones</span></div>'+provHtml+bodHtml;
       }
     }
   } catch(e){

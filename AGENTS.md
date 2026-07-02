@@ -1482,4 +1482,14 @@ Contiene todo lo que NO es flujo activo:
 - **Verificado**: preview local con servidor estático — merge real 661 códigos, test resiliencia 404 con
   cb=1, thead 11 columnas, 0 errores de consola, 0 errores de sintaxis JS. OCR $0: 14/14 OK.
 - **NO se tocó**: reqStockEnviarEmail, reqDescargarHistorial, filtros/ABC, fusionar_despachos, firestore.rules.
+- **Adenda misma noche — consistencia "Días tránsito OC" (Consulta de Stock) verificada + ICD**:
+  trazados 3 códigos reales en SQL contra oc-leadtime.json: TORN0600 (11+21+11)/3=14.3d ✓,
+  600445 82d n=1 ✓, TORN0100 (34+39+11)/3=28d y por proveedor 36.5/11 ✓. Confirmado que los traslados
+  por balanceo/venta (GRT/GIB/GTS sin origen OC, miles en 180d) quedan EXCLUIDOS por el join al
+  documento padre OC — regla de negocio correcta. TEM(46)/IEM(72) ya estaban mapeadas y sí reciben
+  OC ocasionalmente. Fix: `BODEGAS_RECEPCION` en descargar_oc_leadtime.py agrega ICD(73) —
+  recepciones OC en Santiago (133 GRC en 180d) ahora entran al desglose porBodega (115 códigos).
+  panel-admin.html: bloque csFLeadTime agrega línea "Llegada por bodega" (chips RCE/ICD/PEM con
+  días y n) bajo los proveedores. oc-leadtime.json regenerado (1.119 productos) + copiado a
+  carpeta-token + deploy 23:01.
 - V37.55.
