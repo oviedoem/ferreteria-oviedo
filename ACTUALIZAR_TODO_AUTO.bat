@@ -186,6 +186,20 @@ if exist "BODEGAS\descargar_oc_leadtime.py" (
     echo [AVISO] descargar_oc_leadtime.py no encontrado - saltando >> "%LOGFILE%"
 )
 
+:: -- PASO 1N: OC pendientes por codigo (SQL, para Solicitud Semanal) --------
+echo. >> "%LOGFILE%"
+echo [%time%] PASO 1N - OC pendientes por codigo SQL... >> "%LOGFILE%"
+if exist "BODEGAS\descargar_oc_pendientes.py" (
+    "%PYTHON_EXE%" "BODEGAS\descargar_oc_pendientes.py" >> "%LOGFILE%" 2>&1
+    if %errorlevel% neq 0 (
+        echo [AVISO] descargar_oc_pendientes.py fallo - panel usara oc-pend-resumen.json anterior >> "%LOGFILE%"
+    ) else (
+        echo [OK] descargar_oc_pendientes.py >> "%LOGFILE%"
+    )
+) else (
+    echo [AVISO] descargar_oc_pendientes.py no encontrado - saltando >> "%LOGFILE%"
+)
+
 :: -- PASO 1H: Recepciones pendientes + Despachos ERP (Blazor Intranet) ------
 echo. >> "%LOGFILE%"
 echo [%time%] PASO 1H - Recepciones y Despachos ERP (Blazor)... >> "%LOGFILE%"

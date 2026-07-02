@@ -312,6 +312,30 @@ if exist "%~dp0BODEGAS\descargar_oc_leadtime.py" (
 echo.
 timeout /t 2 /nobreak >nul
 
+:: -- PASO 1N: OC pendientes por codigo (SQL, para Solicitud Semanal) -----------
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 1N - OC pendientes por codigo (SQL 22:00)        ^|
+echo  +----------------------------------------------------------+
+echo.
+echo  Generando oc-pendientes.json + oc-pend-resumen.json...
+echo  (columna OC Pend en Solicitud Semanal de Stock)
+echo.
+if exist "%~dp0BODEGAS\descargar_oc_pendientes.py" (
+    "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_oc_pendientes.py"
+    if %errorlevel% neq 0 (
+        color 0C
+        echo  [AVISO] descargar_oc_pendientes.py fallo. Panel usara oc-pend-resumen.json anterior.
+        color 0A
+    ) else (
+        echo  [OK] oc-pendientes.json + oc-pend-resumen.json generados.
+    )
+) else (
+    echo  [AVISO] descargar_oc_pendientes.py no encontrado -- saltando paso.
+)
+echo.
+timeout /t 2 /nobreak >nul
+
 :: -- PASO 1H+1I: Blazor Bodegas -- Por Recepcionar + Por Despachar (1 sesion) ---
 echo.
 echo  +----------------------------------------------------------+

@@ -1,5 +1,5 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.54
+# Version activa: V37.55
 # Fecha: 2026-07-01
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -12,7 +12,7 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.54 |
+| Version | V37.55 |
 | Fecha | 2026-07-01 |
 | Deploy | hecho |
 | Pendiente | reportar a JustTime server ERP roto (CORS + getbase) — workarounds temporales activos en PASO 1H |
@@ -20,6 +20,26 @@
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.55 — 2026-07-01 (OC Pendiente desde SQL — columna en Solicitud Semanal)
+- **Nuevo script:** `BODEGAS/descargar_oc_pendientes.py` (V1.0) — OCs activas (IDDOCUMENTO 8/26/104/108/800-804,
+  `CANTIDAD_PENDIENTE > 0`, `ESTADO <> 'Nulo'`, bodegas EM+CD, ultimos 6 meses) desde SQL Server (sync 22:00).
+  Genera `oc-pendientes.json` (detalle por OC: proveedor, fechas, lineas) y `oc-pend-resumen.json`
+  (`{codigo: qtyPendiente, _generado: ISO}`). Fallo de conexion preserva el JSON anterior (exit 1, bat continua).
+  Primera corrida real: 387 OCs activas, 670 codigos con pendiente.
+- **panel-admin.html:** `_vadmCargarStockMap` encadena fetch de `oc-pend-resumen.json` tras Datos.json y agrega
+  `oc_pend` por codigo al mapa (cierre `_finalizar()` idempotente: `cb()` corre UNA vez, con o sin JSON; datos
+  >26h se ignoran). `reqStockPrellenar` agrega columna "OC Pend" (morada si >0) DESPUES de "Stock actual" —
+  posicion elegida para NO mover los indices `cells[1..7]` que lee `reqStockEnviarEmail` (cero regresion en el
+  email). Div `reqOcFrescura` indica antiguedad de los datos OC. Colspan 10→11 (placeholder + mensajes bloqueo).
+- **Pipeline:** PASO 1N agregado en `ACTUALIZAR_TODO.bat` y `ACTUALIZAR_TODO_AUTO.bat` (1L y 1M ya existian;
+  fallo NO aborta). `rotar_token_data.py`: los 2 JSON agregados a ARCHIVOS_SENSIBLES (rotan a carpeta-token,
+  no quedan publicos). `validar_jsons.py`: `oc-pend-resumen.json` registrado (optional; el detalle no se valida
+  porque lista vacia es legitima).
+- **Verificado en preview con servidor local:** mapa 6.049 codigos con 661 `oc_pend` mezclados; test 404
+  (token falso) → `cb` 1 vez, panel no se bloquea; thead 11 columnas; 0 errores consola; sintaxis JS 0 errores.
+- Revision /revisar-codigo $0: 0 ERROREs, 0 WARNINGs (14/14 reglas).
+- JSON copiados a carpeta-token activa SIN re-rotar. Deploy hecho. Commit: ver AGENTS.md.
 
 ### V37.54 — 2026-07-01 (PASO 1H recuperado — 3 workarounds por server ERP roto)
 - **Contexto:** la actualizacion del ERP JustTime rompio el servidor en dos frentes: el WsApi (`[ERP-WSAPI-HOST]:6969`) dejo de enviar `Access-Control-Allow-Origin` (el navegador bloquea todos los fetch del Blazor) y `login/getbase` responde que la API vive en `localhost:6969` (ERR_CONNECTION_REFUSED desde cualquier otro PC). Tab Por Recepcionar quedo vacio.
@@ -214,4 +234,4 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.54 · 2026-07-01*
+*ESTADO_PROYECTO.md · Version V37.55 · 2026-07-01*

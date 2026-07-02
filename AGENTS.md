@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.54 · Última actualización: 2026-07-01
+# Versión activa: V37.55 · Última actualización: 2026-07-01
 
 ---
 
@@ -264,7 +264,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - Directorio activo: `PROYECTO_E:\ferreteria-oviedo\` (identificar el disco por etiqueta PROYECTO_E,
   no por letra) — NUNCA trabajar directamente en `PROYECTO_E:\git-sync\` ni en discos sin la
   etiqueta PROYECTO_E (ej. el disco con Windows 10 alterno, identificado en 2026-06-22)
-- Versión activa: V37.54
+- Versión activa: V37.55
 
 ### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
@@ -361,6 +361,10 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   portabilidad por bodega (SEM=ligeros/herramientas, PEM=materiales pesados, CD=sin filtro) +
   ordenamiento: prioridad como clave primaria, campo dropdown como secundaria dentro de cada grupo.
   Keywords editables en _TCD_KW_SEM/_TCD_KW_PEM sin tocar más código. Badge emoji en col Código.
+
+- Deploy V37.55: 2026-07-01 — OC Pendiente desde SQL: descargar_oc_pendientes.py nuevo (PASO 1N en ambos bats),
+  columna "OC Pend" en Solicitud Semanal (tras Stock actual, email intacto), oc_pend en _vadmStockMap via fetch
+  encadenado idempotente, 2 JSON en whitelist rotar_token_data.py + validar_jsons.py. OCR $0 14/14 ✅
 
 - Deploy V37.45: 2026-06-30 — Traspasos CD: filtro por bodega (PEM/SEM/CD con botones),
   panel checkboxes ranking para vista CD (Top10/11-25/26-75/76-200/200+/Sin venta),
@@ -1461,3 +1465,21 @@ Contiene todo lo que NO es flujo activo:
   QUITAR cuando JustTime corrija CORS y getbase en el servidor (sigue pendiente reportarlo a soporte —
   la intranet web del ERP en navegador normal sigue rota; el cliente nativo .exe no se ve afectado).
 - V37.54.
+
+- Sesión 2026-07-01 (noche, V37.55) — **OC Pendiente desde SQL → columna "OC Pend" en Solicitud Semanal de Stock**:
+- **Nuevo `BODEGAS\descargar_oc_pendientes.py`** (patrón descargar_oc_leadtime.py): OCs activas
+  (IDDOCUMENTO 8/26/104/108/800-804, `CANTIDAD_PENDIENTE > 0`, `ESTADO <> 'Nulo'`, IDBODEGA
+  13/22/24/29/46/55/72/23, 6 meses) → `oc-pendientes.json` (detalle) + `oc-pend-resumen.json`
+  (`{codigo: qty, _generado}`). Error de conexión preserva JSON anterior. 1a corrida: 387 OCs / 670 códigos.
+- **panel-admin.html**: `_procesarDatos` (interna de `_vadmCargarStockMap`) encadena fetch del resumen y
+  decora `_vadmStockMap[cod].oc_pend`; cierre `_finalizar()` idempotente = `cb()` UNA sola vez incluso si
+  el JSON falta (404 → catch) o `cb` lanza; datos >26h se ignoran. `reqStockPrellenar`: columna nueva
+  DESPUÉS de "Stock actual" para no mover `cells[1..7]` que `reqStockEnviarEmail` lee por índice fijo
+  (email intacto). `reqOcFrescura` muestra antigüedad. Colspan 10→11.
+- **Pipeline**: PASO 1N en ambos bats (1L/1M ya estaban tomados — el plan original decía 1L, corregido).
+  `rotar_token_data.py` ARCHIVOS_SENSIBLES +2 (crítico: sin esto los JSON quedaban públicos con URL fija).
+  `validar_jsons.py` valida `oc-pend-resumen.json` (optional).
+- **Verificado**: preview local con servidor estático — merge real 661 códigos, test resiliencia 404 con
+  cb=1, thead 11 columnas, 0 errores de consola, 0 errores de sintaxis JS. OCR $0: 14/14 OK.
+- **NO se tocó**: reqStockEnviarEmail, reqDescargarHistorial, filtros/ABC, fusionar_despachos, firestore.rules.
+- V37.55.

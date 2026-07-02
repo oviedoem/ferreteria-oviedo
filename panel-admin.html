@@ -3607,6 +3607,9 @@ Todo desde tu celular, gratis, sin apps que descargar.
     <!-- Advertencia cobertura de datos -->
     <div id="reqRangoWarn" style="display:none;margin-bottom:8px;padding:9px 13px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;font-size:12px;color:#92400e;line-height:1.5"></div>
 
+    <!-- Frescura datos OC Pend (V37.55) -->
+    <div id="reqOcFrescura" style="margin-bottom:8px"></div>
+
     <!-- Tabla -->
     <div class="ven-adm-table-wrap">
       <table class="vadm-rank-table" id="reqStockTable" style="width:100%">
@@ -3620,12 +3623,13 @@ Todo desde tu celular, gratis, sin apps que descargar.
             <th class="r" style="min-width:78px">Reposición<br>actual</th>
             <th class="r" style="min-width:68px">Tránsito</th>
             <th class="r" style="min-width:68px">Stock<br>actual</th>
+            <th class="r" style="min-width:64px;background:#ede9fe;color:#4c1d95" title="Unidades en órdenes de compra vigentes aún no recibidas (SQL, sync 22:00)">OC<br>Pend</th>
             <th class="r" style="min-width:82px">Mínimo<br>solicitado</th>
             <th class="r" style="min-width:88px">Reposición<br>solicitado</th>
           </tr>
         </thead>
         <tbody id="reqStockBody">
-          <tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">
+          <tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">
             Selecciona rango de fechas y presiona "Pre-llenar"
           </td></tr>
         </tbody>
@@ -3754,7 +3758,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.54<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.55<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
 
 <script>
 
@@ -8191,9 +8195,30 @@ function _vadmCargarStockMap(cb){
         precio:Number(p.precioiva||p.PRECIO_IVA||0)
       };
     });
-    _vadmStockLoading=false;
-    _vadmEnriquecerMarca();
-    if(cb) cb();
+    // OC pendientes (V37.55): decorar el mapa con oc_pend antes de avisar via cb.
+    // _finalizar es idempotente: cb() se ejecuta UNA sola vez aunque el .catch se dispare.
+    var _ocDone=false;
+    function _finalizar(){
+      if(_ocDone) return; _ocDone=true;
+      _vadmStockLoading=false;
+      _vadmEnriquecerMarca();
+      if(cb) cb();
+    }
+    fetch(dataUrl('oc-pend-resumen.json')+'?t='+Math.floor(Date.now()/3600000))
+      .then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(ocRes){
+        window._vadmOcGenerado = ocRes._generado || null;
+        var gen = ocRes._generado ? new Date(ocRes._generado).getTime() : 0;
+        var horasDesde = gen ? (Date.now()-gen)/3600000 : 999;
+        if(horasDesde < 26){
+          Object.keys(ocRes).forEach(function(cod){
+            if(cod.charAt(0)==='_') return;
+            if(_vadmStockMap[cod]) _vadmStockMap[cod].oc_pend = Number(ocRes[cod])||0;
+          });
+        }
+        _finalizar();
+      })
+      .catch(function(){ _finalizar(); }); // sin datos OC: el mapa sigue funcionando sin oc_pend
   }
   function _intentar(idx){
     if(idx>=_urls.length){ _vadmStockLoading=false; _vadmStockMap={}; if(cb) cb(); return; }
@@ -17586,7 +17611,7 @@ function reqStockPrellenar(){
 
   function _reqMsgBloqueo(icono, titulo, detalle){
     document.getElementById('reqStockBody').innerHTML =
-      '<tr><td colspan="10" style="padding:28px 18px;text-align:center;color:#6b7280;font-size:13px">'+
+      '<tr><td colspan="11" style="padding:28px 18px;text-align:center;color:#6b7280;font-size:13px">'+
         '<div style="font-size:22px;margin-bottom:6px">'+icono+'</div>'+
         '<div style="font-weight:700;color:#374151;margin-bottom:4px">'+titulo+'</div>'+
         '<div style="font-size:12px">'+detalle+'</div>'+
@@ -17706,7 +17731,8 @@ function reqStockPrellenar(){
     var qty          = qtyMap[cod] || 0;
     return { cod:cod, desc:p.desc || b.descripcion || cod, marca:p.marca||'',
              abc:abcMap[cod]||'C', qty:qty, minimoActual:minimoActual,
-             transito:transito, stockActual:stockActual, reposicion:reposicion };
+             transito:transito, stockActual:stockActual, reposicion:reposicion,
+             ocPend:(p.oc_pend || 0) };
   })
 
   // ── 5. Ordenar: más vendido DESC, sin ventas al fondo ──
@@ -17741,12 +17767,26 @@ function reqStockPrellenar(){
       '<td class="r" style="white-space:nowrap;font-size:12px;'+reposSty+'">'+p.reposicion+'</td>'+
       '<td class="r" style="white-space:nowrap;font-size:12px">'+p.transito+'</td>'+
       '<td class="r" style="white-space:nowrap;font-size:12px;'+stockSty+'">'+p.stockActual+'</td>'+
+      '<td class="r" style="white-space:nowrap;font-size:12px;'+(p.ocPend>0?'color:#7c3aed;font-weight:700':'color:#9ca3af')+'">'+(p.ocPend||'—')+'</td>'+
       '<td class="r"><input type="number" '+inp+' class="req-minsol"   value="'+p.minimoActual+'"></td>'+
       '<td class="r"><input type="number" '+inp+' class="req-repossol" value="'+p.reposicion+'"></td>'+
     '</tr>';
   }).join('');
 
   document.getElementById('reqStockBody').innerHTML = rows;
+
+  // Indicador de frescura de datos OC (V37.55)
+  var elOc = document.getElementById('reqOcFrescura');
+  if(elOc){
+    var hrsOc = window._vadmOcGenerado
+      ? Math.round((Date.now()-new Date(window._vadmOcGenerado).getTime())/3600000)
+      : null;
+    elOc.innerHTML = (hrsOc !== null && !isNaN(hrsOc))
+      ? (hrsOc > 26
+         ? '<span style="color:#d97706;font-size:11px">⚠️ Datos OC de hace '+hrsOc+'h — ejecuta ACTUALIZAR_TODO para refrescar</span>'
+         : '<span style="color:#059669;font-size:11px">✓ Columna OC Pend actualizada hace '+hrsOc+'h</span>')
+      : '<span style="color:#9ca3af;font-size:11px">OC Pend: sin datos (no afecta el resto de la tabla)</span>';
+  }
 }
 
 // ── Variables globales para el modal de email solicitud stock ──────────────
