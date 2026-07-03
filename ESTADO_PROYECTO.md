@@ -1,6 +1,6 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.55
-# Fecha: 2026-07-01
+# Version activa: V37.57
+# Fecha: 2026-07-03
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,14 +12,29 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.55 |
-| Fecha | 2026-07-01 |
-| Deploy | hecho |
-| Pendiente | reportar a JustTime server ERP roto (CORS + getbase) — workarounds temporales activos en PASO 1H |
+| Version | V37.57 |
+| Fecha | 2026-07-03 |
+| Deploy | pendiente |
+| Pendiente | deploy + commit V37.57; reportar a JustTime server ERP roto (CORS + getbase) — workarounds temporales activos en PASO 1H |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.57 — 2026-07-03 (Rediseño iconos sidebar v4)
+- **`panel-admin.html`:** 38 SVG símbolos en `<defs>`, componente `.tag` kraft + dot indicator + `--gcolor` por grupo,
+  motion `vadm-stab::after scaleX()`, stagger `.sidebar-group`, touch zone 44px, `focus-visible`, reduced-motion.
+  35 `nav-btn` + 22 `vadm-stab` (Ventas) con iconos SVG + `aria-label`. Excepción "Quiebre" rojo fijo. Badge V37.57.
+
+### V37.56 — 2026-07-03 (Fix seguridad token rotativo + XSS bodHtml)
+- **`_utilidades/rotar_token_data.py`:** bug de seguridad — `ventas-manzano-2026-07.json` (y meses futuros)
+  quedaba en `data/` raíz y se desplegaba públicamente porque la lista `ARCHIVOS_SENSIBLES` estaba hardcodeada
+  hasta `06`. Fix: `get_archivos_sensibles()` descubre dinámicamente todos los `ventas-manzano-????-??.json`
+  con `glob.glob`. Autosustentable sin tocar código al iniciar cada mes.
+- **`panel-admin.html` L18550 (`_csPintarFicha`):** XSS FO-002 — clave de bodega `bk` (string de JSON externo)
+  asignada a `innerHTML` sin escapar. Fix: `venAdmEsc(bk)`. Consistente con `venAdmEsc(pv.nombre)` adyacente.
+- **Revisión /revisar-codigo $0:** 0 ERROREs, 0 WARNINGs (14/14 reglas).
+- Deploy: pendiente.
 
 ### V37.55 — 2026-07-01 (OC Pendiente desde SQL — columna en Solicitud Semanal)
 - **Nuevo script:** `BODEGAS/descargar_oc_pendientes.py` (V1.0) — OCs activas (IDDOCUMENTO 8/26/104/108/800-804,
@@ -239,4 +254,4 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.55 · 2026-07-01*
+*ESTADO_PROYECTO.md · Version V37.56 · 2026-07-03*

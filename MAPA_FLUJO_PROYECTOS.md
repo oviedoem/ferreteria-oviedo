@@ -1,6 +1,6 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
-# Última actualización: 2026-07-01 · Versión activa: V37.54
+# Última actualización: 2026-07-03 · Versión activa: V37.56
 #
 # NOTA V37.54 — PASO 1H con 3 workarounds temporales (actualización del ERP JustTime rompió el server):
 #   · El WsApi ([ERP-WSAPI-HOST]:6969) dejó de enviar CORS y getbase apunta a localhost:6969.
@@ -140,7 +140,9 @@ FUENTES DE DATOS (externas)
              ▼
   ┌──────────────────────────────────────────────────────────┐
   │ _utilidades/rotar_token_data.py                          │
-  │  → mueve los 27 JSON sensibles (ventas/costos/stock/      │
+  │  → descubre dinámicamente ventas-manzano-YYYY-MM.json    │
+  │    (glob — no hardcodeado, cubre todos los meses futuros) │
+  │  → mueve los JSON sensibles (ventas/costos/stock/         │
   │    pedidos/despachos) a data/<token-aleatorio>/           │
   │  → borra la carpeta del token anterior                    │
   │  → publica el token en Firestore dataAccessToken/current  │

@@ -29,6 +29,51 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:
 :root{
   --naranja:#DA0000;--naranja2:#c93a08;--dark:#111827;--card:#fff;
   --border:#e5e7eb;--gris:#6b7280;--verde:#059669;--rojo:#dc2626;--azul:#2563eb;--amarillo:#d97706;
+  --graphite:#20232A; --kraft:#EBDFC6; --kraft-edge:#CBB68C; --brass:#A97C3F;
+  --paper:#F2F0EB;
+  --c-principal:#DA0000; --c-ventas:#A97C3F; --c-inventario:#059669; --c-arbol:#0f766e;
+  --c-catalogo:#2563eb; --c-marketing:#E1306C; --c-adquisiciones:#475569;
+  --c-analisis:#d97706; --c-sistema:#71717a;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+/* ── iconos v4 ── */
+.tag{position:relative;width:34px;height:34px;background:var(--kraft);border:1px solid var(--kraft-edge);
+  border-radius:6px 11px 11px 6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform .35s var(--ease),background .25s ease,border-color .25s ease}
+.tag svg{width:16px;height:16px;stroke:var(--graphite);stroke-width:2;fill:none;stroke-linecap:round;
+  stroke-linejoin:round;margin-left:2px;transition:stroke .25s ease}
+.tag::before{content:"";position:absolute;top:4px;left:4px;width:4px;height:4px;border-radius:50%;
+  background:var(--paper);transition:box-shadow .25s ease}
+.tag:not(.on)::before{box-shadow:0 0 0 1.3px var(--gcolor,var(--brass))}
+.tag.on{background:var(--gcolor,var(--c-principal));border-color:transparent}
+.tag.on svg{stroke:#fff}
+.tag.on::before{box-shadow:0 0 0 1.3px rgba(255,255,255,.75)}
+.nav-btn:hover .tag{transform:rotate(-4deg) translateY(-1px) scale(1.04)}
+.nav-btn{position:relative}
+.nav-btn::before{content:"";position:absolute;inset:-5px 0;pointer-events:none}
+.nav-btn:focus-visible,.vadm-stab:focus-visible{outline:2px solid var(--gcolor,#DA0000);outline-offset:2px}
+.vadm-stab{position:relative;border-bottom:none}
+.vadm-stab svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:4px}
+.vadm-stab::after{content:"";position:absolute;left:8px;right:8px;bottom:-2px;height:2px;
+  background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
+.vadm-stab.active::after{transform:scaleX(1)}
+.sidebar-group{opacity:0;transform:translateY(8px);animation:rise .45s var(--ease) forwards}
+.sidebar-group:nth-child(1){animation-delay:.02s}
+.sidebar-group:nth-child(2){animation-delay:.06s}
+.sidebar-group:nth-child(3){animation-delay:.10s}
+.sidebar-group:nth-child(4){animation-delay:.14s}
+.sidebar-group:nth-child(5){animation-delay:.18s}
+.sidebar-group:nth-child(6){animation-delay:.22s}
+.sidebar-group:nth-child(7){animation-delay:.26s}
+.sidebar-group:nth-child(8){animation-delay:.30s}
+.sidebar-group:nth-child(9){animation-delay:.34s}
+@keyframes rise{to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion: reduce){
+  .sidebar-group{animation:none;opacity:1;transform:none}
+  .tag,.tag svg,.tag::before,.vadm-stab::after{transition:none}
+  .nav-btn:hover .tag{transform:none}
 }
 /* LOGIN */
 #loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#111827,#DA0000);display:flex;align-items:center;justify-content:center;z-index:9999}
@@ -670,6 +715,46 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
 </style>
 </head>
 <body>
+<svg style="display:none"><defs>
+<symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></symbol>
+<symbol id="i-bar" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 5"/><path d="M17 5h3a3 3 0 0 1-3 5"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 7l2-4h14l2 4"/><path d="M9 11v3"/><path d="M15 11v3"/></symbol>
+<symbol id="i-truck" viewBox="0 0 24 24"><rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 10h4l3 3v4h-7"/><circle cx="6" cy="19" r="2"/><circle cx="17.5" cy="19" r="2"/></symbol>
+<symbol id="i-trenddown" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.6 12.6 12 21.2a2 2 0 0 1-2.8 0L2.8 14.8a2 2 0 0 1 0-2.8L11.4 3.6A2 2 0 0 1 12.8 3H19a2 2 0 0 1 2 2v6.2a2 2 0 0 1-.4 1.4z"/><circle cx="16" cy="8" r="1.3"/></symbol>
+<symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+<symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+<symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+<symbol id="i-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+<symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3 11v3a1 1 0 0 0 1 1h1l4 5v-15l-4 5H4a1 1 0 0 0-1 1z"/><path d="M14 8a4 4 0 0 1 0 8"/><path d="M17.5 5.5a8 8 0 0 1 0 13"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
+<symbol id="i-warehouse" viewBox="0 0 24 24"><path d="M22 8.35V20a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8.35a1 1 0 0 1 .553-.894l9-4.5a1 1 0 0 1 .894 0l9 4.5A1 1 0 0 1 22 8.35Z"/><path d="M6 18h3v-3H6z"/><path d="M15 18h3v-3h-3z"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.5 6 22l6-3 6 3-2.2-8.5"/></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 2v6"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></symbol>
+<symbol id="i-calrange" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h2m4 0h2"/></symbol>
+<symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2h16v20l-3-2-3 2-2-2-2 2-3-2-3 2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></symbol>
+</defs></svg>
 
 <!-- LOGIN -->
 <div id="loginScreen">
@@ -758,81 +843,81 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
     <div class="sidebar-group">
       <button class="sidebar-group-toggle open" onclick="toggleSidebarGroup(this)">Principal <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items">
-        <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
-        <button class="nav-btn" onclick="showTab('cotizaciones',this)">📄 Cotizaciones</button>
-        <button class="nav-btn" onclick="showTab('usuarios',this)">👥 Usuarios</button>
-        <button class="nav-btn" onclick="showTab('sesiones',this);adminSesionesCargar()">🔒 Sesiones</button>
-        <button class="nav-btn" id="notifNavBtn" onclick="showTab('notificaciones',this)">🔔 Notificaciones <span id="notifNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
+        <button class="nav-btn active" onclick="showTab('dashboard',this)" aria-label="Dashboard"><span class="tag" style="--gcolor:var(--c-principal)" aria-hidden="true"><svg><use href="#i-dashboard"/></svg></span> Dashboard</button>
+        <button class="nav-btn" onclick="showTab('cotizaciones',this)" aria-label="Cotizaciones"><span class="tag" style="--gcolor:var(--c-principal)" aria-hidden="true"><svg><use href="#i-file"/></svg></span> Cotizaciones</button>
+        <button class="nav-btn" onclick="showTab('usuarios',this)" aria-label="Usuarios"><span class="tag" style="--gcolor:var(--c-principal)" aria-hidden="true"><svg><use href="#i-users"/></svg></span> Usuarios</button>
+        <button class="nav-btn" onclick="showTab('sesiones',this);adminSesionesCargar()" aria-label="Sesiones"><span class="tag" style="--gcolor:var(--c-principal)" aria-hidden="true"><svg><use href="#i-lock"/></svg></span> Sesiones</button>
+        <button class="nav-btn" id="notifNavBtn" onclick="showTab('notificaciones',this)" aria-label="Notificaciones"><span class="tag" style="--gcolor:var(--c-principal)" aria-hidden="true"><svg><use href="#i-bell"/></svg></span> Notificaciones <span id="notifNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle open" onclick="toggleSidebarGroup(this)">Ventas <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items">
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('detalle')">📋 Detalle</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('analisis')">📊 Análisis</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings')">🏆 Rankings</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('temporal')">📅 Temporal</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('clientes')">👤 Clientes</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('detalle')" aria-label="Detalle"><span class="tag" style="--gcolor:var(--c-ventas)" aria-hidden="true"><svg><use href="#i-clipboard"/></svg></span> Detalle</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('analisis')" aria-label="Análisis"><span class="tag" style="--gcolor:var(--c-ventas)" aria-hidden="true"><svg><use href="#i-bar"/></svg></span> Análisis</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('rankings')" aria-label="Rankings"><span class="tag" style="--gcolor:var(--c-ventas)" aria-hidden="true"><svg><use href="#i-trophy"/></svg></span> Rankings</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('temporal')" aria-label="Temporal"><span class="tag" style="--gcolor:var(--c-ventas)" aria-hidden="true"><svg><use href="#i-calendar"/></svg></span> Temporal</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('clientes')" aria-label="Clientes"><span class="tag" style="--gcolor:var(--c-ventas)" aria-hidden="true"><svg><use href="#i-user"/></svg></span> Clientes</button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Inventario <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('quiebre')">🔴 Quiebre</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('sobrestock')">📦 Sobre-stock</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('transito')">🚚 Tránsito</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('bajrot')">📉 Baja Rotación</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('mem')">🔧 Merma MEM</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')">🔖 Liquidación</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('informe-stock')">📊 Informe Stock</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('despachos')">🚚 Despachos Pendientes</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('recepciones')">📥 Por Recepcionar</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('quiebre')" aria-label="Quiebre"><span class="tag" style="--gcolor:var(--c-principal)" aria-hidden="true"><svg><use href="#i-alert"/></svg></span> Quiebre</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('sobrestock')" aria-label="Sobre-stock"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-box"/></svg></span> Sobre-stock</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('transito')" aria-label="Tránsito"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-truck"/></svg></span> Tránsito</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('bajrot')" aria-label="Baja Rotación"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-trenddown"/></svg></span> Baja Rotación</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('mem')" aria-label="Merma MEM"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-wrench"/></svg></span> Merma MEM</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('merma')" aria-label="Liquidación"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-tag"/></svg></span> Liquidación</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('informe-stock')" aria-label="Informe Stock"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-bar"/></svg></span> Informe Stock</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('despachos')" aria-label="Despachos Pendientes"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-truck"/></svg></span> Despachos Pendientes</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('inventario');vadmSubTab('recepciones')" aria-label="Por Recepcionar"><span class="tag" style="--gcolor:var(--c-inventario)" aria-hidden="true"><svg><use href="#i-inbox"/></svg></span> Por Recepcionar</button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Árbol Retail <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbol')">🌳 Árbol</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arboltabla')">📋 Tabla KPIs</button>
-        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbolheat')">🗓️ Mapa Calor</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbol')" aria-label="Árbol"><span class="tag" style="--gcolor:var(--c-arbol)" aria-hidden="true"><svg><use href="#i-branch"/></svg></span> Árbol</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arboltabla')" aria-label="Tabla KPIs"><span class="tag" style="--gcolor:var(--c-arbol)" aria-hidden="true"><svg><use href="#i-table"/></svg></span> Tabla KPIs</button>
+        <button class="nav-btn" onclick="showTab('ventas',this);venAdmCargar();vadmGrupo('arbol');vadmSubTab('arbolheat')" aria-label="Mapa Calor"><span class="tag" style="--gcolor:var(--c-arbol)" aria-hidden="true"><svg><use href="#i-grid"/></svg></span> Mapa Calor</button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Catálogo <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('precios',this)">💰 Precios</button>
-        <button class="nav-btn" onclick="showTab('stockconsulta',this)">🔍 Consulta de Stock</button>
-        <button class="nav-btn" onclick="showTab('url',this);adminUI_iniciarSeccionDispositivos()">⚙️ Configuración ERP</button>
+        <button class="nav-btn" onclick="showTab('precios',this)" aria-label="Precios"><span class="tag" style="--gcolor:var(--c-catalogo)" aria-hidden="true"><svg><use href="#i-dollar"/></svg></span> Precios</button>
+        <button class="nav-btn" onclick="showTab('stockconsulta',this)" aria-label="Consulta de Stock"><span class="tag" style="--gcolor:var(--c-catalogo)" aria-hidden="true"><svg><use href="#i-search"/></svg></span> Consulta de Stock</button>
+        <button class="nav-btn" onclick="showTab('url',this);adminUI_iniciarSeccionDispositivos()" aria-label="Configuración ERP"><span class="tag" style="--gcolor:var(--c-catalogo)" aria-hidden="true"><svg><use href="#i-settings"/></svg></span> Configuración ERP</button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Marketing <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('marketing',this)">📣 Difusión</button>
-        <button class="nav-btn" onclick="showTab('promociones',this)">🎯 Promociones</button>
-        <button class="nav-btn" onclick="showTab('redes',this)">📱 Redes Sociales</button>
-        <button class="nav-btn" id="cuponNavBtn" onclick="showTab('cupones',this)">🏷️ Cupones <span id="cuponNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
-        <button class="nav-btn" onclick="showTab('banner',this);bannerAdminCargar()">🖼️ Banner Principal</button>
+        <button class="nav-btn" onclick="showTab('marketing',this)" aria-label="Difusión"><span class="tag" style="--gcolor:var(--c-marketing)" aria-hidden="true"><svg><use href="#i-megaphone"/></svg></span> Difusión</button>
+        <button class="nav-btn" onclick="showTab('promociones',this)" aria-label="Promociones"><span class="tag" style="--gcolor:var(--c-marketing)" aria-hidden="true"><svg><use href="#i-target"/></svg></span> Promociones</button>
+        <button class="nav-btn" onclick="showTab('redes',this)" aria-label="Redes Sociales"><span class="tag" style="--gcolor:var(--c-marketing)" aria-hidden="true"><svg><use href="#i-share"/></svg></span> Redes Sociales</button>
+        <button class="nav-btn" id="cuponNavBtn" onclick="showTab('cupones',this)" aria-label="Cupones"><span class="tag" style="--gcolor:var(--c-marketing)" aria-hidden="true"><svg><use href="#i-tag"/></svg></span> Cupones <span id="cuponNavCount" style="display:none;background:#dc2626;color:white;border-radius:10px;padding:1px 5px;font-size:10px;margin-left:4px">0</span></button>
+        <button class="nav-btn" onclick="showTab('banner',this);bannerAdminCargar()" aria-label="Banner Principal"><span class="tag" style="--gcolor:var(--c-marketing)" aria-hidden="true"><svg><use href="#i-image"/></svg></span> Banner Principal</button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Adquisiciones <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('adquisiciones',this)">📋 Solicitud Stock</button>
-        <button class="nav-btn" onclick="showTab('traspasocd',this)">🚚 Traspasos CD</button>
+        <button class="nav-btn" onclick="showTab('adquisiciones',this)" aria-label="Solicitud Stock"><span class="tag" style="--gcolor:var(--c-adquisiciones)" aria-hidden="true"><svg><use href="#i-clipboard"/></svg></span> Solicitud Stock</button>
+        <button class="nav-btn" onclick="showTab('traspasocd',this)" aria-label="Traspasos CD"><span class="tag" style="--gcolor:var(--c-adquisiciones)" aria-hidden="true"><svg><use href="#i-truck"/></svg></span> Traspasos CD</button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Análisis <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('analisis',this)">📊 Bodegas IEM / RCE / CEM</button>
+        <button class="nav-btn" onclick="showTab('analisis',this)" aria-label="Bodegas IEM / RCE / CEM"><span class="tag" style="--gcolor:var(--c-analisis)" aria-hidden="true"><svg><use href="#i-warehouse"/></svg></span> Bodegas IEM / RCE / CEM</button>
       </div>
     </div>
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Sistema <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('tutoriales',this)">📚 Tutoriales</button>
-        <button class="nav-btn" onclick="showTab('mejoras',this)">💡 Mejoras</button>
+        <button class="nav-btn" onclick="showTab('tutoriales',this)" aria-label="Tutoriales"><span class="tag" style="--gcolor:var(--c-sistema)" aria-hidden="true"><svg><use href="#i-book"/></svg></span> Tutoriales</button>
+        <button class="nav-btn" onclick="showTab('mejoras',this)" aria-label="Mejoras"><span class="tag" style="--gcolor:var(--c-sistema)" aria-hidden="true"><svg><use href="#i-bulb"/></svg></span> Mejoras</button>
       </div>
     </div>
   </nav>
@@ -929,37 +1014,37 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
         </div>
         <!-- ANÁLISIS -->
         <div class="vadm-subtabs" id="vstabs-analisis" style="display:none">
-          <button class="vadm-stab active" id="vstab-analisis"    onclick="vadmSubTab('analisis')">📦 Categorías</button>
-          <button class="vadm-stab"        id="vstab-marcas"      onclick="vadmSubTab('marcas')">🏷️ Por Marca</button>
-          <button class="vadm-stab"        id="vstab-hora"        onclick="vadmSubTab('hora')">🕐 Por Hora</button>
-              <button class="vadm-stab" id="vstab-pagoanalisis" onclick="vadmSubTab('pagoanalisis')">💳 Forma de Pago</button>
-          <button class="vadm-stab" id="vstab-sector" onclick="vadmSubTab('sector')">📍 Por Sector</button>
-          <button class="vadm-stab" id="vstab-impacto"   onclick="vadmSubTab('impacto')">📉 Q vs $</button>
-          <button class="vadm-stab" id="vstab-marcavend" onclick="vadmSubTab('marcavend')">🏅 Marca × Vendedor</button>
+          <button class="vadm-stab active" id="vstab-analisis"    onclick="vadmSubTab('analisis')" aria-label="Categorías"><svg aria-hidden="true"><use href="#i-box"/></svg> Categorías</button>
+          <button class="vadm-stab"        id="vstab-marcas"      onclick="vadmSubTab('marcas')" aria-label="Por Marca"><svg aria-hidden="true"><use href="#i-tag"/></svg> Por Marca</button>
+          <button class="vadm-stab"        id="vstab-hora"        onclick="vadmSubTab('hora')" aria-label="Por Hora"><svg aria-hidden="true"><use href="#i-clock"/></svg> Por Hora</button>
+              <button class="vadm-stab" id="vstab-pagoanalisis" onclick="vadmSubTab('pagoanalisis')" aria-label="Forma de Pago"><svg aria-hidden="true"><use href="#i-card"/></svg> Forma de Pago</button>
+          <button class="vadm-stab" id="vstab-sector" onclick="vadmSubTab('sector')" aria-label="Por Sector"><svg aria-hidden="true"><use href="#i-pin"/></svg> Por Sector</button>
+          <button class="vadm-stab" id="vstab-impacto"   onclick="vadmSubTab('impacto')" aria-label="Q vs $"><svg aria-hidden="true"><use href="#i-trenddown"/></svg> Q vs $</button>
+          <button class="vadm-stab" id="vstab-marcavend" onclick="vadmSubTab('marcavend')" aria-label="Marca × Vendedor"><svg aria-hidden="true"><use href="#i-award"/></svg> Marca × Vendedor</button>
         </div>
         <!-- RANKINGS -->
         <div class="vadm-subtabs vadm-subtabs-rank" id="vstabs-rankings" style="display:none">
-          <button class="vadm-stab vadm-stab-rank active" id="vstab-top"          onclick="vadmSubTab('top')">🏆 Top Productos</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-vendpro"      onclick="vadmSubTab('vendpro')">🤖 VendedorPRO</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-vendrank"     onclick="vadmSubTab('vendrank')">👥 Vendedores</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-rankingmarca" onclick="vadmSubTab('rankingmarca')">🏷️ Por Marca</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-pagorankings" onclick="vadmSubTab('pagorankings')">💳 Por Pago</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-nc"           onclick="vadmSubTab('nc')">🔴 NC Vendedor</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-marcavend2"   onclick="vadmSubTab('marcavend2')">🏷️ Vend × Marca</button>
-          <button class="vadm-stab vadm-stab-rank"        id="vstab-preciodiff"   onclick="vadmSubTab('preciodiff')">💲 Diff Precios</button>
+          <button class="vadm-stab vadm-stab-rank active" id="vstab-top"          onclick="vadmSubTab('top')" aria-label="Top Productos"><svg aria-hidden="true"><use href="#i-trophy"/></svg> Top Productos</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-vendpro"      onclick="vadmSubTab('vendpro')" aria-label="VendedorPRO"><svg aria-hidden="true"><use href="#i-bot"/></svg> VendedorPRO</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-vendrank"     onclick="vadmSubTab('vendrank')" aria-label="Vendedores"><svg aria-hidden="true"><use href="#i-users"/></svg> Vendedores</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-rankingmarca" onclick="vadmSubTab('rankingmarca')" aria-label="Por Marca"><svg aria-hidden="true"><use href="#i-tag"/></svg> Por Marca</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-pagorankings" onclick="vadmSubTab('pagorankings')" aria-label="Por Pago"><svg aria-hidden="true"><use href="#i-card"/></svg> Por Pago</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-nc"           onclick="vadmSubTab('nc')" aria-label="NC Vendedor"><svg aria-hidden="true"><use href="#i-alert"/></svg> NC Vendedor</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-marcavend2"   onclick="vadmSubTab('marcavend2')" aria-label="Vend × Marca"><svg aria-hidden="true"><use href="#i-award"/></svg> Vend × Marca</button>
+          <button class="vadm-stab vadm-stab-rank"        id="vstab-preciodiff"   onclick="vadmSubTab('preciodiff')" aria-label="Diff Precios"><svg aria-hidden="true"><use href="#i-dollar"/></svg> Diff Precios</button>
         </div>
         <!-- TEMPORAL -->
         <div class="vadm-subtabs" id="vstabs-temporal" style="display:none">
-          <button class="vadm-stab active" id="vstab-comparativa"  onclick="vadmSubTab('comparativa')">📅 Comparativa Mensual</button>
-          <button class="vadm-stab"        id="vstab-entrefechas"  onclick="vadmSubTab('entrefechas')">📆 Entre Fechas</button>
-          <button class="vadm-stab"        id="vstab-estaciones"   onclick="vadmSubTab('estaciones')">🌤️ Venta por Temporada</button>
-          <button class="vadm-stab"        id="vstab-pagotemporal" onclick="vadmSubTab('pagotemporal')">💳 Pago × Mes</button>
+          <button class="vadm-stab active" id="vstab-comparativa"  onclick="vadmSubTab('comparativa')" aria-label="Comparativa Mensual"><svg aria-hidden="true"><use href="#i-calendar"/></svg> Comparativa Mensual</button>
+          <button class="vadm-stab"        id="vstab-entrefechas"  onclick="vadmSubTab('entrefechas')" aria-label="Entre Fechas"><svg aria-hidden="true"><use href="#i-calrange"/></svg> Entre Fechas</button>
+          <button class="vadm-stab"        id="vstab-estaciones"   onclick="vadmSubTab('estaciones')" aria-label="Venta por Temporada"><svg aria-hidden="true"><use href="#i-sun"/></svg> Venta por Temporada</button>
+          <button class="vadm-stab"        id="vstab-pagotemporal" onclick="vadmSubTab('pagotemporal')" aria-label="Pago × Mes"><svg aria-hidden="true"><use href="#i-card"/></svg> Pago × Mes</button>
         </div>
         <!-- CLIENTES -->
         <div class="vadm-subtabs" id="vstabs-clientes" style="display:none">
-          <button class="vadm-stab active" id="vstab-clientes"    onclick="vadmSubTab('clientes')">🏆 Ranking Clientes</button>
-          <button class="vadm-stab"        id="vstab-tipodoc"     onclick="vadmSubTab('tipodoc')">💳 Tipo Documento</button>
-          <button class="vadm-stab"        id="vstab-facturacion" onclick="vadmSubTab('facturacion')">🧾 Facturación</button>
+          <button class="vadm-stab active" id="vstab-clientes"    onclick="vadmSubTab('clientes')" aria-label="Ranking Clientes"><svg aria-hidden="true"><use href="#i-trophy"/></svg> Ranking Clientes</button>
+          <button class="vadm-stab"        id="vstab-tipodoc"     onclick="vadmSubTab('tipodoc')" aria-label="Tipo Documento"><svg aria-hidden="true"><use href="#i-card"/></svg> Tipo Documento</button>
+          <button class="vadm-stab"        id="vstab-facturacion" onclick="vadmSubTab('facturacion')" aria-label="Facturación"><svg aria-hidden="true"><use href="#i-receipt"/></svg> Facturación</button>
         </div>
         <!-- INVENTARIO -->
         <div class="vadm-subtabs vadm-subtabs-inv" id="vstabs-inventario" style="display:none">
@@ -3758,7 +3843,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.55<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-07-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.57<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-07-2026</span></div>
 
 <script>
 
@@ -18467,14 +18552,14 @@ function csVerDesgloseMarca(){
   var max = Math.max.apply(null, filas.map(function(f){ return f.diasProm; }));
 
   var rowsHtml = filas.map(function(f, i){
-    var bg = i%2===0 ? '' : 'background:#f9fafb';
+    var bg = i%2===0 ? 'background:#fff' : 'background:#f1f5f9';
     var provTxt = f.proveedores.slice(0,2).map(function(pv){ return venAdmEsc(pv.nombre||pv.rut); }).join(', ');
     return '<tr style="'+bg+'">'+
-      '<td style="padding:6px 10px;font-family:monospace;border:1px solid #e5e7eb">'+venAdmEsc(f.cod)+'</td>'+
-      '<td style="padding:6px 10px;border:1px solid #e5e7eb">'+venAdmEsc(f.desc.slice(0,50))+'</td>'+
-      '<td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280;font-size:11px">'+provTxt+'</td>'+
-      '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:right;font-weight:700">'+f.diasProm+' días</td>'+
-      '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:right">'+f.n+'</td>'+
+      '<td style="padding:6px 10px;font-family:monospace;border:1px solid #94a3b8;color:#111827;font-weight:600">'+venAdmEsc(f.cod)+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #94a3b8;color:#111827">'+venAdmEsc(f.desc.slice(0,50))+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #94a3b8;color:#374151;font-size:11px">'+provTxt+'</td>'+
+      '<td style="padding:6px 10px;border:1px solid #94a3b8;text-align:right;font-weight:700;color:#111827">'+f.diasProm+' días</td>'+
+      '<td style="padding:6px 10px;border:1px solid #94a3b8;text-align:right;color:#374151">'+f.n+'</td>'+
     '</tr>';
   }).join('');
 
@@ -18483,13 +18568,13 @@ function csVerDesgloseMarca(){
       '<b>'+filas.length+'</b> códigos con recepciones · rango '+min+'–'+max+' días '+
       (max>min*1.5 ? '<span style="color:#dc2626;font-weight:700">⚠️ variación alta — no todas las OC de esta marca llegan en el mismo tiempo</span>' : '')+
     '</div>'+
-    '<table style="border-collapse:collapse;width:100%;font-size:12px">'+
+    '<table style="border-collapse:collapse;width:100%;font-size:12px;border:1px solid #94a3b8">'+
       '<thead><tr style="background:#1a1d3a;color:#fff">'+
-        '<th style="padding:6px 10px;text-align:left;border:1px solid #1a1d3a">Código</th>'+
-        '<th style="padding:6px 10px;text-align:left;border:1px solid #1a1d3a">Descripción</th>'+
-        '<th style="padding:6px 10px;text-align:left;border:1px solid #1a1d3a">Proveedor(es)</th>'+
-        '<th style="padding:6px 10px;text-align:right;border:1px solid #1a1d3a">Días tránsito</th>'+
-        '<th style="padding:6px 10px;text-align:right;border:1px solid #1a1d3a">Recepciones</th>'+
+        '<th style="padding:7px 10px;text-align:left;border:1px solid #334155">Código</th>'+
+        '<th style="padding:7px 10px;text-align:left;border:1px solid #334155">Descripción</th>'+
+        '<th style="padding:7px 10px;text-align:left;border:1px solid #334155">Proveedor(es)</th>'+
+        '<th style="padding:7px 10px;text-align:right;border:1px solid #334155">Días tránsito</th>'+
+        '<th style="padding:7px 10px;text-align:right;border:1px solid #334155">Recepciones</th>'+
       '</tr></thead><tbody>'+rowsHtml+'</tbody>'+
     '</table>';
 }
@@ -18547,7 +18632,7 @@ function _csPintarFicha(cod, p){
             bodKeys.map(function(bk){
               var pb = ltPb[bk];
               return '<span style="display:inline-block;margin-right:8px;padding:1px 7px;background:#f3f4f6;border-radius:8px;font-weight:600;color:#374151">'+
-                bk+' '+pb.diasProm+'d ('+pb.n+')</span>';
+                venAdmEsc(bk)+' '+pb.diasProm+'d ('+pb.n+')</span>';
             }).join('')+'</div>';
         }
         ltEl.innerHTML =

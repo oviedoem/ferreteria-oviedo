@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.55 · Última actualización: 2026-07-01
+# Versión activa: V37.57 · Última actualización: 2026-07-03
 
 ---
 
@@ -264,7 +264,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - Directorio activo: `PROYECTO_E:\ferreteria-oviedo\` (identificar el disco por etiqueta PROYECTO_E,
   no por letra) — NUNCA trabajar directamente en `PROYECTO_E:\git-sync\` ni en discos sin la
   etiqueta PROYECTO_E (ej. el disco con Windows 10 alterno, identificado en 2026-06-22)
-- Versión activa: V37.55
+- Versión activa: V37.56
 
 ### Historial de deploys (desde 2026-06-01)
 - Deploy V37.13: 2026-06-02 03:55 — fix árbol auto-init + guard re-render + tutoriales D:→E: ✅
@@ -361,6 +361,10 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   portabilidad por bodega (SEM=ligeros/herramientas, PEM=materiales pesados, CD=sin filtro) +
   ordenamiento: prioridad como clave primaria, campo dropdown como secundaria dentro de cada grupo.
   Keywords editables en _TCD_KW_SEM/_TCD_KW_PEM sin tocar más código. Badge emoji en col Código.
+
+- Deploy V37.56: 2026-07-03 — Fix seguridad: rotar_token_data.py descubre ventas-manzano-YYYY-MM.json dinámicamente
+  (bug: meses hardcodeados hasta 06, julio quedaba público en Firebase). Fix XSS FO-002: venAdmEsc(bk) en bodHtml
+  (_csPintarFicha). OCR $0 14/14 ✅ (0 errores, 0 warnings tras ambos fixes).
 
 - Deploy V37.55: 2026-07-01 — OC Pendiente desde SQL: descargar_oc_pendientes.py nuevo (PASO 1N en ambos bats),
   columna "OC Pend" en Solicitud Semanal (tras Stock actual, email intacto), oc_pend en _vadmStockMap via fetch
@@ -1493,3 +1497,52 @@ Contiene todo lo que NO es flujo activo:
   días y n) bajo los proveedores. oc-leadtime.json regenerado (1.119 productos) + copiado a
   carpeta-token + deploy 23:01.
 - V37.55.
+
+---
+
+### Sesión 2026-07-03 — **Fix seguridad token rotativo + XSS bodHtml (V37.56)**
+
+**Contexto:** revisión de estado del proyecto detectó dos vulnerabilidades activas.
+
+**Fix 1 — `_utilidades/rotar_token_data.py` (seguridad crítica):**
+`ARCHIVOS_SENSIBLES` tenía los splits mensuales de ventas hardcodeados hasta `ventas-manzano-2026-06.json`.
+`ventas-manzano-2026-07.json` (y todo mes futuro) quedaba en `data/` raíz y se desplegaba públicamente en Firebase
+Hosting con nombres de clientes, vendedores y documentos. Fix: reemplazado por `get_archivos_sensibles()` que
+descubre dinámicamente todos los `ventas-manzano-????-??.json` presentes en `data/` con `glob.glob` —
+autosustentable para todos los meses futuros sin tocar la lista.
+
+**Fix 2 — `panel-admin.html` L18550 (`_csPintarFicha`):**
+En `bodHtml`, la clave de bodega `bk` (string de `oc-leadtime.json` vía fetch) se asignaba a `innerHTML` sin
+escapar, inconsistente con `venAdmEsc(pv.nombre||pv.rut)` usado en `provHtml` adyacente. Fix: `venAdmEsc(bk)`.
+Riesgo práctico bajo (JSON de pipeline controlado), pero cierra la inconsistencia FO-002.
+
+**Revisión /revisar-codigo $0 post-fix:** 0 ERROREs, 0 WARNINGs (14/14 reglas).
+- V37.56.
+
+---
+
+### Sesión 2026-07-03 (continuación) — **Rediseño iconos sidebar v4 (V37.57)**
+
+**Contexto:** propuesta visual `propuesta-v4-avanzada.html` + prompt SCP `PROMPT-SCP-iconos-panel-admin-v4.md`
+revisados contra el proyecto, evaluados con todos los design skills instalados, e implementados en `panel-admin.html`.
+
+**Cambios en `panel-admin.html`:**
+- SVG `<defs>` con 38 símbolos insertado una sola vez al inicio del `<body>`
+- CSS nuevo: tokens `--graphite/--kraft/--kraft-edge/--brass/--paper/--c-*/--ease`, componente `.tag` (etiqueta kraft
+  34×34px, borde redondeado asimétrico, dot indicator con `--gcolor`), motion `.vadm-stab::after scaleX()`,
+  entrada escalonada `.sidebar-group` (9 delays), 44×44px touch zone `.nav-btn::before{inset:-5px 0}`,
+  `focus-visible`, `@media prefers-reduced-motion`
+- **35 `nav-btn`** reemplazados: emoji → `<span class="tag" style="--gcolor:var(--c-GRUPO)"><svg><use href="#i-NOMBRE"/></svg></span>` + `aria-label`
+- **22 `vadm-stab`** reemplazados (solo Ventas: Análisis 7 + Rankings 8 + Temporal 4 + Clientes 3): emoji → `<svg><use href="#i-NOMBRE"/></svg>` + `aria-label`
+- Fix neutralización `border-bottom:none` en `.vadm-stab` (evita doble underline con el `::after` animado)
+- Excepción "Quiebre": `--gcolor:var(--c-principal)` fijo rojo aunque su grupo sea Inventario (verde)
+- Badge actualizado a V37.57 · 03-07-2026
+
+**Auditoría Paperclip post-implementación:** onclick intactos ✅, cero `<form>` ✅, cero localStorage ✅,
+Quiebre excepción roja ✅, SVG defs una sola vez ✅, reduced-motion ✅, 57 aria-label ✅, 57 `<use href>` ✅
+
+**Bugs corregidos en el PROMPT antes de implementar:**
+1. `--paper:#F2F0EB` faltaba en lista de tokens del PROMPT (fallback cubría, pero variable sin declarar)
+2. `.vadm-stab{border-bottom:none}` faltaba — sin esto el `::after` generaba doble underline con el border estático
+
+- V37.57.

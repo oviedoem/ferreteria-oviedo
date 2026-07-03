@@ -121,6 +121,8 @@ Skill de Claude Code que corre dentro de la sesión activa. Evalúa el diff cont
 ```
 /revisar-codigo
 ```
+Antes de `/revisar-codigo` se puede correr `/paperclip-revision-costo-cero` como pasada previa
+basada en grep/patrones (más rápida, sin generación de texto extra).
 
 ### Modo CLI — OCR_REVIEW.bat (usa API externa)
 Usa el paquete npm `open-code-review`. Requiere junction `.opencodereview` activa.
@@ -129,3 +131,23 @@ E:\ferreteria-oviedo\OCR_REVIEW.bat
 ```
 Requiere: `C:\Users\<usuario>\.opencodereview` → `E:\config\opencodereview\`
 Si la junction no existe: ejecutar `MONTAR_CLAUDE.ps1` (la crea automáticamente).
+
+---
+
+## SKILLS DISPONIBLES (`.claude\commands\`)
+
+Skills de diseño y revisión — se activan con `/nombre`:
+
+| Skill | Cuándo usar |
+|---|---|
+| `/web-design-guidelines` | Rediseño visual de panel-admin/cliente/empleado |
+| `/animate-app` | Agregar transiciones, hover, micro-interacciones |
+| `/sleek-mobile` | Layout mobile-first, ergonomía táctil (vendedores/clientes Android) |
+| `/ui-ux-pro-max` | Checklist calidad UX final antes de entregar un cambio visual |
+| `/web-guidelines` | Accesibilidad, performance, seguridad front-end (innerHTML, CSP, PWA) |
+| `/frontend-design` | Dirección estética y tipografía |
+| `/paperclip-revision-costo-cero` | Pasada pre-cierre: patrones XSS/reglas sin costo extra |
+| `/revisar-codigo` | Revisión $0 contra 14 reglas FO del proyecto |
+| `/ahorro-tokens` | Compresión de contexto + estado rápido del proyecto |
+
+Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guidelines`**, nunca solos.
