@@ -2488,9 +2488,27 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
           </div>
           <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('inventario');setTimeout(function(){vadmSubTab('quiebre');},200);},300)">
             <div class="tc-icon">📊</div>
-            <div class="tc-title">Informe Stock V37.28</div>
-            <div class="tc-desc">22 columnas: Disp/Fís/Ped/Dif × 4 bodegas. Clic en Ped → pedidos comprometidos (NVM/VMN/VMP). Clic en Dif → despachos BVE/FVE pendientes.</div>
+            <div class="tc-title">Informe Stock V37.57</div>
+            <div class="tc-desc">22 columnas: Disp/Fís/Ped/Dif × 4 bodegas. Clic en Ped → pedidos comprometidos (NVM/VMN/VMP). Clic en Dif → despachos BVE/FVE pendientes. Encabezados sticky al hacer scroll.</div>
             <div class="tc-link">Ir a Inventario →</div>
+          </div>
+          <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('adquisiciones');setTimeout(function(){vadmSubTab('solicitud-stock');},200);},300)">
+            <div class="tc-icon">📋</div>
+            <div class="tc-title">Solicitud de Stock</div>
+            <div class="tc-desc">Genera solicitudes de reposición PEM/SEM con mínimos/repos desde ERP. Tracking de envíos y exportación a Excel. Columna OC Pendiente integrada.</div>
+            <div class="tc-link">Ir a Solicitud Stock →</div>
+          </div>
+          <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('adquisiciones');setTimeout(function(){vadmSubTab('traspasos');},200);},300)">
+            <div class="tc-icon">🔄</div>
+            <div class="tc-title">Traspasos CD</div>
+            <div class="tc-desc">Propuesta de traspasos desde Centro de Distribución a PEM/SEM. Filtro por bodega, prioridad 4 capas, checkboxes ranking y solicitud manual con exportación.</div>
+            <div class="tc-link">Ir a Traspasos CD →</div>
+          </div>
+          <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('inventario');setTimeout(function(){vadmSubTab('bodegas');},200);},300)">
+            <div class="tc-icon">🏭</div>
+            <div class="tc-title">Análisis Bodegas IEM/GEM/TEM/CEM</div>
+            <div class="tc-desc">6 bodegas El Manzano: stock, días de antigüedad y valorizado. GEM/CEM aceptan stock negativo por diseño ERP. Fuente SQL actualizada a las 22:00.</div>
+            <div class="tc-link">Ir a Análisis Bodegas →</div>
           </div>
           <div class="tut-card-v2" onclick="abrirWaManual()" style="border-color:#25D366">
             <div class="tc-icon" style="background:#25D366">💬</div>
@@ -2911,7 +2929,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
               <span style="font-size:13px;font-weight:700;color:#1a1a1a">Módulo Marketing — Difusión App Cliente</span>
-              <span class="mejora-status wip">En curso V37.28</span>
+              <span class="mejora-status done">✓ Completado V37.37</span>
             </div>
             <div style="font-size:12px;color:#6b7280;line-height:1.6;margin-bottom:8px">
               Tab integrado en el panel con textos listos para copiar en WhatsApp e Instagram,
@@ -2930,8 +2948,8 @@ Todo desde tu celular, gratis, sin apps que descargar.
       <!-- Encabezado con stats -->
       <div class="card" style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.28</div>
-          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-06-23</span>
+          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.57</div>
+          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-07-03</span>
         </div>
         <div id="mejorasStats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
         <div id="listaMejoras"></div>
@@ -6923,8 +6941,12 @@ function renderMejoras(){
     ['Inventario','ok',      '🚚','Despachos Pendientes — V37.10','BVE/FVE cobradas sin guía de despacho. Observación derivada por fechas: Entrega de empaque / Por despachar. Email y Excel. Fuente: despachos-detalle.json, sin nuevas descargas.'],
     ['Inventario','ok',      '📊','Informe Stock ERP 22 cols — V37.8','Disp/Fís/Ped/Dif × PEM/SEM/CEM/MEM. Modales Ped y Dif con detalle de docs BVE/FVE/NVM.'],
     ['Inventario','ok',      '🔍','Consulta de Stock — V37.1','Búsqueda por código o descripción. Ficha 8 bodegas: Disp/Tráns/Fís/Valor/Estado.'],
-    ['Inventario','ok',      '🗓️','Análisis bodegas IEM/RCE/CEM — V36.9k','SQL Server directo. Días de antigüedad por producto. Filtros bodega y rango días.'],
+    ['Inventario','ok',      '🏭','Análisis bodegas IEM/GEM/TEM/CEM — V37.50','6 bodegas El Manzano. GEM/CEM aceptan stock negativo por diseño ERP. Días antigüedad por producto.'],
     ['Inventario','ok',      '⏰','Tarea automática 18:00 — V37.2','ACTUALIZAR_TODO_AUTO.bat corre cada día 18:00. StartWhenAvailable. Log en logs/auto_*.log.'],
+    ['Inventario','ok',      '📋','Solicitud de Stock — V37.47','Base PEM(224)+SEM(573)=797 códigos con mínimos/repos ERP. Tracking envíos, historial Excel, columna OC Pendiente integrada.'],
+    ['Inventario','ok',      '🔄','Traspasos CD — V37.45','Propuesta CD→PEM/SEM con prioridad 4 capas. Filtro bodega, checkboxes ranking, solicitud manual, export solo con cantidad.'],
+    ['Inventario','ok',      '📌','Encabezados sticky Informe Stock — V37.52','position:sticky extendido a todos los menús (18 tab-pane + 34 vadm-section). Encabezados visibles al hacer scroll.'],
+    ['Inventario','ok',      '🔢','OC Pendiente desde SQL — V37.55','387 OCs / 670 códigos. Columna OC Pend en Solicitud Semanal. _vadmStockMap con cb idempotente.'],
     // ── CATÁLOGO ──
     ['Catálogo',  'ok',      '📦','Catálogo 6.011 productos','Pipeline ERP → Excel → JSON → Hosting. Se actualiza con ACTUALIZAR_TODO.bat.'],
     ['Catálogo',  'ok',      '🟢','Stock badges (verde/amarillo/rojo)','Cantidad en tiempo real desde JSON. 3 niveles de color, legible en móvil.'],
@@ -6943,8 +6965,12 @@ function renderMejoras(){
     ['Marketing', 'ok',      '✏️','Editor de texto banner','Editar horarios Lun-Vie / Sáb y posición del texto (izquierda/derecha).'],
     ['Marketing', 'ok',      '🤖','Auto-ajuste IA del banner','Canvas pixel analysis → sugiere brillo/contraste/posición óptimos.'],
     ['Marketing', 'ok',      '💬','WhatsApp Business integrado','Consulta, cotización, botón flotante. Sin API de pago. wa.me links.'],
-    ['Marketing', 'pending', '📣','Promociones programadas','Crear promos con fecha inicio/fin → se activan automáticamente en catálogo.'],
+    ['Marketing', 'ok',      '📣','Difusión — Módulo Marketing — V37.37','Tab con textos WA/Instagram, guión Reels 30s y plan lanzamiento 7 días. Objetivo: 30+ usuarios activos.'],
+    ['Marketing', 'pending', '📅','Promociones programadas','Crear promos con fecha inicio/fin → se activan automáticamente en catálogo.'],
     ['Marketing', 'pending', '🔔','Notificaciones push (FCM)','Avisar a clientes sobre precios especiales o stock crítico vía push gratuito.'],
+    // ── SEGURIDAD ──
+    ['Seguridad', 'ok',      '🔐','Token rotativo glob dinámico — V37.56','Carpeta data con nombre aleatorio rotativa mensual (julio público). Previene fuga de datos históricos.'],
+    ['Seguridad', 'ok',      '🛡️','Fix XSS venAdmEsc — V37.56','venAdmEsc(bk) escapado con textContent. Cumple regla FO-002 del checklist de seguridad.'],
   ];
 
   var ok   = items.filter(function(m){return m[1]==='ok';}).length;
