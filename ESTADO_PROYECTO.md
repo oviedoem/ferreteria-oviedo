@@ -14,8 +14,9 @@
 |---|---|
 | Version | V37.57 |
 | Fecha | 2026-07-03 |
-| Deploy | pendiente |
-| Pendiente | deploy + commit V37.57; reportar a JustTime server ERP roto (CORS + getbase) — workarounds temporales activos en PASO 1H |
+| Deploy | ✅ 2026-07-03 20:37:58 |
+| Commit | 3fab754 |
+| Pendiente | Reportar a JustTime CORS WsApi ERP (workarounds activos PASO 1H); verificar OC Pend con login real; 2 warnings OCR heredados |
 
 ---
 

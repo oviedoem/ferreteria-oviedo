@@ -2,7 +2,7 @@
   "hosting": {
     "site": "ferreteria-oviedo",
     "public": ".",
-    "predeploy": ["node update-sw-version.js"],
+    "predeploy": ["E:\\nodejs-portable\\node.exe update-sw-version.js"],
     "ignore": [
       "firebase.json",
       "**/.*",
