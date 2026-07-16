@@ -1,6 +1,6 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
 # Version activa: V37.57
-# Fecha: 2026-07-03
+# Fecha: 2026-07-15
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -13,14 +13,22 @@
 | Campo | Valor |
 |---|---|
 | Version | V37.57 |
-| Fecha | 2026-07-03 |
-| Deploy | ✅ 2026-07-03 20:37:58 |
-| Commit | 3fab754 |
-| Pendiente | Reportar a JustTime CORS WsApi ERP (workarounds activos PASO 1H); verificar OC Pend con login real; 2 warnings OCR heredados |
+| Fecha | 2026-07-15 |
+| Deploy | ✅ 2026-07-06 22:29:57 |
+| Commit | fb4f30d |
+| Pendiente | CORS WsApi ERP: workarounds activos PASO 1H (JustTime pendiente en su lado) |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.57 — 2026-07-15 (Fix OCR warnings Blazor)
+- **`BODEGAS/descargar_blazor_bodegas.py`:** FO-003 — IP real `200.6.113.97:6969` removida del código fuente.
+  Ahora se lee de `WS_IP_FALLBACK` en `credenciales_erp.ini`; si la clave está vacía, `_WS_ALIASES` solo tiene `localhost:6969`.
+- **`BODEGAS/descargar_blazor_bodegas.py`:** token de recepción ya no filtra en logs al excepción Playwright —
+  `str(e).replace(token, "***")` en el bloque except de `main()`.
+- Revisión `/revisar-codigo` $0: 0 ERROREs, 0 WARNINGs.
+- Deploy: pendiente (no hay cambio de datos, solo seguridad — deployar en próximo pipeline completo).
 
 ### V37.57 — 2026-07-03 (Rediseño iconos sidebar v4)
 - **`panel-admin.html`:** 38 SVG símbolos en `<defs>`, componente `.tag` kraft + dot indicator + `--gcolor` por grupo,
