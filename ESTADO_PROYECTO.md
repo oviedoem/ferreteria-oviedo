@@ -14,9 +14,9 @@
 |---|---|
 | Version | V37.57 |
 | Fecha | 2026-07-15 |
-| Deploy | ✅ 2026-07-06 22:29:57 |
-| Commit | fb4f30d |
-| Pendiente | CORS WsApi ERP: workarounds activos PASO 1H (JustTime pendiente en su lado) |
+| Deploy | ✅ 2026-07-15 21:17:15 |
+| Commit | pendiente |
+| Pendiente | TOKEN_RECEPCION vencido: renovar GUID en credenciales_erp.ini (JustWeb avatar → TOKEN). CORS WsApi ERP: workarounds activos PASO 1H. |
 
 ---
 
@@ -168,9 +168,9 @@
 
 | Archivo | Estado |
 |---|---|
-| panel-admin.html | Actualizado V37.2 |
-| panel-cliente.html | Actualizado V36.9k |
-| index.html | Actualizado V36.9i |
+| panel-admin.html | Actualizado V37.57 (badge 03-07-2026) |
+| panel-cliente.html | Actualizado V37.44 (badge 28-06-2026) |
+| index.html (panel vendedor) | Actualizado V37.44 (badge 28-06-2026) |
 | firebase-config.js | No modificar |
 | firestore.rules | Actualizado V36.9k |
 | firebase.json | Actualizado V36.2 (security headers) |
@@ -263,4 +263,4 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.56 · 2026-07-03*
+*ESTADO_PROYECTO.md · Version V37.57 · 2026-07-15*

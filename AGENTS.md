@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.57 · Última actualización: 2026-07-03
+# Versión activa: V37.57 · Última actualización: 2026-07-15
 
 ---
 
@@ -361,6 +361,13 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   portabilidad por bodega (SEM=ligeros/herramientas, PEM=materiales pesados, CD=sin filtro) +
   ordenamiento: prioridad como clave primaria, campo dropdown como secundaria dentro de cada grupo.
   Keywords editables en _TCD_KW_SEM/_TCD_KW_PEM sin tocar más código. Badge emoji en col Código.
+
+- Sesion 2026-07-15 — Fix OCR warnings descargar_blazor_bodegas.py: (1) FO-003 IP real 200.6.113.97:6969
+  movida a WS_IP_FALLBACK en credenciales_erp.ini; (2) FO-013 token enmascarado en exception log.
+  headless=False restaurado: usuario interviene manualmente al vencer el token (ventana Edge visible).
+  TOKEN_RECEPCION vencido: obtener de JustWeb avatar → TOKEN → actualizar en credenciales_erp.ini.
+  Pipeline: 51.178 ventas hasta 15-07-2026, deploy 20:25:47, commit 1786410.
+  OCR $0: 0 ERROREs, 0 WARNINGs.
 
 - Deploy V37.56: 2026-07-03 — Fix seguridad: rotar_token_data.py descubre ventas-manzano-YYYY-MM.json dinámicamente
   (bug: meses hardcodeados hasta 06, julio quedaba público en Firebase). Fix XSS FO-002: venAdmEsc(bk) en bodHtml
