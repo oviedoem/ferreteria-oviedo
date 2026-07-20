@@ -232,26 +232,22 @@ if exist "BODEGAS\fusionar_despachos.py" (
 :: -- PASO 1J: Enriquecimiento ventas (rut/sector/razon) desde SQL Server ----
 echo. >> "%LOGFILE%"
 echo [%time%] PASO 1J - Enriquecimiento ventas (rut/sector) SQL... >> "%LOGFILE%"
-if exist "BODEGAS\descargar_ventas_enrich.py" (
-    if exist "data\xlsm-enrich.json" (
-        copy /Y "data\xlsm-enrich.json" "data\xlsm-enrich.json.bak" >nul
-    )
-    "%PYTHON_EXE%" "BODEGAS\descargar_ventas_enrich.py" >> "%LOGFILE%" 2>&1
-    if %errorlevel% neq 0 (
-        echo [AVISO] descargar_ventas_enrich.py fallo - restaurando backup para preservar sectores >> "%LOGFILE%"
-        if exist "data\xlsm-enrich.json.bak" (
-            copy /Y "data\xlsm-enrich.json.bak" "data\xlsm-enrich.json" >nul
-            echo [OK] xlsm-enrich.json restaurado desde backup >> "%LOGFILE%"
-        ) else (
-            echo [WARN] Sin backup disponible - sector quedara vacio >> "%LOGFILE%"
-        )
-    ) else (
-        echo [OK] descargar_ventas_enrich.py >> "%LOGFILE%"
-        copy /Y "data\xlsm-enrich.json" "data\xlsm-enrich.json.bak" >nul
-    )
-) else (
-    echo [AVISO] descargar_ventas_enrich.py no encontrado - saltando >> "%LOGFILE%"
-)
+if not exist "BODEGAS\descargar_ventas_enrich.py" goto :paso1j_skip
+if exist "data\xlsm-enrich.json" copy /Y "data\xlsm-enrich.json" "data\xlsm-enrich.json.bak" >nul
+"%PYTHON_EXE%" "BODEGAS\descargar_ventas_enrich.py" >> "%LOGFILE%" 2>&1
+if %errorlevel% neq 0 goto :paso1j_fallo
+echo [OK] descargar_ventas_enrich.py >> "%LOGFILE%"
+if exist "data\xlsm-enrich.json" copy /Y "data\xlsm-enrich.json" "data\xlsm-enrich.json.bak" >nul
+goto :paso1j_fin
+:paso1j_skip
+echo [AVISO] descargar_ventas_enrich.py no encontrado - saltando >> "%LOGFILE%"
+goto :paso1j_fin
+:paso1j_fallo
+echo [AVISO] descargar_ventas_enrich.py fallo - restaurando backup para preservar sectores >> "%LOGFILE%"
+if exist "data\xlsm-enrich.json.bak" copy /Y "data\xlsm-enrich.json.bak" "data\xlsm-enrich.json" >nul
+if exist "data\xlsm-enrich.json.bak" echo [OK] xlsm-enrich.json restaurado desde backup >> "%LOGFILE%"
+if not exist "data\xlsm-enrich.json.bak" echo [WARN] Sin backup disponible - sector quedara vacio >> "%LOGFILE%"
+:paso1j_fin
 
 :: -- PASO 2: Ventas -------------------------------------------------------
 :ventas

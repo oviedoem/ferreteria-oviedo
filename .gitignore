@@ -2,6 +2,8 @@
 credenciales_db.ini
 credenciales_db.enc
 credenciales_erp.ini
+CLAVE*.txt
+CLAVE*.ini
 serviceAccountKey*.json
 *.env
 .env.*

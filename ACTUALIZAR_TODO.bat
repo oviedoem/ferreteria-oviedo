@@ -394,31 +394,25 @@ echo.
 echo  Generando xlsm-enrich.json desde SQL (reemplaza VENTAS.xlsm manual)...
 echo  (rut + razonSocial + sector para ventas-manzano; lo consume main.py)
 echo.
-if exist "%~dp0BODEGAS\descargar_ventas_enrich.py" (
-    REM Guardar backup antes de intentar actualizar
-    if exist "%~dp0data\xlsm-enrich.json" (
-        copy /Y "%~dp0data\xlsm-enrich.json" "%~dp0data\xlsm-enrich.json.bak" >nul
-    )
-    "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_ventas_enrich.py"
-    if %errorlevel% neq 0 (
-        color 0C
-        echo  [AVISO] descargar_ventas_enrich.py fallo (SQL no disponible o E: offline).
-        echo  Restaurando xlsm-enrich.json desde backup para preservar sectores...
-        if exist "%~dp0data\xlsm-enrich.json.bak" (
-            copy /Y "%~dp0data\xlsm-enrich.json.bak" "%~dp0data\xlsm-enrich.json" >nul
-            echo  [OK] xlsm-enrich.json restaurado -- sectores del ultimo pipeline OK.
-        ) else (
-            echo  [WARN] Sin backup disponible. El sector quedara vacio en ventas.
-        )
-        color 0A
-    ) else (
-        echo  [OK] xlsm-enrich.json actualizado desde SQL.
-        REM Mantener backup actualizado tras exito
-        copy /Y "%~dp0data\xlsm-enrich.json" "%~dp0data\xlsm-enrich.json.bak" >nul
-    )
-) else (
-    echo  [AVISO] descargar_ventas_enrich.py no encontrado -- saltando paso.
-)
+if not exist "%~dp0BODEGAS\descargar_ventas_enrich.py" goto :paso1k_skip
+if exist "%~dp0data\xlsm-enrich.json" copy /Y "%~dp0data\xlsm-enrich.json" "%~dp0data\xlsm-enrich.json.bak" >nul
+"%PYTHON_EXE%" "%~dp0BODEGAS\descargar_ventas_enrich.py"
+if %errorlevel% neq 0 goto :paso1k_fallo
+echo  [OK] xlsm-enrich.json actualizado desde SQL.
+if exist "%~dp0data\xlsm-enrich.json" copy /Y "%~dp0data\xlsm-enrich.json" "%~dp0data\xlsm-enrich.json.bak" >nul
+goto :paso1k_fin
+:paso1k_skip
+echo  [AVISO] descargar_ventas_enrich.py no encontrado -- saltando paso.
+goto :paso1k_fin
+:paso1k_fallo
+color 0C
+echo  [AVISO] descargar_ventas_enrich.py fallo (SQL no disponible o E: offline).
+echo  Restaurando xlsm-enrich.json desde backup para preservar sectores...
+if exist "%~dp0data\xlsm-enrich.json.bak" copy /Y "%~dp0data\xlsm-enrich.json.bak" "%~dp0data\xlsm-enrich.json" >nul
+if exist "%~dp0data\xlsm-enrich.json.bak" echo  [OK] xlsm-enrich.json restaurado -- sectores del ultimo pipeline OK.
+if not exist "%~dp0data\xlsm-enrich.json.bak" echo  [WARN] Sin backup disponible. El sector quedara vacio en ventas.
+color 0A
+:paso1k_fin
 echo.
 timeout /t 2 /nobreak >nul
 
