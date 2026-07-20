@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.57 · Última actualización: 2026-07-15
+# Versión activa: V37.57 · Última actualización: 2026-07-20
 
 ---
 
@@ -361,6 +361,14 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   portabilidad por bodega (SEM=ligeros/herramientas, PEM=materiales pesados, CD=sin filtro) +
   ordenamiento: prioridad como clave primaria, campo dropdown como secundaria dentro de cada grupo.
   Keywords editables en _TCD_KW_SEM/_TCD_KW_PEM sin tocar más código. Badge emoji en col Código.
+
+- Sesion 2026-07-20 — Pipeline completo x2 (13:48 + 18:34 cierre jornada). 51.907 ventas hasta 20-07-2026.
+  Clave JustTime actualizada (CLAVE en credenciales_erp.ini). PASO 1H con login manual (TOKEN_RECEPCION vencido).
+  Badges actualizados en 3 paneles: AG V37.57 20-07-2026.
+  Fix definitivo PASO 1K: crash "No se esperaba . en este momento." por bloques if anidados 3 niveles en cmd.exe.
+  Fix: reemplazado con goto labels en ACTUALIZAR_TODO.bat y ACTUALIZAR_TODO_AUTO.bat.
+  Seguridad: CLAVE NUEVA.txt eliminada del proyecto; patron CLAVE*.txt agregado a .gitignore.
+  Deploy: 18:34, commits fef5ca9 (badges) + 1dbdcb3 (fix bat + seguridad). OCR $0: 0 ERROREs, 0 WARNINGs.
 
 - Sesion 2026-07-15 — Fix OCR warnings descargar_blazor_bodegas.py: (1) FO-003 IP real 200.6.113.97:6969
   movida a WS_IP_FALLBACK en credenciales_erp.ini; (2) FO-013 token enmascarado en exception log.

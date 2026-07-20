@@ -1,6 +1,6 @@
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
 # Version activa: V37.57
-# Fecha: 2026-07-15
+# Fecha: 2026-07-20
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -13,14 +13,23 @@
 | Campo | Valor |
 |---|---|
 | Version | V37.57 |
-| Fecha | 2026-07-15 |
-| Deploy | ✅ 2026-07-15 21:17:15 |
-| Commit | bf90036 |
+| Fecha | 2026-07-20 |
+| Deploy | ✅ 2026-07-20 18:34 |
+| Commit | 1dbdcb3 |
 | Pendiente | TOKEN_RECEPCION vencido: renovar GUID en credenciales_erp.ini (JustWeb avatar → TOKEN). CORS WsApi ERP: workarounds activos PASO 1H. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.57 — 2026-07-20 (Pipeline datos + Fix PASO 1K + Seguridad)
+- **Pipeline x2:** 51.907 ventas hasta 20-07-2026 (13:48 parcial + 18:34 cierre jornada).
+- **Fix definitivo PASO 1K:** crash "No se esperaba . en este momento." por bloques `if` anidados 3 niveles en `cmd.exe`.
+  Fix: `goto` labels en `ACTUALIZAR_TODO.bat` y `ACTUALIZAR_TODO_AUTO.bat`. Ambos BATs robustos ahora.
+- **Clave JustTime actualizada:** `CLAVE` en `credenciales_erp.ini` con nueva clave (7070).
+- **Badges paneles:** `AG ● V37.57 ● 20-07-2026` en panel-admin.html, panel-cliente.html, index.html.
+- **Seguridad:** `CLAVE NUEVA.txt` eliminada del proyecto (clave en texto plano); patrón `CLAVE*.txt` en `.gitignore`.
+- Deploy: ✅ 18:34. Commits: fef5ca9 (badges) + 1dbdcb3 (fix bat + .gitignore).
 
 ### V37.57 — 2026-07-15 (Fix OCR warnings Blazor)
 - **`BODEGAS/descargar_blazor_bodegas.py`:** FO-003 — IP real `200.6.113.97:6969` removida del código fuente.
@@ -263,4 +272,4 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.57 · 2026-07-15*
+*ESTADO_PROYECTO.md · Version V37.57 · 2026-07-20*
