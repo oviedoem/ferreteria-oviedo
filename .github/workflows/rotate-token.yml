@@ -1,0 +1,104 @@
+# Rotación automática del dataAccessToken — Ferretera Oviedo
+#
+# PREREQUISITO (configurar una sola vez en GitHub → Settings → Secrets and variables → Actions):
+#   Secret:  FIREBASE_SERVICE_ACCOUNT  →  contenido JSON de la service account key de Firebase
+#                                          (Firebase Console → Project Settings → Service accounts
+#                                           → Generate new private key)
+#
+# La service account necesita los roles:
+#   - Firebase Hosting Admin    (para listar archivos del release activo)
+#   - Cloud Datastore User      (para leer/escribir dataAccessToken en Firestore)
+#
+# Orden de pasos (resistente a fallos):
+#   1. --prepare : lee token de Firestore → descarga archivos del CDN → escribe data/<new>/
+#   2. deploy    : Firebase Hosting reemplaza la carpeta data/ (nuevo token live, viejo desaparece)
+#   3. --commit  : actualiza Firestore con nuevo token y expires_at (clientes migran al nuevo)
+
+name: Rotar Token de Datos
+
+on:
+  schedule:
+    # Diariamente a las 06:00 UTC ≈ 02:00-03:00 Chile (fuera del horario de atención)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — preparar archivos localmente sin deploy ni commit a Firestore'
+        type: boolean
+        default: false
+
+jobs:
+  rotate:
+    name: Rotar token de datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # ── 2. Entorno Python + Node ───────────────────────────────────────────
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Instalar dependencias Python
+        run: pip install firebase-admin google-auth requests
+
+      # ── 3. Fase prepare ─────────────────────────────────────────────────
+      - name: Preparar archivos del nuevo token
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python .github/scripts/rotate_token.py --prepare
+
+      # ── 4. Parchear predeploy para Linux ─────────────────────────────────────
+      #    firebase.json tiene ruta Windows (E:\nodejs-portable\node.exe).
+      #    La reemplazamos por 'node' estándar solo para esta ejecución.
+      - name: Adaptar predeploy hook para Linux
+        run: |
+          python3 - << 'PYEOF'
+          import json
+          with open('firebase.json') as f:
+              cfg = json.load(f)
+          cfg['hosting']['predeploy'] = ['node update-sw-version.js']
+          with open('firebase.json', 'w') as f:
+              json.dump(cfg, f, indent=2, ensure_ascii=False)
+          print('[predeploy] OK: node update-sw-version.js')
+          PYEOF
+
+      # ── 5. Deploy Firebase Hosting ──────────────────────────────────────────
+      - name: Deploy a Firebase Hosting
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > /tmp/firebase-sa.json
+          GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json \
+            firebase deploy --only hosting
+          rm -f /tmp/firebase-sa.json
+
+      # ── 6. Fase commit (actualizar Firestore) ─────────────────────────────
+      - name: Actualizar token en Firestore
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python .github/scripts/rotate_token.py --commit
+
+      # ── 7. Resumen dry run ─────────────────────────────────────────────────
+      - name: Resumen (dry run)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+        run: |
+          echo "=== DRY RUN completado ==="
+          echo "Archivos preparados en:"
+          ls data/
+          echo "(deploy y actualización de Firestore omitidos)"

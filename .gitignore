@@ -39,3 +39,6 @@ __pycache__/
 
 # Centinela pipeline (generado por procesar-actualizacion.py, solo local)
 .pipeline_date
+
+# Token temporal generado por rotate_token.py (GitHub Actions)
+.new_token_value
