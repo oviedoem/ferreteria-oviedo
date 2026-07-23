@@ -4,9 +4,11 @@ Rotación automática del dataAccessToken — Ferretera Oviedo.
 
 Flujo:
   --prepare  Lee token actual de Firestore, descarga archivos desde Firebase Hosting CDN,
-             los escribe en data/<nuevo-token>/ y guarda el nuevo token en .new_token_value.
+             los escribe en data/<nuevo-token>/ Y en data/<token-actual>/ (para evitar
+             ventana de inconsistencia durante deploy→commit), guarda nuevo token en
+             .new_token_value.
   --commit   Lee .new_token_value y actualiza Firestore dataAccessToken/current con el nuevo
-             token + expires_at (TTL 8 h), cerrando la rotación tras el deploy exitoso.
+             token + expires_at (TTL 26 h), cerrando la rotación tras el deploy exitoso.
 
 Requiere env var: FIREBASE_SERVICE_ACCOUNT  (contenido JSON de la service account key)
 """
@@ -22,7 +24,8 @@ PROJECT_ID = "ferreteria-oviedo"
 SITE = "ferreteria-oviedo"
 BASE_URL = f"https://{SITE}.web.app"
 HOSTING_API = "https://firebasehosting.googleapis.com/v1beta1"
-TOKEN_TTL_HOURS = 8
+# 26 h cubre un ciclo de 24 h + 2 h de margen para retrasos del cron
+TOKEN_TTL_HOURS = 26
 NEW_TOKEN_FILE = ".new_token_value"
 
 
@@ -69,13 +72,17 @@ def list_token_files(oauth_token, old_token):
     headers = {"Authorization": f"Bearer {oauth_token}"}
 
     # Obtener la versión del último release
-    resp = requests.get(
-        f"{HOSTING_API}/sites/{SITE}/releases",
-        headers=headers,
-        params={"pageSize": 1},
-        timeout=30,
-    )
-    resp.raise_for_status()
+    try:
+        resp = requests.get(
+            f"{HOSTING_API}/sites/{SITE}/releases",
+            headers=headers,
+            params={"pageSize": 1},
+            timeout=30,
+        )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        sys.exit(f"ERROR: No se pudo obtener releases de Hosting: {e}")
+
     releases = resp.json().get("releases", [])
     if not releases:
         sys.exit("ERROR: No se encontraron releases en Firebase Hosting")
@@ -90,13 +97,16 @@ def list_token_files(oauth_token, old_token):
         params = {"pageSize": 1000}
         if page_token:
             params["pageToken"] = page_token
-        resp = requests.get(
-            f"{HOSTING_API}/{version_name}/files",
-            headers=headers,
-            params=params,
-            timeout=30,
-        )
-        resp.raise_for_status()
+        try:
+            resp = requests.get(
+                f"{HOSTING_API}/{version_name}/files",
+                headers=headers,
+                params=params,
+                timeout=30,
+            )
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            sys.exit(f"ERROR: No se pudo listar archivos de la versión: {e}")
         data = resp.json()
         all_files.extend(data.get("files", []))
         page_token = data.get("nextPageToken")
@@ -115,25 +125,36 @@ def download_files(file_paths):
         filename = path.rsplit("/", 1)[-1]
         url = f"{BASE_URL}{path}"
         print(f"  Descargando: {filename}")
-        resp = requests.get(url, timeout=60)
-        resp.raise_for_status()
+        try:
+            resp = requests.get(url, timeout=60)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            sys.exit(f"ERROR: Fallo descargando {filename}: {e}")
         content_map[filename] = resp.content
     return content_map
 
 
 def write_token_dir(content_map, token):
     out_dir = os.path.join("data", token)
-    os.makedirs(out_dir, exist_ok=True)
-    for filename, content in content_map.items():
-        with open(os.path.join(out_dir, filename), "wb") as fh:
-            fh.write(content)
-        print(f"  Escrito: data/{token}/{filename}")
+    try:
+        os.makedirs(out_dir, exist_ok=True)
+        for filename, content in content_map.items():
+            with open(os.path.join(out_dir, filename), "wb") as fh:
+                fh.write(content)
+            print(f"  Escrito: data/{token[:8]}.../{filename}")
+    except OSError as e:
+        sys.exit(f"ERROR: No se pudo escribir en {out_dir}: {e}")
 
 
 # ── fases ────────────────────────────────────────────────────────────────────────────
 
 def prepare(sa_dict):
-    """Fase 1: descargar archivos y preparar el nuevo directorio de token."""
+    """Fase 1: descargar archivos y preparar el nuevo directorio de token.
+
+    Escribe tanto data/<new_token>/ como data/<old_token>/ para que el deploy
+    incluya ambas carpetas y los clientes con el token anterior no reciban 404
+    durante la ventana entre deploy y commit a Firestore.
+    """
     import firebase_admin
     from firebase_admin import credentials, firestore
 
@@ -156,7 +177,11 @@ def prepare(sa_dict):
     print("[4/4] Descargando y escribiendo en nueva ruta...")
     content_map = download_files(file_paths)
     new_token = secrets.token_hex(16)
+
+    # Escribir carpeta nueva (será el próximo token activo)
     write_token_dir(content_map, new_token)
+    # Mantener carpeta del token actual en el deploy para evitar 404 durante deploy→commit
+    write_token_dir(content_map, old_token)
 
     with open(NEW_TOKEN_FILE, "w") as fh:
         fh.write(new_token)

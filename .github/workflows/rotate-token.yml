@@ -83,9 +83,9 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           echo "$FIREBASE_SERVICE_ACCOUNT" > /tmp/firebase-sa.json
+          trap 'rm -f /tmp/firebase-sa.json' EXIT
           GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json \
             firebase deploy --only hosting
-          rm -f /tmp/firebase-sa.json
 
       # ── 6. Fase commit (actualizar Firestore) ─────────────────────────────
       - name: Actualizar token en Firestore
@@ -99,6 +99,6 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
         run: |
           echo "=== DRY RUN completado ==="
-          echo "Archivos preparados en:"
-          ls data/
+          echo "Directorios de token preparados en data/:"
+          ls data/ | while read d; do echo "  ${d:0:8}..."; done
           echo "(deploy y actualización de Firestore omitidos)"
