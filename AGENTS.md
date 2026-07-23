@@ -1561,3 +1561,34 @@ Quiebre excepción roja ✅, SVG defs una sola vez ✅, reduced-motion ✅, 57 a
 2. `.vadm-stab{border-bottom:none}` faltaba — sin esto el `::after` generaba doble underline con el border estático
 
 - V37.57.
+
+---
+
+### Sesiones 2026-07-06 a 2026-07-20 — Pipelines y fixes de infraestructura (V37.57)
+
+Resumen compacto (detalle completo en memory/estado-sesion-2026070*.md y estado-sesion-202607*.md):
+
+- **2026-07-06:** fix `validar_jsons.py` schema (3 archivos sin spec), fix `firebase.json` predeploy ruta absoluta. Deploy 22:29, commit fb4f30d.
+- **2026-07-15:** fix `descargar_blazor_bodegas.py` — IP real movida a `credenciales_erp.ini`, token masked en exception log. Deploy 21:17, commit bf90036.
+- **2026-07-20:** fix PASO 1K (`ACTUALIZAR_TODO.bat`) — bloques if anidados 3 niveles reemplazados por `goto` labels; `CLAVE NUEVA.txt` (clave en texto plano) eliminada del proyecto, patrón `CLAVE*.txt` agregado a `.gitignore`. Badges actualizados en 3 paneles (admin/cliente/vendedor) → V37.57 / 20-07-2026. Deploy 18:34, commit d69d3ae.
+
+---
+
+### Sesión 2026-07-23 — Fix validar_jsons opcional vacío + renovación TOKEN_RECEPCION (V37.57)
+
+**Problema:** `despachos-pendientes-erp.json` llegaba como lista vacía `[]` cuando TOKEN_RECEPCION vencía (PASO 1H sin datos). El validador marcaba `LISTA VACIA: ERROR` y bloqueaba el deploy, aunque el archivo es `optional: True`.
+
+**Fix `validar_jsons.py`** — rama `raw_list`, antes del `return False, 'LISTA VACIA'`:
+```python
+if len(data) < 1:
+    if spec.get('optional'):
+        return None, 'OMITIDO (opcional, lista vacía — Playwright sin datos esta corrida)'
+    return False, 'LISTA VACIA: ' + ruta
+```
+Archivos beneficiados: `despachos-pendientes-erp.json` y `recepciones-pendientes.json` (ambos `raw_list, optional: True`).
+
+**Renovación TOKEN_RECEPCION:** token vencido `dfb4fccd-b874-f111-8b85-00155d9d0600` → nuevo `1ae317f0-ac86-f111-8aab-00155d9d0613`. Método: Chrome con `--disable-web-security --user-data-dir="C:\temp-chrome"` → ERP Blazor → PERFIL DE USUARIO → TOKEN.
+
+**Pipeline 2026-07-23:** 52.536 ventas, 40 despachos, 10 recepciones, 31/31 JSONs OK. Deploy 11:55, commit 66be2d0.
+
+- V37.57 — última actualización: 2026-07-23

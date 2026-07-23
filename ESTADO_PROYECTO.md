@@ -1,6 +1,6 @@
-# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
+﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
 # Version activa: V37.57
-# Fecha: 2026-07-20
+# Fecha: 2026-07-23
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -272,4 +272,4 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.57 · 2026-07-20*
+*ESTADO_PROYECTO.md · Version V37.57 · 2026-07-23*
