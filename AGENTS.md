@@ -302,6 +302,13 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   plan de cutover pendiente (ver memoria de Claude: seguridad-carpeta-aleatoria-datos,
   pendiente-passwords-texto-plano).
 
+- Sesion 2026-07-25: Confirmado que IdMenu=377 usa **Blazor Web App** (blazor.web.js, versión 8+)
+  con render mode WASM para este componente (badge WASM visible en status bar). No es Blazor Server
+  puro — no hay SignalR real. El API `foviedo.justtime.cl:6969` es HTTP/fetch puro. El mensaje del
+  script "SignalR caido" es impreciso; lo que falla es el fetch cross-origin. La carga tarda ~90s
+  porque el runtime .NET WASM se descarga al primer load. Los workarounds `--disable-web-security`
+  y route intercept `localhost:6969→host real` siguen siendo necesarios.
+
 - Sesion 2026-06-30 (sesión C): PASO 1H descargar_blazor_bodegas.py reescrito — token directo
   sin login, selector botón correcto `button.e-boton:has-text('Exportar a Excel')` (sin atributo
   title), tabs via `[role='tab']:has-text(...)`. TOKEN_RECEPCION en credenciales_erp.ini (visible en
@@ -1588,6 +1595,8 @@ if len(data) < 1:
 Archivos beneficiados: `despachos-pendientes-erp.json` y `recepciones-pendientes.json` (ambos `raw_list, optional: True`).
 
 **Renovación TOKEN_RECEPCION:** token vencido `dfb4fccd-b874-f111-8b85-00155d9d0600` → nuevo `1ae317f0-ac86-f111-8aab-00155d9d0613`. Método: Chrome con `--disable-web-security --user-data-dir="C:\temp-chrome"` → ERP Blazor → PERFIL DE USUARIO → TOKEN.
+
+**Renovación TOKEN_RECEPCION 2026-07-25:** `1ae317f0-ac86-f111-8aab-00155d9d0613` (vencido, ~2 días TTL) → nuevo `7fc97930-4d88-f111-8aab-00155d9d0613`. Mismo método.
 
 **Pipeline 2026-07-23:** 52.536 ventas, 40 despachos, 10 recepciones, 31/31 JSONs OK. Deploy 11:55, commit 66be2d0.
 

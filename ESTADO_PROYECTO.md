@@ -16,7 +16,7 @@
 | Fecha | 2026-07-20 |
 | Deploy | ✅ 2026-07-20 18:34 |
 | Commit | 1dbdcb3 |
-| Pendiente | TOKEN_RECEPCION vencido: renovar GUID en credenciales_erp.ini (JustWeb avatar → TOKEN). CORS WsApi ERP: workarounds activos PASO 1H. |
+| Pendiente | CORS WsApi ERP: workarounds activos PASO 1H (--disable-web-security). TOKEN_RECEPCION renovado 25-07-2026 → `7fc97930-4d88-f111-8aab-00155d9d0613` (TTL ~2 días). |
 
 ---
 
