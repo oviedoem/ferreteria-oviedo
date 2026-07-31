@@ -204,6 +204,8 @@ def validar_archivo(nombre, spec):
             if cnt is None:
                 return False, 'CAMPO "' + array_field + '" no es lista/objeto en: ' + ruta
             if cnt < 1:
+                if spec.get('optional'):
+                    return None, 'OMITIDO (opcional, lista vacía — sin datos esta corrida)'
                 return False, 'CAMPO "' + array_field + '" VACIO en: ' + ruta
             return True, str(cnt) + ' registros'
 
