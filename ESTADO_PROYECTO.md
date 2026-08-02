@@ -22,6 +22,17 @@
 
 ## ULTIMOS CAMBIOS (V37.x)
 
+### Auditoría de Seguridad — 2026-08-02 (Claude Code remoto, sin cambio de versión)
+- **Escaneo completo de credenciales:** sin tokens, API keys ni contraseñas hardcodeadas en código fuente
+- **`firebase-config.js`:** API key de Firebase (`AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ`) — pública por diseño (web SDK), comentario en el archivo lo documenta. Sin riesgo.
+- **`firestore.rules`:** bien configurado — default deny (`allow read, write: if false`) para todo lo no listado; admins verificados contra Firestore; colección `precios` requiere auth real (no anónima); invitados con esquema estrictamente validado.
+- **`storage.rules`:** todo bloqueado (`if false`) — correcto, Storage no se usa.
+- **`rotate_token.py`:** lee `FIREBASE_SERVICE_ACCOUNT` exclusivamente de `os.environ` — sin hardcoding.
+- **`.github/workflows/rotate-token.yml`:** usa `${{ secrets.FIREBASE_SERVICE_ACCOUNT }}` — correcto. Workflow corrió exitosamente (run #10, 2026-08-02 05:22 UTC).
+- **`.gitignore`:** cubre correctamente `serviceAccountKey*.json`, `.env.*`, `.claude/`, `CLAVE*.txt`.
+- **Observación menor (no crítica):** sistema legado usa SHA-256 sin salt para contraseñas en Firestore (`h1:` prefijo). Solo afecta cuentas legacy; Firebase Auth moderno no lo usa. Mitigar si se crean cuentas nuevas con ese sistema.
+- **Sin cambios de código ni deploy en esta sesión.**
+
 ### V37.57 — 2026-07-20 (Pipeline datos + Fix PASO 1K + Seguridad)
 - **Pipeline x2:** 51.907 ventas hasta 20-07-2026 (13:48 parcial + 18:34 cierre jornada).
 - **Fix definitivo PASO 1K:** crash "No se esperaba . en este momento." por bloques `if` anidados 3 niveles en `cmd.exe`.
@@ -272,4 +283,4 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.57 · 2026-07-23*
+*ESTADO_PROYECTO.md · Version V37.57 · Auditoria seguridad 2026-08-02*
