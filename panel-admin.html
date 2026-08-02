@@ -920,6 +920,12 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
         <button class="nav-btn" onclick="showTab('mejoras',this)" aria-label="Mejoras"><span class="tag" style="--gcolor:var(--c-sistema)" aria-hidden="true"><svg><use href="#i-bulb"/></svg></span> Mejoras</button>
       </div>
     </div>
+    <div class="sidebar-group">
+      <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Bot WhatsApp <span class="sgt-chevron">▼</span></button>
+      <div class="sidebar-group-items collapsed">
+        <button class="nav-btn" onclick="showTab('bot',this);botAdminCargar()" aria-label="Costos IA"><span class="tag" style="--gcolor:#25d366" aria-hidden="true"><svg><use href="#i-bot"/></svg></span> Costos IA</button>
+      </div>
+    </div>
   </nav>
 
   <!-- Main content -->
@@ -3815,6 +3821,36 @@ Todo desde tu celular, gratis, sin apps que descargar.
     </div>
   </div>
 </div>
+
+    <!-- ── BOT WHATSAPP ── -->
+    <div class="tab-pane" id="tab-bot">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title"><span>🤖</span> Bot WhatsApp — Costos IA</div>
+        <div id="bot-loading" style="text-align:center;padding:32px;color:#6b7280;font-size:13px">Cargando datos...</div>
+        <div id="bot-error"   style="display:none;color:#dc2626;padding:16px;font-size:13px"></div>
+        <div id="bot-dash"    style="display:none">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px" id="bot-kpis"></div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Costo diario — 14 días (CLP)</div>
+          <div style="overflow-x:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 12px 0;margin-bottom:18px">
+            <div id="bot-bar" style="display:flex;align-items:flex-end;gap:5px;height:100px;padding-bottom:22px;min-width:360px"></div>
+          </div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Últimas 50 consultas</div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr style="background:#f9fafb">
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Fecha</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Hora</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Modelo</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Tokens</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">CLP</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">USD</th>
+              </tr></thead>
+              <tbody id="bot-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div><!-- /content -->
   </div><!-- /main-content -->
@@ -20156,6 +20192,72 @@ window.dpExportExcel = function(){
   XLSX.writeFile(wb, 'DespachosPendientes_'+new Date().toISOString().slice(0,10)+'.xlsx');
   if(window.toast) toast('📊 Excel exportado','ok');
 };
+
+// ── Bot WhatsApp — Costos IA ──────────────────────────────────────
+function botAdminCargar() {
+  if (window._botAdminCargado) return;
+  window._botAdminCargado = true;
+  firebase.firestore().collection('bot_costos').orderBy('fecha','desc').limit(500).get()
+    .then(snap => {
+      const data = snap.docs.map(d => d.data());
+      _botRender(data);
+      document.getElementById('bot-loading').style.display = 'none';
+      document.getElementById('bot-dash').style.display    = 'block';
+    })
+    .catch(e => {
+      document.getElementById('bot-loading').style.display = 'none';
+      const el = document.getElementById('bot-error');
+      el.style.display  = 'block';
+      el.textContent    = 'Error al cargar: ' + e.message;
+    });
+}
+
+function _botRender(data) {
+  const ymd = iso => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+  const hm  = iso => new Date(iso).toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'});
+  const clp = n  => '$' + Math.round(n||0).toLocaleString('es-CL');
+  const sum = (arr, k) => arr.reduce((s,r) => s+(r[k]||0), 0);
+  const hoy = ymd(new Date().toISOString());
+  const weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const monStart = new Date(); monStart.setDate(1); monStart.setHours(0,0,0,0);
+  const todayRecs = data.filter(r => ymd(r.fecha||'') === hoy);
+  const weekRecs  = data.filter(r => new Date(r.fecha||0) >= weekAgo);
+  const monRecs   = data.filter(r => new Date(r.fecha||0) >= monStart);
+  const kpis = [
+    { lbl:'Hoy',    val: clp(sum(todayRecs,'costo_clp')), sub: todayRecs.length+' consultas', c:'#059669' },
+    { lbl:'Semana', val: clp(sum(weekRecs,'costo_clp')),  sub: weekRecs.length+' consultas',  c:'#2563eb' },
+    { lbl:'Mes',    val: clp(sum(monRecs,'costo_clp')),   sub: monRecs.length+' consultas',   c:'#d97706' },
+    { lbl:'Total',  val: clp(sum(data,'costo_clp')),      sub: data.length+' consultas totales', c:'#dc2626' },
+  ];
+  document.getElementById('bot-kpis').innerHTML = kpis.map(k =>
+    `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px">
+      <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">${k.lbl}</div>
+      <div style="font-size:20px;font-weight:700;color:${k.c};margin-top:3px;font-variant-numeric:tabular-nums">${k.val}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:2px">${k.sub}</div>
+    </div>`).join('');
+  const byDay = {};
+  for (let i=13;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); byDay[ymd(d.toISOString())]=0; }
+  data.forEach(r => { const k=ymd(r.fecha||''); if(byDay[k]!==undefined) byDay[k]+=(r.costo_clp||0); });
+  const keys = Object.keys(byDay), vals = keys.map(k=>byDay[k]);
+  const maxV = Math.max(...vals, 1);
+  document.getElementById('bot-bar').innerHTML = keys.map((k,i) => {
+    const v = vals[i], h = Math.max((v/maxV)*76, v>0?2:0);
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:22px">
+      <div style="font-size:8px;color:#6b7280;margin-bottom:2px;text-align:center">${v>0?clp(v):''}</div>
+      <div style="width:100%;background:linear-gradient(180deg,#25d366,#1a9e4b);border-radius:3px 3px 0 0;height:${h}px;min-height:${v>0?2:0}px"></div>
+      <div style="font-size:8px;color:#6b7280;margin-top:4px">${k.slice(5)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('bot-tbody').innerHTML = data.slice(0,50).map(r =>
+    `<tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:7px 10px">${ymd(r.fecha||'')}</td>
+      <td style="padding:7px 10px">${hm(r.fecha||'')}</td>
+      <td style="padding:7px 10px"><span style="background:#ede9fe;color:#7c3aed;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600">${r.modelo||'?'}</span></td>
+      <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums">${(r.total_tokens||0).toLocaleString('es-CL')}</td>
+      <td style="padding:7px 10px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${clp(r.costo_clp||0)}</td>
+      <td style="padding:7px 10px;text-align:right;color:#6b7280;font-variant-numeric:tabular-nums">$${(r.costo_usd||0).toFixed(5)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:16px">Sin datos aún</td></tr>';
+}
 
 })();
 </script>
