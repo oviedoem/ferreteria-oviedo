@@ -157,6 +157,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── BOT COSTOS ────────────────────────────────────────────
+    // Escrito por bot vía Admin SDK (bypassa reglas); solo admin puede leer
+    match /bot_costos/{docId} {
+      allow read: if esAdmin();
+      allow write: if false;
+    }
+
+    match /bot_config/{docId} {
+      allow read: if esAdmin();
+      allow write: if false;
+    }
+
     // ── BLOQUEO POR DEFECTO ───────────────────────────────────
     // Todo lo que no esté listado arriba → denegado
     // Incluye: productos, solicitudes_cupon, sessions (obsoletas)
