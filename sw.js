@@ -4,7 +4,7 @@
 // BUILD_DATE se actualiza automáticamente al hacer deploy
 // ============================================================
 
-const BUILD_DATE = '2026-07-23 11:20:49'; // <- actualizado por update-sw-version.js // ← actualizado por update-sw-version.js // ← actualizado por update-sw-version.js
+const BUILD_DATE = '2026-08-03 17:21:00'; // <- actualizado por update-sw-version.js // ← actualizado por update-sw-version.js // ← actualizado por update-sw-version.js
 const CACHE_NAME = 'oviedo-' + BUILD_DATE.replace(/[^0-9]/g,'').slice(0,12);
 
 // Assets estáticos que se cachean en instalación (NO incluir HTML)
@@ -69,11 +69,12 @@ self.addEventListener('fetch', function(event) {
 
   // ── NAVIGATION (HTML) → Network-First ──────────────────
   // Siempre intentar red primero; solo fallback a caché si sin conexión
+  // cache:'no-cache' = revalidar con el servidor (evita HTML viejo con headers antiguos)
   if (event.request.mode === 'navigate' ||
       url.pathname.endsWith('.html') ||
       url.pathname === '/') {
     event.respondWith(
-      fetch(event.request).then(function(response) {
+      fetch(event.request, { cache: 'no-cache' }).then(function(response) {
         if (response && response.status === 200) {
           // Guardar copia fresca en caché (para offline)
           const clone = response.clone();

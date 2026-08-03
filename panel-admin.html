@@ -8182,6 +8182,7 @@ function instalarPWA(){
 
 function mostrarBannerActualizacionAdmin(pendingWorker) {
   if (document.getElementById('swUpdateBanner')) return;
+  window._swPendingWorker = pendingWorker;
   var banner = document.createElement('div');
   banner.id = 'swUpdateBanner';
   banner.style.cssText = [
@@ -8193,14 +8194,31 @@ function mostrarBannerActualizacionAdmin(pendingWorker) {
     'border-top:2px solid #DA0000'
   ].join(';');
   banner.innerHTML =
-    '<span style="flex:1">🔄 <strong>Nueva versión disponible.</strong> Actualiza para ver los últimos cambios.</span>'+
+    '<span style="flex:1">🔄 <strong>Nueva versión disponible.</strong> Se actualizará sola en <strong id="swUpdateCount" style="color:#fbbf24">15</strong>s...</span>'+
     '<button onclick="aplicarActualizacionAdmin()" style="padding:8px 16px;background:#DA0000;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Actualizar ahora</button>'+
-    '<button onclick="this.parentNode.remove()" style="padding:6px 10px;background:rgba(255,255,255,.1);color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer">✕</button>';
+    '<button onclick="cancelarActualizacionAdmin()" style="padding:6px 10px;background:rgba(255,255,255,.1);color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer">Después</button>';
   document.body.appendChild(banner);
-  window._swPendingWorker = pendingWorker;
+  // Auto-aplicar: si el usuario no cancela en 15s, la actualización se instala sola
+  var seg = 15;
+  window._swUpdateTimer = setInterval(function() {
+    seg--;
+    var el = document.getElementById('swUpdateCount');
+    if (el) el.textContent = seg;
+    if (seg <= 0) {
+      clearInterval(window._swUpdateTimer); window._swUpdateTimer = null;
+      aplicarActualizacionAdmin();
+    }
+  }, 1000);
+}
+
+function cancelarActualizacionAdmin() {
+  if (window._swUpdateTimer) { clearInterval(window._swUpdateTimer); window._swUpdateTimer = null; }
+  var b = document.getElementById('swUpdateBanner');
+  if (b) b.remove();
 }
 
 function aplicarActualizacionAdmin() {
+  if (window._swUpdateTimer) { clearInterval(window._swUpdateTimer); window._swUpdateTimer = null; }
   if (window._swPendingWorker) {
     window._swPendingWorker.postMessage({ type: 'SKIP_WAITING' });
   }
