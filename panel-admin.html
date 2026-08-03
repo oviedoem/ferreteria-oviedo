@@ -3825,14 +3825,44 @@ Todo desde tu celular, gratis, sin apps que descargar.
     <!-- ── BOT WHATSAPP ── -->
     <div class="tab-pane" id="tab-bot">
       <div class="card" style="margin-bottom:16px">
-        <div class="card-title"><span>🤖</span> Bot WhatsApp — Costos IA</div>
+        <div class="card-title"><span>🤖</span> Bot WhatsApp — Monitor</div>
+        <!-- Sub-pestañas del monitor -->
+        <div style="display:flex;gap:2px;border-bottom:2px solid #e5e7eb;margin-bottom:14px;flex-wrap:wrap">
+          <button class="bot-subtab" data-sub="costos" onclick="botMonSubTab('costos',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#059669;border-bottom:2px solid #25d366;margin-bottom:-2px;cursor:pointer;font-family:inherit">💰 Costos IA</button>
+          <button class="bot-subtab" data-sub="estado" onclick="botMonSubTab('estado',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">📡 Estado en vivo</button>
+          <button class="bot-subtab" data-sub="contactos" onclick="botMonSubTab('contactos',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">👥 Contactos</button>
+          <button class="bot-subtab" data-sub="broadcast" onclick="botMonSubTab('broadcast',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">📢 Broadcast</button>
+          <button class="bot-subtab" data-sub="uptime" onclick="botMonSubTab('uptime',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">📈 Uptime</button>
+        </div>
+
+        <!-- SUB: COSTOS IA (datos Firestore) -->
+        <div id="bot-sub-costos">
         <div id="bot-loading" style="text-align:center;padding:32px;color:#6b7280;font-size:13px">Cargando datos...</div>
         <div id="bot-error"   style="display:none;color:#dc2626;padding:16px;font-size:13px"></div>
         <div id="bot-dash"    style="display:none">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px" id="bot-kpis"></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px" id="bot-kpis2"></div>
           <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Costo diario — 14 días (CLP)</div>
           <div style="overflow-x:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 12px 0;margin-bottom:18px">
             <div id="bot-bar" style="display:flex;align-items:flex-end;gap:5px;height:100px;padding-bottom:22px;min-width:360px"></div>
+          </div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Distribución por hora del día (CLP)</div>
+          <div style="overflow-x:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 12px 0;margin-bottom:18px">
+            <div id="bot-bar-horas" style="display:flex;align-items:flex-end;gap:3px;height:80px;padding-bottom:20px;min-width:480px"></div>
+          </div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Desglose por modelo</div>
+          <div style="overflow-x:auto;margin-bottom:18px">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr style="background:#f9fafb">
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Modelo</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Mensajes</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Tokens entrada</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Tokens salida</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">USD</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">CLP</th>
+              </tr></thead>
+              <tbody id="bot-tbody-modelos"></tbody>
+            </table>
           </div>
           <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Últimas 50 consultas</div>
           <div style="overflow-x:auto">
@@ -3848,6 +3878,81 @@ Todo desde tu celular, gratis, sin apps que descargar.
               <tbody id="bot-tbody"></tbody>
             </table>
           </div>
+        </div>
+        </div>
+
+        <!-- SUB: ESTADO EN VIVO (API del bot en Render) -->
+        <div id="bot-sub-estado" style="display:none">
+          <div id="bot-estado-loading" style="display:none;text-align:center;padding:24px;color:#6b7280;font-size:13px">Conectando con el bot (si está dormido puede tardar ~1 min)...</div>
+          <div id="bot-estado-err" style="display:none;color:#dc2626;padding:16px;font-size:13px"></div>
+          <div id="bot-estado-dash" style="display:none">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px" id="bot-estado-kpis"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">Conversaciones recientes</div>
+              <button onclick="botMonCargarEstado(true)" style="padding:5px 12px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">↻ Actualizar</button>
+            </div>
+            <div id="bot-convs" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden"></div>
+          </div>
+        </div>
+
+        <!-- SUB: CONTACTOS -->
+        <div id="bot-sub-contactos" style="display:none">
+          <div id="bot-contactos-loading" style="display:none;text-align:center;padding:24px;color:#6b7280;font-size:13px">Cargando contactos...</div>
+          <div id="bot-contactos-err" style="display:none;color:#dc2626;padding:16px;font-size:13px"></div>
+          <div id="bot-contactos-dash" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div id="bot-contactos-total" style="font-size:13px;font-weight:600;color:#374151"></div>
+              <button onclick="botMonCargarContactos(true)" style="padding:5px 12px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">↻ Actualizar</button>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead><tr style="background:#f9fafb">
+                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Contacto</th>
+                  <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Mensajes</th>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Primer contacto</th>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:10px">Última actividad</th>
+                </tr></thead>
+                <tbody id="bot-tbody-contactos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB: BROADCAST -->
+        <div id="bot-sub-broadcast" style="display:none">
+          <div style="max-width:560px">
+            <p style="font-size:13px;color:#6b7280;margin-bottom:14px;line-height:1.6">
+              Envía una imagen de flyer a <strong id="bot-bc-count" style="color:#111827">los contactos</strong> que alguna vez escribieron al bot. Solo usar para promociones reales de la ferretería.
+            </p>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Imagen del flyer</div>
+            <div id="bot-bc-zone" onclick="document.getElementById('bot-bc-file').click()"
+                 ondrop="botMonDrop(event)" ondragover="event.preventDefault();this.style.borderColor='#25d366'"
+                 ondragleave="this.style.borderColor='#d1d5db'"
+                 style="border:2px dashed #d1d5db;border-radius:8px;padding:30px 16px;text-align:center;cursor:pointer;color:#6b7280;font-size:13px">
+              <input type="file" id="bot-bc-file" accept="image/*" style="display:none" onchange="botMonFile(event)">
+              <div id="bot-bc-hint">📸 Haz clic o arrastra aquí la imagen del flyer</div>
+              <img id="bot-bc-preview" style="display:none;max-width:240px;max-height:160px;margin:12px auto 0;border-radius:6px">
+            </div>
+            <div style="margin-top:12px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:4px">Caption (texto del mensaje)</div>
+              <textarea id="bot-bc-caption" placeholder="Ej: 🔨 OFERTA SEMANA: Tornillos 10% descuento · Válido hasta el viernes · Consulta en tienda" style="width:100%;padding:9px 11px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;min-height:72px;box-sizing:border-box"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
+              <button id="bot-bc-btn" onclick="botMonEnviarBroadcast()" disabled style="padding:8px 16px;border:none;border-radius:6px;background:#25d366;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📢 Enviar a todos los contactos</button>
+              <span id="bot-bc-hint2" style="font-size:12px;color:#6b7280">Selecciona una imagen primero</span>
+            </div>
+            <div id="bot-bc-progress" style="display:none;margin-top:12px">
+              <div style="background:#e5e7eb;border-radius:3px;height:4px"><div id="bot-bc-bar" style="background:#25d366;height:100%;border-radius:3px;width:0;transition:width .5s"></div></div>
+              <div id="bot-bc-status" style="font-size:12px;color:#6b7280;margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB: UPTIME -->
+        <div id="bot-sub-uptime" style="display:none">
+          <div id="bot-uptime-loading" style="display:none;text-align:center;padding:24px;color:#6b7280;font-size:13px">Cargando datos de UptimeRobot...</div>
+          <div id="bot-uptime-panel"></div>
+          <p style="font-size:12px;color:#6b7280;margin-top:10px">Los datos provienen de la API de UptimeRobot vía el bot (proxy en <code style="font-size:11px">/api/uptime</code>).</p>
         </div>
       </div>
     </div>
@@ -20201,6 +20306,7 @@ function botAdminCargar() {
     .then(snap => {
       const data = snap.docs.map(d => d.data());
       _botRender(data);
+      _botRenderExtras(data);
       document.getElementById('bot-loading').style.display = 'none';
       document.getElementById('bot-dash').style.display    = 'block';
     })
@@ -20258,6 +20364,254 @@ function _botRender(data) {
       <td style="padding:7px 10px;text-align:right;color:#6b7280;font-variant-numeric:tabular-nums">$${(r.costo_usd||0).toFixed(5)}</td>
     </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:16px">Sin datos aún</td></tr>';
 }
+
+// ── Monitor del bot (funciones de monitor.html) — aditivo ───────────────────
+const BOT_API = 'https://oviedo-whatsapp-bot.onrender.com';
+
+// Extras de costos calculados desde los mismos datos Firestore (sin nueva dependencia)
+function _botRenderExtras(data) {
+  const clp = n => '$' + Math.round(n||0).toLocaleString('es-CL');
+  const usd = (n,d=5) => '$' + (n||0).toFixed(d);
+  const sum = (arr,k) => arr.reduce((s,r) => s+(r[k]||0), 0);
+  const totClp = sum(data,'costo_clp'), totUsd = sum(data,'costo_usd'), n = data.length;
+
+  // Proyección mes al ritmo actual
+  const mes = new Date().toISOString().slice(0,7);
+  const costoMesUsd = sum(data.filter(r => (r.fecha||'').startsWith(mes)),'costo_usd');
+  const diasEnMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+  const proyUsd = (costoMesUsd / new Date().getDate()) * diasEnMes;
+  const tasa = n && data[0] && data[0].costo_usd ? (data[0].costo_clp / data[0].costo_usd) : 950;
+
+  const kpis2 = [
+    { lbl:'Promedio/consulta', val: n ? clp(totClp/n) : '–', sub: n ? usd(totUsd/n) + ' USD' : '', c:'#7c3aed' },
+    { lbl:'Proyección mes',    val: clp(proyUsd*tasa),        sub: usd(proyUsd,2) + ' USD al ritmo actual', c:'#ea580c' },
+  ];
+  document.getElementById('bot-kpis2').innerHTML = kpis2.map(k =>
+    `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px">
+      <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">${k.lbl}</div>
+      <div style="font-size:20px;font-weight:700;color:${k.c};margin-top:3px;font-variant-numeric:tabular-nums">${k.val}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:2px">${k.sub}</div>
+    </div>`).join('');
+
+  // Distribución por hora del día (CLP)
+  const horas = Array(24).fill(0);
+  data.forEach(r => { if (r.fecha) horas[new Date(r.fecha).getHours()] += (r.costo_clp||0); });
+  const maxH = Math.max(...horas, 1);
+  document.getElementById('bot-bar-horas').innerHTML = horas.map((v,i) => {
+    const h = Math.max((v/maxH)*56, v>0?2:0);
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:14px" title="${i}h: ${clp(v)}">
+      <div style="width:100%;background:linear-gradient(180deg,#a78bfa,#7c3aed);border-radius:2px 2px 0 0;height:${h}px"></div>
+      <div style="font-size:8px;color:#6b7280;margin-top:4px">${i%3===0?i+'h':''}</div>
+    </div>`;
+  }).join('');
+
+  // Desglose por modelo
+  const mods = {};
+  data.forEach(r => {
+    const k = r.modelo || '?';
+    if (!mods[k]) mods[k] = { msgs:0, inp:0, out:0, usd:0, clp:0 };
+    mods[k].msgs++; mods[k].inp += (r.input_tokens||0); mods[k].out += (r.output_tokens||0);
+    mods[k].usd += (r.costo_usd||0); mods[k].clp += (r.costo_clp||0);
+  });
+  document.getElementById('bot-tbody-modelos').innerHTML = Object.entries(mods).map(([k,v]) =>
+    `<tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:7px 10px"><span style="background:#ede9fe;color:#7c3aed;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600">${k}</span></td>
+      <td style="padding:7px 10px;text-align:right">${v.msgs}</td>
+      <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums">${v.inp.toLocaleString('es-CL')}</td>
+      <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums">${v.out.toLocaleString('es-CL')}</td>
+      <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums">${usd(v.usd)}</td>
+      <td style="padding:7px 10px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${clp(v.clp)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:16px">Sin datos aún</td></tr>';
+}
+
+// Navegación de sub-pestañas (carga perezosa: cada sección se carga la primera vez)
+window._botMonLoaded = window._botMonLoaded || {};
+function botMonSubTab(sub, btn) {
+  ['costos','estado','contactos','broadcast','uptime'].forEach(s => {
+    const pane = document.getElementById('bot-sub-'+s);
+    if (pane) pane.style.display = (s===sub) ? 'block' : 'none';
+  });
+  document.querySelectorAll('.bot-subtab').forEach(b => {
+    const act = b === btn;
+    b.style.color = act ? '#059669' : '#6b7280';
+    b.style.borderBottomColor = act ? '#25d366' : 'transparent';
+  });
+  if (sub==='estado'    && !window._botMonLoaded.estado)    { window._botMonLoaded.estado=true;    botMonCargarEstado(); }
+  if (sub==='contactos' && !window._botMonLoaded.contactos) { window._botMonLoaded.contactos=true; botMonCargarContactos(); }
+  if (sub==='uptime'    && !window._botMonLoaded.uptime)    { window._botMonLoaded.uptime=true;    botMonCargarUptime(); }
+  if (sub==='broadcast' && !window._botMonLoaded.broadcast) { window._botMonLoaded.broadcast=true; botMonCargarContactos(true, true); }
+}
+
+function _botMonFetch(path, opts) {
+  return fetch(BOT_API + path, opts).then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+
+// Estado en vivo + conversaciones recientes
+function botMonCargarEstado(manual) {
+  const load = document.getElementById('bot-estado-loading');
+  const err  = document.getElementById('bot-estado-err');
+  const dash = document.getElementById('bot-estado-dash');
+  load.style.display = 'block'; err.style.display = 'none'; if (!manual) dash.style.display = 'none';
+  Promise.all([_botMonFetch('/api/estado'), _botMonFetch('/api/conversaciones')])
+    .then(([est, convs]) => {
+      load.style.display = 'none'; dash.style.display = 'block';
+      const clp = n => '$' + Math.round(n||0).toLocaleString('es-CL');
+      const h = Math.floor((est.uptime||0)/3600), m = Math.floor((est.uptime||0)%3600/60);
+      const kpis = [
+        { lbl:'Conexión WhatsApp', val: est.connected ? '🟢 Conectado' : '🔴 Caído', sub:'', c: est.connected ? '#059669' : '#dc2626' },
+        { lbl:'Proveedor IA',  val: (est.proveedor||'claude').toUpperCase(), sub: est.modelo || '', c:'#7c3aed' },
+        { lbl:'Uptime',        val: h+'h '+m+'m', sub:'desde último inicio', c:'#2563eb' },
+        { lbl:'Mensajes hoy',  val: est.mensajes_hoy ?? '–', sub:'consultas IA', c:'#059669' },
+        { lbl:'Contactos',     val: est.contactos ?? '–', sub:'en memoria del bot', c:'#d97706' },
+        { lbl:'Costo hoy',     val: clp(est.costo_hoy_clp), sub:'$'+(est.costo_hoy_usd||0).toFixed(5)+' USD', c:'#dc2626' },
+      ];
+      document.getElementById('bot-estado-kpis').innerHTML = kpis.map(k =>
+        `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">${k.lbl}</div>
+          <div style="font-size:17px;font-weight:700;color:${k.c};margin-top:3px;font-variant-numeric:tabular-nums">${k.val}</div>
+          <div style="font-size:10px;color:#6b7280;margin-top:2px">${k.sub}</div>
+        </div>`).join('');
+      const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const mask = jid => { const n2 = (jid||'').replace(/@.+/,''); return n2.length>4 ? '···'+n2.slice(-4) : n2; };
+      const list = (Array.isArray(convs) ? convs : []).slice(0,40);
+      document.getElementById('bot-convs').innerHTML = list.length ? list.map(x =>
+        `<div style="display:grid;grid-template-columns:80px 1fr 60px;gap:8px;padding:7px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;align-items:center">
+          <span style="color:#6b7280;font-family:monospace;font-size:11px">${esc(mask(x.jid))}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${x.esBot?'color:#059669':''}">${x.esBot?'🤖 ':''}${esc((x.texto||'').slice(0,120))}</span>
+          <span style="color:#6b7280;font-size:10px;text-align:right">${x.ts ? new Date(x.ts).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+        </div>`).join('')
+        : '<div style="padding:24px;text-align:center;color:#6b7280;font-size:13px">Sin conversaciones aún — espera a que lleguen mensajes.</div>';
+    })
+    .catch(e => {
+      load.style.display = 'none';
+      err.style.display = 'block';
+      err.textContent = 'No se pudo conectar con el bot (puede estar dormido en Render — espera ~1 min y presiona ↻ Actualizar). Detalle: ' + e.message;
+    });
+}
+
+// Contactos
+function botMonCargarContactos(manual, silencioso) {
+  const load = document.getElementById('bot-contactos-loading');
+  const err  = document.getElementById('bot-contactos-err');
+  const dash = document.getElementById('bot-contactos-dash');
+  if (!silencioso) { load.style.display = 'block'; err.style.display = 'none'; if (!manual) dash.style.display = 'none'; }
+  _botMonFetch('/api/contactos')
+    .then(cts => {
+      const entries = Object.entries(cts || {}).sort((a,b) => (b[1].mensajes||0)-(a[1].mensajes||0));
+      // Broadcast necesita el conteo aunque el panel de contactos esté oculto
+      const bcCount = document.getElementById('bot-bc-count');
+      if (bcCount) bcCount.textContent = entries.length ? entries.length + ' contactos' : 'los contactos';
+      const bcHint = document.getElementById('bot-bc-hint2');
+      if (bcHint && !entries.length) bcHint.textContent = 'Aún no hay contactos registrados en memoria del bot';
+      if (silencioso) return;
+      load.style.display = 'none'; dash.style.display = 'block';
+      document.getElementById('bot-contactos-total').textContent = entries.length + ' contactos que han escrito al bot';
+      const fD = iso => { try { return new Date(iso).toLocaleDateString('es-CL'); } catch(e2) { return '–'; } };
+      document.getElementById('bot-tbody-contactos').innerHTML = entries.length ? entries.map(([jid,v]) =>
+        `<tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:7px 10px;font-family:monospace;font-size:11px">${jid}</td>
+          <td style="padding:7px 10px;text-align:right">${v.mensajes||0}</td>
+          <td style="padding:7px 10px">${fD(v.primera_vez)}</td>
+          <td style="padding:7px 10px">${fD(v.ultima_vez)}</td>
+        </tr>`).join('')
+        : '<tr><td colspan="4" style="text-align:center;color:#6b7280;padding:16px">Sin contactos en memoria (se reinician si Render redespliega)</td></tr>';
+    })
+    .catch(e => {
+      if (silencioso) return;
+      load.style.display = 'none';
+      err.style.display = 'block';
+      err.textContent = 'No se pudo conectar con el bot. Detalle: ' + e.message;
+    });
+}
+
+// UptimeRobot (proxy del bot)
+function botMonCargarUptime() {
+  const load = document.getElementById('bot-uptime-loading');
+  const panel = document.getElementById('bot-uptime-panel');
+  load.style.display = 'block'; panel.innerHTML = '';
+  _botMonFetch('/api/uptime')
+    .then(d => {
+      load.style.display = 'none';
+      if (!d || !d.monitors) {
+        panel.innerHTML = '<div style="padding:24px;text-align:center;color:#6b7280;font-size:13px">' + ((d && d.error) || 'Sin datos — configurar UPTIMEROBOT_API_KEY en el bot') + '</div>';
+        return;
+      }
+      panel.innerHTML = '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">' + d.monitors.map(mm => {
+        const up = mm.status === 2;
+        const ratio = parseFloat(mm.all_time_uptime_ratio || 100).toFixed(2);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #e5e7eb">
+          <div style="width:8px;height:8px;border-radius:50%;background:${up?'#059669':'#dc2626'};flex-shrink:0"></div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">${mm.friendly_name||''}</div><div style="font-size:11px;color:#6b7280">${mm.url||''}</div></div>
+          <div style="width:100px;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;flex-shrink:0"><div style="height:100%;background:#25d366;width:${ratio}%"></div></div>
+          <div style="font-size:12px;min-width:46px;text-align:right;color:${up?'#059669':'#dc2626'};font-variant-numeric:tabular-nums">${ratio}%</div>
+          <span style="background:${up?'#d1fae5':'#fef3c7'};color:${up?'#059669':'#d97706'};border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700">${up?'UP':'DOWN'}</span>
+        </div>`;
+      }).join('') + '</div>';
+    })
+    .catch(e => {
+      load.style.display = 'none';
+      panel.innerHTML = '<div style="padding:24px;text-align:center;color:#dc2626;font-size:13px">No se pudo conectar con el bot. Detalle: ' + e.message + '</div>';
+    });
+}
+
+// Broadcast de flyer
+window._botBcImg = null;
+function botMonFile(e) { if (e.target.files[0]) _botMonSetImage(e.target.files[0]); }
+function botMonDrop(e) {
+  e.preventDefault();
+  document.getElementById('bot-bc-zone').style.borderColor = '#d1d5db';
+  if (e.dataTransfer.files[0]) _botMonSetImage(e.dataTransfer.files[0]);
+}
+function _botMonSetImage(file) {
+  const r = new FileReader();
+  r.onload = ev => {
+    window._botBcImg = { data: ev.target.result, type: file.type };
+    const img = document.getElementById('bot-bc-preview');
+    img.src = ev.target.result; img.style.display = 'block';
+    document.getElementById('bot-bc-hint').textContent = '✅ ' + file.name;
+    document.getElementById('bot-bc-btn').disabled = false;
+    document.getElementById('bot-bc-hint2').textContent = 'Listo para enviar';
+  };
+  r.readAsDataURL(file);
+}
+function botMonEnviarBroadcast() {
+  if (!window._botBcImg) return;
+  if (!confirm('¿Enviar el flyer a TODOS los contactos del bot?')) return;
+  const btn = document.getElementById('bot-bc-btn');
+  btn.disabled = true;
+  document.getElementById('bot-bc-progress').style.display = 'block';
+  document.getElementById('bot-bc-bar').style.width = '5%';
+  document.getElementById('bot-bc-status').textContent = 'Enviando a la cola de broadcast...';
+  const base64 = window._botBcImg.data.split(',')[1];
+  const caption = document.getElementById('bot-bc-caption').value.trim();
+  _botMonFetch('/api/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imagen_base64: base64, mimetype: window._botBcImg.type, caption })
+  })
+    .then(res => {
+      document.getElementById('bot-bc-bar').style.width = '100%';
+      document.getElementById('bot-bc-status').textContent = res.ok
+        ? '✅ Broadcast iniciado — ' + res.queued + ' mensajes en cola. El bot los envía en segundo plano.'
+        : '❌ ' + (res.error || 'Error desconocido');
+    })
+    .catch(e => {
+      document.getElementById('bot-bc-status').textContent = '❌ Error de conexión — ¿el bot está despierto? ' + e.message;
+    })
+    .finally(() => { btn.disabled = false; });
+}
+
+// Exponer globalmente: el bloque está dentro de una IIFE y los onclick las necesitan
+window.botAdminCargar = botAdminCargar;
+window.botMonSubTab = botMonSubTab;
+window.botMonCargarEstado = botMonCargarEstado;
+window.botMonCargarContactos = botMonCargarContactos;
+window.botMonFile = botMonFile;
+window.botMonDrop = botMonDrop;
+window.botMonEnviarBroadcast = botMonEnviarBroadcast;
 
 })();
 </script>
