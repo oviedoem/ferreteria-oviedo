@@ -22,6 +22,13 @@
 
 ## ULTIMOS CAMBIOS (V37.x)
 
+### Incidente Hosting — 2026-08-03 (Kimi Work, sin cambio de versión)
+- **Síntoma:** paneles rotos — vendedor mostraba precio neto (fallback `SIva/1.19`) en vez de costo promedio; menús de análisis sin datos; iconos 404.
+- **Causa raíz:** el GitHub Action `rotate-token.yml` (cron diario 06:00 UTC) despliega Hosting desde el repo. Como `CATALOGO PRODUCTOS/`, `icons/`, `cotizador.html` y demás archivos generados localmente NO están en el repo, cada deploy del Action los borraba del CDN. `Datos.json` quedó 404 → los paneles caían al fallback.
+- **Fix:** redeploy completo desde la carpeta local `E:erreteria-oviedo` (fuente de verdad del sitio) + **schedule del Action desactivado** (queda solo `workflow_dispatch`). La rotación de token la sigue haciendo el pipeline local.
+- **NO reactivar el cron** sin antes modificar `rotate_token.py` para preservar el sitio completo (descargar todos los archivos del release activo, no solo `/data/<token>/`).
+- panel-admin.html quedó con el menú "Bot WhatsApp → Costos IA" (commit a30da41, aditivo) aplicado sobre la versión local.
+
 ### Auditoría de Seguridad — 2026-08-02 (Claude Code remoto, sin cambio de versión)
 - **Escaneo completo de credenciales:** sin tokens, API keys ni contraseñas hardcodeadas en código fuente
 - **`firebase-config.js`:** API key de Firebase (`AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ`) — pública por diseño (web SDK), comentario en el archivo lo documenta. Sin riesgo.
