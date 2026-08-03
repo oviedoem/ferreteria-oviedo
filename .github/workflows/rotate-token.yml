@@ -17,9 +17,15 @@
 name: Rotar Token de Datos
 
 on:
-  schedule:
-    # Diariamente a las 06:00 UTC ≈ 02:00-03:00 Chile (fuera del horario de atención)
-    - cron: '0 6 * * *'
+  # SCHEDULE DESACTIVADO 2026-08-03 (incidente): el deploy desde este Action
+  # REEMPLAZA todo el Hosting con el contenido del repo, borrando archivos que
+  # solo existen en el PC local (CATALOGO PRODUCTOS/Datos.json, icons/,
+  # cotizador.html, etc.). Eso rompio los 3 paneles (vendedor mostraba precio
+  # neto en vez de costo promedio). El token lo sigue rotando el pipeline local
+  # (ACTUALIZAR_TODO.bat / ACTUALIZAR_TODO_AUTO.bat). NO reactivar el cron sin
+  # antes hacer que rotate_token.py preserve el sitio completo.
+  # schedule:
+  #   - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
