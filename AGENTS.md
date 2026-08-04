@@ -1617,3 +1617,26 @@ if cnt < 1:
 **Pipeline 2026-07-31:** 54.082 ventas totales 2026, julio con 6.582 registros hasta 13:54 (día parcial). Días julio verificados: todos los días hábiles presentes. Feriado 16-07 confirmado (sin datos = correcto). Deploy 14:02, commit 0f93e6f. Token rotado: `b0410f37c69dbd9ab0c97d74a698833b`.
 
 - V37.57 — última actualización: 2026-07-31
+
+### Sesión 2026-08-04 (Claude Code) — Auditoría + sincronización git-sync + skill caveman
+
+**Resumen:** Auditoría de seguridad completa en ambos proyectos. Sincronización de 8 archivos pendientes en ferreteria-oviedo → git-sync (push exitoso V37.58). Skill caveman instalado en `.claude/commands/caveman.md`.
+
+**Hallazgos seguridad:**
+- `credenciales_erp.ini` / `credenciales_db.ini` — en `.gitignore`, nunca commiteados ✅
+- Sin credenciales hardcodeadas en HTML/JS/Python ✅
+
+**Sincronización V37.58 (git-sync → GitHub):**
+- `panel-admin.html`: tab Bot WhatsApp / Costos IA (ya estaba en GitHub vía PR anterior de Kimi)
+- `firestore.rules`: reglas `bot_costos` + `bot_config`
+- `firebase.json`: CSP `connect-src` agrega Render del bot
+- `ACTUALIZAR_TODO.bat` / `ACTUALIZAR_TODO_AUTO.bat`: PASO 5 sube catálogo bot a Firestore
+- `AGENTS.md`: sesión 2026-07-31
+- `ESTADO_PROYECTO.md`: incidente Hosting 2026-08-03 (Action cron borraba CDN — cron desactivado)
+- `sw.js`: BUILD_DATE 2026-07-25
+
+**Pendiente:**
+1. Correr `ACTUALIZAR_TODO.bat` para subir catálogo actualizado y hacer deploy
+2. Verificar que panel-admin → Bot WhatsApp → Costos IA muestra KPIs (requiere `FIREBASE_SERVICE_ACCOUNT` en Render del bot)
+
+- V37.58 — actualización: 2026-08-04

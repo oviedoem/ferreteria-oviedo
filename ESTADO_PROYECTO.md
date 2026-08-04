@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.57
-# Fecha: 2026-07-23
+# Version activa: V37.58
+# Fecha: 2026-08-04
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,11 +12,11 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.57 |
-| Fecha | 2026-07-31 |
-| Deploy | ✅ 2026-07-31 14:02 |
-| Commit | 0f93e6f |
-| Pendiente | Correr pipeline después de 18:30 para completar datos del 31-07. TOKEN_RECEPCION vence ~2 días desde 25-07 — probablemente vencido, renovar si PASO 1H falla. |
+| Version | V37.58 |
+| Fecha | 2026-08-04 |
+| Deploy | ⏳ pendiente (correr ACTUALIZAR_TODO.bat) |
+| Commit | 6eb3430 (git-sync) |
+| Pendiente | Correr ACTUALIZAR_TODO.bat para deploy + catálogo bot. TOKEN_RECEPCION vence ~2 días desde 25-07 — probablemente vencido, renovar si PASO 1H falla. |
 
 ---
 
