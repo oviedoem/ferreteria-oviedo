@@ -1639,4 +1639,47 @@ if cnt < 1:
 1. Correr `ACTUALIZAR_TODO.bat` para subir catálogo actualizado y hacer deploy
 2. Verificar que panel-admin → Bot WhatsApp → Costos IA muestra KPIs (requiere `FIREBASE_SERVICE_ACCOUNT` en Render del bot)
 
+### Sesión 2026-08-04 (Claude Code) — App Litueche v1.14: PDF redesign + Mapa GPS + PWA fix + Pipeline SQL
+
+**Resumen:** App Vendedor Litueche (`litueche-vendedor.web.app`) actualizada a v1.14. Pipeline SQLite corrido hoy: snapshot 867KB con 9.245 productos lista 23 + 5.375 costos SQL Server. PDF cotización rediseñado. Mapa en vivo para admin implementado. SW PWA activado. Auditoría completa — app sana.
+
+**Pipeline SQL 2026-08-04:**
+- `generar_snapshot_lt.py` → SQLite `E:\SQL\db\foviedo_local.db` → 9.245 productos lista 23 (IDLISTA=23), 5.375 costos SQL Server, snapshot 867KB horneado en index.html
+- `catalogo_bot` Firestore (proyecto ferreteria-oviedo): 6.084 productos actualizados desde pipeline `ACTUALIZAR_TODO.bat`
+
+**Cambios app Litueche (`E:\LITUECHE\`):**
+
+PDF cotización:
+- Encabezado split: panel blanco izq (logo_oviedo_white.jpg 70×28mm + "Sucursal Litueche") + panel oscuro der (Venta Cotización / N° azul / Vendedor / Emite)
+- 5 columnas sin Margen (Margen sigue visible en UI del vendedor, no aparece en PDF)
+- Sin referencias a Ferretería El Manzano — solo datos Litueche
+
+Mapa en Vivo (costo $0):
+- Leaflet.js 1.9.4 + OpenStreetMap tiles (CDN unpkg, sin costo)
+- Vendedores: `iniciarGPS()` al login — `getCurrentPosition()` + `setInterval(3 min)`
+- Admin: `onSnapshot` sobre `vendedor_ubicaciones` — marcadores en tiempo real
+- GPS activo solo mientras pestaña abierta (web app, no app nativa)
+- Firestore `vendedor_ubicaciones/{uid}`: write=uid propio, read=admin
+
+Service Worker PWA (fix):
+- Bug encontrado en auditoría: `sw.js` estaba en `ignore` de firebase.json + sin register en HTML
+- Fix: sw.js fuera del ignore + `navigator.serviceWorker.register('/sw.js')` añadido
+- Justificación: Litueche es zona rural con señal variable → caché offline útil
+
+**Archivos modificados (Litueche):**
+- `index.html`: PDF encabezado split, Leaflet, renderAdminMapa(), iniciarGPS(), SW register
+- `firestore.rules`: colección `vendedor_ubicaciones`
+- `firebase.json`: sw.js fuera del ignore
+- `deploy_lt.py`: LOGO_PATH → logo_oviedo_white.jpg
+- `sw.js`: CACHE_NAME litueche-1.14
+- `CLAUDE.md`: CREADO — documentación completa del proyecto
+- `scripts/generar_snapshot_lt.py`: query vendedores fix (GROUP BY v.id + MIN(nombre))
+
+**Versión desplegada:** v1.14
+
+**Pendiente Litueche:**
+1. Verificar GPS en producción: vendedor debe abrir app y aceptar permiso de ubicación
+2. Verificar displayName correcto en Firebase Auth → Authentication → Users para auto-match
+3. `setInterval` GPS: considerar limpiar en logout si escala a más vendedores
+
 - V37.58 — actualización: 2026-08-04
