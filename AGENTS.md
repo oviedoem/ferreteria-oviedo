@@ -1601,3 +1601,19 @@ Archivos beneficiados: `despachos-pendientes-erp.json` y `recepciones-pendientes
 **Pipeline 2026-07-23:** 52.536 ventas, 40 despachos, 10 recepciones, 31/31 JSONs OK. Deploy 11:55, commit 66be2d0.
 
 - V37.57 — última actualización: 2026-07-23
+
+### Sesión 2026-07-31 — Fix validar_jsons kind=wrapped + pipeline julio completo (V37.57)
+
+**Problema:** `bod-iem-registros.json` (`kind='wrapped'`, `optional: True`) llegaba con `registros: []` cuando no hay ingresos pendientes en IEM. El validador bloqueaba el deploy con `CAMPO "registros" VACIO` porque el check `optional` solo estaba implementado para `raw_list`, no para `wrapped`.
+
+**Fix `validar_jsons.py`** — bloque `wrapped`, antes del `return False, 'CAMPO ... VACIO'`:
+```python
+if cnt < 1:
+    if spec.get('optional'):
+        return None, 'OMITIDO (opcional, lista vacía — sin datos esta corrida)'
+    return False, 'CAMPO "' + array_field + '" VACIO en: ' + ruta
+```
+
+**Pipeline 2026-07-31:** 54.082 ventas totales 2026, julio con 6.582 registros hasta 13:54 (día parcial). Días julio verificados: todos los días hábiles presentes. Feriado 16-07 confirmado (sin datos = correcto). Deploy 14:02, commit 0f93e6f. Token rotado: `b0410f37c69dbd9ab0c97d74a698833b`.
+
+- V37.57 — última actualización: 2026-07-31

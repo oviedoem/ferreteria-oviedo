@@ -514,6 +514,30 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: -- PASO 5: Sincronizar catalogo del BOT a Firestore (catalogo_bot) -----------
+:: Agregado 2026-08-03: el bot WhatsApp lee precios/stock desde la coleccion
+:: catalogo_bot. Se re-sube tras cada actualizacion de Datos.json.
+:: No bloquea: si falla, el sitio ya quedo publicado igual.
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 5/5 - Sincronizando catalogo del Bot WhatsApp    ^|
+echo  +----------------------------------------------------------+
+echo.
+if exist "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP\src\upload-catalog.js" (
+    pushd "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP"
+    "%NODE_EXE%" src\upload-catalog.js
+    if %errorlevel% neq 0 (
+        color 0E
+        echo  [AVISO] upload-catalog.js fallo - el bot seguira con el catalogo anterior.
+        echo          Reintenta con ACTUALIZAR_CATALOGO_BOT.bat
+    ) else (
+        echo  [OK] Catalogo del bot sincronizado en Firestore.
+    )
+    popd
+) else (
+    echo  [AVISO] No se encontro el proyecto del bot - paso omitido.
+)
+
 color 0A
 echo.
 echo  ============================================================
@@ -521,6 +545,7 @@ echo   ACTUALIZACION COMPLETA
 echo   [OK] Precio y Stock
 echo   [OK] Ventas
 echo   [OK] Deploy Firebase
+echo   [OK] Catalogo Bot
 echo  ============================================================
 echo.
 pause

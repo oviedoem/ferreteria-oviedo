@@ -13,10 +13,10 @@
 | Campo | Valor |
 |---|---|
 | Version | V37.57 |
-| Fecha | 2026-07-20 |
-| Deploy | ✅ 2026-07-20 18:34 |
-| Commit | 1dbdcb3 |
-| Pendiente | CORS WsApi ERP: workarounds activos PASO 1H (--disable-web-security). TOKEN_RECEPCION renovado 25-07-2026 → `7fc97930-4d88-f111-8aab-00155d9d0613` (TTL ~2 días). |
+| Fecha | 2026-07-31 |
+| Deploy | ✅ 2026-07-31 14:02 |
+| Commit | 0f93e6f |
+| Pendiente | Correr pipeline después de 18:30 para completar datos del 31-07. TOKEN_RECEPCION vence ~2 días desde 25-07 — probablemente vencido, renovar si PASO 1H falla. |
 
 ---
 

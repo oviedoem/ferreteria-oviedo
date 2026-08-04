@@ -282,6 +282,22 @@ if %errorlevel% neq 0 (
     echo [OK] deploy completo >> "%LOGFILE%"
 )
 
+:: -- PASO 5: Sincronizar catalogo del BOT a Firestore (agregado 2026-08-03) --
+echo. >> "%LOGFILE%"
+echo [%time%] PASO 5 - Sincronizando catalogo bot... >> "%LOGFILE%"
+if exist "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP\src\upload-catalog.js" (
+    pushd "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP"
+    "%NODE_EXE%" src\upload-catalog.js >> "%LOGFILE%" 2>&1
+    if %errorlevel% neq 0 (
+        echo [AVISO] upload-catalog.js fallo - bot queda con catalogo anterior >> "%LOGFILE%"
+    ) else (
+        echo [OK] catalogo bot sincronizado >> "%LOGFILE%"
+    )
+    popd
+) else (
+    echo [AVISO] proyecto bot no encontrado - paso omitido >> "%LOGFILE%"
+)
+
 echo. >> "%LOGFILE%"
 echo ============================================================ >> "%LOGFILE%"
 echo  FINALIZADO: %date% %time% >> "%LOGFILE%"
