@@ -13,10 +13,16 @@
 | Campo | Valor |
 |---|---|
 | Version | V37.58 |
-| Fecha | 2026-08-04 |
-| Deploy | ⏳ pendiente (correr ACTUALIZAR_TODO.bat) |
-| Commit | 6eb3430 (git-sync) |
-| Pendiente | Correr ACTUALIZAR_TODO.bat para deploy + catálogo bot. TOKEN_RECEPCION vence ~2 días desde 25-07 — probablemente vencido, renovar si PASO 1H falla. |
+| Fecha | 2026-08-07 (revisión) |
+| Deploy | ✅ activo — rotate-token.yml cron 15:00 UTC (11:00 AM Chile) |
+| Commit | a5ed31b (git-sync) |
+| Pendiente | TOKEN_RECEPCION: verificar si vencido (vencía ~2026-07-27). Renovar si PASO 1H falla en ACTUALIZAR_TODO.bat |
+
+### Auditoría 2026-08-07 (Claude Code)
+- Repo git-sync sincronizado con GitHub (origin/main = a5ed31b)
+- rotate-token.yml: reactivado con cron 15:00 UTC + fix rotate_token.py que preserva sitio completo
+- .claude/commands/caveman.md: creado localmente (excluido por .gitignore — correcto)
+- Sin cambios de código
 
 ---
 
