@@ -24,7 +24,7 @@ name: Rotar Token de Datos
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 15 * * *'   # 11:00 AM Chile (UTC-4 invierno)
   workflow_dispatch:
     inputs:
       dry_run:
