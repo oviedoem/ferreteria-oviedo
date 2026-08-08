@@ -151,3 +151,17 @@ Skills de diseño y revisión — se activan con `/nombre`:
 | `/ahorro-tokens` | Compresión de contexto + estado rápido del proyecto |
 
 Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guidelines`**, nunca solos.
+
+---
+
+## REGLAS CRÍTICAS — PIPELINE BOT WHATSAPP
+
+### PASO 5 de ACTUALIZAR_TODO.bat — catálogo bot va a Hosting, NUNCA a Firestore
+- **ACTUALIZADO 2026-08-08:** el PASO 5 genera `catalogo-bot.json` con PowerShell y hace `firebase deploy --only hosting`
+- **NO llamar a `upload-catalog.js`** — sube a Firestore cuya quota gratuita está agotada. Si se llama, el pipeline se cuelga indefinidamente en "Leyendo catálogo desde..."
+- El bot descarga `catalogo-bot.json` desde `https://ferreteria-oviedo.web.app/catalogo-bot.json` al arrancar
+
+### Blazor (descargar_blazor_bodegas.py) — selector de servidor
+- Usar `.filter(has_text=re.compile(r'^\s*Oviedo\s*$'))` para hacer click en el botón "Oviedo"
+- **NO usar** `:not(:has-text('Test'))` — no funciona en Playwright con pseudo-clases compuestas
+- Fix aplicado 2026-08-08. Si el login/selección de servidor falla en la próxima corrida, revisar que el selector `.filter()` esté vigente

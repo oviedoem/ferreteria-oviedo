@@ -514,29 +514,44 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: -- PASO 5: Sincronizar catalogo del BOT a Firestore (catalogo_bot) -----------
-:: Agregado 2026-08-03: el bot WhatsApp lee precios/stock desde la coleccion
-:: catalogo_bot. Se re-sube tras cada actualizacion de Datos.json.
-:: No bloquea: si falla, el sitio ya quedo publicado igual.
+:: -- PASO 5: Generar catalogo-bot.json y subir a Firebase Hosting -------------
+:: 2026-08-07: migrado de Firestore (quota agotada) a Hosting (gratis, sin quota).
+:: El bot descarga catalogo-bot.json al arrancar desde ferreteria-oviedo.web.app
+:: No bloquea: si falla, el bot seguira con el catalogo anterior en Hosting.
 echo.
 echo  +----------------------------------------------------------+
-echo  ^|  PASO 5/5 - Sincronizando catalogo del Bot WhatsApp    ^|
+echo  ^|  PASO 5/5 - Catalogo Bot → Firebase Hosting           ^|
 echo  +----------------------------------------------------------+
 echo.
-if exist "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP\src\upload-catalog.js" (
-    pushd "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP"
-    "%NODE_EXE%" src\upload-catalog.js
-    if %errorlevel% neq 0 (
-        color 0E
-        echo  [AVISO] upload-catalog.js fallo - el bot seguira con el catalogo anterior.
-        echo          Reintenta con ACTUALIZAR_CATALOGO_BOT.bat
-    ) else (
-        echo  [OK] Catalogo del bot sincronizado en Firestore.
-    )
-    popd
-) else (
-    echo  [AVISO] No se encontro el proyecto del bot - paso omitido.
+set DATOS_JSON=E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json
+set CATALOGO_BOT=E:\ferreteria-oviedo\catalogo-bot.json
+
+if not exist "%DATOS_JSON%" (
+    echo  [AVISO] No se encontro Datos.json - paso omitido.
+    goto :paso5_fin
 )
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$d = Get-Content '%DATOS_JSON%' -Raw | ConvertFrom-Json; ^
+   $c = $d ^| ForEach-Object { [PSCustomObject]@{ c=$_.codigo; d=$_.descripcion; m=($_.marca -replace '^\s+|\s+$',''); f=$_.familia; sf=$_.subfamilia; hf=$_.hiperfamilia; p=$_.precioiva; pe=$_.pem; se=$_.sem } }; ^
+   [System.IO.File]::WriteAllText('%CATALOGO_BOT%', ($c ^| ConvertTo-Json -Compress), [System.Text.Encoding]::UTF8); ^
+   Write-Host ('[OK] catalogo-bot.json generado: ' + $d.Count + ' productos')"
+
+if %errorlevel% neq 0 (
+    color 0E
+    echo  [AVISO] Error generando catalogo-bot.json - paso omitido.
+    goto :paso5_fin
+)
+
+call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo
+if %errorlevel% neq 0 (
+    color 0E
+    echo  [AVISO] Firebase deploy Hosting fallo - el bot seguira con el catalogo anterior.
+) else (
+    echo  [OK] catalogo-bot.json publicado en ferreteria-oviedo.web.app
+)
+
+:paso5_fin
 
 color 0A
 echo.
