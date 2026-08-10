@@ -11,6 +11,7 @@ users_export.json
 
 # Scripts pipeline — no van a GitHub
 BODEGAS/
+!BODEGAS/descargar_blazor_bodegas.py
 VENTAS EL MANZANO/
 DATOS ERP/
 data/
