@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.58
-# Fecha: 2026-08-04
+# Version activa: V37.57
+# Fecha: 2026-08-09
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,21 +12,25 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.58 |
-| Fecha | 2026-08-07 (revisión) |
-| Deploy | ✅ activo — rotate-token.yml cron 15:00 UTC (11:00 AM Chile) |
-| Commit | a5ed31b (git-sync) |
-| Pendiente | TOKEN_RECEPCION: verificar si vencido (vencía ~2026-07-27). Renovar si PASO 1H falla en ACTUALIZAR_TODO.bat |
-
-### Auditoría 2026-08-07 (Claude Code)
-- Repo git-sync sincronizado con GitHub (origin/main = a5ed31b)
-- rotate-token.yml: reactivado con cron 15:00 UTC + fix rotate_token.py que preserva sitio completo
-- .claude/commands/caveman.md: creado localmente (excluido por .gitignore — correcto)
-- Sin cambios de código
+| Version | V37.57 |
+| Fecha | 2026-08-09 |
+| Deploy | ✅ 20:51 (datos al 09-08-2026, 228 archivos) |
+| Commit | 0e4a6c7 (git-sync) |
+| Pendiente | Ninguno. Próxima corrida pipeline verificará PASO 1H con auto-renovación (token expira ~2 días). |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### Sesion 2026-08-09 — Migracion ERP + Fixes Pipeline (V37.57, sin cambio panel)
+- **Migracion servidor ERP:** JustWeb migró de `http://200.6.113.97/Justweb_Foviedo` → `https://erp.justtime.cl/justweb_foviedo`. Fix en `descargar_erp.py`: BASE/BLAZOR_ROOT/XTOKEN leídos desde `credenciales_erp.ini` (antes hardcodeados en el script).
+- **Fix PASO 1H Blazor (`descargar_blazor_bodegas.py`):** `renovar_token_via_login()` ahora incluye el paso 3 — click en "Foviedo" (diálogo CATALOGOS) tras seleccionar "Oviedo" (SERVIDOR). Sin este paso la app no cargaba y el token no se podía leer. Verificado OK: 37 despachos exportados.
+- **Fix PASO 5 bat:** bloque PowerShell multilínea con `^` reemplazado por script separado `generate_catalogo_bot.ps1` — el bug se activaba al redirigir stdout del bat a log.
+- **Scripts Python en GitHub:** `descargar_erp.py` y `descargar_blazor_bodegas.py` agregados al whitelist de `ACTUALIZAR_GITHUB.bat` y commiteados.
+- **TOKEN_RECEPCION:** `43289979-eb47-43ce-8c47-79ca3834c0a8` en `credenciales_erp.ini`.
+- **Pipeline:** 55.733 ventas hasta 09-08-2026. Deploy ✅ 20:51. Commits: 9212db9 → 5426379 → 0e4a6c7.
+- **Menú Costos IA:** revisado y confirmado funcionando (botAdminCargar → Firestore `bot_costos`, KPIs + gráfico + tabla).
+- **Badge panel-admin:** `AG ● V37.57 ● 09-08-2026` (fecha actualizada al deploy de hoy).
 
 ### Incidente Hosting — 2026-08-03 (Kimi Work, sin cambio de versión)
 - **Síntoma:** paneles rotos — vendedor mostraba precio neto (fallback `SIva/1.19`) en vez de costo promedio; menús de análisis sin datos; iconos 404.

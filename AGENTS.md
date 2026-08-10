@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.57 · Última actualización: 2026-07-20
+# Versión activa: V37.57 · Última actualización: 2026-08-09
 
 ---
 
@@ -72,10 +72,18 @@ SQL Server [SQL-SERVER-IP] sincroniza con JustWeb **una sola vez al día a las 2
 
 **Respuesta estándar:** "Los datos de despachos/pedidos/bodegas vienen del Servidor 2 que sincroniza a las 22:00."
 
+### ERP JustWeb — Servidor (actualizado 2026-08-09)
+- **Servidor nuevo (desde 2026-08):** `https://erp.justtime.cl/justweb_foviedo` (cloud JustTime)
+- **Servidor viejo (hasta 2026-07):** `http://200.6.113.97/Justweb_Foviedo` (IP local — ya NO funciona, da 503)
+- BASE y BLAZOR_ROOT configurados en `credenciales_erp.ini` (no hardcodeados en scripts)
+- Blazor login requiere 3 pasos: login → seleccionar **Oviedo** (SERVIDOR) → seleccionar **Foviedo** (CATALOGOS)
+- XTOKEN para VisorRS.aspx también en ini (campo XTOKEN). TTL aproximado: días/semanas.
+- TOKEN_RECEPCION para IdMenu=377: TTL ~2 días. Auto-renovación implementada en descargar_blazor_bodegas.py.
+
 ### VPN — Cuándo usar
 - **Cable directo a la red de la ferretería** → NO requiere VPN. Pipeline corre sin VPN.
 - **WiFi (cualquier red)** → SÍ requiere VPN activa antes de correr el pipeline.
-- La VPN da acceso a [SQL-SERVER-IP] y [ERP-SERVER-IP]. Por cable esa conectividad ya existe.
+- La VPN da acceso a [SQL-SERVER-IP]. ERP JustWeb ya es cloud (https://erp.justtime.cl) — accesible sin VPN.
 
 ---
 
@@ -368,6 +376,18 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   portabilidad por bodega (SEM=ligeros/herramientas, PEM=materiales pesados, CD=sin filtro) +
   ordenamiento: prioridad como clave primaria, campo dropdown como secundaria dentro de cada grupo.
   Keywords editables en _TCD_KW_SEM/_TCD_KW_PEM sin tocar más código. Badge emoji en col Código.
+
+- Sesion 2026-08-09 — Migracion servidor ERP: JustWeb movio de 200.6.113.97 a https://erp.justtime.cl.
+  Fix descargar_erp.py: BASE/BLAZOR_ROOT/XTOKEN leidos desde credenciales_erp.ini (antes hardcodeados).
+  Fix descargar_blazor_bodegas.py: renovar_token_via_login() agregado paso 3 click "Foviedo" (dialogo
+  CATALOGOS tras seleccionar SERVIDOR "Oviedo"). Flujo login: login → Oviedo → Foviedo → leer token perfil.
+  Fix PASO 5 ACTUALIZAR_TODO.bat: bloque PowerShell multilínea con ^ reemplazado por generate_catalogo_bot.ps1
+  (fallaba con redirección stdout). Scripts Python descargar_erp.py y descargar_blazor_bodegas.py
+  agregados a ACTUALIZAR_GITHUB.bat whitelist y a GitHub. TOKEN_RECEPCION: 43289979-eb47-43ce-8c47-79ca3834c0a8.
+  Pipeline: 55733 ventas hasta 09-08-2026, PASO 1A+1H verificados OK, deploy 20:51, commits 9212db9→0e4a6c7.
+
+- Sesion 2026-08-09 (segunda parte, misma sesion) — Pipeline corrido x2 (fallida por red + exitosa).
+  Datos al 09-08-2026. Costos IA revisado: funcionando OK (botAdminCargar → Firestore bot_costos).
 
 - Sesion 2026-07-20 — Pipeline completo x2 (13:48 + 18:34 cierre jornada). 51.907 ventas hasta 20-07-2026.
   Clave JustTime actualizada (CLAVE en credenciales_erp.ini). PASO 1H con login manual (TOKEN_RECEPCION vencido).
