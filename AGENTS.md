@@ -1703,3 +1703,29 @@ Service Worker PWA (fix):
 3. `setInterval` GPS: considerar limpiar en logout si escala a más vendedores
 
 - V37.58 — actualización: 2026-08-04
+
+---
+
+### Sesión 2026-08-10 (Claude Code — desde bot) — generar_catalogo_cotizador.py + rotación v3m/v6m
+
+**Resumen:** Script Python para generar `catalogo-cotizador.json` con campos `v3m` y `v6m` (unidades vendidas últimos 3 y 6 meses). Sin SQL Server, sin configuración adicional: lee `data/ventas-manzano-YYYY-MM.json` que ya genera `main.py` en PASO 2. Integrado en ambos pipelines.
+
+**Archivos modificados:**
+- `generar_catalogo_cotizador.py` (NUEVO, raíz): lee monthly JSONs, agrega cantidad por codigo, fusiona con Datos.json, escribe catalogo-cotizador.json con v3m/v6m opcionales. Si no hay archivos mensuales, genera igual sin los campos (panel mostrará N/D)
+- `ACTUALIZAR_TODO.bat` PASO 5: llama el script antes de `generate_catalogo_bot.ps1` → ambos JSONs se publican juntos en Firebase Hosting
+- `ACTUALIZAR_TODO_AUTO.bat` PASO 3.6 (NUEVO): llama el script antes del firebase deploy (PASO 4)
+
+**Integración en panel /agentes del bot:**
+- Columnas Rot.3M / Rot.6M ya implementadas en la UI (commits anteriores en bot repo)
+- Muestran "N/D" si `catalogo-cotizador.json` no tiene v3m/v6m
+- Muestran datos reales en cuanto el usuario corra `ACTUALIZAR_TODO.bat` en el PC
+
+**Flujo completo:**
+1. `ACTUALIZAR_TODO.bat` PASO 1B → genera `Datos.json`
+2. `ACTUALIZAR_TODO.bat` PASO 2 → genera `data/ventas-manzano-YYYY-MM.json`
+3. `ACTUALIZAR_TODO.bat` PASO 5 → `generar_catalogo_cotizador.py` lee ambos → `catalogo-cotizador.json`
+4. PASO 5 firebase deploy → sube a `ferreteria-oviedo.web.app/catalogo-cotizador.json`
+5. Panel /agentes del bot descarga el JSON → columnas Rot.3M/Rot.6M muestran datos reales
+
+**Pendiente:**
+- Correr `ACTUALIZAR_TODO.bat` una vez para activar los datos de rotación

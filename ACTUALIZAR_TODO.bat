@@ -531,6 +531,16 @@ if not exist "%DATOS_JSON%" (
     goto :paso5_fin
 )
 
+:: catalogo-cotizador.json con v3m/v6m (lee data/ventas-manzano-YYYY-MM.json)
+echo  Generando catalogo-cotizador.json (rotacion 3M/6M)...
+"%PYTHON_EXE%" "%~dp0generar_catalogo_cotizador.py"
+if %errorlevel% neq 0 (
+    color 0E
+    echo  [AVISO] generar_catalogo_cotizador.py fallo - cotizador queda sin rotacion.
+    color 0A
+)
+
+:: catalogo-bot.json (catalogo compacto del bot WhatsApp)
 powershell -NoProfile -ExecutionPolicy Bypass -File "E:\ferreteria-oviedo\generate_catalogo_bot.ps1"
 
 if %errorlevel% neq 0 (
@@ -544,7 +554,7 @@ if %errorlevel% neq 0 (
     color 0E
     echo  [AVISO] Firebase deploy Hosting fallo - el bot seguira con el catalogo anterior.
 ) else (
-    echo  [OK] catalogo-bot.json publicado en ferreteria-oviedo.web.app
+    echo  [OK] catalogo-bot.json + catalogo-cotizador.json publicados en ferreteria-oviedo.web.app
 )
 
 :paso5_fin

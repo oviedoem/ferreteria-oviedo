@@ -270,6 +270,16 @@ echo. >> "%LOGFILE%"
 echo [%time%] PASO 3.5 - Rotando proteccion de datos sensibles... >> "%LOGFILE%"
 "%PYTHON_EXE%" "_utilidades\rotar_token_data.py" >> "%LOGFILE%" 2>&1
 
+:: -- PASO 3.6: Catalogo cotizador con rotacion 3M/6M ----------------------
+echo. >> "%LOGFILE%"
+echo [%time%] PASO 3.6 - catalogo-cotizador.json con rotacion... >> "%LOGFILE%"
+"%PYTHON_EXE%" "generar_catalogo_cotizador.py" >> "%LOGFILE%" 2>&1
+if %errorlevel% neq 0 (
+    echo [AVISO] generar_catalogo_cotizador.py fallo - cotizador sin rotacion >> "%LOGFILE%"
+) else (
+    echo [OK] catalogo-cotizador.json >> "%LOGFILE%"
+)
+
 :: -- PASO 4: Deploy Firebase ---------------------------------------------
 echo. >> "%LOGFILE%"
 echo [%time%] PASO 4 - Firebase deploy... >> "%LOGFILE%"
