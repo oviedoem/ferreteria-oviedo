@@ -82,6 +82,18 @@ robocopy "E:\ferreteria-oviedo\.opencodereview" "E:\git-sync\.opencodereview" ^
   rule.json ^
   /XO /NP /NJH /NFL
 
+robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
+  generate_catalogo_bot.ps1 ^
+  /XO /NP /NJH /NFL
+
+robocopy "E:\ferreteria-oviedo\BODEGAS" "E:\git-sync\BODEGAS" ^
+  descargar_blazor_bodegas.py ^
+  /XO /NP /NJH /NFL
+
+robocopy "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts" "E:\git-sync\CATALOGO PRODUCTOS\scripts" ^
+  descargar_erp.py ^
+  /XO /NP /NJH /NFL
+
 :: ============================================================
 :: BLOQUE 3 - COMMIT CON TRAZABILIDAD
 :: ============================================================

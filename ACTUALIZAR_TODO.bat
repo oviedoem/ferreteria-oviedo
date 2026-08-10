@@ -531,11 +531,7 @@ if not exist "%DATOS_JSON%" (
     goto :paso5_fin
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$d = Get-Content '%DATOS_JSON%' -Raw | ConvertFrom-Json; ^
-   $c = $d ^| ForEach-Object { [PSCustomObject]@{ c=$_.codigo; d=$_.descripcion; m=($_.marca -replace '^\s+|\s+$',''); f=$_.familia; sf=$_.subfamilia; hf=$_.hiperfamilia; p=$_.precioiva; pe=$_.pem; se=$_.sem } }; ^
-   [System.IO.File]::WriteAllText('%CATALOGO_BOT%', ($c ^| ConvertTo-Json -Compress), [System.Text.Encoding]::UTF8); ^
-   Write-Host ('[OK] catalogo-bot.json generado: ' + $d.Count + ' productos')"
+powershell -NoProfile -ExecutionPolicy Bypass -File "E:\ferreteria-oviedo\generate_catalogo_bot.ps1"
 
 if %errorlevel% neq 0 (
     color 0E
