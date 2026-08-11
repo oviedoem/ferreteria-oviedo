@@ -300,4 +300,15 @@
 
 ---
 
-*ESTADO_PROYECTO.md · Version V37.57 · Auditoria seguridad 2026-08-02*
+---
+
+## SESION 2026-08-11
+
+- Pipeline completo: 55733 ventas hasta 11-08-2026, 6088 productos en catálogo, token rotado
+- **NUEVO PASO 3.6:** `generar_catalogo_cotizador_rotacion.ps1` genera `catalogo-cotizador.json`
+  con campos `v3m` y `v6m` (ventas últimos 3 y 6 meses) consultando SQL Server directamente.
+  3054 de 6088 SKUs tienen datos de rotación. Alimenta columnas Rot.3M/Rot.6M del panel /agentes del bot.
+- ACTUALIZAR_TODO.bat: PASO 3.6 insertado entre PASO 3.5 (rotar token) y PASO 4 (deploy)
+- Commit 5bec71d — 4 archivos: ACTUALIZAR_TODO.bat, ACTUALIZAR_GITHUB.bat, generar_catalogo_cotizador_rotacion.ps1, sw.js
+
+*ESTADO_PROYECTO.md · Version V37.57 · Auditoria seguridad 2026-08-02 · Pipeline 2026-08-11*

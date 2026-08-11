@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.57 · Última actualización: 2026-08-09
+# Versión activa: V37.57 · Última actualización: 2026-08-11
 
 ---
 
@@ -385,6 +385,13 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
   (fallaba con redirección stdout). Scripts Python descargar_erp.py y descargar_blazor_bodegas.py
   agregados a ACTUALIZAR_GITHUB.bat whitelist y a GitHub. TOKEN_RECEPCION: 43289979-eb47-43ce-8c47-79ca3834c0a8.
   Pipeline: 55733 ventas hasta 09-08-2026, PASO 1A+1H verificados OK, deploy 20:51, commits 9212db9→0e4a6c7.
+
+- Sesion 2026-08-11 — Pipeline ACTUALIZAR_TODO.bat completo. 55733 ventas hasta 11-08-2026.
+  PASO 3.6 NUEVO: generar_catalogo_cotizador_rotacion.ps1 consulta SQL y genera catalogo-cotizador.json
+  con campos v3m/v6m (rotacion 3 y 6 meses) por SKU. 3054 de 6088 productos tienen datos reales.
+  Token rotado → 05a03a6c2aa496ed68962ba01aa515ae. Commit 5bec71d.
+  ACTUALIZAR_TODO.bat: PASO 3.6 insertado entre PASO 3.5 y PASO 4 (corre antes del deploy → deploy lo publica).
+  ACTUALIZAR_GITHUB.bat: whitelist actualizado con generar_catalogo_cotizador_rotacion.ps1.
 
 - Sesion 2026-08-09 (segunda parte, misma sesion) — Pipeline corrido x2 (fallida por red + exitosa).
   Datos al 09-08-2026. Costos IA revisado: funcionando OK (botAdminCargar → Firestore bot_costos).
@@ -1703,29 +1710,3 @@ Service Worker PWA (fix):
 3. `setInterval` GPS: considerar limpiar en logout si escala a más vendedores
 
 - V37.58 — actualización: 2026-08-04
-
----
-
-### Sesión 2026-08-10 (Claude Code — desde bot) — generar_catalogo_cotizador.py + rotación v3m/v6m
-
-**Resumen:** Script Python para generar `catalogo-cotizador.json` con campos `v3m` y `v6m` (unidades vendidas últimos 3 y 6 meses). Sin SQL Server, sin configuración adicional: lee `data/ventas-manzano-YYYY-MM.json` que ya genera `main.py` en PASO 2. Integrado en ambos pipelines.
-
-**Archivos modificados:**
-- `generar_catalogo_cotizador.py` (NUEVO, raíz): lee monthly JSONs, agrega cantidad por codigo, fusiona con Datos.json, escribe catalogo-cotizador.json con v3m/v6m opcionales. Si no hay archivos mensuales, genera igual sin los campos (panel mostrará N/D)
-- `ACTUALIZAR_TODO.bat` PASO 5: llama el script antes de `generate_catalogo_bot.ps1` → ambos JSONs se publican juntos en Firebase Hosting
-- `ACTUALIZAR_TODO_AUTO.bat` PASO 3.6 (NUEVO): llama el script antes del firebase deploy (PASO 4)
-
-**Integración en panel /agentes del bot:**
-- Columnas Rot.3M / Rot.6M ya implementadas en la UI (commits anteriores en bot repo)
-- Muestran "N/D" si `catalogo-cotizador.json` no tiene v3m/v6m
-- Muestran datos reales en cuanto el usuario corra `ACTUALIZAR_TODO.bat` en el PC
-
-**Flujo completo:**
-1. `ACTUALIZAR_TODO.bat` PASO 1B → genera `Datos.json`
-2. `ACTUALIZAR_TODO.bat` PASO 2 → genera `data/ventas-manzano-YYYY-MM.json`
-3. `ACTUALIZAR_TODO.bat` PASO 5 → `generar_catalogo_cotizador.py` lee ambos → `catalogo-cotizador.json`
-4. PASO 5 firebase deploy → sube a `ferreteria-oviedo.web.app/catalogo-cotizador.json`
-5. Panel /agentes del bot descarga el JSON → columnas Rot.3M/Rot.6M muestran datos reales
-
-**Pendiente:**
-- Correr `ACTUALIZAR_TODO.bat` una vez para activar los datos de rotación
