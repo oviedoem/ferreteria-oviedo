@@ -83,7 +83,7 @@ robocopy "E:\ferreteria-oviedo\.opencodereview" "E:\git-sync\.opencodereview" ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
-  generate_catalogo_bot.ps1 ^
+  generate_catalogo_bot.ps1 generar_catalogo_cotizador_rotacion.ps1 ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo\BODEGAS" "E:\git-sync\BODEGAS" ^

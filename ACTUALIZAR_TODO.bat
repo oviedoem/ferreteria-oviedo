@@ -494,6 +494,30 @@ if %errorlevel% neq 0 (
     echo  [AVISO] rotar_token_data.py fallo - revisar E:\config\ y Firestore.
 )
 
+:: -- PASO 3.6: Catalogo cotizador con rotacion v3m/v6m desde SQL Server --------
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 3.6 - Catalogo cotizador con rotacion v3m/v6m   ^|
+echo  +----------------------------------------------------------+
+echo.
+echo  Consultando SQL Server: ventas 3M y 6M por SKU (suc 04)...
+echo  (genera catalogo-cotizador.json — incluido en deploy PASO 4)
+echo.
+if exist "%~dp0generar_catalogo_cotizador_rotacion.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0generar_catalogo_cotizador_rotacion.ps1"
+    if %errorlevel% neq 0 (
+        color 0E
+        echo  [AVISO] catalogo-cotizador con rotacion fallo - se usara el JSON anterior.
+        color 0A
+    ) else (
+        echo  [OK] catalogo-cotizador.json con v3m/v6m generado.
+    )
+) else (
+    echo  [AVISO] generar_catalogo_cotizador_rotacion.ps1 no encontrado -- saltando.
+)
+echo.
+timeout /t 2 /nobreak >nul
+
 :: -- PASO 4: Deploy Firebase ---------------------------------------------------
 echo.
 echo  +----------------------------------------------------------+
