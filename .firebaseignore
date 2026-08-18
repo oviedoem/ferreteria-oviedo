@@ -28,3 +28,5 @@ users_export.json
 **/*.sql
 **/*.pdf
 **/*.xlsx
+logs/
+.pipeline_date

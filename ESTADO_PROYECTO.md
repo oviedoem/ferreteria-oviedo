@@ -41,7 +41,7 @@
 
 ### Auditoría de Seguridad — 2026-08-02 (Claude Code remoto, sin cambio de versión)
 - **Escaneo completo de credenciales:** sin tokens, API keys ni contraseñas hardcodeadas en código fuente
-- **`firebase-config.js`:** API key de Firebase (`AIzaSyCUWgGMzPxGu9aZTr5Hf-_YfiI-3MdiwLQ`) — pública por diseño (web SDK), comentario en el archivo lo documenta. Sin riesgo.
+- **`firebase-config.js`:** API key de Firebase (ver firebase-config.js) — pública por diseño (web SDK), comentario en el archivo lo documenta. Sin riesgo.
 - **`firestore.rules`:** bien configurado — default deny (`allow read, write: if false`) para todo lo no listado; admins verificados contra Firestore; colección `precios` requiere auth real (no anónima); invitados con esquema estrictamente validado.
 - **`storage.rules`:** todo bloqueado (`if false`) — correcto, Storage no se usa.
 - **`rotate_token.py`:** lee `FIREBASE_SERVICE_ACCOUNT` exclusivamente de `os.environ` — sin hardcoding.

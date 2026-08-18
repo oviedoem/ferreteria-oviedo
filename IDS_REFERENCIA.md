@@ -58,7 +58,7 @@ CD (23) y MEM (29) viven en SUC=08 pero se usan como auxiliares en los cálculos
 | **29** | **MEM** | **Mermas El Manzano** | ✅ stock SSRS bloque 1, informe |
 | 54 | RCD | Recepcion Centro Distribucion | ❌ no usado |
 | 67 | TCD | Transito Centro Distribucion | ❌ no usado |
-| 73 | ICD | Ingreso Centro Distribucion | ❌ no usado |
+| 73 | ICD | Ingreso Centro Distribucion | ✅ usado — bod-icd-registros.json via descargar_bod.py |
 
 ### SSRS Bloques de descarga (descargar_erp.py)
 
@@ -308,5 +308,24 @@ OC ERP   = xIdDocumento=8   # Orden de compra (ERP ASP)
 
 ---
 
-*Generado 2026-06-12 — consulta SQL directa a Foviedo.dbo.P_BODEGAS, C_SUCURSALES, M_DOCUMENTOS*
-*No editar manualmente. Para actualizar: re-ejecutar queries y reemplazar secciones.*
+---
+
+## ENRIQUECIMIENTO DE VENTAS — tablas SQL (V37.25)
+
+`descargar_ventas_enrich.py` genera `xlsm-enrich.json` (rut/sector/razón social) desde SQL,
+reemplazando el archivo manual VENTAS.xlsm. Tablas e IDs usados:
+
+| Dato | Tabla SQL | Campo | JOIN |
+|---|---|---|---|
+| Razón social | `M_ENTIDADES` | `RAZON_SOCIAL` | `ent.IDENTIDAD = CAST(enc.IDENTIDAD AS NVARCHAR(20))` |
+| RUT | `M_ENTIDADES` | `RUT` (sin dígito) | idem |
+| Sector | `M_Documentos_Encabezado_Observacion` | `OBSERVACION_IMPRESA` | `G.IDDOCUMENTO=enc.IDDOCUMENTO AND G.IDNUMERO=enc.IDNUMERO AND G.IDSUCURSAL=enc.IDSUCURSAL` |
+| Número, fecha, vendedor | `M_DOCUMENTOS_ENCABEZADO` | `NUMERO`, `FECHA_EMISION`, `IDVENDEDOR` | base (IDSUCURSAL='04') |
+
+Documentos de venta incluidos: **BVE, FVE, NCE** (+ BVP, FVP). Validado 100% match con ventas-manzano.
+Limitación: SQL sincroniza 22:00 → enriquecimiento con ≤1 día de retraso.
+
+---
+
+*Generado 2026-06-12 · enrich SQL agregado 2026-06-14 — consulta directa a Foviedo.dbo.P_BODEGAS, C_SUCURSALES, M_DOCUMENTOS, M_ENTIDADES*
+*No editar manualmente las secciones de IDs. Para actualizar: re-ejecutar queries y reemplazar secciones.*

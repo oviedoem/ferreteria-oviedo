@@ -2,6 +2,7 @@
 credenciales_db.ini
 credenciales_db.enc
 credenciales_erp.ini
+_PROMPTS/credenciales_dbRP.ini
 CLAVE*.txt
 CLAVE*.ini
 serviceAccountKey*.json
@@ -43,3 +44,7 @@ __pycache__/
 
 # Token temporal generado por rotate_token.py (GitHub Actions)
 .new_token_value
+
+# Temporales Office
+~$*.docx
+~$*.xlsx

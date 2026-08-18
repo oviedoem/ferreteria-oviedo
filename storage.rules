@@ -1,9 +1,0 @@
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    // Storage no usado desde V31 (banner migrado a Firestore base64)
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
-  }
-}
