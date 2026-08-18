@@ -87,8 +87,6 @@ Un prompt = una función tocada. Si el fix requiere 2 funciones → dos prompts 
 **Junction Claude:** `C:\Users\<usuario>\.claude` → `CONFIG_W:\claude-config\`
 Ejecutar `CONFIG_W:\MONTAR_CLAUDE.ps1` para crearla/actualizarla en cualquier PC.
 
-**Junction OCR:** `C:\Users\<usuario>\.opencodereview` → `PROYECTO_E:\config\opencodereview\`
-
 ### FortiShield bloquea los discos USB (causa de desconexiones)
 `FortiShield` + `fortimon3` (minifiltros FSFilter) retienen handles sobre los volúmenes USB
 y los bloquean tras una desconexión abrupta. Fix rápido — desadherir de los USB:
@@ -114,23 +112,15 @@ arriba — no confundir "Windows Empresa nunca en C" con "este PC sí puede tene
 
 ---
 
-## REVISIÓN DE CÓDIGO — DOS MODOS
+## REVISIÓN DE CÓDIGO
 
-### Modo $0 — /revisar-codigo (recomendado, sin costo)
+### /revisar-codigo (único modo activo)
 Skill de Claude Code que corre dentro de la sesión activa. Evalúa el diff contra las 14 reglas de `.opencodereview\rule.json` sin llamar a ninguna API externa.
 ```
 /revisar-codigo
 ```
 Antes de `/revisar-codigo` se puede correr `/paperclip-revision-costo-cero` como pasada previa
 basada en grep/patrones (más rápida, sin generación de texto extra).
-
-### Modo CLI — OCR_REVIEW.bat (usa API externa)
-Usa el paquete npm `open-code-review`. Requiere junction `.opencodereview` activa.
-```
-E:\ferreteria-oviedo\OCR_REVIEW.bat
-```
-Requiere: `C:\Users\<usuario>\.opencodereview` → `E:\config\opencodereview\`
-Si la junction no existe: ejecutar `MONTAR_CLAUDE.ps1` (la crea automáticamente).
 
 ---
 

@@ -605,7 +605,6 @@ PUBLICAR.bat                  → solo firebase deploy
 ACTUALIZAR_GITHUB.bat         → sync github
 ACTUALIZAR_TODO_AUTO.bat      → sin interacción (para ejecutar manualmente o tarea programada)
 VENTAS EL MANZANO\ACTUALIZAR_VENTAS.bat → solo ventas
-OCR_REVIEW.bat                → revision de codigo IA antes del deploy (ver seccion OCR abajo)
 ```
 
 BATs archivados en `_HISTORICO\` — NO ejecutar:
@@ -992,71 +991,11 @@ Móviles: Viernes Santo (Pascua-2), Sábado Santo (Pascua-1) — algoritmo Butch
 
 ---
 
-## OPEN CODE REVIEW (OCR) — Revisión de código IA (V37.18)
+## REVISIÓN DE CÓDIGO — /revisar-codigo (único modo activo)
 
-Herramienta: `@alibaba-group/open-code-review` v1.2.6
-Instalado en: `E:\npm-global\` (global, NO como dependencia del proyecto)
-Config global: `C:\Users\Ferreteria Oviedo\.opencodereview\config.json` (NO subir a git — gitignored)
-Reglas proyecto: `E:\ferreteria-oviedo\.opencodereview\rule.json` (SÍ está en git)
-Comando slash: `.claude\commands\open-code-review.md` (local, NO en git por .claude/ gitignore)
-
-### Cuándo usar OCR_REVIEW.bat
-- Antes de cualquier deploy importante (V37.X)
-- Cuando se modifica panel-admin.html, panel-cliente.html, firestore.rules, o sw.js
-- Cuando se agrega lógica nueva de autenticación o manejo de credenciales
-- Cuando se modifica el pipeline Python (main.py, descargar_*.py, leer_xlsm.py)
-
-### Uso desde terminal
-```batch
-REM Opción 1 — BAT integrado (revisa + pregunta si hacer deploy)
-E:\ferreteria-oviedo\OCR_REVIEW.bat
-
-REM Opción 2 — solo revisión sin deploy
-ocr review --from main --to HEAD --audience human
-
-REM Opción 3 — solo cambios staged
-ocr review --audience human
-
-REM Opción 4 — desde Claude Code (slash command)
-/open-code-review
-```
-
-### Reglas activas (rule.json)
-| ID | Archivo | Severidad | Descripción |
-|----|---------|-----------|-------------|
-| FO-001 | firebase-config.js, credenciales*.ini | ERROR | Archivos absolutamente intocables |
-| FO-002 | panel-admin.html, panel-cliente.html | ERROR | XSS via innerHTML sin sanitizar |
-| FO-003 | *.html | ERROR | API keys o tokens hardcodeados en HTML |
-| FO-004 | panel-admin.html | WARNING | Firma de funciones JS críticas alterada |
-| FO-005 | panel-admin.html | WARNING | Variables globales JS críticas renombradas |
-| FO-006 | panel-cliente.html | ERROR | window._mostrarPrecio default != false |
-| FO-007 | firestore.rules | ERROR | Regla sin request.auth != null |
-| FO-008 | *.py | ERROR | IP real o token hardcodeado en Python |
-| FO-009 | *.py | WARNING | Ruta absoluta Windows hardcodeada |
-| FO-010 | *.py | WARNING | IO sin try/except en pipeline crítico |
-| FO-011 | *.bat | WARNING | Ruta D:\ferreteria-oviedo (migrada a E:) |
-| FO-012 | main.py, leer_xlsm.py | ERROR | main.py escribe xlsm-enrich.json |
-| FO-013 | *.py | ERROR | Token/password logueado en print() |
-| FO-014 | sw.js | WARNING | Estrategia de cache del Service Worker |
-
-### Arquitectura de config (sin rastro en C:)
-```
-C:\Users\Ferreteria Oviedo\.opencodereview\  ──junction──►  E:\config\opencodereview\
-```
-El binario lee `~/.opencodereview/config.json` → Windows redirige a `E:\config\opencodereview\config.json`.
-Igual al patrón .claude → W:\claude-config\.
-
-Claves importantes:
-- `llm.auth_header = x-api-key`  (Anthropic requiere esto, NO Authorization: Bearer)
-- `llm.use_anthropic = true`
-- `llm.auth_token` = API key real (en E: físico, nunca en C:)
-- Los wrappers `ocr.cmd/ps1/sh` solo setean `OCR_NO_UPDATE=1`
-
-### Verificar funcionamiento
-```batch
-ocr llm test
-REM Debe mostrar: Source: OCR config file / URL: .../v1/messages / Model: claude-sonnet-4-6
-```
+Reglas del proyecto en `.opencodereview\rule.json` (14 reglas FO-001 a FO-014).
+Usar `/revisar-codigo` o `/paperclip-revision-costo-cero` desde Claude Code.
+OCR_REVIEW.bat y open-code-review npm: **descartados**.
 
 ---
 
