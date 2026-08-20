@@ -18608,18 +18608,15 @@ function vadmBuscarStock(){
 
   _vadmCargarStockMap(function(){
     _csResultados = [];
-    // Normalizar query: "100x100" → "100 100", quitar tildes, splitear en tokens
-    var qNorm = q.normalize('NFD').replace(/[̀-ͯ]/g,'')
-                  .replace(/[xX×]/g,' ').replace(/[^a-z0-9\s]/g,' ');
-    var tokens = qNorm.split(/\s+/).filter(function(t){ return t.length >= 2; });
+    // Normalizar: quitar tildes + "100x100"→"100 100" en query Y en texto del producto
+    // Splitear en tokens, todos deben aparecer (AND) — así "perfil cuad" y "100x100" funcionan
+    var _qn = q.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[x×]/g,' ').replace(/[^a-z0-9\s]/g,' ');
+    var tokens = _qn.split(/\s+/).filter(function(t){ return t.length >= 2; });
     if(!tokens.length){ return; }
     Object.keys(_vadmStockMap).forEach(function(cod){
       var p = _vadmStockMap[cod];
-      // Texto normalizado: código + descripción + marca (sin tildes, minúsculas)
       var texto = (cod+' '+(p.desc||'')+' '+(p.marca||'')).toLowerCase()
-                    .normalize('NFD').replace(/[̀-ͯ]/g,'')
-                    .replace(/[xX×]/g,' ');
-      // Todos los tokens deben estar presentes (AND)
+                    .normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[x×]/g,' ');
       var match = tokens.every(function(t){ return texto.indexOf(t) >= 0; });
       if(match) _csResultados.push({ cod: cod, p: p });
     });
