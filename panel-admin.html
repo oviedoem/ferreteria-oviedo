@@ -3501,7 +3501,9 @@ Todo desde tu celular, gratis, sin apps que descargar.
     <div class="vadm-anal-bar" style="gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       <label style="font-size:12px;font-weight:600;color:#374151">Buscar
         <input type="text" id="csQuery" placeholder="Código o descripción..." oninput="vadmBuscarStock()"
+          list="csSugerencias" autocomplete="off"
           style="margin-left:6px;font-size:13px;padding:7px 12px;border:1px solid #d1d5db;border-radius:6px;width:300px">
+        <datalist id="csSugerencias"></datalist>
       </label>
       <span id="csCount" style="font-size:12px;color:#6b7280"></span>
     </div>
@@ -8472,6 +8474,7 @@ function _vadmCargarStockMap(cb){
       if(_ocDone) return; _ocDone=true;
       _vadmStockLoading=false;
       _vadmEnriquecerMarca();
+      _csPoblarSugerencias();
       if(cb) cb();
     }
     fetch(dataUrl('oc-pend-resumen.json')+'?t='+Math.floor(Date.now()/3600000))
@@ -18569,6 +18572,23 @@ var _csBodegas = [
   { key:'cd',  trans:'cd_trans',  label:'CD',  nombre:'Centro Distribución',       tipo:'Auxiliar'  }
 ];
 
+// Pobla el datalist con descripciones únicas (top 300 por stock) para sugerencias nativas del browser
+function _csPoblarSugerencias(){
+  var dl = document.getElementById('csSugerencias');
+  if(!dl || !_vadmStockMap) return;
+  var items = Object.keys(_vadmStockMap).map(function(cod){
+    return { desc: (_vadmStockMap[cod].desc||'').trim(), stock: _vadmStockMap[cod].stock||0 };
+  });
+  items.sort(function(a,b){ return b.stock - a.stock; });
+  var vistos = {}, html = '';
+  items.forEach(function(it){
+    if(!it.desc || vistos[it.desc]) return;
+    vistos[it.desc] = true;
+    html += '<option value="'+it.desc.replace(/"/g,'&quot;')+'"></option>';
+  });
+  dl.innerHTML = html;
+}
+
 function vadmBuscarStock(){
   var q      = (document.getElementById('csQuery').value||'').trim().toLowerCase();
   var count  = document.getElementById('csCount');
@@ -18588,11 +18608,20 @@ function vadmBuscarStock(){
 
   _vadmCargarStockMap(function(){
     _csResultados = [];
+    // Normalizar query: "100x100" → "100 100", quitar tildes, splitear en tokens
+    var qNorm = q.normalize('NFD').replace(/[̀-ͯ]/g,'')
+                  .replace(/[xX×]/g,' ').replace(/[^a-z0-9\s]/g,' ');
+    var tokens = qNorm.split(/\s+/).filter(function(t){ return t.length >= 2; });
+    if(!tokens.length){ return; }
     Object.keys(_vadmStockMap).forEach(function(cod){
       var p = _vadmStockMap[cod];
-      if(cod.toLowerCase().indexOf(q) >= 0 || (p.desc||'').toLowerCase().indexOf(q) >= 0){
-        _csResultados.push({ cod: cod, p: p });
-      }
+      // Texto normalizado: código + descripción + marca (sin tildes, minúsculas)
+      var texto = (cod+' '+(p.desc||'')+' '+(p.marca||'')).toLowerCase()
+                    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+                    .replace(/[xX×]/g,' ');
+      // Todos los tokens deben estar presentes (AND)
+      var match = tokens.every(function(t){ return texto.indexOf(t) >= 0; });
+      if(match) _csResultados.push({ cod: cod, p: p });
     });
     _csResultados.sort(function(a, b){ return (b.p.stock||0) - (a.p.stock||0); });
 
