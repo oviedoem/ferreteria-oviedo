@@ -155,3 +155,22 @@ Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guideli
 - Usar `.filter(has_text=re.compile(r'^\s*Oviedo\s*$'))` para hacer click en el botón "Oviedo"
 - **NO usar** `:not(:has-text('Test'))` — no funciona en Playwright con pseudo-clases compuestas
 - Fix aplicado 2026-08-08. Si el login/selección de servidor falla en la próxima corrida, revisar que el selector `.filter()` esté vigente
+
+### REGLA CRÍTICA — Datos.json NO está en git / deploy siempre debe copiarlo
+- `E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json` (3.6 MB) **NO está en git-sync**
+- Cada `firebase deploy --only hosting` desde git-sync **borra Datos.json de Hosting** si no se copia antes
+- **Fix aplicado 2026-08-20:** `ACTUALIZAR_TODO.bat` PASO 4 ahora copia Datos.json antes del deploy
+- **Si se hace deploy manual** (sin el bat): copiar manualmente antes: `copy /Y "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json" "E:\git-sync\CATALOGO PRODUCTOS\Datos.json"`
+
+---
+
+### Sesión 2026-08-20 (Claude Code) — Fix búsqueda stock panel-admin + proteger Datos.json en deploy
+
+**Resumen:** Mejora búsqueda Consulta de Stock: búsqueda AND por tokens (antes era substring completo), normalización de tildes y dimensiones "100x100"→"100 100", datalist HTML5 para sugerencias nativas. Bug introducido: mis deploys borraron Datos.json de Hosting (no estaba en git-sync). Fix: pipeline ACTUALIZAR_TODO.bat copia Datos.json antes del deploy.
+
+**Archivos modificados:**
+- `panel-admin.html`: función `vadmBuscarStock` — búsqueda por tokens AND + normalize; `_csPoblarSugerencias` — datalist con top descripciones; `<datalist id="csSugerencias">` en el input
+- `ACTUALIZAR_TODO.bat`: PASO 4 agrega copia de Datos.json desde ferreteria-oviedo antes del firebase deploy
+
+**Pendiente:**
+- El error "Missing or insufficient permissions" en Ventas→Categorías ocurre cuando ventas-manzano JSON no está en Hosting → fallback a Firestore colección `ventasLineas` sin permisos. Se resuelve corriendo el pipeline completo (`ACTUALIZAR_TODO.bat`).
