@@ -166,7 +166,7 @@ if exist "%~dp0VENTAS EL MANZANO\VENTAS.xlsm" (
     echo  [AVISO] VENTAS.xlsm no encontrado en VENTAS EL MANZANO\ -- saltando paso.
 )
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 1D: Bodegas IEM/RCE/CEM desde SQL Server ----------------------------
 echo.
@@ -190,7 +190,7 @@ if exist "%~dp0BODEGAS\descargar_bod.py" (
     echo  [AVISO] descargar_bod.py no encontrado -- saltando paso.
 )
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 1E: Pedidos comprometidos desde SQL Server ---------------------------
 echo.
@@ -214,7 +214,7 @@ if exist "%~dp0BODEGAS\descargar_pedidos.py" (
     echo  [AVISO] descargar_pedidos.py no encontrado -- saltando paso.
 )
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 1F: Despachos pendientes desde SQL Server ----------------------------
 echo.
@@ -238,7 +238,7 @@ if exist "%~dp0BODEGAS\descargar_despachos.py" (
     echo  [AVISO] descargar_despachos.py no encontrado -- saltando paso.
 )
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 1G: Informe Stock desde CSVs SSRS (St_Bod + St_Ped todas sucursales) --
 echo.
@@ -286,7 +286,7 @@ if exist "%~dp0BODEGAS\descargar_stock_critico.py" (
     echo  [AVISO] descargar_stock_critico.py no encontrado -- saltando paso.
 )
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 1M: Tiempo de transito proveedor (OC -> GRC/GRT/GIB desde SQL) ---------
 echo.
@@ -310,7 +310,7 @@ if exist "%~dp0BODEGAS\descargar_oc_leadtime.py" (
     echo  [AVISO] descargar_oc_leadtime.py no encontrado -- saltando paso.
 )
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 1N: OC pendientes por codigo (SQL, para Solicitud Semanal) -----------
 echo.
@@ -334,7 +334,7 @@ if exist "%~dp0BODEGAS\descargar_oc_pendientes.py" (
     echo  [AVISO] descargar_oc_pendientes.py no encontrado -- saltando paso.
 )
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 1H+1I: Blazor Bodegas -- Por Recepcionar + Por Despachar (1 sesion) ---
 echo.
@@ -414,7 +414,7 @@ if not exist "%~dp0data\xlsm-enrich.json.bak" echo  [WARN] Sin backup disponible
 color 0A
 :paso1k_fin
 echo.
-timeout /t 2 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
 :: -- PASO 2: Ventas ------------------------------------------------------------
 :ventas
@@ -501,7 +501,7 @@ echo  ^|  PASO 3.6 - Catalogo cotizador con rotacion v3m/v6m   ^|
 echo  +----------------------------------------------------------+
 echo.
 echo  Consultando SQL Server: ventas 3M y 6M por SKU (suc 04)...
-echo  (genera catalogo-cotizador.json — incluido en deploy PASO 4)
+echo  (genera catalogo-cotizador.json � incluido en deploy PASO 4)
 echo.
 if exist "%~dp0generar_catalogo_cotizador_rotacion.ps1" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0generar_catalogo_cotizador_rotacion.ps1"
@@ -525,22 +525,6 @@ echo  ^|  PASO 4/4 - Publicando en Firebase Hosting             ^|
 echo  +----------------------------------------------------------+
 echo.
 
-:: Asegurar que Datos.json este en git-sync antes del deploy
-:: (el archivo se genera en ferreteria-oviedo pero el deploy sale de git-sync)
-if exist "%~dp0CATALOGO PRODUCTOS\Datos.json" (
-    echo  [INFO] Datos.json ya existe en git-sync
-) else (
-    echo  [INFO] Copiando Datos.json desde ferreteria-oviedo a git-sync...
-    copy /Y "%~dp0CATALOGO PRODUCTOS\Datos.json" "%~dp0CATALOGO PRODUCTOS\Datos.json" >nul 2>&1
-)
-:: Siempre copiar para garantizar version fresca
-copy /Y "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json" "%~dp0CATALOGO PRODUCTOS\Datos.json" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo  [WARN] No se pudo copiar Datos.json — verificar ruta E:\ferreteria-oviedo\
-) else (
-    echo  [OK] Datos.json actualizado en git-sync
-)
-
 "%NODE_EXE%" "%~dp0update-sw-version.js" 2>nul
 
 call "%FIREBASE_CMD%" deploy --only hosting
@@ -560,7 +544,7 @@ if %errorlevel% neq 0 (
 :: No bloquea: si falla, el bot seguira con el catalogo anterior en Hosting.
 echo.
 echo  +----------------------------------------------------------+
-echo  ^|  PASO 5/5 - Catalogo Bot → Firebase Hosting           ^|
+echo  ^|  PASO 5/5 - Catalogo Bot ? Firebase Hosting           ^|
 echo  +----------------------------------------------------------+
 echo.
 set DATOS_JSON=E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json
@@ -571,16 +555,6 @@ if not exist "%DATOS_JSON%" (
     goto :paso5_fin
 )
 
-:: catalogo-cotizador.json con v3m/v6m (lee data/ventas-manzano-YYYY-MM.json)
-echo  Generando catalogo-cotizador.json (rotacion 3M/6M)...
-"%PYTHON_EXE%" "%~dp0generar_catalogo_cotizador.py"
-if %errorlevel% neq 0 (
-    color 0E
-    echo  [AVISO] generar_catalogo_cotizador.py fallo - cotizador queda sin rotacion.
-    color 0A
-)
-
-:: catalogo-bot.json (catalogo compacto del bot WhatsApp)
 powershell -NoProfile -ExecutionPolicy Bypass -File "E:\ferreteria-oviedo\generate_catalogo_bot.ps1"
 
 if %errorlevel% neq 0 (
@@ -594,7 +568,7 @@ if %errorlevel% neq 0 (
     color 0E
     echo  [AVISO] Firebase deploy Hosting fallo - el bot seguira con el catalogo anterior.
 ) else (
-    echo  [OK] catalogo-bot.json + catalogo-cotizador.json publicados en ferreteria-oviedo.web.app
+    echo  [OK] catalogo-bot.json publicado en ferreteria-oviedo.web.app
 )
 
 :paso5_fin

@@ -179,21 +179,21 @@ async def renovar_token_via_login(page, creds):
         # Paso 1: formulario usuario / clave
         # Blazor WASM tarda 10-20s en renderizar el formulario — esperar el input
         user_input = page.locator("input[type='text'], input[type='email']").first
-        await user_input.wait_for(state="visible", timeout=30000)
+        await user_input.wait_for(state="visible", timeout=60000)
         await user_input.fill(creds["user"])
         pass_input = page.locator("input[type='password']").first
         await pass_input.fill(creds["clave"])
 
         btn = page.locator("button:has-text('LOGIN'), button:has-text('Ingresar'), button[type='submit']").first
         await btn.click()
-        await page.wait_for_timeout(5000)
+        await page.wait_for_timeout(10000)
 
         # Paso 2: seleccion de servidor — aparece menu con "SQL Instancia 3" / "Oviedo"
-        # Usar filter(has_text) con regex exacto para no confundir con otras opciones
+        # Nuevo servidor erp.justtime.cl puede omitir este paso y ir directo a catálogos
         try:
             import re as _re
             btn_oviedo = page.locator("button").filter(has_text=_re.compile(r'^\s*Oviedo\s*$'))
-            await btn_oviedo.wait_for(state="visible", timeout=15000)
+            await btn_oviedo.wait_for(state="visible", timeout=10000)
             await btn_oviedo.click()
             log("[token] Servidor 'Oviedo' seleccionado OK")
             await page.wait_for_timeout(5000)
@@ -205,10 +205,10 @@ async def renovar_token_via_login(page, creds):
         try:
             import re as _re2
             btn_foviedo = page.locator("button").filter(has_text=_re2.compile(r'^\s*Foviedo\s*$'))
-            await btn_foviedo.wait_for(state="visible", timeout=15000)
+            await btn_foviedo.wait_for(state="visible", timeout=30000)
             await btn_foviedo.click()
             log("[token] Catalogo 'Foviedo' seleccionado OK")
-            await page.wait_for_timeout(15000)
+            await page.wait_for_timeout(20000)
         except Exception as e:
             log(f"[token] (catalogo skip) {e}")
 
@@ -308,7 +308,7 @@ async def _ejecutar(creds):
             else:
                 await route.continue_()
         await ctx.route("**://localhost:6969/**", _rewrite_ws)
-        await ctx.route("**://200.6.113.97:6969/**", _rewrite_ws)
+        await ctx.route("**://wsapi.justtime.cl/**", _rewrite_ws)
 
         page = await ctx.new_page()
 

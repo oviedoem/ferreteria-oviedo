@@ -91,10 +91,10 @@
   {
     "id": "FO-012",
     "name": "xlsm-enrich.json solo por scripts autorizados",
-    "description": "xlsm-enrich.json lo genera descargar_ventas_enrich.py (primario desde SQL, V37.25) o leer_xlsm.py (fallback desde XLSM). main.py NO debe escribir este archivo.",
+    "description": "xlsm-enrich.json lo genera descargar_ventas_enrich.py (PASO 1K, primario SQL), xlsm_a_json.py (PASO 0B, ACTUALIZAR_TODO2 via XLSM) o leer_xlsm.py (fallback). main.py NO debe escribir este archivo.",
     "severity": "error",
-    "filePattern": "(main\\.py|leer_xlsm\\.py|descargar_ventas_enrich\\.py)",
-    "check": "Si main.py escribe xlsm-enrich.json directamente, reportar como ERROR critico. El archivo lo genera descargar_ventas_enrich.py (PASO 1K, primario) o leer_xlsm.py (fallback). Nunca main.py."
+    "filePattern": "(main\\.py|leer_xlsm\\.py|descargar_ventas_enrich\\.py|xlsm_a_json\\.py)",
+    "check": "Si main.py escribe xlsm-enrich.json directamente, reportar como ERROR critico. El archivo lo generan: descargar_ventas_enrich.py (PASO 1K), xlsm_a_json.py (PASO 0B) o leer_xlsm.py (fallback). Nunca main.py."
   },
   {
     "id": "FO-013",

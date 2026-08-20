@@ -7,7 +7,7 @@ title FERRETERIA OVIEDO - Auto 18:00
 :: ACTUALIZAR_TODO_AUTO.bat
 :: Version no interactiva de ACTUALIZAR_TODO.bat
 :: Para uso en Tarea Programada Windows (18:00 diario)
-:: Sin pause, sin choice â€” todo automatico
+:: Sin pause, sin choice — todo automatico
 :: Precios: OCULTOS por defecto (seguro)
 :: Log: logs\auto_YYYYMMDD_HH.log
 :: ============================================================
@@ -103,6 +103,7 @@ if exist "VENTAS EL MANZANO\VENTAS.xlsm" (
 ) else (
     echo [AVISO] VENTAS.xlsm no encontrado - saltando >> "%LOGFILE%"
 )
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 1D: Bodegas SQL Server -----------------------------------------
 echo. >> "%LOGFILE%"
@@ -115,6 +116,7 @@ if exist "BODEGAS\descargar_bod.py" (
         echo [OK] descargar_bod.py >> "%LOGFILE%"
     )
 )
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 1E: Pedidos comprometidos desde SQL Server -----------------------
 echo. >> "%LOGFILE%"
@@ -129,6 +131,7 @@ if exist "BODEGAS\descargar_pedidos.py" (
 ) else (
     echo [AVISO] descargar_pedidos.py no encontrado - saltando >> "%LOGFILE%"
 )
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 1F: Despachos pendientes desde SQL Server ------------------------
 echo. >> "%LOGFILE%"
@@ -143,6 +146,7 @@ if exist "BODEGAS\descargar_despachos.py" (
 ) else (
     echo [AVISO] descargar_despachos.py no encontrado - saltando >> "%LOGFILE%"
 )
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 1G: Informe Stock desde CSVs SSRS ----------------------------------
 echo. >> "%LOGFILE%"
@@ -171,6 +175,7 @@ if exist "BODEGAS\descargar_stock_critico.py" (
 ) else (
     echo [AVISO] descargar_stock_critico.py no encontrado - saltando >> "%LOGFILE%"
 )
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 1M: Tiempo de transito proveedor (OC -> GRC/GRT/GIB desde SQL) -----
 echo. >> "%LOGFILE%"
@@ -185,6 +190,7 @@ if exist "BODEGAS\descargar_oc_leadtime.py" (
 ) else (
     echo [AVISO] descargar_oc_leadtime.py no encontrado - saltando >> "%LOGFILE%"
 )
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 1N: OC pendientes por codigo (SQL, para Solicitud Semanal) --------
 echo. >> "%LOGFILE%"
@@ -199,6 +205,7 @@ if exist "BODEGAS\descargar_oc_pendientes.py" (
 ) else (
     echo [AVISO] descargar_oc_pendientes.py no encontrado - saltando >> "%LOGFILE%"
 )
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 1H: Recepciones pendientes + Despachos ERP (Blazor Intranet) ------
 echo. >> "%LOGFILE%"
@@ -248,6 +255,7 @@ if exist "data\xlsm-enrich.json.bak" copy /Y "data\xlsm-enrich.json.bak" "data\x
 if exist "data\xlsm-enrich.json.bak" echo [OK] xlsm-enrich.json restaurado desde backup >> "%LOGFILE%"
 if not exist "data\xlsm-enrich.json.bak" echo [WARN] Sin backup disponible - sector quedara vacio >> "%LOGFILE%"
 :paso1j_fin
+timeout /t 8 /nobreak > nul
 
 :: -- PASO 2: Ventas -------------------------------------------------------
 :ventas
@@ -270,21 +278,20 @@ echo. >> "%LOGFILE%"
 echo [%time%] PASO 3.5 - Rotando proteccion de datos sensibles... >> "%LOGFILE%"
 "%PYTHON_EXE%" "_utilidades\rotar_token_data.py" >> "%LOGFILE%" 2>&1
 
-:: -- PASO 3.6: Catalogo cotizador con rotacion 3M/6M ----------------------
-echo. >> "%LOGFILE%"
-echo [%time%] PASO 3.6 - catalogo-cotizador.json con rotacion... >> "%LOGFILE%"
-"%PYTHON_EXE%" "generar_catalogo_cotizador.py" >> "%LOGFILE%" 2>&1
-if %errorlevel% neq 0 (
-    echo [AVISO] generar_catalogo_cotizador.py fallo - cotizador sin rotacion >> "%LOGFILE%"
-) else (
-    echo [OK] catalogo-cotizador.json >> "%LOGFILE%"
-)
-
 :: -- PASO 4: Deploy Firebase ---------------------------------------------
 echo. >> "%LOGFILE%"
 echo [%time%] PASO 4 - Firebase deploy... >> "%LOGFILE%"
 "%NODE_EXE%" update-sw-version.js >> "%LOGFILE%" 2>&1
 if exist "E:\nodejs-portable" set PATH=E:\nodejs-portable;%PATH%
+
+:: Datos.json no esta en git-sync -- copiarlo antes del deploy (fix 2026-08-20)
+if exist "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json" (
+    copy /Y "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json" "E:\git-sync\CATALOGO PRODUCTOS\Datos.json" >nul 2>&1
+    echo [OK] Datos.json copiado a git-sync >> "%LOGFILE%"
+) else (
+    echo [AVISO] Datos.json no encontrado - deploy puede borrar catalogo >> "%LOGFILE%"
+)
+
 call "%FIREBASE_CMD%" deploy --only hosting >> "%LOGFILE%" 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] firebase deploy fallo - revisar autenticacion >> "%LOGFILE%"
@@ -292,22 +299,30 @@ if %errorlevel% neq 0 (
     echo [OK] deploy completo >> "%LOGFILE%"
 )
 
-:: -- PASO 5: Sincronizar catalogo del BOT a Firestore (agregado 2026-08-03) --
+:: -- PASO 5: Generar catalogo-bot.json y subir a Firebase Hosting ----------
+:: 2026-08-07: migrado de Firestore (quota agotada) a Hosting (gratis, sin quota).
+:: NO llamar upload-catalog.js -- sube a Firestore y se cuelga indefinidamente.
+:: El bot descarga catalogo-bot.json desde ferreteria-oviedo.web.app al arrancar.
 echo. >> "%LOGFILE%"
-echo [%time%] PASO 5 - Sincronizando catalogo bot... >> "%LOGFILE%"
-if exist "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP\src\upload-catalog.js" (
-    pushd "E:\BOT  OVIEDO_ELMANZANO WHATSSSAP"
-    "%NODE_EXE%" src\upload-catalog.js >> "%LOGFILE%" 2>&1
-    if %errorlevel% neq 0 (
-        echo [AVISO] upload-catalog.js fallo - bot queda con catalogo anterior >> "%LOGFILE%"
-    ) else (
-        echo [OK] catalogo bot sincronizado >> "%LOGFILE%"
-    )
-    popd
+echo [%time%] PASO 5 - Catalogo Bot a Firebase Hosting... >> "%LOGFILE%"
+set DATOS_JSON=E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json
+if not exist "%DATOS_JSON%" (
+    echo [AVISO] Datos.json no encontrado - PASO 5 omitido >> "%LOGFILE%"
+    goto :fin
+)
+powershell -NoProfile -ExecutionPolicy Bypass -File "E:\ferreteria-oviedo\generate_catalogo_bot.ps1" >> "%LOGFILE%" 2>&1
+if %errorlevel% neq 0 (
+    echo [AVISO] generate_catalogo_bot.ps1 fallo - bot queda con catalogo anterior >> "%LOGFILE%"
+    goto :fin
+)
+call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo >> "%LOGFILE%" 2>&1
+if %errorlevel% neq 0 (
+    echo [AVISO] Firebase deploy catalogo-bot fallo - bot queda con catalogo anterior >> "%LOGFILE%"
 ) else (
-    echo [AVISO] proyecto bot no encontrado - paso omitido >> "%LOGFILE%"
+    echo [OK] catalogo-bot.json publicado en ferreteria-oviedo.web.app >> "%LOGFILE%"
 )
 
+:fin
 echo. >> "%LOGFILE%"
 echo ============================================================ >> "%LOGFILE%"
 echo  FINALIZADO: %date% %time% >> "%LOGFILE%"
