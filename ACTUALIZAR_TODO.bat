@@ -525,6 +525,22 @@ echo  ^|  PASO 4/4 - Publicando en Firebase Hosting             ^|
 echo  +----------------------------------------------------------+
 echo.
 
+:: Asegurar que Datos.json este en git-sync antes del deploy
+:: (el archivo se genera en ferreteria-oviedo pero el deploy sale de git-sync)
+if exist "%~dp0CATALOGO PRODUCTOS\Datos.json" (
+    echo  [INFO] Datos.json ya existe en git-sync
+) else (
+    echo  [INFO] Copiando Datos.json desde ferreteria-oviedo a git-sync...
+    copy /Y "%~dp0CATALOGO PRODUCTOS\Datos.json" "%~dp0CATALOGO PRODUCTOS\Datos.json" >nul 2>&1
+)
+:: Siempre copiar para garantizar version fresca
+copy /Y "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json" "%~dp0CATALOGO PRODUCTOS\Datos.json" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo  [WARN] No se pudo copiar Datos.json — verificar ruta E:\ferreteria-oviedo\
+) else (
+    echo  [OK] Datos.json actualizado en git-sync
+)
+
 "%NODE_EXE%" "%~dp0update-sw-version.js" 2>nul
 
 call "%FIREBASE_CMD%" deploy --only hosting
