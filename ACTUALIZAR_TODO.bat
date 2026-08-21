@@ -336,52 +336,17 @@ if exist "%~dp0BODEGAS\descargar_oc_pendientes.py" (
 echo.
 timeout /t 8 /nobreak >nul
 
-:: -- PASO 1H+1I: Blazor Bodegas -- Por Recepcionar + Por Despachar (1 sesion) ---
-echo.
-echo  +----------------------------------------------------------+
-echo  ^|  PASO 1H+1I - Blazor Bodegas (1 sesion Playwright)    ^|
-echo  ^|  Por Recepcionar (GRT/GIB) + Por Despachar (tiempo real)^|
-echo  +----------------------------------------------------------+
-echo.
-echo  Descargando ambos tabs en una sola sesion Playwright...
-echo  (genera recepciones-pendientes.json + despachos-pendientes-erp.json)
-echo.
-if exist "%~dp0BODEGAS\descargar_blazor_bodegas.py" (
-    "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_blazor_bodegas.py"
-    if %errorlevel% neq 0 (
-        color 0C
-        echo  [AVISO] descargar_blazor_bodegas.py fallo. Tabs Por Recepcionar y Por Despachar usaran datos anteriores.
-        color 0A
-    ) else (
-        echo  [OK] recepciones-pendientes.json + despachos-pendientes-erp.json actualizados.
-    )
-) else (
-    echo  [AVISO] descargar_blazor_bodegas.py no encontrado -- saltando paso.
-)
+:: -- PASO 1H+1I: ya integrado en descargar_despachos.py (PASO 1F) ---------------
+:: recepciones-pendientes.json y despachos-pendientes-erp.json se generan via SQL
+:: en descargar_despachos.py (PASO 1F). No requiere Blazor ni Playwright.
+echo  [OK] PASO 1H+1I incluido en PASO 1F (descargar_despachos.py)
 echo.
 timeout /t 2 /nobreak >nul
 
-:: -- PASO 1J: Fusion Despachos ERP + SQL -> despachos-panel.json ---------------
-echo.
-echo  +----------------------------------------------------------+
-echo  ^|  PASO 1J - Fusion Despachos (ERP tiempo real + SQL)   ^|
-echo  +----------------------------------------------------------+
-echo.
-echo  Combinando ERP (tiempo real) + SQL (cliente/RUT/vendedor)...
-echo  (genera despachos-panel.json para panel-admin)
-echo.
-if exist "%~dp0BODEGAS\fusionar_despachos.py" (
-    "%PYTHON_EXE%" "%~dp0BODEGAS\fusionar_despachos.py"
-    if %errorlevel% neq 0 (
-        color 0C
-        echo  [AVISO] fusionar_despachos.py fallo. Panel admin usara despachos-detalle.json anterior.
-        color 0A
-    ) else (
-        echo  [OK] despachos-panel.json generado.
-    )
-) else (
-    echo  [AVISO] fusionar_despachos.py no encontrado -- saltando paso.
-)
+:: -- PASO 1J: ELIMINADO 2026-08-20 -----------------------------------------------
+:: fusionar_despachos.py generaba despachos-panel.json pero el panel usa despachos-detalle.json
+:: Ambas fuentes son ahora SQL (descargar_despachos.py). Script archivado.
+echo  [OK] PASO 1J omitido (despachos-panel.json no consumido por ningun panel)
 echo.
 timeout /t 2 /nobreak >nul
 
@@ -501,7 +466,7 @@ echo  ^|  PASO 3.6 - Catalogo cotizador con rotacion v3m/v6m   ^|
 echo  +----------------------------------------------------------+
 echo.
 echo  Consultando SQL Server: ventas 3M y 6M por SKU (suc 04)...
-echo  (genera catalogo-cotizador.json — incluido en deploy PASO 4)
+echo  (genera catalogo-cotizador.json ï¿½ incluido en deploy PASO 4)
 echo.
 if exist "%~dp0generar_catalogo_cotizador_rotacion.ps1" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0generar_catalogo_cotizador_rotacion.ps1"

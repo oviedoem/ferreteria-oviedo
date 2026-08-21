@@ -273,10 +273,10 @@
 |---|---|---|
 | IEM / RCE / CEM / ICD / GEM / TEM | analisis | OK V37.51 — GEM/TEM agregadas + stock negativo visible en rojo (GEM/CEM aceptan negativo por diseño ERP) |
 
-### RECEPCIONES / DESPACHOS (Blazor JustWeb)
+### RECEPCIONES / DESPACHOS (SQL Server)
 | Modulo | Tab | Estado |
 |---|---|---|
-| Por Recepcionar / Por Despachar | — | OK V37.22 — descargar_blazor_bodegas.py (Playwright) |
+| Por Recepcionar / Por Despachar | — | OK V37.57 — descargar_despachos.py SQL (GRC/GRT/GIB + BVE/FVE, datos sync 22:00) |
 
 ### ARBOL RETAIL
 | Modulo | Tab | Estado |

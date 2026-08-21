@@ -75,10 +75,9 @@ SQL Server [SQL-SERVER-IP] sincroniza con JustWeb **una sola vez al día a las 2
 ### ERP JustWeb — Servidor (actualizado 2026-08-09)
 - **Servidor nuevo (desde 2026-08):** `https://erp.justtime.cl/justweb_foviedo` (cloud JustTime)
 - **Servidor viejo (hasta 2026-07):** `http://200.6.113.97/Justweb_Foviedo` (IP local — ya NO funciona, da 503)
-- BASE y BLAZOR_ROOT configurados en `credenciales_erp.ini` (no hardcodeados en scripts)
-- Blazor login requiere 3 pasos: login → seleccionar **Oviedo** (SERVIDOR) → seleccionar **Foviedo** (CATALOGOS)
-- XTOKEN para VisorRS.aspx también en ini (campo XTOKEN). TTL aproximado: días/semanas.
-- TOKEN_RECEPCION para IdMenu=377: TTL ~2 días. Auto-renovación implementada en descargar_blazor_bodegas.py.
+- BASE y XTOKEN configurados en `credenciales_erp.ini` (no hardcodeados en scripts)
+- XTOKEN para VisorRS.aspx en campo XTOKEN del ini. TTL aproximado: días/semanas.
+- TOKEN_RECEPCION y X_API_KEY en ini — usados por wsapi.justtime.cl REST API (pendiente permiso JustTime P_CONTROL_BODEGAS).
 
 ### VPN — Cuándo usar
 - **Cable directo a la red de la ferretería** → NO requiere VPN. Pipeline corre sin VPN.
@@ -816,9 +815,9 @@ Análisis bodegas: analisis (IEM/RCE/CEM con selector bfFuente)
 ```
 
 Notas tabs nuevos:
-- `informe-stock`: usa informe-stock.json (PASO 1G descargar_blazor_informe.py Playwright). Muestra Dif<0 (anomalía JT) como filas rojas.
+- `informe-stock`: usa informe-stock.json (PASO 1G generar_informe_stock.py, lee raw_bloque1/2_*.csv de SSRS). Muestra Dif<0 (anomalía JT) como filas rojas.
 - `despachos`: usa despachos-pendientes.json (PASO 1F descargar_despachos.py SQL). Despachos NVM sin BVE/FVE.
-- `recepciones` / sub-tab "Por Recepcionar": usa recepciones-pendientes.json (PASO 1H descargar_blazor_bodegas.py Playwright). GRT/GIB pendientes de Editar+Grabar.
+- `recepciones` / sub-tab "Por Recepcionar": usa recepciones-pendientes.json (PASO 1F descargar_despachos.py SQL, GRC/GRT/GIB pendientes). Datos al último sync 22:00.
 
 TABS ELIMINADOS (no recrear): `vvsstock` (eliminado V35.0)
 NAVEGACIÓN REAL: `showTab` → `vadmGrupo` → `vadmSubTab`. NO existe `adminShowTab()`.
@@ -1113,7 +1112,7 @@ Contiene todo lo que NO es flujo activo:
 - **Crear tarea programada AutoUpdate18:00** (requiere autorización): `schtasks /create /tn "AutoUpdate18:00" /tr "cmd /c E:\ferreteria-oviedo\ACTUALIZAR_TODO_AUTO.bat" /sc daily /st 18:00`
 - ~~Actualizar VENTAS.xlsm~~ → RESUELTO: ya no se depende del XLSM manual para rut/sector/razonSocial (ahora SQL)
 - **RANKING.xlsm / PRECIOS.xlsm** siguen manuales (tabs ranking-unidades y precios-diff) — migrar a SQL en sesión futura si se desea
-- **Blazor script** (`descargar_blazor_bodegas.py`): navegación a IdMenu=377 pendiente de fix definitivo (JustWeb ASP.NET TreeView usa postbacks)
+- ~~Blazor script~~ RESUELTO 2026-08-20: recepciones/despachos pendientes migrados a SQL (descargar_despachos.py PASO 1F). Script archivado.
 
 ## HISTORIAL SESIÓN 2026-06-21 — V37.26 Redes sociales + banner horario
 

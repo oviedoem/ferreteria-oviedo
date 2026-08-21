@@ -2,15 +2,10 @@
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
 # Última actualización: 2026-07-03 · Versión activa: V37.56
 #
-# NOTA V37.54 — PASO 1H con 3 workarounds temporales (actualización del ERP JustTime rompió el server):
-#   · El WsApi ([ERP-WSAPI-HOST]:6969) dejó de enviar CORS y getbase apunta a localhost:6969.
-#   · descargar_blazor_bodegas.py ahora lanza Chromium con --disable-web-security, reescribe las
-#     rutas localhost:6969 → host real (ctx.route) y espera el botón Exportar con 3 intentos + reload.
-#   · QUITAR los workarounds cuando JustTime corrija CORS/getbase. Detalle: AGENTS.md → "Fix 2026-07-01 (sesión 3u)".
-# NOTA V37.46 — cambios al pipeline (ver MAPA 2):
-#   · PASO 1H (descargar_blazor_bodegas.py) reescrito: TOKEN_RECEPCION directo en credenciales_erp.ini,
-#     sin login. Blazor en http://[ERP-SERVER-IP]/ (root). Selector: button.e-boton:has-text('Exportar a Excel').
-#     Si token expira → JustWeb avatar → TOKEN → actualizar GUID en ini.
+# NOTA V37.57+ — PASO 1H eliminado. recepciones-pendientes.json y despachos-pendientes-erp.json
+#   ahora los genera descargar_despachos.py (PASO 1F) vía SQL Server (GRC/GRT/GIB + BVE/FVE).
+#   descargar_blazor_bodegas.py archivado en E:\_ARCHIVO_FERRETERIA\BODEGAS_BLAZOR_20260820\.
+#   Causa: P_CONTROL_BODEGAS sin permisos en servidor cloud JustTime (no resuelto por proveedor).
 #   · PASO 1M (descargar_oc_leadtime.py, V37.40): oc-leadtime.json — días OC→recepción por bodega/marca.
 #   · Traspasos CD (V37.45-46): filtro bodega, checkboxes ranking, prioridad 4 capas, keywords portabilidad.
 #   · Para el detalle visual completo ver pipeline-datos-mapa.html (solo local).

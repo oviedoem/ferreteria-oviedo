@@ -90,11 +90,11 @@
   },
   {
     "id": "FO-012",
-    "name": "xlsm-enrich.json solo por scripts autorizados",
-    "description": "xlsm-enrich.json lo genera descargar_ventas_enrich.py (PASO 1K, primario SQL), xlsm_a_json.py (PASO 0B, ACTUALIZAR_TODO2 via XLSM) o leer_xlsm.py (fallback). main.py NO debe escribir este archivo.",
+    "name": "JSONs de bodega solo por scripts autorizados",
+    "description": "xlsm-enrich.json: descargar_ventas_enrich.py (PASO 1K), xlsm_a_json.py (PASO 0B) o leer_xlsm.py. despachos-pendientes-erp.json + recepciones-pendientes.json: descargar_despachos.py (PASO 1F SQL) o xlsm_a_json.py (PASO 0B XLSM). main.py NO debe escribir ninguno de estos archivos.",
     "severity": "error",
-    "filePattern": "(main\\.py|leer_xlsm\\.py|descargar_ventas_enrich\\.py|xlsm_a_json\\.py)",
-    "check": "Si main.py escribe xlsm-enrich.json directamente, reportar como ERROR critico. El archivo lo generan: descargar_ventas_enrich.py (PASO 1K), xlsm_a_json.py (PASO 0B) o leer_xlsm.py (fallback). Nunca main.py."
+    "filePattern": "(main\\.py|leer_xlsm\\.py|descargar_ventas_enrich\\.py|xlsm_a_json\\.py|descargar_despachos\\.py)",
+    "check": "Si main.py escribe xlsm-enrich.json, despachos-pendientes-erp.json o recepciones-pendientes.json directamente, reportar como ERROR critico. Estos archivos los generan solo los scripts autorizados en la descripcion."
   },
   {
     "id": "FO-013",

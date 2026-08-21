@@ -151,11 +151,6 @@ Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guideli
 - **NO llamar a `upload-catalog.js`** — sube a Firestore cuya quota gratuita está agotada. Si se llama, el pipeline se cuelga indefinidamente en "Leyendo catálogo desde..."
 - El bot descarga `catalogo-bot.json` desde `https://ferreteria-oviedo.web.app/catalogo-bot.json` al arrancar
 
-### Blazor (descargar_blazor_bodegas.py) — selector de servidor
-- Usar `.filter(has_text=re.compile(r'^\s*Oviedo\s*$'))` para hacer click en el botón "Oviedo"
-- **NO usar** `:not(:has-text('Test'))` — no funciona en Playwright con pseudo-clases compuestas
-- Fix aplicado 2026-08-08. Si el login/selección de servidor falla en la próxima corrida, revisar que el selector `.filter()` esté vigente
-
 ### REGLA CRÍTICA — Datos.json NO está en git / deploy siempre debe copiarlo
 - `E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json` (3.6 MB) **NO está en git-sync**
 - Cada `firebase deploy --only hosting` desde git-sync **borra Datos.json de Hosting** si no se copia antes

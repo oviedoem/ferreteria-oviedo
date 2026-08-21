@@ -7,7 +7,7 @@ title FERRETERIA OVIEDO - Auto 18:00
 :: ACTUALIZAR_TODO_AUTO.bat
 :: Version no interactiva de ACTUALIZAR_TODO.bat
 :: Para uso en Tarea Programada Windows (18:00 diario)
-:: Sin pause, sin choice — todo automatico
+:: Sin pause, sin choice ï¿½ todo automatico
 :: Precios: OCULTOS por defecto (seguro)
 :: Log: logs\auto_YYYYMMDD_HH.log
 :: ============================================================
@@ -207,34 +207,13 @@ if exist "BODEGAS\descargar_oc_pendientes.py" (
 )
 timeout /t 8 /nobreak > nul
 
-:: -- PASO 1H: Recepciones pendientes + Despachos ERP (Blazor Intranet) ------
-echo. >> "%LOGFILE%"
-echo [%time%] PASO 1H - Recepciones y Despachos ERP (Blazor)... >> "%LOGFILE%"
-if exist "BODEGAS\descargar_blazor_bodegas.py" (
-    "%PYTHON_EXE%" "BODEGAS\descargar_blazor_bodegas.py" >> "%LOGFILE%" 2>&1
-    if %errorlevel% neq 0 (
-        echo [AVISO] descargar_blazor_bodegas.py fallo - tabs Por Recepcionar/Despachar usan datos anteriores >> "%LOGFILE%"
-    ) else (
-        echo [OK] descargar_blazor_bodegas.py >> "%LOGFILE%"
-    )
-) else (
-    echo [AVISO] descargar_blazor_bodegas.py no encontrado - saltando >> "%LOGFILE%"
-)
+:: -- PASO 1H: incluido en descargar_despachos.py (PASO 1F) ------------------
+echo [OK] PASO 1H incluido en PASO 1F - recepciones y despachos via SQL >> "%LOGFILE%"
 timeout /t 3 /nobreak > nul
 
-:: -- PASO 1I: Fusionar despachos SQL + ERP -> despachos-panel.json ----------
-echo. >> "%LOGFILE%"
-echo [%time%] PASO 1I - Fusionar despachos (SQL + ERP)... >> "%LOGFILE%"
-if exist "BODEGAS\fusionar_despachos.py" (
-    "%PYTHON_EXE%" "BODEGAS\fusionar_despachos.py" >> "%LOGFILE%" 2>&1
-    if %errorlevel% neq 0 (
-        echo [AVISO] fusionar_despachos.py fallo - panel usara despachos-detalle.json anterior >> "%LOGFILE%"
-    ) else (
-        echo [OK] fusionar_despachos.py >> "%LOGFILE%"
-    )
-) else (
-    echo [AVISO] fusionar_despachos.py no encontrado - saltando >> "%LOGFILE%"
-)
+:: -- PASO 1I: ELIMINADO 2026-08-20 ------------------------------------------
+:: fusionar_despachos.py archivado. despachos-panel.json no consumido por ningun panel.
+echo [OK] PASO 1I omitido (fusionar_despachos archivado) >> "%LOGFILE%"
 
 :: -- PASO 1J: Enriquecimiento ventas (rut/sector/razon) desde SQL Server ----
 echo. >> "%LOGFILE%"

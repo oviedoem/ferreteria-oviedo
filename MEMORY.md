@@ -115,11 +115,9 @@ PASO 1G  generar_informe_stock.py (BODEGAS/)
          CRITICO parseo CSV: punto=miles, coma=decimal — igual que regla SSRS en AGENTS.md
          Si no encuentra ningun CSV: sys.exit(1). BAT captura el error y continua con [AVISO].
 
-PASO 1H  descargar_blazor_bodegas.py (BODEGAS/)  [V37.22]
-         Playwright headless → Intranet JustWeb Blazor IdMenu=377 (1 sesion = 2 tabs)
-         → data/recepciones-pendientes.json (GRT/GIB pendientes Editar+Grabar — anomalia JT)
-         → data/despachos-pendientes-erp.json
-         Reemplaza descargar_recepciones_pendientes.py + descargar_despachos_erp.py (deprecados)
+PASO 1H  ELIMINADO 2026-08-20. recepciones-pendientes.json y despachos-pendientes-erp.json
+         ahora los genera descargar_despachos.py (PASO 1F) via SQL Server (GRC/GRT/GIB + BVE/FVE).
+         Script original archivado en E:\_ARCHIVO_FERRETERIA\BODEGAS_BLAZOR_20260820\
 
 PASO 1I  fusionar_despachos.py (BODEGAS/) → data/despachos-panel.json (ERP tiempo real + SQL)
 
@@ -312,8 +310,8 @@ REGLA CRÍTICA subquery ULT:
 | main.py | VENTAS EL MANZANO\ | ventas-manzano*.json | Pipeline ventas completo |
 | descargar_ventas_erp.py | VENTAS EL MANZANO\ | ventas_erp_producto_YYYYMMDD.xlsx | Incremental; dedup por (Numero, Codigo) |
 | descargar_ventas_enrich.py | BODEGAS\ | xlsm-enrich.json | **V37.25** SQL: rut/sector/razon desde M_ENTIDADES+Observacion (BVE/FVE/NCE) |
-| descargar_blazor_bodegas.py | BODEGAS\ | recepciones-pendientes.json + despachos-pendientes-erp.json | Playwright Intranet IdMenu=377 |
-| fusionar_despachos.py | BODEGAS\ | despachos-panel.json | Fusiona despachos ERP + SQL |
+| descargar_despachos.py (PASO 1F+4+5) | BODEGAS\ | recepciones-pendientes.json + despachos-pendientes-erp.json + despachos-comprometidos.json + despachos-detalle.json | SQL Server M_DOCUMENTOS_DETALLE (sync 22:00) |
+| ~~fusionar_despachos.py~~ | archivado 2026-08-20 | despachos-panel.json nunca consumido por panel | Panel usa despachos-detalle.json (SQL directo) |
 | encriptar_credenciales.py | _utilidades\ | credenciales_db.enc | Utilidad seguridad (no es pipeline; movido V37.25) |
 
 ---
