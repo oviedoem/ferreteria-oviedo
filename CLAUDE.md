@@ -159,6 +159,17 @@ Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guideli
 
 ---
 
+### Sesión 2026-08-22 (Claude Code) — auditoría sistema operativo IA + sin cambios de código
+
+**Resumen:** Auditoría de consistencia de skills y archivos del Sistema Operativo IA en todos los repos del ecosistema. Sin cambios de código en ferreteria-oviedo.
+
+**Archivos modificados:** ninguno
+
+**Pendiente:**
+- Error "Missing or insufficient permissions" en Ventas→Categorías: se resuelve corriendo `ACTUALIZAR_TODO.bat` completo
+
+---
+
 ### Sesión 2026-08-20 (Claude Code) — Fix búsqueda stock panel-admin + proteger Datos.json en deploy
 
 **Resumen:** Mejora búsqueda Consulta de Stock: búsqueda AND por tokens (antes era substring completo), normalización de tildes y dimensiones "100x100"→"100 100", datalist HTML5 para sugerencias nativas. Bug introducido: mis deploys borraron Datos.json de Hosting (no estaba en git-sync). Fix: pipeline ACTUALIZAR_TODO.bat copia Datos.json antes del deploy.
