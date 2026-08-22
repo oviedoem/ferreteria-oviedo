@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.58 · Última actualización: 2026-08-20
+# Versión activa: V37.58 · Última actualización: 2026-08-22
 
 ---
 
@@ -1605,3 +1605,23 @@ if cnt < 1:
 2. Verificar que panel-admin → Bot WhatsApp → Costos IA muestra KPIs (requiere `FIREBASE_SERVICE_ACCOUNT` en Render del bot)
 
 - V37.58 — actualización: 2026-08-04
+
+### Sesión 2026-08-22 (Claude Code) — Pipeline ACTUALIZAR_TODO2 completo + fix rotar_token
+
+**Resumen:** Pipeline ACTUALIZAR_TODO2.bat corrido exitosamente (13:16–13:30). Datos frescos al 22-08-2026.
+Fix: `rotar_token_data.py` — removido `despachos-panel.json` de `_ARCHIVOS_SENSIBLES_BASE` (archivado en sesión 20-08d, causaba [AVISO] falso en cada ejecución). Deploy 13:30, catalogo-bot 6106 productos.
+
+**Pipeline 2026-08-22 (ACTUALIZAR_TODO2.bat 13:16–13:30):**
+- PASO 0: BajarTodoBat (datos-app.xlsm) — OK (error VBA 80040e4d al conectar SQL; bat continuó con datos guardados 20-08)
+- PASO 0B: xlsm_a_json.py — OK (bodegas/stock/OC/enrich desde XLSM guardado)
+- PASO 1A–1G, 1H+1I, 2: todos OK
+- Validación, token rotation (33 archivos → cc89c034...), deploy Firebase: OK
+- Catalogo cotizador: 6106 prods, 3027 con rotación, 1581 KB
+
+**Issue pendiente (no crítico):**
+- `modFO` en `datos-app.xlsm` tiene `CLAVE = "poli"` hardcodeada. Si el password cambia en `credenciales_db.ini`, el VBA falla con 80040e4d. El pipeline sigue funcionando (bat tiene fallback C/N en PASO 0, continúa con datos XLSM guardados). Fix: hacer que el VBA llame a `LeerIniDB("password")` leyendo de `credenciales_db.ini` en `ThisWorkbook.Path\..\`. Requiere abrir datos-app.xlsm → Alt+F11 → modFO → reemplazar `Private Const clave As String = "poli"` por función LeerIniDB.
+
+**Archivos modificados:**
+- `_utilidades/rotar_token_data.py`: removido `despachos-panel.json` de lista sensibles
+
+- V37.58 — actualización: 2026-08-22
