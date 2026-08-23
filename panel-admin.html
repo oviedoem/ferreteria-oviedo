@@ -8591,8 +8591,8 @@ function vadmCargarLineas(){
               _vadmAplicarDatos(arr, status, 'Firestore');
             })
             .catch(function(e){
-              status.textContent='❌ Error: '+e.message; status.style.color='#dc2626';
-              if(body) body.innerHTML='<div class="ven-adm-empty">Error: '+venAdmEsc(e.message)+'</div>';
+              status.textContent='❌ Sin datos: '+e.message; status.style.color='#dc2626';
+              if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos de ventas disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos de ventas y subirlos a Hosting.</div>';
             });
         });
     });
@@ -9503,7 +9503,7 @@ function venAdmCargar(){
     })
     .catch(function(){
       // 3. Fallback a Firestore (sin límite de 1000)
-      if(!window.db){ if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos disponibles.</div>'; return; }
+      if(!window.db){ if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos de ventas.</div>'; return; }
       var query = window.db.collection('ventas');
       if(vendedor) query = query.where('vendedor','==',vendedor);
       query.get().then(function(snap){
@@ -9516,7 +9516,7 @@ function venAdmCargar(){
         filtrados.sort(function(a,b){ return (parseInt(b.numero)||0)-(parseInt(a.numero)||0); });
         _mostrar(filtrados);
       }).catch(function(e){
-        if(body) body.innerHTML = '<div class="ven-adm-empty">Error al cargar: '+venAdmEsc(e.message||'')+'</div>';
+        if(body) body.innerHTML = '<div class="ven-adm-empty">Sin datos de ventas disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos de ventas y subirlos a Hosting.</div>';
       });
     });
 }

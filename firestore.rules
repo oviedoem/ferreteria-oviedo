@@ -169,6 +169,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+
+    // ── VENTAS HISTÓRICAS (colecciones legacy / fallback) ─────────────────
+    // ventasLineas: fallback cuando ventas-manzano.json no está en Hosting
+    // ventas: colección legacy de último recurso en venAdmCargar
+    match /ventasLineas/{docId} {
+      allow read: if esAdmin() || esVendedor();
+      allow write: if false;
+    }
+    match /ventas/{docId} {
+      allow read: if esAdmin() || esVendedor();
+      allow write: if false;
+    }
+
     // ── BLOQUEO POR DEFECTO ───────────────────────────────────
     // Todo lo que no esté listado arriba → denegado
     // Incluye: productos, solicitudes_cupon, sessions (obsoletas)
