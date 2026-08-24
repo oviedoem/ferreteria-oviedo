@@ -1,3 +1,9 @@
+# JSONs de datos de negocio — datos internos, no van a repo público
+bodegas_gestion.json
+bodegas_ir_otras.json
+merma_isabel_riquelme.json
+CATALOGO PRODUCTOS/Datos.json
+
 # Credenciales — NUNCA subir
 credenciales_db.ini
 credenciales_db.enc
@@ -12,7 +18,7 @@ users_export.json
 
 # Scripts pipeline — no van a GitHub
 BODEGAS/
-!BODEGAS/modDespachosPend.bas
+!BODEGAS/descargar_blazor_bodegas.py
 VENTAS EL MANZANO/
 DATOS ERP/
 data/
