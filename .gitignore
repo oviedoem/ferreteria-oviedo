@@ -3,6 +3,8 @@ bodegas_gestion.json
 bodegas_ir_otras.json
 merma_isabel_riquelme.json
 CATALOGO PRODUCTOS/Datos.json
+catalogo-bot.json
+catalogo-cotizador.json
 
 # Credenciales — NUNCA subir
 credenciales_db.ini

@@ -1,526 +1,103 @@
-# MEMORY.md — Ferretería Oviedo El Manzano
-# Referencia consolidada · Desde 2026-06-01
-# Última actualización: 2026-06-14 · Versión activa: V37.25
-
----
-
-## 1. VERSIÓN ACTIVA
-
-| Campo | Valor |
-|---|---|
-| Versión | V37.25 |
-| Fecha último deploy | 2026-06-13 23:04 (datos ventas con rut/sector/razón desde SQL) |
-| Último cambio | V37.25: enrich ventas migrado XLSM→SQL (descargar_ventas_enrich.py), limpieza extrema a E:\_ARCHIVO_FERRETERIA, _utilidades\, DATOS ERP eliminada de GitHub |
-| Pendiente | commit V37.25 + badges 3 paneles (datos ya desplegados) |
-
-Historial reciente (desde 2026-06-01):
-- V37.25 (2026-06-13/14): enrich SQL (PASO 1K), limpieza extrema, blazor recepciones/despachos
-- V37.22 (2026-06-09): tab Por Recepcionar/Despachar — descargar_blazor_bodegas.py
-- V37.24 (2026-06-12): bodega ICD (IDBODEGA=73) en tab Análisis de Bodegas
-- V37.19-21 (2026-06-09): auditoría seguridad XSS/CSP + fixes OCR
-
-*Historial pre-junio en _HISTORICO\20260602_MEMORY_completo.md*
-
-*Historial pre-junio en _HISTORICO\20260602_MEMORY_completo.md*
-
----
-
-## 2. URLs DE PRODUCCIÓN
-
-| Panel | URL |
-|---|---|
-| Panel Vendedor | https://ferreteria-oviedo.web.app |
-| Panel Cliente | https://ferreteria-oviedo.web.app/panel-cliente |
-| Panel Admin | https://ferreteria-oviedo.web.app/panel-admin |
-| Firebase Console | https://console.firebase.google.com/project/ferreteria-oviedo |
-| APP-INVENTARIO | https://oviedoem.github.io/APP-INVENTARIO/ |
-
----
-
-## 3. RUTAS CRÍTICAS LOCALES
-
-```
-Proyecto activo:     E:\ferreteria-oviedo\        (E: = particion PROYECTO_E — letra puede variar)
-Git sync (solo):     E:\git-sync\                 (copia sanitizada para GitHub, NO trabajar aqui)
-Historico:           E:\ferreteria-oviedo\_HISTORICO\
-Utilidades equipo:   E:\ferreteria-oviedo\_utilidades\
-Archivo historico:   E:\_ARCHIVO_FERRETERIA\      (FUERA del proyecto — no se sube a git/firebase)
-Bodegas XLSM:        E:\ferreteria-oviedo\BODEGAS\
-Pipeline ventas:     E:\ferreteria-oviedo\VENTAS EL MANZANO\
-Catalogo scripts:    E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts\
-APP-INVENTARIO:      E:\APP-INVENTARIO\
-
-Memory Claude:       CONFIG_W:\claude-config\projects\E--ferreteria-oviedo\memory\
-                     (junction C:\Users\<usuario>\.claude → CONFIG_W:\claude-config\)
-                     Crear/actualizar junction: CONFIG_W:\MONTAR_CLAUDE.ps1
-Git config:          E:\config\gitconfig   (GIT_CONFIG_GLOBAL)
-Git tokens:          E:\config\gcm-store   (DPAPI cifrado)
-OCR config:          E:\config\opencodereview\config.json
-                     (junction C:\Users\<usuario>\.opencodereview → E:\config\opencodereview\)
-
-MD activos raiz:
-  AGENTS.md               E:\ferreteria-oviedo\AGENTS.md
-  MEMORY.md               E:\ferreteria-oviedo\MEMORY.md  (este archivo)
-  MAPA_FLUJO_PROYECTOS.md E:\ferreteria-oviedo\MAPA_FLUJO_PROYECTOS.md
-```
-
-NOTA DISCOS: Las letras de particion varian segun el PC. Identificar siempre por etiqueta:
-- PROYECTO_E → proyecto + config + herramientas portables
-- CONFIG_W   → claude-config (memoria, settings, skills)
-REGLA: Nunca trabajar en E:\git-sync\ directamente.
-
----
-
-## 4. PIPELINE COMPLETO — ACTUALIZAR_TODO.bat
-
-Único punto de entrada del pipeline. No ejecutar pasos individuales fuera de este bat.
-
-```
-PASO 1A  descargar_erp.py
-         → CATALOGO PRODUCTOS\actualizar.xlsx (precios + stock SSRS 2 bloques)
-
-PASO 1B  procesar-actualizacion.py → Datos.xlsx
-         xlsx_a_csv.py → Datos.csv
-         csv_a_json.py → Datos.json (~3.5MB, 6011 productos)
-         CRÍTICO: procesar-actualizacion.py escribe data/catalogo-dinamico.json (señal para main.py)
-
-PASO 1C  leer_xlsm.py (lee VENTAS EL MANZANO/RANKING.xlsm + PRECIOS.xlsm + VENTAS.xlsm)
-         → ventas-xlsm-YYYY.json · ventas-xlsm-sector.json · ranking-unidades.json · precios-diff.json
-         → xlsm-enrich.json (FALLBACK — el primario lo genera PASO 1K desde SQL desde V37.25)
-         NOTA: NO lee BODEGAS/ — eso es exclusivo de descargar_bod.py (PASO 1D)
-
-PASO 1D  descargar_bod.py (BODEGAS/)
-         → data/bod-iem-registros.json (IEM=72)
-         → data/bod-rce-registros.json (RCE=55)
-         → data/bod-cem-registros.json (CEM=24)
-         Si falla → continúa sin detener el pipeline
-
-PASO 1E  descargar_pedidos.py (BODEGAS/)  [reescrito V37.8]
-         Fuente comprometidos: R_STOCK_PRODUCTOS.ST_PEDIDO (oficial ERP)
-         Fuente detalle: M_DOCUMENTOS_DETALLE.CANTIDAD_PENDIENTE > 0, tipos NVM/VMN/VMP
-         → data/pedidos-comprometidos.json
-         → data/pedidos-detalle.json
-
-PASO 1F  descargar_despachos.py (BODEGAS/)  [V37.8]
-         Fuente: BVE/FVE, CANTIDAD_PENDIENTE > 0 (= Fís − Disp)
-         → data/despachos-comprometidos.json
-         → data/despachos-detalle.json
-
-PASO 1G  generar_informe_stock.py (BODEGAS/)
-         Fuente: raw_bloque1/2_*.csv en CATALOGO PRODUCTOS/backups/ (escritos por descargar_erp.py)
-         → data/informe-stock.json
-           { cod: { pem_bod, sem_bod, cem_bod, mem_bod,
-                    pem_ped, sem_ped, cem_ped, mem_ped } }
-         pem_ped = St_DVen + St_Ped de TODAS las sucursales (mas completo que pedidos-comprometidos.json)
-         CRITICO parseo CSV: punto=miles, coma=decimal — igual que regla SSRS en AGENTS.md
-         Si no encuentra ningun CSV: sys.exit(1). BAT captura el error y continua con [AVISO].
-
-PASO 1H  ELIMINADO 2026-08-20. recepciones-pendientes.json y despachos-pendientes-erp.json
-         ahora los genera descargar_despachos.py (PASO 1F) via SQL Server (GRC/GRT/GIB + BVE/FVE).
-         Script original archivado en E:\_ARCHIVO_FERRETERIA\BODEGAS_BLAZOR_20260820\
-
-PASO 1I  fusionar_despachos.py (BODEGAS/) → data/despachos-panel.json (ERP tiempo real + SQL)
-
-PASO 1K  descargar_ventas_enrich.py (BODEGAS/)  [V37.25 — NUEVO]
-         SQL: M_DOCUMENTOS_ENCABEZADO + M_ENTIDADES (RUT/razon) + Encabezado_Observacion (sector)
-         Docs venta BVE/FVE/NCE suc 04, indice por NUMERO
-         → data/xlsm-enrich.json (PRIMARIO — reemplaza generacion desde VENTAS.xlsm manual)
-         rut 0%→100%, razonSocial 0%→100%, sector 0%→~12%
-         REGLA: xlsm-enrich.json lo genera descargar_ventas_enrich.py (SQL) o leer_xlsm.py (fallback), NUNCA main.py
-         (en ACTUALIZAR_TODO_AUTO.bat este paso es 1J; corre ANTES de main.py)
-
-PASO 2   main.py --sin-deploy
-         PASO 1: _catalogo_generado_hoy()? SI → leer_bodegas_desde_actualizar (3s)
-                                           NO → descargar_bodegas HTTP (~70s extra)
-         PASO 2: descargar_ventas_erp.py incremental (dedup por Numero+Codigo)
-         PASO 3: consolidar() — JOIN catálogo + ventas + mapa_cliente
-         PASO 3.5: enriquecer_desde_xlsm() — agrega rut, sector, bodegaCorta, hora, razonSocial
-         PASO 4: guardar_json() → ventas-manzano*.json
-         → ventas-manzano.json (FALLBACK OBLIGATORIO — 4 puntos del panel dependen de él)
-         → ventas-manzano-YYYY.json (anual completo)
-         → ventas-manzano-YYYY-MM.json (mensual, ~200KB)
-
-PASO 3   Pregunta visibilidad precios (10s timeout, default N=ocultos)
-
-PASO 4   firebase deploy --only hosting
-```
-
-SEÑAL ANTI-DOBLE-DESCARGA: `catalogo-dinamico.json` escrito por `procesar-actualizacion.py`.
-`main.py` lo lee como señal. Sin señal → descarga ERP de nuevo (~70s extra). NO modificar.
-
----
-
-## 5. BATS DISPONIBLES
-
-| BAT | Función | Estado |
-|---|---|---|
-| ACTUALIZAR_TODO.bat | Pipeline completo — USAR ESTE | Activo |
-| ACTUALIZAR_TODO_AUTO.bat | Pipeline sin interacción (ejecutar manualmente o tarea programada) | Activo V37.2 |
-| PUBLICAR.bat | Solo firebase deploy | Activo |
-| ACTUALIZAR_GITHUB.bat | Sync git | Activo |
-| VENTAS EL MANZANO\ACTUALIZAR_VENTAS.bat | Solo ventas (llama main.py) | Activo |
-
-BATs en _HISTORICO\ — NO ejecutar:
-`20260523_PREPARAR_Y_PUBLICAR.bat` · `20260523_ACTUALIZAR_AUTO.bat` · `20260530_SUBIR_VENTAS_MANZANO.bat`
-
----
-
-## 6. TAREA PROGRAMADA WINDOWS
-
-FerreteriOviedo-Auto18 eliminada del Task Scheduler (era dependencia del registro de Windows en C:).
-**Reemplazo:** ejecutar `ACTUALIZAR_TODO_AUTO.bat` manualmente o re-registrar en equipo nuevo.
-
----
-
-## 7. BODEGAS EL MANZANO — IDs SQL Y CLASIFICACIÓN (verificado 2026-06-07)
-
-### IDSUCURSAL='04' (El Manzano) — P_BODEGAS confirmado con VPN 2026-06-07
-| Bodega | Nombre completo | IDBODEGA SQL | IdBodega ERP (VisorRS) |
-|--------|----------------|--------------|------------------------|
-| PEM | Patio El Manzano | 22 | 22 |
-| SEM | Sala El Manzano | 13 | 13 |
-| CEM | Calzada El Manzano | 24 | 393 |
-| IEM | Ingreso El Manzano | 72 | 72 |
-| RCE | Recepcion El Manzano | 55 | 55 |
-| TEM | Transito El Manzano | 46 | — |
-| GEM | Gestion El Manzano | 28 | — |
-| RWE | Retiro Web El Manzano | 49 | — |
-| EEM | Exhibicion El Manzano | 83 | — |
-
-### IDSUCURSAL='08' (otra sucursal — usadas como auxiliares El Manzano)
-| Bodega | Nombre completo | IDBODEGA SQL | IdBodega ERP (VisorRS) |
-|--------|----------------|--------------|------------------------|
-| MEM | Mermas El Manzano | 29 | 29 |
-| CD | Centro de Distribucion | 23 | — |
-
-**Notas clave:**
-- EEM (83) = bodega Exhibicion = lo que en _BOD_CORTA se llama 'EXH'. Sin uso en pipeline aún.
-- GEM (28) y RWE (49) son bodegas activas en SUC='04' no usadas en pipeline ni panel.
-- CEM=24 (SQL) y CEM=393 (VisorRS) son AMBOS correctos — sistemas distintos, misma bodega.
-- CAL = nombre antiguo ERP para CEM. CAL→None en _BOD_CORTA desde 2026-06-07.
-- MEM y CD tienen IDSUCURSAL='08', NO '04' — pero se usan en SSRS y cálculos de informe-stock.json.
-- URL_CEM=393 definida en descargar_erp.py pero sin invocación activa.
-
-**Consistencia ERP ↔ SQL verificada 2026-06-07:**
-IEM (IDBODEGA=72): 5 productos comparados entre bod-iem-registros.json y R_STOCK_PRODUCTOS → 100% coincidente.
-CEM XX84502: ERP JSON=40, SQL IDBODEGA=24=40. Consistentes.
-
-NOTA: Los scripts usan MD.DOC string ('BVE','FVE','NVM'...) — NO IDDOCUMENTO numérico.
-Los IDDOCUMENTO en AGENTS.md son referencia documental, no se usan en código.
-Bodegas ELIMINADAS del ERP: CAL (nombre antiguo de Calzada — reemplazado por CEM).
-Alias ERP excluidos en _BOD_CORTA (leer_xlsm.py): CAL→None · SAL→None.
-EXH: activa en _BOD_CORTA ('EXH') desde 2026-06-07 (= EEM IDBODEGA=83) — NO se usa aún en pipeline ni panel.
-
-### BODSTOCK — 8 bodegas, no reducir
-```javascript
-var BODSTOCK = {
-  PEM:'pem', SEM:'sem', CEM:'cem', RCE:'rce',
-  MEM:'mem', TEM:'tem', IEM:'iem', CD:'cd'
-}
-```
-
-### SSRS — bloques de descarga
-- BLOQUE 1 (solo DISP): SEM, CEM, RCE, MEM
-- BLOQUE 2 (DISP+TRANS): PEM, TEM, CD, IEM
-
----
-
-## 7b. ARCHIVOS DE REFERENCIA — FUENTES DE VERDAD
-
-```
-E:\ferreteria-oviedo\BODEGAS\Copia de Movimiento Stock.xlsx
-```
-
-```
-E:\ferreteria-oviedo\BODEGAS\Copia de Movimiento Stock.xlsx
-```
-Hoja activa: **FLUJO ERP** — tabla SUMA/RESTA por documento y campo de stock.
-Es fuente de verdad de las tablas Flujo COMPRA/VENTA/DEVOLUCION en AGENTS.md §FLUJO ERP.
-Hoja **SOLO EJEMPLO NO TOMAR EN CUENTA** → ignorar.
-Usar ante cualquier duda sobre Disp/Fis/Ped/Dif o nuevo menu de stock.
-
-```
-E:\ferreteria-oviedo\_HISTORICO\ID DOC OVIEDO EM.xlsx
-```
-Notas de negocio por IDDOCUMENTO y DOC — quien usa cada documento, si esta activo, flujo real.
-Fuente definitiva para interpretar documentos del ERP. Ver §7c para resumen.
-Usar ante cualquier duda sobre un tipo de documento (activo/obsoleto, efecto en stock).
-
----
-
-## 7c. TIPOS DE DOCUMENTO — verificado 2026-06-07
-Fuentes: M_DOCUMENTOS (SQL) + _HISTORICO\ID DOC OVIEDO EM.xlsx (notas negocio)
-Scripts filtran por MD.DOC string, NO por IDDOCUMENTO numerico.
-
-| Doc | IDDOCUMENTO | Efecto stock | Nota clave |
-|-----|-------------|-------------|------------|
-| VMN | 336 | Pedido UP (Disp DN) | ACTIVO. Reemplaza VMP (210) |
-| VMP | 210 | Pedido UP | SIN USO — reemplazado por VMN |
-| NVM | 205/213 | Pedido UP | Nota de Venta clasica |
-| BVE | 316/605 | Pedido DN + FisDip UP | Pago cliente. 605=WEB |
-| FVE | 35/301/335/601 | Pedido DN + FisDisp UP | Factura. 4 variantes |
-| GME | 308 | Fisico DN + Disp DN | Despacha pendientes |
-| Gdc | 79 | Disp UP (espera NCE) | Devolucion cliente → espera NCE para Fisico |
-| NCE | 304/603 | Fisico UP | Llama a Gdc. Suma al Fisico |
-| GRC | 15/86 | Fisico UP | Llegada de proveedor |
-| GRT | 17/307/701/712/713 | Fisico UP | Traslado recepcion. 17=menu antiguo |
-| GIB | 709 | Fisico UP | Entre bodegas misma tienda |
-| GTS | 711 | Fisico DN | Entre sucursales. Llama a GST |
-| GST | 702/718 | Sin efecto | Solo solicitud. NO mueve stock |
-| GII | 33/606 | Fisico+Disp UP | Ingresa directo |
-| GEI | 34/710 | Fisico+Disp DN | 710=Merma-Gestion (bodega GEM) |
-
-Pipeline pedidos: NVM/VMN/VMP | Pipeline despachos: BVE/FVE
-GBR/GIN/GRN/GRP: en whitelist descargar_bod.py pero NO existen en M_DOCUMENTOS
-
----
-
-## 8. CONEXIÓN SQL SERVER
-
-| Campo | Valor |
-|---|---|
-| IP | [SQL-SERVER-IP] |
-| Base de datos | Foviedo |
-| Driver | pyodbc |
-| Credenciales | E:\ferreteria-oviedo\credenciales_db.ini sección [DB] |
-
-NUNCA mostrar contenido de credenciales_db.ini. NUNCA subir a git.
-
-REGLA CRÍTICA subquery ULT:
-- `WHERE IDBODEGA=?` ANTES del `GROUP BY`
-- JOIN usa `FECHA_EMISION=ULT.ULTIMA_FECHA`, NO `IDDOCUMENTO`
-- `IDDOCUMENTO` = tipo de documento (GRT=17), no ID único de movimiento
-
----
-
-## 9. SCRIPTS PYTHON — QUÉ HACE CADA UNO
-
-| Script | Ubicación | Genera | Notas |
-|---|---|---|---|
-| descargar_erp.py | CATALOGO PRODUCTOS\scripts\ | actualizar.xlsx | SSRS 2 bloques; precios VisorRS |
-| procesar-actualizacion.py | CATALOGO PRODUCTOS\scripts\ | Datos.xlsx + catalogo-dinamico.json | catalogo-dinamico.json = señal main.py |
-| xlsx_a_csv.py | CATALOGO PRODUCTOS\scripts\ | Datos.csv | Lee Datos.xlsx |
-| csv_a_json.py | CATALOGO PRODUCTOS\scripts\ | Datos.json | Lee Datos.csv |
-| actualizar_config_precios.py | CATALOGO PRODUCTOS\scripts\ | — | Visibilidad precios en Firestore |
-| leer_xlsm.py | VENTAS EL MANZANO\ | xlsm-enrich.json | Join por numero; bodegaCorta real desde XLSM |
-| descargar_bod.py | BODEGAS\ | bod-iem/rce/cem-registros.json | SQL Server directo |
-| descargar_pedidos.py | BODEGAS\ | pedidos-comprometidos.json + pedidos-detalle.json | R_STOCK_PRODUCTOS.ST_PEDIDO |
-| descargar_despachos.py | BODEGAS\ | despachos-comprometidos.json + despachos-detalle.json | BVE/FVE pendientes |
-| generar_informe_stock.py | BODEGAS\ | data/informe-stock.json | Stock fisico + comprometido todas sucursales. Fuente: raw_bloque1/2_*.csv (backups/). pem/sem/cem/mem_bod + _ped |
-| main.py | VENTAS EL MANZANO\ | ventas-manzano*.json | Pipeline ventas completo |
-| descargar_ventas_erp.py | VENTAS EL MANZANO\ | ventas_erp_producto_YYYYMMDD.xlsx | Incremental; dedup por (Numero, Codigo) |
-| descargar_ventas_enrich.py | BODEGAS\ | xlsm-enrich.json | **V37.25** SQL: rut/sector/razon desde M_ENTIDADES+Observacion (BVE/FVE/NCE) |
-| descargar_despachos.py (PASO 1F+4+5) | BODEGAS\ | recepciones-pendientes.json + despachos-pendientes-erp.json + despachos-comprometidos.json + despachos-detalle.json | SQL Server M_DOCUMENTOS_DETALLE (sync 22:00) |
-| ~~fusionar_despachos.py~~ | archivado 2026-08-20 | despachos-panel.json nunca consumido por panel | Panel usa despachos-detalle.json (SQL directo) |
-| encriptar_credenciales.py | _utilidades\ | credenciales_db.enc | Utilidad seguridad (no es pipeline; movido V37.25) |
-
----
-
-## 10. JSONs EN data/ — FUENTE Y ROL
-
-| Archivo | Fuente | Tamaño | Rol |
-|---|---|---|---|
-| Datos.json | csv_a_json.py | ~3.5MB | Catálogo productos — cargado una vez, cacheado en sesión JS |
-| catalogo-dinamico.json | procesar-actualizacion.py | ~350KB | Señal Python (mtime) + fallback panel (siempre 404 → usa Datos.json) |
-| ventas-manzano.json | main.py | variable | FALLBACK OBLIGATORIO — 4 puntos del panel dependen de él. NO eliminar |
-| ventas-manzano-YYYY.json | main.py | 2-18MB | Anual completo |
-| ventas-manzano-YYYY-MM.json | main.py | ~200KB | Mensual — carga por defecto |
-| bod-iem-registros.json | descargar_bod.py | pequeño | ~19 registros IEM |
-| bod-rce-registros.json | descargar_bod.py | pequeño | ~10 registros RCE |
-| bod-cem-registros.json | descargar_bod.py | pequeño | registros CEM |
-| pedidos-comprometidos.json | descargar_pedidos.py | pequeño | Totales por bodega |
-| pedidos-detalle.json | descargar_pedidos.py | variable | Documentos de pedido con detalle |
-| despachos-comprometidos.json | descargar_despachos.py | pequeño | Totales BVE/FVE pendientes |
-| despachos-detalle.json | descargar_despachos.py | variable | Documentos BVE/FVE con detalle |
-| xlsm-enrich.json | leer_xlsm.py | variable | Enriquecimiento ventas (rut, sector, hora, razonSocial) |
-
-DOBLE ROL de catalogo-dinamico.json:
-1. Python: procesar-actualizacion.py lo escribe → main.py lee su mtime como señal
-2. Panel: busca en /CATALOGO%20PRODUCTOS/catalogo-dinamico.json → siempre 404 → fallback a Datos.json
-NO mover catalogo-dinamico.json a CATALOGO PRODUCTOS/ — el 404 es comportamiento correcto.
-
----
-
-## 11. VARIABLES JS GLOBALES CLAVE — no renombrar
-
-```
-_vadmLineas       Array registros ventas {codigo, fecha, valorNeto, cantidad, marca, periodo, bodegaCorta}
-_vadmStockMap     Mapa cod → {pem, sem, cem, mem, stock, marca, desc, costo, precio, pem_trans, ...}
-_vadmBodSel       Array de bodegas seleccionadas ([] = todas)
-_vadmVendSel      Array de vendedores seleccionados
-_vadmSSProds      Cache último render sobre-stock — usan email, Excel, Outlook
-_vadmBRDatos      Cache último render baja rotación — idem
-_vadmAnioSel      Año seleccionado ('' = mes actual)
-_vadmSSMesesMin   Cobertura mínima para sobre-stock (default 12)
-```
-
----
-
-## 12. FUNCIONES JS CLAVE — no renombrar ni cambiar firma
-
-```
-vadmCargarLineas()           Carga ventas JSON según _vadmAnioSel
-_vadmCargarStockMap(cb)      Carga Datos.json → _vadmStockMap; cachea — NO llamar si ya existe
-vadmRenderSobreStock()       Render sobre-stock, cobertura en meses
-vadmSSMarcaClick(el)         Toggle filtro marca — usa data-marca, NUNCA string en onclick
-vadmRenderBajaRot()          Render baja rotación + auto-reload si rango > datos cargados
-vadmFiltrarBajaRot()         Re-filtra _vadmBRDatos sin recomputar ABC
-vadmRenderQuiebre()          Render stock quiebre con ABC + Rot.30/60/90d
-vadmRenderImpacto()          Volumen vs Precio: Q y precio prom por vendedor en 2 períodos
-vadmRenderNC()               NC por vendedor desde _vadmLineas
-vadmBuscarStock()            Filtra _vadmStockMap en memoria para Consulta de Stock
-vadmRenderStockConsulta(cod) Ficha detalle de un producto (8 bodegas)
-venAdmParseFecha(s)          Parsea fecha DD/MM/YYYY → timestamp ms — NO cambiar firma
-venAdmFmt(n)                 Formatea número como X.XXX CLP — NO cambiar firma
-vadmDatosFiltrados()         Filtrado central — todas las funciones render deben usarla
-```
-
----
-
-## 13. ARCHIVOS ABSOLUTAMENTE INTOCABLES
-
-| Archivo | Motivo |
-|---|---|
-| firebase-config.js | Configuración SDK Firebase compartida — no modificar nunca desde panel HTML |
-| credenciales_erp.ini | En VENTAS EL MANZANO\ y CATALOGO PRODUCTOS\scripts\ — nunca subir a git |
-| credenciales_db.ini | Credenciales SQL Server — nunca tocar, nunca subir |
-| venAdmParseFecha() | Utility global — no cambiar firma ni comportamiento |
-| venAdmFmt() | Utility global — no cambiar firma |
-| window._mostrarPrecio | Default SIEMPRE false en panel-cliente.html |
-| xlsm-enrich.json | Lo genera descargar_ventas_enrich.py (SQL, primario, V37.25) o leer_xlsm.py (fallback) — NUNCA main.py |
-| ventas-manzano.json | Fallback del panel en 4 puntos — NO eliminar |
-| _catalogo_generado_hoy() | No revertir a _actualizar_xlsx_es_hoy() (eliminada V36.5) |
-
----
-
-## 14. MAPA DE DEPENDENCIAS CRÍTICAS
-
-| Si tocas... | Debes verificar también... |
-|---|---|
-| vadmSubTab(id) | Que id esté en vadmReRenderTabActivo |
-| vadmRenderSobreStock() | _vadmSSProds — lo usan email, Excel y Outlook |
-| vadmRenderBajaRot() | _vadmBRDatos + _vadmLineas cubre el rango de fechas |
-| vadmRenderQuiebre() | _vadmStockMap debe estar cargado |
-| _vadmCargarStockMap() | Cacheada en sesión — NO llamar si ya existe con datos |
-| vadmSSMarcaClick(el) | Usa data-marca del HTML — NUNCA string en onclick |
-| Sidebar HTML | Verificar que grupos siguen colapsando correctamente |
-| onclick="" en botones | NUNCA usar JSON.stringify — rompe con comillas en nombres |
-| descargar_ventas_enrich.py | Genera xlsm-enrich.json desde SQL (primario). Correr ANTES de main.py |
-| leer_xlsm.py | Genera ventas-xlsm/ranking/precios; su xlsm-enrich es fallback si SQL falla |
-| enriquecer_desde_xlsm() | Debe correr DESPUÉS de consolidar() y ANTES de guardar_json() |
-| _catalogo_generado_hoy() | Verifica catalogo-dinamico.json mtime — no revertir |
-| descargar_bod.py | Subquery ULT con WHERE IDBODEGA=? antes del GROUP BY |
-
----
-
-## 15. TABS VERIFICADOS DEL PANEL-ADMIN
-
-```
-ERP:    hora · topMarcas · comparativa · vendrank · marcavend · clientes
-        tipodoc · facturacion · quiebre · sobrestock · transito · merma
-        rankingmarca · estaciones · bajrot · pagoanalisis · pagorankings
-        pagotemporal · entrefechas · arbol · arboltabla · arbolheat · sector
-        stockconsulta (V37.1)
-XLSM:   nc · marcavend2 · preciodiff · mem
-Stubs:  impacto
-Análisis bodegas: analisis (IEM/RCE/CEM con selector bfFuente)
-```
-
-TABS ELIMINADOS (no recrear): `vvsstock` (eliminado V35.0)
-NAVEGACIÓN REAL: `showTab` → `vadmGrupo` → `vadmSubTab`. NO existe `adminShowTab()`.
-
----
-
-## 16. SEGURIDAD FIREBASE
-
-### Reglas Firestore (resumen)
-| Colección | Admin | Cooperador | Vendedor | Cliente | Sin auth |
-|---|---|---|---|---|---|
-| users (read) | SI | lista | propio | propio | NO |
-| users (write) | SI | NO | propio* | propio* | NO |
-| config (read) | SI | SI | SI | SI | sessionConfig |
-| config (write) | SI | NO | NO | NO | NO |
-| cotizaciones | SI | read | read+write | read+write | NO |
-| auditLog (read) | SI | NO | NO | NO | NO |
-| notificaciones | SI | SI | SI | SI (autenticados) | NO |
-
-### Device Binding (autenticación admin)
-- Cada navegador genera ID único en localStorage (clave: ov_device_id)
-- Lista autorizada: config/adminDispositivos.lista en Firestore
-- Administrar: Panel Admin → URL / Conexión → Dispositivos autorizados
-
-### Hosting ignore — bloqueados
-`VENTAS EL MANZANO/` · `backups/` · `.claude/` · `*.ini` · `*.xlsm` · `*.mp4`
-
----
-
-## 17. REGLAS DEL PROYECTO — NO NEGOCIABLES
-
-- Cambios mínimos — no refactorizar, no agregar abstracciones
-- Sin dependencias externas sin autorización
-- Sin renombrar funciones públicas
-- Python: sin tildes, sin emojis, solo ASCII cp1252
-- BATs: guardar en ANSI cp1252
-- Costo cero — plan Spark gratuito Firebase
-- Un prompt = una función tocada
-- Datos reales siempre — nunca hardcode de valores ni datos de ejemplo
-- No pedir confirmación antes de ejecutar si el usuario dijo "ejecuta"
-- No usar cmd /c bat > NUL desde bash → usar PowerShell
-
----
-
-## 18. FLUJO LOGIN — INVARIANTES V36.9k
-
-| Situación | Comportamiento correcto |
-|---|---|
-| Usuario Google nuevo (!snap.exists) | Crear doc /users con creadoPor:'google' — NUNCA signOut sin crear |
-| Usuario pendiente (registroAprobado=false) | code:'pendiente' — NUNCA code:'noregistrado' |
-| Registro deshabilitado | Bloquear, code:'noregistrado' — único caso válido |
-| Usuario bloqueado | signOut + mensaje claro |
-
----
-
-## 19. CHECKLIST POST-CAMBIO
-
-```
-[ ] Función modificada recibe los mismos parámetros de entrada
-[ ] Variables globales que usaba siguen existiendo con el mismo nombre
-[ ] El tab que la invoca sigue en vadmReRenderTabActivo
-[ ] Filtro _vadmBodSel sigue afectando el resultado (stock Y ventas)
-[ ] No se hardcodeó ningún valor que debe venir de datos reales
-[ ] No se renombró ninguna función pública
-[ ] window._mostrarPrecio = false sigue siendo default en panel-cliente.html
-[ ] xlsm-enrich.json sigue siendo generado por leer_xlsm.py (no main.py)
-[ ] _catalogo_generado_hoy() no fue revertida
-[ ] ventas-manzano.json sigue siendo generado por guardar_json() en main.py
-[ ] Subquery ULT en descargar_bod.py tiene WHERE IDBODEGA=? antes del GROUP BY
-[ ] Deploy ejecutado y "Deploy cierre sesión" en AGENTS.md actualizado
-[ ] ACTUALIZAR_GITHUB.bat ejecutado con descripción del cambio
-```
-
----
-
-## 20. CÁLCULOS — METODOLOGÍA (referencia rápida)
-
-### Velocidad de venta
-```
-velocidad_dh = unidades_vendidas_periodo / dias_habiles_periodo
-cobertura_dh = stock_actual / velocidad_dh
-```
-Días hábiles = Lun-Sab que NO sean feriados chilenos. `_vadmDiasHabiles()` nunca retorna 0.
-
-### ABC Pareto
-A: top 80% valor ventas · B: 81-95% · C: 96-100% · D: sin ventas
-
-### Sobre-stock (cobertura en meses)
-```
-velMes = qty_vendida_periodo / nMeses_cargados
-cobMeses = stock / velMes   (si velMes=0 → cobMeses=999 = Sin venta)
-```
-Colores: rojo=999 · naranja>=24m · amarillo>=12m.
-
----
-
-*MEMORY.md consolidado 2026-06-05*
-*Historial completo pre-junio: _HISTORICO\20260602_MEMORY_completo.md*
-*Para actualizar: editar directamente este archivo al cierre de cada sesión.*
+## Índice de memoria — proyecto E:\ferreteria-oviedo
+
+### Estado de sesión (recientes)
+- [estado-sesion-20260822](estado-sesion-20260822.md) — V37.58: pipeline TODO2 22-08 OK, fix rotar_token despachos-panel, análisis TRIM confirmado OK, docs actualizados, commit f838206.
+- [estado-sesion-20260820d](estado-sesion-20260820d.md) — V37.58: SQL reemplaza Blazor definitivo, fusionar_despachos.py archivado (código muerto), modDespachosPend.bas creado, limpieza docs completa. Deploy+commit 8acd3cd.
+- [estado-sesion-20260820c](estado-sesion-20260820c.md) — TODO2.bat OK, descargar_blazor_api.py creado (REST puro), BOM+URL ERP fix, TOKEN renovado. Bug JustTime: P_CONTROL_BODEGAS sin permisos cloud.
+- [estado-sesion-20260820b](estado-sesion-20260820b.md) — FO_SQL_DATOS.xlsm creado+corregido (Error 3704 fix: CopyFromRecordset+adOpenStatic), XLSM=1ra fuente SQL, Python=fallback. Pendiente: probar BAJAR TODO + pipeline.
+- [estado-sesion-20260820](estado-sesion-20260820.md) — Fix búsqueda Consulta de Stock (AND tokens+tildes+dimensiones), datalist sugerencias HTML5, proteger Datos.json en deploy (PASO 4 bat).
+- [estado-sesion-20260818b](estado-sesion-20260818b.md) — Ventas 18-08 OK (57.460 reg), OCR descartado de docs, Litueche removido, panel-admin sin errores, commit 598b0a2.
+- [estado-sesion-20260818](estado-sesion-20260818.md) — Deploy 17-08 OK (bodegas/stock frescos, ventas 11-08), TOKEN_RECEPCION actualizado, seguridad gitignore, commit 489d715.
+- [estado-sesion-20260817](estado-sesion-20260817.md) — Análisis ERP vs SQL: 24 scripts inventariados, ERP_SIN_SQL_SOLUCION.md creado con plan de implementación por prioridad. CONOCIMIENTO DEL NEGOCIO\ centralizado.
+- [estado-sesion-20260813](estado-sesion-20260813.md) — ISABEL RIQUELME: pipeline ERP 5 sucursales (9858 reg), 3 bugs corregidos (cache:{no-store}, SW v5, bodegasIncluidas), 3 commits GitHub Pages. Commit activo: 327dbeb.
+- [estado-sesion-20260809](estado-sesion-20260809.md) — V37.57 Pipeline OK: ventas 55733 reg hasta 08-08, token rotado 262ca37c, deploy 20:18, commit 4b7adca. PASO 1A SSRS y PASO 1H Blazor fallaron (pendientes).
+- [estado-sesion-20260731](estado-sesion-20260731.md) — V37.57 Fix validar_jsons kind=wrapped optional, julio completo (28-31), deploy 14:02, commit 0f93e6f. Pendiente: pipeline 18:30+.
+- [estado-sesion-20260725](estado-sesion-20260725.md) — V37.57 Token 7fc97930 activo, auto-renovación TOKEN_RECEPCION implementada en blazor_bodegas.py V1.1, ERP=Blazor Web WASM documentado.
+- [estado-sesion-20260723](estado-sesion-20260723.md) — V37.57 Renovación TOKEN_RECEPCION + fix validar_jsons lista vacía opcional + pipeline 52.536 ventas, 40 despachos, deploy 11:55. Commit pendiente verificar.
+- [estado-sesion-20260720](estado-sesion-20260720.md) — V37.57 Sesión completa 20-07: 2 pipelines (13:48+18:34), 51.907 ventas, fix PASO 1K goto labels, CLAVE NUEVA.txt eliminada, docs sync E:/W:, commit d69d3ae. Pendiente: renovar TOKEN_RECEPCION.
+- [estado-sesion-20260715b](estado-sesion-20260715b.md) — V37.57 CIERRE: headless=False Blazor (intervención manual token vencido), deploy 21:17, commit bf90036. TOKEN_RECEPCION pendiente renovar.
+- [estado-sesion-20260715](estado-sesion-20260715.md) — V37.57 Fix OCR warnings Blazor: IP real movida a credenciales + token masked en exception log. Pendientes 1/2 OK. ESTADO_PROYECTO actualizado.
+- [estado-sesion-20260706](estado-sesion-20260706.md) — V37.57 Pipeline completo 06-07: renovar token, main.py ventas, fix validar_jsons schema (3 errores), fix firebase.json predeploy ruta absoluta. Deploy 22:29, commit fb4f30d.
+- [estado-sesion-20260703d](estado-sesion-20260703d.md) — V37.57 Agentes multi-proyecto: CLAUDE.md+skills 6 proyectos, Tutoriales/Mejoras panel actualizados (37/45 ok 82%), deploy 20:38, commit 3fab754.
+- [estado-sesion-20260703c](estado-sesion-20260703c.md) — V37.57 Fix PASO 1H Blazor: 90s sin reload + route.continue_() + selector substring. Pipeline OK, deploy 19:45, commit a01149d.
+- [estado-sesion-20260703b](estado-sesion-20260703b.md) — V37.57 Rediseño iconos sidebar v4: 38 SVG symbols, .tag kraft, 35 nav-btn + 22 vadm-stab, auditoría Paperclip 57/57. Deploy hecho 15:06.
+- [estado-sesion-20260703](estado-sesion-20260703.md) — V37.56 Fix seguridad: token rotativo glob dinámico (julio público), XSS FO-002 venAdmEsc(bk), CLAUDE.md skills, sync W:. Deploy pendiente.
+- [estado-sesion-20260701n](estado-sesion-20260701n.md) — V37.55 OC Pendiente desde SQL CERRADO: descargar_oc_pendientes.py (PASO 1N, 387 OCs/670 códigos), columna OC Pend en Solicitud Semanal (tras Stock actual, email intacto), oc_pend en _vadmStockMap con cb idempotente, whitelist rotar_token +2 (el plan lo omitía). Verificado en preview + prod badge V37.55. OCR 14/14. Deploy 22:37, commit 988dd73. Pendiente: ver columna con login real + 2 fixes OCR blazor heredados
+- [estado-sesion-20260701m](estado-sesion-20260701m.md) — PASO 1H RECUPERADO con 3 workarounds en descargar_blazor_bodegas.py (CORS --disable-web-security + reescritura localhost:6969→host real + reintentos SignalR). recepciones=7, despachos-panel=35. V37.54 CERRADO: deploy datos+badge, commits e0dd33f+cce444e, OCR $0 sin errores. Pendiente: reportar server ERP a JustTime + 2 warnings OCR (IP fallback + token en log)
+- [estado-sesion-20260701l](estado-sesion-20260701l.md) — ACTUALIZAR_TODO OK (venta final del día, deploy 18:27, token rotado). PASO 1H Blazor cayó: causa raíz REAL = CORS del servidor WsApi ERP (no Defender/token); tab Por Recepcionar vacío. Docs E/W a V37.53. Pendiente decidir fix A (JustTime) vs B (--disable-web-security)
+- [estado-sesion-20260701k](estado-sesion-20260701k.md) — El fix sticky headers de sesiones anteriores NUNCA funcionó de verdad (solo verificado con computedStyle). Causa raíz real encontrada y corregida (wrappers overflow-x:auto secuestran el containing block). V37.53
+- [estado-sesion-20260701j](estado-sesion-20260701j.md) — Sticky headers extendidos a TODOS los menús (18 tab-pane + 34 vadm-section), excepciones en 4 modales con scroll propio. V37.52
+- [estado-sesion-20260701i](estado-sesion-20260701i.md) — Informe Stock: encabezados sticky (position:sticky;top:60px) para que no desaparezcan al hacer scroll
+- [estado-sesion-20260701h](estado-sesion-20260701h.md) — Informe Stock: Dif fantasma por Disp desactualizado (Excel manual actualizar.xlsx) vs Fisico ya correcto (SQL/SSRS); se prioriza SQL. V37.51. Resumen de los 5 fixes en cadena del día
+- [estado-sesion-20260701g](estado-sesion-20260701g.md) — Análisis de Bodegas ocultaba stock negativo por completo (GEM/CEM aceptan negativo por diseño ERP); corregido, se muestra en rojo con Valorizado negativo
+- [estado-sesion-20260701f](estado-sesion-20260701f.md) — Bug real corregido: JOIN por sucursal en descargar_bod.py causaba fecha/días incorrectos en TEM (y latente en GEM). R_STOCK_PRODUCTOS se actualiza 1x/día (~22:00), no en tiempo real
+- [estado-sesion-20260701e](estado-sesion-20260701e.md) — Fix real: GEM/TEM sin datos porque data/*.json vive tras carpeta-token rotativa no whitelisteada; corregido + verificado en producción
+- [estado-sesion-20260701d](estado-sesion-20260701d.md) — Análisis de Bodegas: agregadas GEM+TEM (6 bodegas). ESTADO_PROYECTO.md/AGENTS.md puestos al día. V37.50, commit e7de37b
+- [estado-sesion-20260701c](estado-sesion-20260701c.md) — Fix historial Solicitud Stock: exporta base completa (no solo enviados) + guarda mínimo/repos solicitados al enviar. V37.49
+- [estado-sesion-20260701b](estado-sesion-20260701b.md) — Fix login: dataAccessToken vencido deslogueaba sin mensaje en admin/vendedor; pipeline re-corrido + mensaje visible. Commit 2382545
+- [estado-sesion-20260701](estado-sesion-20260701.md) — Base ampliada +1.716 códigos sin mínimo/repos ERP; migración mapa→subcolección Firestore por límite de índices. V37.48
+- [estado-sesion-20260630f](estado-sesion-20260630f.md) — Solicitud de Stock: base Firestore PEM(224)+SEM(573)=797 códigos, tracking envíos, historial Excel. V37.47
+- [estado-sesion-20260630e](estado-sesion-20260630e.md) — Fix bug vendedores=0 al navegar a Análisis. _vadmAplicarDatos omitía campo vendedor. Commit 19fae2a
+- [estado-sesion-20260630d](estado-sesion-20260630d.md) — CIERRE DEFINITIVO: PASO 1H resuelto TOKEN directo, pipeline 18:00 OK, deploy V37.46, docs E/C/W actualizados
+- [estado-sesion-20260630c](estado-sesion-20260630c.md) — PASO 1A bloqueado: Playwright bloqueado por FortiShield (no Defender), requests SI funciona, falta capturar export CSV
+- [estado-sesion-20260630b](estado-sesion-20260630b.md) — Traspasos CD: prioridad 4 capas + filtro keyword portabilidad + badge visual. Deploy V37.46
+- [estado-sesion-20260630](estado-sesion-20260630.md) — Traspasos CD: filtro bodega PEM/SEM/CD + checkboxes ranking + Solicitar manual + export solo con cantidad. Deploy V37.45
+- [estado-sesion-20260628e](estado-sesion-20260628e.md) — XSS vadmBuscarStock/csVerDesgloseMarca corregido, Playwright PATH seteado, excepción Defender PASO 1A aplicada. V37.43
+- [estado-sesion-20260628d](estado-sesion-20260628d.md) — Consulta de Stock con tránsito por bodega/marca, fix XSS, plano HTML actualizado. V37.42
+- [estado-sesion-20260628c](estado-sesion-20260628c.md) — Traspasos CD→PEM/SEM implementado (ST_MAX ERP por bodega), porBodega en stock-critico.json. V37.30
+
+- [prompt-siguiente-proyecto-xlsm](prompt-siguiente-proyecto-xlsm.md) — Prompt listo para adoptar modelo XLSM+VBA+SQL en otro proyecto (sin mezclar con FO)
+- [feedback-no-editar-sin-autorizacion](feedback-no-editar-sin-autorizacion.md) — REGLA PERMANENTE: no editar/crear/borrar ningún archivo sin autorización explícita en cada sesión
+
+### Feedback — reglas activas (NO eliminar)
+- [feedback-bodegas-gestion-bodegasIncluidas](feedback-bodegas-gestion-bodegasIncluidas.md) — REGLA: bodegasIncluidas debe ser array de {simbolo,nombre} — nunca null — o la tabla muestra 0 filas
+- [feedback-proyectos-separados-ferresystem-sql](feedback-proyectos-separados-ferresystem-sql.md) — REGLA: FerreSystem, SQL, bodegas-gestion, LITUECHE y E:\CONOCIMIENTO DEL NEGOCIO\ son proyectos/carpetas separados — nunca mezclar con este proyecto sin autorización explícita
+- [feedback-open-code-review-deprecado](feedback-open-code-review-deprecado.md) — REGLA: /open-code-review deprecado; usar /revisar-codigo o /paperclip-revision-costo-cero
+- [feedback-validar-jsons-schema-formato](feedback-validar-jsons-schema-formato.md) — REGLA: si deploy bloqueado por validar_jsons, revisar formato real del JSON antes de asumir fallo del script
+- [feedback-verificar-sticky-con-scroll-real](feedback-verificar-sticky-con-scroll-real.md) — REGLA: verificar position:sticky con scroll real + screenshot, nunca solo con getComputedStyle
+- [feedback-protocolo-sesion](feedback-protocolo-sesion.md) — REGLA PERMANENTE: TOCO+anti-regresión+safe change+AGENTS.md activos en TODA sesión automáticamente
+- [feedback-no-correr-rotar-token-aislado](feedback-no-correr-rotar-token-aislado.md) — REGLA CRÍTICA: nunca correr rotar_token_data.py aislado, borra carpeta de token anterior con todos los datos
+- [feedback-datos-erp-aislamiento-estricto](feedback-datos-erp-aislamiento-estricto.md) — REGLA CRÍTICA: en sesión DATOS ERP jamás tocar E:\ferreteria-oviedo\ — ni commits, ni grep, ni panel-admin
+- [feedback-seguridad-repo](feedback-seguridad-repo.md) — REGLA: nunca IPs reales ni tokens en repo público; placeholders obligatorios antes de todo commit
+- [feedback-no-extraer-credenciales-encubierto](feedback-no-extraer-credenciales-encubierto.md) — REGLA SEGURIDAD: nunca extraer/descifrar credenciales evitando alertas (caso Pypykatz)
+- [feedback-no-exponer-credenciales-en-acciones](feedback-no-exponer-credenciales-en-acciones.md) — REGLA: nunca pasar usuario/clave/token en llamadas de herramienta visibles
+- [feedback-actualizar-badge-version-solo-al-cerrar-sesion](feedback-actualizar-badge-version-solo-al-cerrar-sesion.md) — REGLA: badge versión solo al CERRAR sesión, nunca en cada mejora
+- [feedback-bat-encoding-ansi](feedback-bat-encoding-ansi.md) — REGLA: archivos .bat siempre en ANSI CP1252 con PowerShell+GetEncoding(1252)
+- [feedback-probar-fetch-externo-en-navegador](feedback-probar-fetch-externo-en-navegador.md) — REGLA: fetch() a dominio externo SIEMPRE probar en navegador real — CSP de firebase.json solo bloquea ahí
+- [feedback-verificar-codigo-en-prompts-detallados](feedback-verificar-codigo-en-prompts-detallados.md) — REGLA: código literal en prompts puede traer bugs — verificar antes de aplicar
+- [feedback-revisar-referencias-antes-de-investigar](feedback-revisar-referencias-antes-de-investigar.md) — REGLA: revisar IDS_REFERENCIA.md y .xlsx ANTES de investigar con agentes
+- [feedback-no-usar-c](feedback-no-usar-c.md) — REGLA: nunca usar C: para el proyecto; confirmar antes de borrar cualquier registro en C:
+- [feedback-archivos-respaldo-fuera-proyecto](feedback-archivos-respaldo-fuera-proyecto.md) — REGLA: respaldos/temporales → E:\ferreteria-oviedo\_ARCHIVO_FERRETERIA, nunca dentro del proyecto
+- [feedback-rutas-activas-e-w](feedback-rutas-activas-e-w.md) — REGLA: E: y W: son rutas activas; L: es solo respaldo, nunca cambiar configs a L:
+- [feedback-ejecucion-bats](feedback-ejecucion-bats.md) — BATs en background con output visible; usuario puede chatear sin interrumpir
+- [feedback-orientacion-sesion-nueva](feedback-orientacion-sesion-nueva.md) — REGLA: leer archivos reales al inicio, declarar scope, ejecutar pendientes sin preguntar
+- [feedback-proactividad-analisis](feedback-proactividad-analisis.md) — REGLA: al analizar pipeline revisar TODAS las carpetas; ejecutar consecuencias obvias sin preguntar
+- [feedback-docs-copy-paste-sin-placeholders](feedback-docs-copy-paste-sin-placeholders.md) — Guías para el dueño deben resolver la letra de disco en el comando mismo, sin placeholders
+
+- [fix-validar-jsons-lista-vacia-opcional](fix-validar-jsons-lista-vacia-opcional.md) — Fix 23-07: lista vacía + optional=True → OMITIDO (no ERROR); método renovar TOKEN_RECEPCION con Chrome --disable-web-security
+
+### Referencia técnica — proyecto
+- [traslados-entre-sucursales-protocolo](traslados-entre-sucursales-protocolo.md) — TEM/TCD=crossdock SOLO Casa Matriz/Santiago; INGRESO (IEM/ICD)=transitoria destino; flujo GRC→GTS→GIB sin despacho automático; GTS/GIB sin origen OC → excluidos de oc-leadtime por diseño
+- [sql-stock-calculos-formulas](sql-stock-calculos-formulas.md) — Fórmulas stock SQL (St_Disp/St_Bod/Ped), parseo CSV SSRS, flujos COMPRA/VENTA/DEVOLUCION, IDs bodegas
+- [erp-reportes-mapeados](erp-reportes-mapeados.md) — 12 reportes JustWeb mapeados: columnas, IDs El Manzano, métodos acceso, origen ST_MIN/MAX/CRITICO
+- [cuentas-identidad](cuentas-identidad.md) — Mapa cuentas: agonzalez=ERP, alejandrog45@gmail.com=Firebase Auth, ferreteriaoviedo.elmanzano=GitHub+Firebase consola
+- [arquitectura-discos](arquitectura-discos.md) — Identificar SIEMPRE por etiqueta de volumen (PROYECTO_E/CONFIG_W); cutover 22-06 completado
+- [cutover-claude-config-completado](cutover-claude-config-completado.md) — W: es canónico/real, C: es duplicado intencional (sync W→C con SYNC_W_A_C.bat)
+- [seguridad-carpeta-aleatoria-datos](seguridad-carpeta-aleatoria-datos.md) — Fix fuga datos públicos: carpeta nombre aleatorio rotativo; rotar_token_data.py gestiona la rotación
+- [conocimiento-materiales-construccion-chile](conocimiento-materiales-construccion-chile.md) — siding metálico=META005 (no SIDI0005=plástico), equivalencias OSB/Volcanita/Metalcon/Cemento
+- [reglas-negocio-stock](reglas-negocio-stock.md) — Códigos XX excluidos de merma; reposición PEM/SEM solo si CD=0
+- [reglas-negocio-cem](reglas-negocio-cem.md) — CEM acepta stock negativo por diseño; excluir de stock crítico siempre
+- [bug-dedup-ventas-erp-perdia-lineas](bug-dedup-ventas-erp-perdia-lineas.md) — FIX 26-06: dedup Numero+Codigo perdía líneas repetidas (~1.4% venta); corregido en descargar_ventas_erp.py
+- [bug-dataaccesstoken-vencido-logout-silencioso](bug-dataaccesstoken-vencido-logout-silencioso.md) — dataAccessToken TTL 8h; si vence, admin/vendedor se desloguean sin mensaje (ya tiene fix visible)
+
+- [blazor-rest-api-endpoints](blazor-rest-api-endpoints.md) — REST API wsapi.justtime.cl despachos/recepciones, X_API_KEY, bug P_CONTROL_BODEGAS pendiente JustTime
+
+### Referencia técnica — infraestructura
+- [forticlient-disco-e-emergencia](forticlient-disco-e-emergencia.md) — FortiShield bloquea disco USB; fix v3: Stop-FortiUSBmon + fltmc detach + REMONTAR_DISCO_E.ps1
+- [git-credential-fix](git-credential-fix.md) — helper=manager; tokens DPAPI en E:\config\gcm-store
+- [python-portable-reparado](proyecto-python-portable-reparado.md) — Python portable en E:\python-portable; python311.dll+zip, paquetes, playwright
+- [firebase-token-backup](firebase-token-backup.md) — Token Firebase en E:\config (DPAPI enc)
+- [claude-mobile-config](claude-mobile-config.md) — App Claude Android: login Google (ferreteriaoviedo.elmanzano@gmail.com)
+- [referencia-netlify-vendedorpro-coach](referencia-netlify-vendedorpro-coach.md) — Netlify CLI LOCAL en node_modules\.bin\netlify.cmd, no en npm-global
+- [justime-c-fix-com-y-defender](justime-c-fix-com-y-defender.md) — Fix Justime: reg.bat path COM/OCX + Defender Network Protection bloqueaba WS ERP
+- [justime-c-fix-truedbgrid-activex](justime-c-fix-truedbgrid-activex.md) — Justime C: ActiveX JustEDocumentos+TrueDBGrid sin registrar; fix copiando runtime desde D
