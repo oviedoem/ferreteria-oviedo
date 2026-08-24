@@ -49,6 +49,10 @@
 - [prompt-siguiente-proyecto-xlsm](prompt-siguiente-proyecto-xlsm.md) — Prompt listo para adoptar modelo XLSM+VBA+SQL en otro proyecto (sin mezclar con FO)
 - [feedback-no-editar-sin-autorizacion](feedback-no-editar-sin-autorizacion.md) — REGLA PERMANENTE: no editar/crear/borrar ningún archivo sin autorización explícita en cada sesión
 
+- [feedback-anti-regresion-datos](feedback-anti-regresion-datos.md) — Checklist anti-regresión: bot, cotizador, JSONs fuera de git, archivos temp basura
+
+- [feedback-sesiones-cortas-enfocadas](feedback-sesiones-cortas-enfocadas.md) — REGLA PERMANENTE: una tarea por sesión — el contexto crece con cada herramienta, sesiones largas pierden coherencia
+
 ### Feedback — reglas activas (NO eliminar)
 - [feedback-bodegas-gestion-bodegasIncluidas](feedback-bodegas-gestion-bodegasIncluidas.md) — REGLA: bodegasIncluidas debe ser array de {simbolo,nombre} — nunca null — o la tabla muestra 0 filas
 - [feedback-proyectos-separados-ferresystem-sql](feedback-proyectos-separados-ferresystem-sql.md) — REGLA: FerreSystem, SQL, bodegas-gestion, LITUECHE y E:\CONOCIMIENTO DEL NEGOCIO\ son proyectos/carpetas separados — nunca mezclar con este proyecto sin autorización explícita
