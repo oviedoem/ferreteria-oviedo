@@ -75,7 +75,7 @@ robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
   AGENTS.md MEMORY.md ESTADO_PROYECTO.md CLAUDE.md ^
   RESUMEN_TECNICO_MIGRACION_E.md MAPA_FLUJO_PROYECTOS.md ^
   .gitignore OCR_REVIEW.bat ^
-  ACTUALIZAR_GITHUB.bat ACTUALIZAR_TODO.bat ACTUALIZAR_TODO_AUTO.bat PUBLICAR.bat ^
+  ACTUALIZAR_GITHUB.bat ACTUALIZAR_TODO.bat ACTUALIZAR_TODO2.bat ACTUALIZAR_TODO_AUTO.bat PUBLICAR.bat ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo\.opencodereview" "E:\git-sync\.opencodereview" ^
@@ -92,6 +92,10 @@ robocopy "E:\ferreteria-oviedo\BODEGAS" "E:\git-sync\BODEGAS" ^
 
 robocopy "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts" "E:\git-sync\CATALOGO PRODUCTOS\scripts" ^
   descargar_erp.py ^
+  /XO /NP /NJH /NFL
+
+robocopy "E:\ferreteria-oviedo\VENTAS EL MANZANO" "E:\git-sync\VENTAS EL MANZANO" ^
+  descargar_ventas_erp.py main.py ^
   /XO /NP /NJH /NFL
 
 :: ============================================================
