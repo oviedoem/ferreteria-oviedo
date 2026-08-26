@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.58 · Última actualización: 2026-08-22
+# Versión activa: V37.58 · Última actualización: 2026-08-26
 
 ---
 
@@ -298,6 +298,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - V37.58 (2026-08-20): FO_SQL_DATOS.xlsm creado (Error 3704 fix); XLSM=1ra fuente SQL; fix búsqueda stock AND+tildes+datalist
 - V37.58 (2026-08-22): pipeline TODO2 OK; fix rotar_token despachos-panel; TRIM análisis confirmado OK; docs synced
 - V37.58 (2026-08-24): fix duplicados ventas (dedup cli + sync fechas delta); JSONs datos negocio excluidos git
+- V37.58 (2026-08-26): Blazor→SQL completado; pipeline ACTUALIZAR_TODO OK (244 archivos deploy 16:54); pipeline-datos-mapa.html actualizado (Playwright→SQL en docs); limpieza proyecto: carpetas Blazor archivadas, 36 CSVs backups pre-20260817 archivados, 8 CSVs/archivos _utilidades archivados; commit 955f87a
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
 ### APP-INVENTARIO (proyecto separado)

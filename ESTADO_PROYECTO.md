@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
 # Version activa: V37.58
-# Fecha: 2026-08-22
+# Fecha: 2026-08-26
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -13,10 +13,10 @@
 | Campo | Valor |
 |---|---|
 | Version | V37.58 |
-| Fecha | 2026-08-22 |
-| Deploy | ✅ 13:30 (datos al 22-08-2026, ACTUALIZAR_TODO2.bat, 236 archivos) |
-| Commit | pendiente esta sesión |
-| Pendiente | — (verificado 2026-08-25: modFO ya usa LeerIni() desde credenciales_db.ini, fix aplicado) |
+| Fecha | 2026-08-26 |
+| Deploy | ✅ 16:54 (datos al 26-08-2026, ACTUALIZAR_TODO.bat, 244 archivos) |
+| Commit | 955f87a (pipeline-datos-mapa.html Playwright→SQL) |
+| Pendiente | — |
 
 ---
 
