@@ -4004,7 +4004,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.58<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">20-08-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.59<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">26-08-2026</span></div>
 
 <script>
 
@@ -8591,8 +8591,8 @@ function vadmCargarLineas(){
               _vadmAplicarDatos(arr, status, 'Firestore');
             })
             .catch(function(e){
-              status.textContent='❌ Sin datos: '+e.message; status.style.color='#dc2626';
-              if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos de ventas disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos de ventas y subirlos a Hosting.</div>';
+              status.textContent='❌ Error: '+e.message; status.style.color='#dc2626';
+              if(body) body.innerHTML='<div class="ven-adm-empty">Error: '+venAdmEsc(e.message)+'</div>';
             });
         });
     });
@@ -9503,7 +9503,7 @@ function venAdmCargar(){
     })
     .catch(function(){
       // 3. Fallback a Firestore (sin límite de 1000)
-      if(!window.db){ if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos de ventas.</div>'; return; }
+      if(!window.db){ if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos disponibles.</div>'; return; }
       var query = window.db.collection('ventas');
       if(vendedor) query = query.where('vendedor','==',vendedor);
       query.get().then(function(snap){
@@ -9516,7 +9516,7 @@ function venAdmCargar(){
         filtrados.sort(function(a,b){ return (parseInt(b.numero)||0)-(parseInt(a.numero)||0); });
         _mostrar(filtrados);
       }).catch(function(e){
-        if(body) body.innerHTML = '<div class="ven-adm-empty">Sin datos de ventas disponibles.<br>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> para generar los datos de ventas y subirlos a Hosting.</div>';
+        if(body) body.innerHTML = '<div class="ven-adm-empty">Error al cargar: '+venAdmEsc(e.message||'')+'</div>';
       });
     });
 }
@@ -18487,8 +18487,12 @@ function vadmFiltrarBodFem(){
     var dispSt=(r.disp||0)<0?'color:#dc2626;font-weight:700':'';
     var fisSt=(r.fisico||0)<0?'color:#dc2626;font-weight:700':'font-weight:600';
     var valSt=val<0?'color:#dc2626;font-weight:700':'font-weight:600';
-    return '<tr style="'+bg+'">'
-      +'<td style="padding:6px 10px;font-weight:600">'+_bfEsc(r.bodega||'')+'</td>'
+    var hasGRT=r.documentosGRT&&r.documentosGRT.length>1;
+    var chevron=hasGRT?'<span id="bfgrt_ico_'+i+'" style="display:inline-block;width:14px;margin-right:3px;color:#6366f1;cursor:pointer;font-size:10px;user-select:none">▶</span>':'';
+    var trStyle=bg+(bg?';':'')+(hasGRT?'cursor:pointer':'');
+    var trClick=hasGRT?' onclick="window._bfToggleGRT('+i+')"':'';
+    var mainRow='<tr style="'+trStyle+'"'+trClick+'>'
+      +'<td style="padding:6px 10px;font-weight:600">'+chevron+_bfEsc(r.bodega||'')+'</td>'
       +'<td style="padding:6px 10px;font-weight:600">'+_bfEsc(r.tipoDoc||'')+'</td>'
       +'<td style="padding:6px 10px;text-align:right;font-family:monospace">'+_bfEsc(r.folio||'')+'</td>'
       +'<td style="padding:6px 10px;font-family:monospace;font-size:11px">'+_bfEsc(r.codigoTecnico||'')+'</td>'
@@ -18502,12 +18506,43 @@ function vadmFiltrarBodFem(){
       +'<td style="padding:6px 10px;text-align:right;'+valSt+'">'+(val!==0?venAdmFmt(val):'—')+'</td>'
       +'<td style="padding:6px 10px;color:#6b7280;font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_bfEsc(r.observacion||'')+'">'+_bfEsc(r.observacion||'')+'</td>'
       +'</tr>';
+    var subRows='';
+    if(hasGRT){
+      subRows=r.documentosGRT.map(function(g){
+        var gd=g.diasAntiguedad!=null?g.diasAntiguedad:'—';
+        var gdc='';
+        if(typeof gd==='number'){ if(gd>=90) gdc='color:#dc2626;font-weight:700'; else if(gd>=30) gdc='color:#d97706;font-weight:600'; }
+        return '<tr data-bfgrt="'+i+'" style="display:none;background:#eef2ff">'
+          +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe;border-left:3px solid #6366f1"><span style="color:#6366f1;font-size:9px;margin-left:4px">└</span></td>'
+          +'<td style="padding:3px 10px;font-size:11px;color:#4f46e5;font-weight:600;border-top:1px solid #c7d2fe">'+_bfEsc(g.tipoDoc||'')+'</td>'
+          +'<td style="padding:3px 10px;text-align:right;font-family:monospace;font-size:11px;border-top:1px solid #c7d2fe">'+_bfEsc(g.folio||'')+'</td>'
+          +'<td colspan="2" style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;text-align:right;font-weight:700;font-size:12px;color:#374151;border-top:1px solid #c7d2fe">'+g.cantidad+'</td>'
+          +'<td colspan="2" style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;text-align:center;white-space:nowrap;font-size:11px;border-top:1px solid #c7d2fe">'+_bfEsc(g.fechaRegistro||'')+'</td>'
+          +'<td style="padding:3px 10px;text-align:right;font-size:11px;'+gdc+';border-top:1px solid #c7d2fe">'+gd+'</td>'
+          +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;font-size:11px;color:#6b7280;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-top:1px solid #c7d2fe" title="'+_bfEsc(g.observacion||'')+'">'+_bfEsc(g.observacion||'')+'</td>'
+          +'</tr>';
+      }).join('');
+    }
+    return mainRow+subRows;
   }).join('');
   document.getElementById('bfTfoot').innerHTML='<tr style="background:#1a1d3a;color:white;font-weight:700">'
     +'<td colspan="11" style="padding:8px 10px;text-align:right;font-size:12px">TOTAL VALORIZADO ('+fil.length+' registros)</td>'
     +'<td style="padding:8px 10px;text-align:right;font-size:13px">'+venAdmFmt(totalVal)+'</td>'
     +'<td></td></tr>';
 }
+
+window._bfToggleGRT = function(i){
+  var rows=document.querySelectorAll('[data-bfgrt="'+i+'"]');
+  var ico=document.getElementById('bfgrt_ico_'+i);
+  if(!rows.length) return;
+  var open=rows[0].style.display==='none';
+  rows.forEach(function(r){ r.style.display=open?'':'none'; });
+  if(ico) ico.textContent=open?'▼':'▶';
+};
 
 window.bfExportExcel = function(){
   if(!_bfDatos.length){ if(window.toast) toast('Sin datos para exportar','err'); return; }
