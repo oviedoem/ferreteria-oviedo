@@ -16,7 +16,7 @@
 | Fecha | 2026-08-22 |
 | Deploy | ✅ 13:30 (datos al 22-08-2026, ACTUALIZAR_TODO2.bat, 236 archivos) |
 | Commit | pendiente esta sesión |
-| Pendiente | Fix manual: modFO en datos-app.xlsm tiene CLAVE="poli" hardcodeada. Ver instrucción en AGENTS.md sesión 22-08. |
+| Pendiente | — (verificado 2026-08-25: modFO ya usa LeerIni() desde credenciales_db.ini, fix aplicado) |
 
 ---
 
