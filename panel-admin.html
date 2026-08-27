@@ -8768,7 +8768,7 @@ function vadmRenderAnalisis(){
 
   // ── Contar documentos únicos y separar NC
   var docsMap={};
-  datos.forEach(function(r){ if(r.numero) docsMap[r.numero]={doc:r.documento||'',neto:r.valorNeto||0}; });
+  datos.forEach(function(r){ if(r.numero){ if(!docsMap[r.numero]) docsMap[r.numero]={doc:r.documento||'',neto:0}; docsMap[r.numero].neto+=(r.valorNeto||0); } });
   var nDocs=Object.keys(docsMap).length;
   var ncDocs=0, ncMonto=0, ventaBruta=0;
   Object.keys(docsMap).forEach(function(k){
@@ -13340,7 +13340,19 @@ function vadmRenderSector(){
     var totalCnt=arr.reduce(function(s,v){return s+v.cnt;},0);
     var maxNeto=arr.reduce(function(m,v){return Math.max(m,v.neto);},1);
     var vendLabel=_vadmVendSel.length?_vadmVendLabelText():'Todos';
-    if(st) st.textContent=arr.length+' sectores · '+totalCnt+' documentos · '+(docFil||'todos')+' · '+vendLabel;
+    // NC del mismo rango para mostrar venta neta (NC excluidas de filas de sector)
+    var _ncR=_vadmLineas.filter(function(r){
+      if(!_esNC(r)) return false;
+      if(_vadmVendSel.length>0&&!_vadmVendSel.some(function(v){return r.vendedor===v||r.gmailUser===v||r.vendedorErp===v;})) return false;
+      if(_vadmBodSel.length>0&&_vadmBodSel.indexOf(r.bodegaCorta)<0) return false;
+      var fd=_vadmFechaToISO(r.fecha);
+      if(desde&&fd<desde) return false;
+      if(hasta&&fd>hasta) return false;
+      return true;
+    });
+    var _ncTotal=_ncR.reduce(function(s,r){return s+(r.valorNeto||r.neto||0);},0);
+    var _ventaNeta=totalN+_ncTotal;
+    if(st) st.textContent=arr.length+' sectores · '+totalCnt+' documentos · '+(docFil||'todos')+' · '+vendLabel+(_ncR.length?' · NC: '+_ncR.length+' reg':'');
     var head='<thead><tr style="background:#1a1d3a;color:#fff">'+
       '<th style="width:24px">#</th><th>Sector</th><th class="r">Neto</th>'+
       '<th style="width:120px">Participación</th>'+
@@ -13421,12 +13433,23 @@ function vadmRenderSector(){
         '</td>'+
       '</tr>');
     });
-    var foot='<tfoot><tr style="background:#f3f4f6">'+
-      '<td colspan="2" style="font-weight:700">TOTAL</td>'+
-      '<td class="r" style="font-weight:700">'+venAdmFmt(totalN)+'</td>'+
-      '<td></td>'+
-      '<td class="r" style="font-weight:700">'+totalCnt+'</td>'+
-      '<td colspan="3"></td></tr></tfoot>';
+    var foot='<tfoot>'+
+      '<tr style="background:#f3f4f6">'+
+        '<td colspan="2" style="font-weight:700">Venta Bruta</td>'+
+        '<td class="r" style="font-weight:700">'+venAdmFmt(totalN)+'</td>'+
+        '<td></td><td class="r" style="font-weight:700">'+totalCnt+'</td>'+
+        '<td colspan="3"></td></tr>'+
+      (_ncTotal<0?
+        '<tr style="background:#fef3c7">'+
+          '<td colspan="2" style="font-weight:600;color:#92400e">NC ('+_ncR.length+' registros)</td>'+
+          '<td class="r" style="font-weight:600;color:#92400e">'+venAdmFmt(_ncTotal)+'</td>'+
+          '<td colspan="5"></td></tr>'+
+        '<tr style="background:#d1fae5">'+
+          '<td colspan="2" style="font-weight:700;color:#065f46">Venta Neta</td>'+
+          '<td class="r" style="font-weight:700;color:#065f46">'+venAdmFmt(_ventaNeta)+'</td>'+
+          '<td colspan="5"></td></tr>'
+        :'')+
+      '</tfoot>';
     if(bd) bd.innerHTML='<div class="ven-adm-table-wrap"><table class="vtbl">'+head+'<tbody>'+rows.join('')+'</tbody>'+foot+'</table></div>'+
       '<div id="vadmSEChartWrap" style="padding:16px;max-width:720px"></div>';
     _vadmSEHoraChart(lineas);
