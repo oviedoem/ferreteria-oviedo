@@ -134,7 +134,6 @@ echo  Convirtiendo Datos.csv -^> Datos.json...
 if %errorlevel% neq 0 (
     color 0C
     echo  [ERROR] csv_a_json.py fallo.
-    pause
     goto :ventas
 )
 
