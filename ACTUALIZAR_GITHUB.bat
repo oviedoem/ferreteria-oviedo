@@ -52,8 +52,8 @@ if exist "E:\git-sync\*.xlsm" (
     echo BLOQUEADO: archivo .xlsm detectado en repo
     set BLOQUEO=1
 )
-if exist "E:\git-sync\*.py" (
-    echo BLOQUEADO: archivo .py detectado en repo
+for /f "delims=" %%F in ('E:\git-portable\mingw64\bin\git.exe -C E:\git-sync ls-files --others --exclude-standard --full-name "*.py" 2^>nul') do (
+    echo BLOQUEADO: archivo .py sin trackear: %%F
     set BLOQUEO=1
 )
 

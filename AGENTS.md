@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.59 · Última actualización: 2026-08-26
+# Versión activa: V37.60 · Última actualización: 2026-08-27
 
 ---
 
@@ -271,7 +271,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - Directorio activo: `PROYECTO_E:\ferreteria-oviedo\` (identificar el disco por etiqueta PROYECTO_E,
   no por letra) — NUNCA trabajar directamente en `PROYECTO_E:\git-sync\` ni en discos sin la
   etiqueta PROYECTO_E (ej. el disco con Windows 10 alterno, identificado en 2026-06-22)
-- Versión activa: V37.59
+- Versión activa: V37.60
 
 ### Historial de deploys (resumen — detalle completo en _HISTORICO\)
 - V37.13-14: 2026-06-02 — fix árbol auto-init, guard re-render, tutoriales D:→E:, 5 scripts pipeline D:→E:
@@ -300,6 +300,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - V37.58 (2026-08-24): fix duplicados ventas (dedup cli + sync fechas delta); JSONs datos negocio excluidos git
 - V37.58 (2026-08-26): Blazor→SQL completado; pipeline ACTUALIZAR_TODO OK (244 archivos deploy 16:54); pipeline-datos-mapa.html actualizado (Playwright→SQL en docs); limpieza proyecto: carpetas Blazor archivadas, 36 CSVs backups pre-20260817 archivados, 8 CSVs/archivos _utilidades archivados; commit 955f87a
 - V37.59 (2026-08-26): documentosGRT multi-GRT en Análisis Bodegas — algoritmo LIFO híbrido en descargar_bod.py (GRT/GRC/GIB como entradas, GME como consumo); chevron ▶ + sub-filas expandibles en panel-admin.html; fix path: descargar_bod.py guarda en token subfolder; commit 452510f
+- V37.60 (2026-08-27): fix inconsistencia ventas ERP cloud ago-2026 — normalizar_totales_sql() escala lineas SSRS a VALOR_NETO SQL (corrige 1733 pares duplicados), fix NCE sign inversion, agregar_docs_sin_ssrs() recupera 163 docs omitidos por cloud; descargar_ventas_enrich.py agrega campos neto+fecha; panel 24-Jul a 23-Ago: $187.6M sin NCE vs meta ERP $187.3M (0.13% dif.); commit 442e795
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
 ### APP-INVENTARIO (proyecto separado)
