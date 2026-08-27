@@ -149,6 +149,83 @@ SCHEMA = {
 }
 
 
+def validar_ventas_vs_enrich():
+    """
+    Compara la suma de valorNeto por documento en ventas-manzano.json contra
+    el VALOR_NETO SQL guardado en xlsm-enrich.json (campo 'neto').
+
+    Detecta documentos con divergencia >5% entre panel y SQL.
+    Si >10% del total de docs con neto SQL divergen, es senal de que la
+    normalizacion no se aplico (ej. ERP cloud genero duplicados sin correccion).
+    Bloquea el deploy con descripcion del problema.
+
+    No hace consultas SQL: solo lee archivos locales ya generados.
+    """
+    ventas_path = os.path.join(DATA_DIR, 'ventas-manzano.json')
+    enrich_path = os.path.join(DATA_DIR, 'xlsm-enrich.json')
+
+    if not os.path.exists(ventas_path) or not os.path.exists(enrich_path):
+        return None, 'OMITIDO (archivos no disponibles aun)'
+
+    try:
+        with open(ventas_path, 'r', encoding='utf-8') as f:
+            ventas_data = json.load(f)
+        with open(enrich_path, 'r', encoding='utf-8') as f:
+            enrich = json.load(f)
+    except Exception as e:
+        return None, 'OMITIDO (error al leer: ' + str(e) + ')'
+
+    sample = next(iter(enrich.values()), {})
+    if 'neto' not in sample:
+        return False, ('xlsm-enrich.json sin campo neto — '
+                       'ejecutar descargar_ventas_enrich.py (PASO 1K) antes de deploy')
+
+    registros = ventas_data.get('registros', [])
+    if not registros:
+        return None, 'OMITIDO (ventas-manzano.json sin registros)'
+
+    # Sumar valorNeto por documento (panel)
+    sumas_panel = {}
+    for r in registros:
+        try:
+            num = str(int(float(str(r.get('numero', '')).strip())))
+        except Exception:
+            continue
+        sumas_panel[num] = sumas_panel.get(num, 0) + r.get('valorNeto', 0)
+
+    divergentes = []
+    docs_con_neto = 0
+    for num, panel_sum in sumas_panel.items():
+        e = enrich.get(num, {})
+        sql_neto = int(e.get('neto', 0) or 0)
+        if not sql_neto:
+            continue
+        docs_con_neto += 1
+        # NCE: signos opuestos SQL/SSRS por diseno — saltar
+        if (panel_sum > 0) != (sql_neto > 0):
+            continue
+        if sql_neto == 0:
+            continue
+        diff_pct = abs(panel_sum - sql_neto) / abs(sql_neto) * 100
+        if diff_pct > 5:
+            divergentes.append((num, panel_sum, sql_neto, round(diff_pct, 1)))
+
+    n_div = len(divergentes)
+    umbral = max(10, int(docs_con_neto * 0.10))
+
+    if n_div > umbral:
+        muestra = divergentes[:3]
+        return False, (
+            'INCONSISTENCIA VENTAS vs SQL: ' + str(n_div) + '/' + str(docs_con_neto) +
+            ' docs con divergencia >5% -- senal de duplicados ERP cloud sin normalizar. '
+            'Ejecutar main.py para aplicar normalizacion. '
+            'Muestra (num, panel, sql, pct%): ' + str(muestra)
+        )
+
+    return True, (str(n_div) + ' docs con divergencia >5% de ' +
+                  str(docs_con_neto) + ' verificados (dentro del umbral)')
+
+
 def contar(valor):
     if isinstance(valor, list):
         return len(valor)
@@ -234,6 +311,16 @@ def main():
         else:
             resumen.append((nombre, 'ERROR', msg))
             errores.append(nombre + ': ' + msg)
+
+    # Validacion cruzada ventas panel vs SQL neto (detecta duplicados ERP cloud)
+    ok_v, msg_v = validar_ventas_vs_enrich()
+    if ok_v is None:
+        resumen.append(('ventas-vs-enrich [CONSISTENCIA]', 'OMITIDO', msg_v))
+    elif ok_v:
+        resumen.append(('ventas-vs-enrich [CONSISTENCIA]', 'OK', msg_v))
+    else:
+        resumen.append(('ventas-vs-enrich [CONSISTENCIA]', 'ERROR', msg_v))
+        errores.append('ventas-vs-enrich [CONSISTENCIA]: ' + msg_v)
 
     print('')
     for nombre, estado, msg in resumen:
