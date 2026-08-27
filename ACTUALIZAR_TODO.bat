@@ -168,14 +168,14 @@ if exist "%~dp0VENTAS EL MANZANO\VENTAS.xlsm" (
 echo.
 timeout /t 8 /nobreak >nul
 
-:: -- PASO 1D: Bodegas IEM/RCE/CEM desde SQL Server ----------------------------
+:: -- PASO 1D: Bodegas IEM/RCE/CEM/ICD desde SQL Server -----------------------
 echo.
 echo  +----------------------------------------------------------+
-echo  ^|  PASO 1D - Bodegas IEM, RCE y CEM desde SQL Server    ^|
+echo  ^|  PASO 1D - Bodegas IEM/RCE/CEM/ICD desde SQL Server    ^|
 echo  +----------------------------------------------------------+
 echo.
-echo  Descargando registros IEM, RCE y CEM...
-echo  (genera bod-iem-registros.json, bod-rce-registros.json, bod-cem-registros.json)
+echo  Descargando registros IEM, RCE, CEM e ICD...
+echo  (genera bod-iem-registros.json, bod-rce-registros.json, bod-cem-registros.json, bod-icd-registros.json)
 echo.
 if exist "%~dp0BODEGAS\descargar_bod.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_bod.py"
@@ -466,7 +466,7 @@ echo  ^|  PASO 3.6 - Catalogo cotizador con rotacion v3m/v6m   ^|
 echo  +----------------------------------------------------------+
 echo.
 echo  Consultando SQL Server: ventas 3M y 6M por SKU (suc 04)...
-echo  (genera catalogo-cotizador.json � incluido en deploy PASO 4)
+echo  (genera catalogo-cotizador.json - incluido en deploy PASO 4)
 echo.
 if exist "%~dp0generar_catalogo_cotizador_rotacion.ps1" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0generar_catalogo_cotizador_rotacion.ps1"
@@ -486,7 +486,7 @@ timeout /t 2 /nobreak >nul
 :: -- PASO 4: Deploy Firebase ---------------------------------------------------
 echo.
 echo  +----------------------------------------------------------+
-echo  ^|  PASO 4/4 - Publicando en Firebase Hosting             ^|
+echo  ^|  PASO 4/5 - Publicando en Firebase Hosting             ^|
 echo  +----------------------------------------------------------+
 echo.
 
@@ -509,18 +509,17 @@ if %errorlevel% neq 0 (
 :: No bloquea: si falla, el bot seguira con el catalogo anterior en Hosting.
 echo.
 echo  +----------------------------------------------------------+
-echo  ^|  PASO 5/5 - Catalogo Bot ? Firebase Hosting           ^|
+echo  ^|  PASO 5/5 - Catalogo Bot -> Firebase Hosting          ^|
 echo  +----------------------------------------------------------+
 echo.
-set DATOS_JSON=E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json
-set CATALOGO_BOT=E:\ferreteria-oviedo\catalogo-bot.json
+set DATOS_JSON=%~dp0CATALOGO PRODUCTOS\Datos.json
 
 if not exist "%DATOS_JSON%" (
     echo  [AVISO] No se encontro Datos.json - paso omitido.
     goto :paso5_fin
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "E:\ferreteria-oviedo\generate_catalogo_bot.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0generate_catalogo_bot.ps1"
 
 if %errorlevel% neq 0 (
     color 0E
