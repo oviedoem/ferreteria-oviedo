@@ -1,6 +1,6 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
-# Última actualización: 2026-07-03 · Versión activa: V37.56
+# Última actualización: 2026-08-27 · Versión activa: V37.59
 #
 # NOTA V37.57+ — PASO 1H eliminado. recepciones-pendientes.json y despachos-pendientes-erp.json
 #   ahora los genera descargar_despachos.py (PASO 1F) vía SQL Server (GRC/GRT/GIB + BVE/FVE).
