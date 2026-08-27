@@ -1,4 +1,4 @@
-# generate_catalogo_bot.ps1 — generado desde ACTUALIZAR_TODO.bat (PASO 5)
+# generate_catalogo_bot.ps1 ï¿½ generado desde ACTUALIZAR_TODO.bat (PASO 5)
 param(
     [string]$DatosJson   = "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json",
     [string]$CatalogoBot = "E:\ferreteria-oviedo\catalogo-bot.json"
@@ -15,5 +15,5 @@ $c = $d | ForEach-Object { [PSCustomObject]@{
     pe = $_.pem
     se = $_.sem
 } }
-[System.IO.File]::WriteAllText($CatalogoBot, ($c | ConvertTo-Json -Compress), [System.Text.Encoding]::UTF8)
+[System.IO.File]::WriteAllText($CatalogoBot, ($c | ConvertTo-Json -Compress), [System.Text.UTF8Encoding]::new($false))
 Write-Host ("[OK] catalogo-bot.json generado: " + $d.Count + " productos")
