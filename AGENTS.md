@@ -66,11 +66,12 @@ Otras causas posibles: NVM cancelada sin reversa · ajuste contable incorrecto �
 `1.536` = 1536 unidades (NO 1.536). Error histórico 2026-05-30 en generar_informe_stock.py.
 
 ### Servidor 2 — Limitación Real-time
-SQL Server [SQL-SERVER-IP] sincroniza con JustWeb **una sola vez al día a las 22:00**.
+SQL Server [SQL-SERVER-IP] recibe documentos **en tiempo continuo durante el horario laboral** (verificado 2026-08-28 vía FECHA_REGISTRO en M_DOCUMENTOS_ENCABEZADO).
+- Peak de ingreso: 08:00–17:00. Residual hasta ~21:00. Sin docs registrados de madrugada.
 - descargar_erp.py / descargar_ventas_erp.py → Real-time (HTTP/SSRS)
-- descargar_bod.py / descargar_pedidos.py / descargar_despachos.py / leer_xlsm.py → Solo tras 22:00
+- descargar_bod.py / descargar_pedidos.py / descargar_despachos.py / leer_xlsm.py → Datos del día disponibles desde las 08:00, completos después de las 19:00
 
-**Respuesta estándar:** "Los datos de despachos/pedidos/bodegas vienen del Servidor 2 que sincroniza a las 22:00."
+**Respuesta estándar:** "Los datos de despachos/pedidos/bodegas se actualizan durante el día. Para datos completos del día, correr los scripts después de las 19:00."
 
 ### ERP JustWeb — Servidor (actualizado 2026-08-09)
 - **Servidor nuevo (desde 2026-08):** `https://erp.justtime.cl/justweb_foviedo` (cloud JustTime)
@@ -676,7 +677,7 @@ Análisis bodegas: analisis (IEM/RCE/CEM con selector bfFuente)
 Notas tabs nuevos:
 - `informe-stock`: usa informe-stock.json (PASO 1G generar_informe_stock.py, lee raw_bloque1/2_*.csv de SSRS). Muestra Dif<0 (anomalía JT) como filas rojas.
 - `despachos`: usa despachos-pendientes.json (PASO 1F descargar_despachos.py SQL). Despachos NVM sin BVE/FVE.
-- `recepciones` / sub-tab "Por Recepcionar": usa recepciones-pendientes.json (PASO 1F descargar_despachos.py SQL, GRC/GRT/GIB pendientes). Datos al último sync 22:00.
+- `recepciones` / sub-tab "Por Recepcionar": usa recepciones-pendientes.json (PASO 1F descargar_despachos.py SQL, GRC/GRT/GIB pendientes). Datos completos del día disponibles después de las 19:00.
 
 TABS ELIMINADOS (no recrear): `vvsstock` (eliminado V35.0)
 NAVEGACIÓN REAL: `showTab` → `vadmGrupo` → `vadmSubTab`. NO existe `adminShowTab()`.
