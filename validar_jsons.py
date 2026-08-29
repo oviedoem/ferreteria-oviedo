@@ -226,6 +226,44 @@ def validar_ventas_vs_enrich():
                   str(docs_con_neto) + ' verificados (dentro del umbral)')
 
 
+def validar_datos_campos_bot():
+    """
+    Verifica que Datos.json tenga los campos que consume el bot de WhatsApp.
+    catalogo-bot.json (PASO 5) se genera desde este archivo; si faltan campos
+    o los precios vienen todos en 0, el bot responderia sin precio/stock.
+    Bloquea el deploy en esos casos.
+
+    Solo lectura. No modifica nada.
+    """
+    ruta = os.path.join(CATALOGO_DIR, 'Datos.json')
+    if not os.path.isfile(ruta):
+        return None, 'OMITIDO (Datos.json no existe)'
+    try:
+        with open(ruta, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception as e:
+        return None, 'OMITIDO (error al leer: ' + str(e) + ')'
+    if not isinstance(data, list) or not data:
+        return None, 'OMITIDO (lista vacia o no es lista)'
+
+    campos = ['codigo', 'descripcion', 'precioiva', 'pem', 'sem']
+    for p in data[:50]:  # muestra de los primeros 50
+        faltan = [c for c in campos if c not in p]
+        if faltan:
+            return False, ('Datos.json sin campos ' + str(faltan) +
+                           ' en codigo ' + str(p.get('codigo', '?')) +
+                           ' -- el bot no podria dar precio ni stock')
+
+    sin_precio = sum(1 for p in data if not p.get('precioiva'))
+    if sin_precio == len(data):
+        return False, ('Datos.json con TODOS los precios en 0 -- '
+                       'revisar descarga ERP antes de publicar al bot')
+
+    pct = round(sin_precio * 100 / len(data), 1)
+    return True, (str(len(data)) + ' productos con campos bot OK; ' +
+                  str(sin_precio) + ' sin precio (' + str(pct) + '%)')
+
+
 def contar(valor):
     if isinstance(valor, list):
         return len(valor)
@@ -321,6 +359,16 @@ def main():
     else:
         resumen.append(('ventas-vs-enrich [CONSISTENCIA]', 'ERROR', msg_v))
         errores.append('ventas-vs-enrich [CONSISTENCIA]: ' + msg_v)
+
+    # Validacion campos que consume el bot de WhatsApp (catalogo-bot.json PASO 5)
+    ok_b, msg_b = validar_datos_campos_bot()
+    if ok_b is None:
+        resumen.append(('datos-campos-bot [BOT WHATSAPP]', 'OMITIDO', msg_b))
+    elif ok_b:
+        resumen.append(('datos-campos-bot [BOT WHATSAPP]', 'OK', msg_b))
+    else:
+        resumen.append(('datos-campos-bot [BOT WHATSAPP]', 'ERROR', msg_b))
+        errores.append('datos-campos-bot [BOT WHATSAPP]: ' + msg_b)
 
     print('')
     for nombre, estado, msg in resumen:
