@@ -6,7 +6,11 @@
 1. Leer `AGENTS.md` (reglas completas del proyecto, Safe Change Protocol, pipeline, historial)
 2. Leer `MEMORY.md` (índice de memoria — disponible en contexto)
 3. Leer el archivo `estado-sesion-YYYYMMDD*.md` más reciente en memory/ para retomar el flujo exacto de la última sesión. Buscar con: `Get-ChildItem "$env:USERPROFILE\.claude\projects\E--ferreteria-oviedo\memory" -Filter "estado-sesion-*" | Sort-Object LastWriteTime -Descending | Select-Object -First 1`
-4. Recién después ejecutar cualquier tarea
+4. **REGLA FLUJO ACTUAL:** Revisar fechas de modificación de archivos en la raíz del proyecto. Los archivos con fechas más recientes marcan el flujo actual — no solo los `.md`. Un archivo `.bat`, `.py` o `.ps1` reciente puede indicar un pipeline nuevo no documentado aún.
+   ```powershell
+   Get-ChildItem "E:\ferreteria-oviedo" -File | Sort-Object LastWriteTime -Descending | Select-Object Name, LastWriteTime | Select-Object -First 20
+   ```
+5. Recién después ejecutar cualquier tarea
 
 **REGLA MEMORIA:** Al terminar cualquier sesión con cambios, guardar `estado-sesion-YYYYMMDD.md` en memory/ con: qué se hizo, qué quedó pendiente, versión activa, próximos pasos. Esto garantiza continuidad entre sesiones y PCs.
 
@@ -16,7 +20,7 @@
 
 - **Proyecto activo:** `E:\ferreteria-oviedo\` — trabajar SIEMPRE aquí
 - **Git repo:** `E:\git-sync\` — NUNCA modificar directamente
-- **Versión activa:** ver AGENTS.md (historial de deploys)
+- **Versión activa:** V37.61 · 2026-08-27 · ver AGENTS.md (historial de deploys)
 - **Stack:** HTML/CSS/JS Vanilla + Firebase Hosting + Python pipeline ERP (JustWeb SSRS)
 - **Deploy:** `firebase deploy` desde `E:\ferreteria-oviedo\`
 - **Commit:** `ACTUALIZAR_GITHUB.bat` desde `E:\ferreteria-oviedo\`
@@ -139,12 +143,22 @@ Skills de diseño y revisión — se activan con `/nombre`:
 | `/paperclip-revision-costo-cero` | Pasada pre-cierre: patrones XSS/reglas sin costo extra |
 | `/revisar-codigo` | Revisión $0 contra 14 reglas FO del proyecto |
 | `/ahorro-tokens` | Compresión de contexto + estado rápido del proyecto |
+| `/arbitro-flujo` | Árbitro anti-confusión — flujo actual vs archivado, trampas frecuentes |
+| `/analizar-ventas` | Análisis de ventas (usar JSONs en data/, NO foviedo_local.db de Bodegas) |
+| `/revisar-pipeline` | Auditoría pipeline ERP→Firebase (pasos 1A–1N + 3/3.5/3.6/4/5) |
+| `/caveman` | Simplificación de código — remover complejidad innecesaria |
+| `/open-code-review` | **DEPRECADO** — no usar, reemplazado por `/revisar-codigo` |
 
 Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guidelines`**, nunca solos.
 
 ---
 
 ## REGLAS CRÍTICAS — PIPELINE BOT WHATSAPP
+
+### PASO 3.6 de ACTUALIZAR_TODO.bat — catálogo cotizador con precios rotativos
+- `generar_catalogo_cotizador_rotacion.ps1` genera `catalogo-cotizador.json` (precios v3m/v6m por SKU)
+- Corre entre PASO 3 (visibilidad precios) y PASO 4 (firebase deploy)
+- JSON vive en carpeta token rotativo (`data/<token>/catalogo-cotizador.json`)
 
 ### PASO 5 de ACTUALIZAR_TODO.bat — catálogo bot va a Hosting, NUNCA a Firestore
 - **ACTUALIZADO 2026-08-08:** el PASO 5 genera `catalogo-bot.json` con PowerShell y hace `firebase deploy --only hosting`
@@ -159,17 +173,6 @@ Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guideli
 
 ---
 
-### Sesión 2026-08-22 (Claude Code) — auditoría sistema operativo IA + sin cambios de código
-
-**Resumen:** Auditoría de consistencia de skills y archivos del Sistema Operativo IA en todos los repos del ecosistema. Sin cambios de código en ferreteria-oviedo.
-
-**Archivos modificados:** ninguno
-
-**Pendiente:**
-- Error "Missing or insufficient permissions" en Ventas→Categorías: se resuelve corriendo `ACTUALIZAR_TODO.bat` completo
-
----
-
 ### Sesión 2026-08-20 (Claude Code) — Fix búsqueda stock panel-admin + proteger Datos.json en deploy
 
 **Resumen:** Mejora búsqueda Consulta de Stock: búsqueda AND por tokens (antes era substring completo), normalización de tildes y dimensiones "100x100"→"100 100", datalist HTML5 para sugerencias nativas. Bug introducido: mis deploys borraron Datos.json de Hosting (no estaba en git-sync). Fix: pipeline ACTUALIZAR_TODO.bat copia Datos.json antes del deploy.
@@ -178,5 +181,27 @@ Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guideli
 - `panel-admin.html`: función `vadmBuscarStock` — búsqueda por tokens AND + normalize; `_csPoblarSugerencias` — datalist con top descripciones; `<datalist id="csSugerencias">` en el input
 - `ACTUALIZAR_TODO.bat`: PASO 4 agrega copia de Datos.json desde ferreteria-oviedo antes del firebase deploy
 
-**Pendiente:**
-- El error "Missing or insufficient permissions" en Ventas→Categorías ocurre cuando ventas-manzano JSON no está en Hosting → fallback a Firestore colección `ventasLineas` sin permisos. Se resuelve corriendo el pipeline completo (`ACTUALIZAR_TODO.bat`).
+**Pendiente:** — (resuelto 2026-08-28: error Ventas→Categorías corregido corriendo ACTUALIZAR_TODO.bat completo)
+
+---
+
+### Sesiones V37.59–V37.61 (2026-08-27) — pipeline completo + documentosGRT + fix NCE
+
+**V37.59:** `descargar_bod.py` — soporte multi-GRT para documentosGRT + algoritmo LIFO híbrido.
+Sub-filas chevron en panel-admin para detalles de documentos por GRT.
+
+**V37.60:** `normalizar_totales_sql` — corrección de totales SQL. Fix NCE (primera corrección).
+`agregar_docs_sin_ssrs` — documentos sin correlativo SSRS ahora incluidos.
+
+**V37.61:** Fix NCE definitivo. Validación `.py` en ACTUALIZAR_TODO.bat.
+Badge actualizado: `AG ● V37.61 ● 27-08-2026`. Deploy commit `acdc33b` — 17:07.
+
+**Estado al 2026-08-28:** pipeline funcional, ningún pendiente activo.
+
+---
+
+### Centro de Comando — ACTUALIZAR_CONTEXTO_BOT.bat
+
+Panel Agentes: `https://oviedo-agentes-panel.onrender.com/agentes` (lee `contexto/negocio.md`)
+`ACTUALIZAR_CONTEXTO_BOT.bat` (en `E:\BOT  OVIEDO_ELMANZANO WHATSSSAP\`) regenera `negocio.md`
+leyendo el CLAUDE.md de cada proyecto. Correr después de actualizar cualquier CLAUDE.md del stack.

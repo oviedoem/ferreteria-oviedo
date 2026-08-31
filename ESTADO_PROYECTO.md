@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.58
-# Fecha: 2026-08-26
+# Version activa: V37.61
+# Fecha: 2026-08-27
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,10 +12,10 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.58 |
-| Fecha | 2026-08-26 |
-| Deploy | ✅ 16:54 (datos al 26-08-2026, ACTUALIZAR_TODO.bat, 244 archivos) |
-| Commit | 955f87a (pipeline-datos-mapa.html Playwright→SQL) |
+| Version | V37.61 |
+| Fecha | 2026-08-27 |
+| Deploy | ✅ 17:07 (pipeline completo, sesiones V37.59→V37.61) |
+| Commit | acdc33b (V37 2026-08-27 — actualizacion automatica) |
 | Pendiente | — |
 
 ---
@@ -205,7 +205,7 @@
 
 | Archivo | Estado |
 |---|---|
-| panel-admin.html | Actualizado V37.57 (badge 03-07-2026) |
+| panel-admin.html | Actualizado V37.61 (badge 27-08-2026) |
 | panel-cliente.html | Actualizado V37.44 (badge 28-06-2026) |
 | index.html (panel vendedor) | Actualizado V37.44 (badge 28-06-2026) |
 | firebase-config.js | No modificar |
@@ -215,7 +215,7 @@
 | descargar_ventas_erp.py | Actualizado V37.2 |
 | main.py | Actualizado V36.9 |
 | leer_xlsm.py | Actualizado V36.9 |
-| descargar_bod.py (BODEGAS/) | Actualizado V37.50 (GEM/TEM agregadas) |
+| descargar_bod.py (BODEGAS/) | Actualizado V37.59 (documentosGRT multi-GRT, algoritmo LIFO híbrido) |
 | procesar-actualizacion.py | Actualizado V36.6 |
 | csv_a_json.py | Actualizado V36.9c |
 | ACTUALIZAR_TODO.bat | Activo — unico punto de entrada |
@@ -311,4 +311,4 @@
 - ACTUALIZAR_TODO.bat: PASO 3.6 insertado entre PASO 3.5 (rotar token) y PASO 4 (deploy)
 - Commit 5bec71d — 4 archivos: ACTUALIZAR_TODO.bat, ACTUALIZAR_GITHUB.bat, generar_catalogo_cotizador_rotacion.ps1, sw.js
 
-*ESTADO_PROYECTO.md · Version V37.57 · Auditoria seguridad 2026-08-02 · Pipeline 2026-08-11*
+*ESTADO_PROYECTO.md · Version V37.61 · Auditoria seguridad 2026-08-02 · Pipeline 2026-08-27*

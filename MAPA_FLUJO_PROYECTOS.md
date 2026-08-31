@@ -1,6 +1,6 @@
 # MAPA DE FLUJO — PROYECTOS FERRETERÍA OVIEDO
 # Arquitectura completa · Disco E: + W: + C: · Desde 2026-06-01
-# Última actualización: 2026-08-27 · Versión activa: V37.59
+# Última actualización: 2026-08-27 · Versión activa: V37.61
 #
 # NOTA V37.57+ — PASO 1H eliminado. recepciones-pendientes.json y despachos-pendientes-erp.json
 #   ahora los genera descargar_despachos.py (PASO 1F) vía SQL Server (GRC/GRT/GIB + BVE/FVE).
@@ -276,18 +276,18 @@ Operador (contador de inventario)
 ║   DEPENDENCIAS EN C:   (si C: falla → estas cosas caen)             ║
 ╠══════════════════════════════════════════════════════════════════════╣
 ║                                                                      ║
-║  1. PYTHON — C:\Python3x\                                            ║
+║  1. PYTHON — E:\python-portable\python.exe                           ║
 ║     ├── python.exe  (intérprete de todo el pipeline)                 ║
 ║     ├── pyodbc      (SQL Server → descargar_bod/pedidos/despachos)   ║
 ║     ├── openpyxl    (XLSX → descargar_erp, procesar-actualizacion)   ║
 ║     └── requests    (HTTP → descargar_erp SSRS)                      ║
 ║                                                                      ║
-║  2. NODE.JS — C:\Program Files\nodejs\                               ║
+║  2. NODE.JS — E:\nodejs-portable\node.exe                            ║
 ║     ├── node.exe  (runtime)                                          ║
 ║     └── usado por: firebase deploy (PUBLICAR.bat, ACTUALIZAR_TODO)   ║
 ║     Los paquetes npm ya están en E:\npm-global\                      ║
 ║                                                                      ║
-║  3. GIT FOR WINDOWS — C:\Program Files\Git\                          ║
+║  3. GIT FOR WINDOWS — E:\git-portable\mingw64\bin\git.exe            ║
 ║     └── usado por ACTUALIZAR_GITHUB.bat y Omnara internamente        ║
 ║                                                                      ║
 ║  4. CLAUDE CODE CONFIG — C:\..\.claude\  (junction → W:\)           ║
@@ -401,9 +401,9 @@ HERRAMIENTAS (W:):
   W:\herramientas\seguridad\      Scripts emergencia USB/Claude
 
 DEPENDENCIAS CRÍTICAS (C:):
-  C:\Python3x\                    Intérprete + packages (pipeline)
-  C:\Program Files\nodejs\        Node.js runtime (firebase deploy)
-  C:\Program Files\Git\           Git for Windows
+  E:\python-portable\python.exe   Intérprete + packages (pipeline)
+  E:\nodejs-portable\node.exe     Node.js runtime (firebase deploy)
+  E:\git-portable\mingw64\bin\git.exe  Git for Windows
 
 DEPLOY DESTINOS:
   ferreteria-oviedo.web.app                   Panel principal (Firebase)

@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.61 · Última actualización: 2026-08-27 (NCE fix + bat .py check)
+# Versión activa: V37.62 · Última actualización: 2026-08-31 (migración bot Render + guarda token PASO 6)
 
 ---
 
@@ -302,6 +302,8 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - V37.58 (2026-08-26): Blazor→SQL completado; pipeline ACTUALIZAR_TODO OK (244 archivos deploy 16:54); pipeline-datos-mapa.html actualizado (Playwright→SQL en docs); limpieza proyecto: carpetas Blazor archivadas, 36 CSVs backups pre-20260817 archivados, 8 CSVs/archivos _utilidades archivados; commit 955f87a
 - V37.59 (2026-08-26): documentosGRT multi-GRT en Análisis Bodegas — algoritmo LIFO híbrido en descargar_bod.py (GRT/GRC/GIB como entradas, GME como consumo); chevron ▶ + sub-filas expandibles en panel-admin.html; fix path: descargar_bod.py guarda en token subfolder; commit 452510f
 - V37.60 (2026-08-27): fix inconsistencia ventas ERP cloud ago-2026 — normalizar_totales_sql() escala lineas SSRS a VALOR_NETO SQL (corrige 1733 pares duplicados), fix NCE sign inversion, agregar_docs_sin_ssrs() recupera 163 docs omitidos por cloud; descargar_ventas_enrich.py agrega campos neto+fecha; panel 24-Jul a 23-Ago: $187.6M sin NCE vs meta ERP $187.3M (0.13% dif.); commit 442e795
+- V37.61 (2026-08-27): fix NCE duplicados SSRS v2 (escala k=-sql_neto/ssrs_sum cuando ssrs_sum<0 y sql_neto>0; 675 docs); panel $183.53M vs ERP $183.49M (0.024%); ACTUALIZAR_GITHUB.bat sin pause + check .py via git ls-files; commit 08d6d32
+- V37.62 (2026-08-31): MIGRACIÓN bot WhatsApp a cuenta Render alejandrog45 (servicio nuevo oviedo-whatsapp-bot-k6ou.onrender.com; viejo suspendido — límite 750h gratis); BOT_API + CSP connect-src a URL nueva; fix token data/: Firestore dataAccessToken/current quedó apuntando a token fantasma d1564d57 (escritor externo 16:42 sin campo 'actualizado' — sospecha: otro PC con script antiguo) → reapuntado a 8e95f5f4 con renovar_token_data.py; GUARDA PASO 6 en ACTUALIZAR_TODO.bat y _AUTO.bat: verifica token data/ vivo en Hosting post-deploy (HTTP 200), reintenta deploy 1 vez y alerta en rojo si falla — evita que el panel quede sin datos nunca más
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
 ### APP-INVENTARIO (proyecto separado)

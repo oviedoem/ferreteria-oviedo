@@ -536,6 +536,44 @@ if %errorlevel% neq 0 (
 
 :paso5_fin
 
+:: -- PASO 6: Verificacion token data/ en vivo (fix 2026-08-31) ----------------
+:: Si el deploy no subio la carpeta del token, el panel queda sin datos
+:: (404 -> fallback Firestore -> "Missing or insufficient permissions").
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 6/6 - Verificando token data/ en Hosting          ^|
+echo  +----------------------------------------------------------+
+echo.
+if not exist "%~dp0data\.token-actual" (
+    echo  [AVISO] No existe data\.token-actual - verificacion omitida.
+    goto :paso6_fin
+)
+set /p TOKEN_ACT=<"%~dp0data\.token-actual"
+set "TOKCODE=000"
+for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
+if "%TOKCODE%"=="200" goto :paso6_ok
+
+echo  [REINTENTO] Token no visible en Hosting (HTTP %TOKCODE%) - re-publicando...
+call "%FIREBASE_CMD%" deploy --only hosting
+set "TOKCODE=000"
+for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
+if "%TOKCODE%"=="200" goto :paso6_ok
+
+color 0C
+echo.
+echo  ============================================================
+echo   [ALERTA] PANEL QUEDARA SIN DATOS - token no subio (HTTP %TOKCODE%)
+echo   Ejecuta manualmente:  firebase deploy --only hosting
+echo   y recarga esta URL hasta que responda:
+echo   https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json
+echo  ============================================================
+goto :paso6_fin
+:paso6_ok
+echo  [OK] Token data/ verificado en vivo (HTTP 200) - panel con datos.
+:paso6_fin
+echo.
+timeout /t 2 /nobreak >nul
+
 color 0A
 echo.
 echo  ============================================================

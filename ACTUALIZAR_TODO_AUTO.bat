@@ -302,6 +302,25 @@ if %errorlevel% neq 0 (
 )
 
 :fin
+
+:: -- PASO 6: Verificacion token data/ en vivo (fix 2026-08-31) ----------------
+:: Si el deploy no subio la carpeta del token, el panel queda sin datos.
+if not exist "E:\ferreteria-oviedo\data\.token-actual" goto :fin_sin_verif
+set /p TOKEN_ACT=<"E:\ferreteria-oviedo\data\.token-actual"
+set "TOKCODE=000"
+for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
+if "%TOKCODE%"=="200" goto :verif_ok
+echo [%time%] [ALERTA] token NO visible en Hosting HTTP %TOKCODE% - reintentando deploy >> "%LOGFILE%"
+call "%FIREBASE_CMD%" deploy --only hosting >> "%LOGFILE%" 2>&1
+set "TOKCODE=000"
+for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
+if "%TOKCODE%"=="200" goto :verif_ok
+echo [%time%] [ALERTA GRAVE] PANEL SIN DATOS - token %TOKEN_ACT% no subio (HTTP %TOKCODE%) >> "%LOGFILE%"
+goto :fin_sin_verif
+:verif_ok
+echo [%time%] [OK] token data/ verificado en vivo HTTP 200 >> "%LOGFILE%"
+:fin_sin_verif
+
 echo. >> "%LOGFILE%"
 echo ============================================================ >> "%LOGFILE%"
 echo  FINALIZADO: %date% %time% >> "%LOGFILE%"
