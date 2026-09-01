@@ -28,7 +28,10 @@ backups/
 logs/
 _ARCHIVADOS/
 _HISTORICO/
+_ARCHIVO_FERRETERIA/
+_PROMPTS/
 _utilidades/
+ADQUISICIONES/
 
 # Archivos binarios / Excel
 *.xlsm
