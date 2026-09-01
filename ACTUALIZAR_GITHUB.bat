@@ -68,13 +68,13 @@ if %BLOQUEO%==1 (
 :: BLOQUE 2 - SINCRONIZAR SOLO ARCHIVOS PERMITIDOS
 :: ============================================================
 robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
-  panel-admin.html panel-cliente.html index.html ^
+  panel-admin.html panel-cliente.html index.html cotizador.html ^
   firebase.json firestore.rules firestore.indexes.json storage.rules ^
   sw.js update-sw-version.js firebase-config.js manifest.json ^
   manifest-admin.json manifest-cliente.json ^
-  AGENTS.md MEMORY.md ESTADO_PROYECTO.md CLAUDE.md ^
-  RESUMEN_TECNICO_MIGRACION_E.md MAPA_FLUJO_PROYECTOS.md ^
-  .gitignore OCR_REVIEW.bat ^
+  AGENTS.md MEMORY.md ESTADO_PROYECTO.md CLAUDE.md README.md ^
+  IDS_REFERENCIA.md MAPA_FLUJO_PROYECTOS.md ^
+  validar_jsons.py .gitignore ^
   ACTUALIZAR_GITHUB.bat ACTUALIZAR_TODO.bat ACTUALIZAR_TODO_AUTO.bat PUBLICAR.bat ^
   /XO /NP /NJH /NFL
 
