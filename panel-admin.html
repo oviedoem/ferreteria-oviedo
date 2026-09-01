@@ -3713,8 +3713,6 @@ Todo desde tu celular, gratis, sin apps que descargar.
             <th style="min-width:85px">Código</th>
             <th style="min-width:190px">Producto</th>
             <th class="r" style="min-width:72px">Vta últimos<br>2 meses</th>
-            <th class="r" style="min-width:72px">Mínimo<br>actual</th>
-            <th class="r" style="min-width:78px">Reposición<br>actual</th>
             <th class="r" style="min-width:68px">Tránsito</th>
             <th class="r" style="min-width:68px">Stock<br>actual</th>
             <th class="r" style="min-width:64px;background:#ede9fe;color:#4c1d95" title="Unidades en órdenes de compra vigentes aún no recibidas (SQL, sync 22:00)">OC<br>Pend</th>
@@ -3723,7 +3721,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
           </tr>
         </thead>
         <tbody id="reqStockBody">
-          <tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">
+          <tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:24px;font-size:13px">
             Selecciona rango de fechas y presiona "Pre-llenar"
           </td></tr>
         </tbody>
@@ -17894,7 +17892,7 @@ function reqStockPrellenar(){
 
   function _reqMsgBloqueo(icono, titulo, detalle){
     document.getElementById('reqStockBody').innerHTML =
-      '<tr><td colspan="11" style="padding:28px 18px;text-align:center;color:#6b7280;font-size:13px">'+
+      '<tr><td colspan="9" style="padding:28px 18px;text-align:center;color:#6b7280;font-size:13px">'+
         '<div style="font-size:22px;margin-bottom:6px">'+icono+'</div>'+
         '<div style="font-weight:700;color:#374151;margin-bottom:4px">'+titulo+'</div>'+
         '<div style="font-size:12px">'+detalle+'</div>'+
@@ -18016,7 +18014,7 @@ function reqStockPrellenar(){
     var minimoActual = b.st_min   || erp.min  || 0;
     var reposicion   = b.st_repos || erp.repo || 0;
     var transito     = (p.pem_trans || 0) + (p.tem_trans || 0);
-    var stockActual  = (p.pem || 0) + (p.sem || 0) + (p.cem || 0) + (p.mem || 0);
+    var stockActual  = (p.pem || 0) + (p.sem || 0);  // solo PEM + SEM disponible
     var qty          = qtyMap[cod] || 0;
     return { cod:cod, desc:p.desc || b.descripcion || cod, marca:p.marca||b.marca||'',
              abc:abcMap[cod]||'C', qty:qty, minimoActual:minimoActual,
@@ -18058,8 +18056,6 @@ function reqStockPrellenar(){
         '</div>'+
       '</td>'+
       '<td class="r" style="white-space:nowrap;font-size:12px">'+Math.round(p.qty)+'</td>'+
-      '<td class="r" style="white-space:nowrap;font-size:12px">'+p.minimoActual+'</td>'+
-      '<td class="r" style="white-space:nowrap;font-size:12px;'+reposSty+'">'+p.reposicion+'</td>'+
       '<td class="r" style="white-space:nowrap;font-size:12px">'+p.transito+'</td>'+
       '<td class="r" style="white-space:nowrap;font-size:12px;'+stockSty+'">'+p.stockActual+'</td>'+
       '<td class="r" style="white-space:nowrap;font-size:12px;'+(p.ocPend>0?'color:#7c3aed;font-weight:700':'color:#9ca3af')+'">'+(p.ocPend||'—')+'</td>'+
@@ -18073,7 +18069,7 @@ function reqStockPrellenar(){
     var _msgD = catD
       ? '🏷️ '+_reqDDExcluidos+' código(s) categoría D incluidos (sin venta en 12 meses o descontinuados DD)'
       : '🏷️ '+_reqDDExcluidos+' código(s) categoría D de esta marca (sin venta en 12 meses o descontinuados DD) — excluidos del envío';
-    rows = '<tr class="req-info-row"><td colspan="11" style="padding:6px 14px;background:#f3f4f6;color:#6b7280;font-size:11px;border-bottom:1px solid #e5e7eb">'+_msgD+'</td></tr>' + rows;
+    rows = '<tr class="req-info-row"><td colspan="9" style="padding:6px 14px;background:#f3f4f6;color:#6b7280;font-size:11px;border-bottom:1px solid #e5e7eb">'+_msgD+'</td></tr>' + rows;
   }
   document.getElementById('reqStockBody').innerHTML = rows;
 
@@ -18135,14 +18131,12 @@ function reqStockEnviarEmail(){
     var cod     = tr.cells[1].textContent.trim();
     var prod    = tr.cells[2].textContent.trim();
     var vta     = tr.cells[3].textContent.trim();
-    var minAct  = tr.cells[4].textContent.trim();
-    var repAct  = tr.cells[5].textContent.trim();
-    var trans   = tr.cells[6].textContent.trim();
-    var stAct   = tr.cells[7].textContent.trim();
+    var trans   = tr.cells[4].textContent.trim();
+    var stAct   = tr.cells[5].textContent.trim();
     var minSol  = inps[0].value;
     var repSol  = inps[1].value;
     _reqCodigosEnviados.push({ codigo: cod, desc: prod, abc: abc,
-      vta: vta, minActual: minAct, repActual: repAct, transito: trans, stockActual: stAct,
+      vta: vta, transito: trans, stockActual: stAct,
       minSol: minSol, repSol: repSol });
     var bg      = (idx % 2 === 0) ? '#f3f4f6' : '#ffffff';
     var dotHtml = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+dc+';margin-right:6px;vertical-align:middle"></span>';
@@ -18151,16 +18145,13 @@ function reqStockEnviarEmail(){
         '<td style="'+sCd+';width:70px;font-family:monospace;font-size:11px;white-space:nowrap;overflow:hidden">'+cod+'</td>'+
         '<td style="'+sCd+';width:200px;max-width:200px;word-break:break-word;overflow-wrap:break-word;overflow:hidden">'+dotHtml+'<strong>'+prod+'</strong></td>'+
         '<td style="'+sCdR+';width:58px;overflow:hidden">'+vta+'</td>'+
-        '<td style="'+sCdR+';width:62px;overflow:hidden">'+minAct+'</td>'+
-        '<td style="'+sCdR+';width:68px;overflow:hidden;background:#fef3c7;font-weight:700">'+repAct+'</td>'+
         '<td style="'+sCdR+';width:58px;overflow:hidden">'+trans+'</td>'+
         '<td style="'+sCdR+';width:58px;overflow:hidden">'+stAct+'</td>'+
         '<td style="'+sCdR+';width:68px;overflow:hidden">'+minSol+'</td>'+
         '<td style="'+sCdR+';width:72px;overflow:hidden;background:#d1fae5;font-weight:700">'+repSol+'</td>'+
       '</tr>';
     plainLineas.push(idx+'. ['+abc+'] '+cod+' — '+prod+
-      '\n   Vta 2m: '+vta+' | Min.actual: '+minAct+' | Repos.actual: '+repAct+
-      ' | Tránsito: '+trans+' | Stock: '+stAct+
+      '\n   Vta 2m: '+vta+' | Tránsito: '+trans+' | Stock: '+stAct+
       ' | Min.sol: '+minSol+' | Repos.sol: '+repSol);
   });
 
@@ -18186,8 +18177,6 @@ function reqStockEnviarEmail(){
             '<th style="'+sTh+'left;width:70px">Código</th>'+
             '<th style="'+sTh+'left;width:200px;max-width:200px">Producto</th>'+
             '<th style="'+sTh+'right;width:58px">Vta<br>2 meses</th>'+
-            '<th style="'+sTh+'right;width:62px">Mínimo<br>actual</th>'+
-            '<th style="'+sTh+'right;width:68px;background:#92400e">Repos.<br>actual</th>'+
             '<th style="'+sTh+'right;width:58px">Tránsito</th>'+
             '<th style="'+sTh+'right;width:58px">Stock<br>actual</th>'+
             '<th style="'+sTh+'right;width:68px">Mínimo<br>solicitado</th>'+
@@ -18200,7 +18189,7 @@ function reqStockEnviarEmail(){
       '<div style="background:#eff6ff;border-left:3px solid #3b82f6;padding:8px 12px;font-size:11px;color:#1e40af;margin-bottom:14px;width:690px">'+
         '&#9679; Cobertura calculada: <strong>'+dias+' días</strong> &nbsp;|&nbsp; '+
         'Período analizado: <strong>'+desde+'</strong> al <strong>'+hasta+'</strong><br>'+
-        '&#9679; Repos. actual = Mínimo &minus; Stock actual &minus; Tránsito en curso'+
+        '&#9679; Stock = PEM + SEM disponible'+
       '</div>'+
 
       '<hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0">'+
@@ -18220,7 +18209,7 @@ function reqStockEnviarEmail(){
     plainLineas.join('\n\n')+
     '\n\n'+'─'.repeat(60)+'\n'+
     'Cobertura: '+dias+' días  |  Período: '+desde+' al '+hasta+'\n'+
-    'Repos. actual = Mínimo - Stock actual - Tránsito\n\n'+
+    'Stock = PEM + SEM disponible\n\n'+
     'Saludos,\nAlejandro González\nFerretería Oviedo — El Manzano';
 
   _reqEmailMailto = 'mailto:paco@oviedo.cl'+
@@ -18305,8 +18294,8 @@ function reqImportarHistorialWord(){
         nuevos.forEach(function(item){
           var e = item.e;
           var cods = (e.productos||[]).map(function(x){
-            return { codigo:x.codigo, desc:x.desc, vta:x.vta, minActual:x.minActual,
-                     repActual:x.repActual, transito:x.transito, stockActual:x.stockActual,
+            return { codigo:x.codigo, desc:x.desc, vta:x.vta,
+                     transito:x.transito, stockActual:x.stockActual,
                      minSol:x.minSol, repSol:x.repSol };
           });
           totalProds += cods.length;
