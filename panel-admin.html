@@ -9491,7 +9491,6 @@ function venAdmCargar(){
       // 3. Fallback a Firestore (sin límite de 1000)
       if(!window.db){ if(body) body.innerHTML='<div class="ven-adm-empty">Sin datos disponibles.</div>'; return; }
       var query = window.db.collection('ventas');
-      if(vendedor) query = query.where('vendedor','==',vendedor);
       query.get().then(function(snap){
         var todos = [];
         snap.forEach(function(d){ todos.push(d.data()); });
