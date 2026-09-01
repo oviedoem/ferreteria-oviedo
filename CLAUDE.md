@@ -20,7 +20,7 @@
 
 - **Proyecto activo:** `E:\ferreteria-oviedo\` — trabajar SIEMPRE aquí
 - **Git repo:** `E:\git-sync\` — NUNCA modificar directamente
-- **Versión activa:** V37.61 · 2026-08-27 · ver AGENTS.md (historial de deploys)
+- **Versión activa:** V37.63 · 2026-08-31 · ver AGENTS.md (historial de deploys)
 - **Stack:** HTML/CSS/JS Vanilla + Firebase Hosting + Python pipeline ERP (JustWeb SSRS)
 - **Deploy:** `firebase deploy` desde `E:\ferreteria-oviedo\`
 - **Commit:** `ACTUALIZAR_GITHUB.bat` desde `E:\ferreteria-oviedo\`

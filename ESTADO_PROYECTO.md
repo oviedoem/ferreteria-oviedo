@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.61
-# Fecha: 2026-08-27
+# Version activa: V37.63
+# Fecha: 2026-08-31
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,10 +12,10 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.61 |
-| Fecha | 2026-08-27 |
-| Deploy | ✅ 17:07 (pipeline completo, sesiones V37.59→V37.61) |
-| Commit | acdc33b (V37 2026-08-27 — actualizacion automatica) |
+| Version | V37.63 |
+| Fecha | 2026-08-31 |
+| Deploy | ✅ 01:30 01-09-2026 (via hotspot — FortiFilter bloqueaba deploy en red local) |
+| Commit | pendiente ACTUALIZAR_GITHUB.bat |
 | Pendiente | — |
 
 ---
