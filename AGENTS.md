@@ -142,6 +142,7 @@ Proyecto activo:     PROYECTO_E:\ferreteria-oviedo\   (letra real variable — i
 Git sync (solo):     PROYECTO_E:\git-sync\        (NO es el proyecto — solo copia para git)
 Archivados:          PROYECTO_E:\ferreteria-oviedo\_HISTORICO\
 Bodegas XLSM:        PROYECTO_E:\ferreteria-oviedo\BODEGAS\
+Adquisiciones:       PROYECTO_E:\ferreteria-oviedo\ADQUISICIONES\  (inputs tab Solicitud Stock: BaseStockMinimos.xlsx, solicitud de stock.docx)
 Memory Claude:       CONFIG_W:\claude-config\projects\E--ferreteria-oviedo\memory\
                      (acceso via junction C:\Users\<usuario>\.claude → CONFIG_W:\claude-config\)
 CLAUDE.md global:    CONFIG_W:\claude-config\CLAUDE.md

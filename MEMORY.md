@@ -1,7 +1,8 @@
 ## Índice de memoria — proyecto E:\ferreteria-oviedo
 
 ### Estado de sesión (recientes)
-- [estado-sesion-20260831](estado-sesion-20260831.md) — V37.63: Solicitud Stock prioridad A→B→C + DD→categoría D, guardado desacoplado (botón Confirmar), import historial Word (7 envíos/63 prods). Commit 20e8126. DEPLOY PENDIENTE (firebase login requerido).
+- [estado-sesion-20260901](estado-sesion-20260901.md) — V37.63: Deploy bloqueado FortiFilter NDIS (red local), resuelto via hotspot moto g22. Panel restaurado. Docs sync, commit 3020cfd.
+- [estado-sesion-20260831](estado-sesion-20260831.md) — V37.63: Solicitud Stock prioridad A→B→C + DD→categoría D, guardado desacoplado (botón Confirmar), import historial Word. Commit 20e8126. Deploy hecho 01-09 ~01:20 via hotspot.
 - [estado-sesion-20260822](estado-sesion-20260822.md) — V37.58: pipeline TODO2 22-08 OK, fix rotar_token despachos-panel, análisis TRIM confirmado OK, docs actualizados, commit f838206.
 - [estado-sesion-20260820d](estado-sesion-20260820d.md) — V37.58: SQL reemplaza Blazor definitivo, fusionar_despachos.py archivado (código muerto), modDespachosPend.bas creado, limpieza docs completa. Deploy+commit 8acd3cd.
 - [estado-sesion-20260820c](estado-sesion-20260820c.md) — TODO2.bat OK, descargar_blazor_api.py creado (REST puro), BOM+URL ERP fix, TOKEN renovado. Bug JustTime: P_CONTROL_BODEGAS sin permisos cloud.
@@ -72,7 +73,7 @@
 - [feedback-verificar-codigo-en-prompts-detallados](feedback-verificar-codigo-en-prompts-detallados.md) — REGLA: código literal en prompts puede traer bugs — verificar antes de aplicar
 - [feedback-revisar-referencias-antes-de-investigar](feedback-revisar-referencias-antes-de-investigar.md) — REGLA: revisar IDS_REFERENCIA.md y .xlsx ANTES de investigar con agentes
 - [feedback-no-usar-c](feedback-no-usar-c.md) — REGLA: nunca usar C: para el proyecto; confirmar antes de borrar cualquier registro en C:
-- [feedback-archivos-respaldo-fuera-proyecto](feedback-archivos-respaldo-fuera-proyecto.md) — REGLA: respaldos/temporales → E:\ferreteria-oviedo\_ARCHIVO_FERRETERIA, nunca dentro del proyecto
+- [feedback-archivos-respaldo-fuera-proyecto](feedback-archivos-respaldo-fuera-proyecto.md) — REGLA: respaldos/temporales → E:\_ARCHIVO_FERRETERIA (FUERA del proyecto), nunca dentro del proyecto
 - [feedback-rutas-activas-e-w](feedback-rutas-activas-e-w.md) — REGLA: E: y W: son rutas activas; L: es solo respaldo, nunca cambiar configs a L:
 - [feedback-ejecucion-bats](feedback-ejecucion-bats.md) — BATs en background con output visible; usuario puede chatear sin interrumpir
 - [feedback-orientacion-sesion-nueva](feedback-orientacion-sesion-nueva.md) — REGLA: leer archivos reales al inicio, declarar scope, ejecutar pendientes sin preguntar

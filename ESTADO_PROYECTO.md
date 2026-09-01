@@ -15,7 +15,7 @@
 | Version | V37.63 |
 | Fecha | 2026-08-31 |
 | Deploy | ✅ 01:30 01-09-2026 (via hotspot — FortiFilter bloqueaba deploy en red local) |
-| Commit | pendiente ACTUALIZAR_GITHUB.bat |
+| Commit | 3020cfd (docs sync V37.63) |
 | Pendiente | — |
 
 ---
