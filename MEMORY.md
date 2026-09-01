@@ -1,6 +1,7 @@
 ## Índice de memoria — proyecto E:\ferreteria-oviedo
 
 ### Estado de sesión (recientes)
+- [estado-sesion-20260831](estado-sesion-20260831.md) — V37.63: Solicitud Stock prioridad A→B→C + DD→categoría D, guardado desacoplado (botón Confirmar), import historial Word (7 envíos/63 prods). Commit 20e8126. DEPLOY PENDIENTE (firebase login requerido).
 - [estado-sesion-20260822](estado-sesion-20260822.md) — V37.58: pipeline TODO2 22-08 OK, fix rotar_token despachos-panel, análisis TRIM confirmado OK, docs actualizados, commit f838206.
 - [estado-sesion-20260820d](estado-sesion-20260820d.md) — V37.58: SQL reemplaza Blazor definitivo, fusionar_despachos.py archivado (código muerto), modDespachosPend.bas creado, limpieza docs completa. Deploy+commit 8acd3cd.
 - [estado-sesion-20260820c](estado-sesion-20260820c.md) — TODO2.bat OK, descargar_blazor_api.py creado (REST puro), BOM+URL ERP fix, TOKEN renovado. Bug JustTime: P_CONTROL_BODEGAS sin permisos cloud.
