@@ -574,6 +574,23 @@ echo  [OK] Token data/ verificado en vivo (HTTP 200) - panel con datos.
 echo.
 timeout /t 2 /nobreak >nul
 
+:: -- PASO 7: Commit y push a GitHub --------------------------------------------
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 7 - Commit automatico a GitHub                   ^|
+echo  +----------------------------------------------------------+
+echo.
+call "%~dp0ACTUALIZAR_GITHUB.bat"
+if %errorlevel% neq 0 (
+    color 0E
+    echo  [AVISO] Commit a GitHub fallo - ejecuta ACTUALIZAR_GITHUB.bat manualmente.
+    color 0A
+) else (
+    echo  [OK] Cambios commiteados y pusheados a GitHub.
+)
+echo.
+timeout /t 2 /nobreak >nul
+
 color 0A
 echo.
 echo  ============================================================
@@ -582,6 +599,7 @@ echo   [OK] Precio y Stock
 echo   [OK] Ventas
 echo   [OK] Deploy Firebase
 echo   [OK] Catalogo Bot
+echo   [OK] Commit GitHub
 echo  ============================================================
 echo.
 pause
