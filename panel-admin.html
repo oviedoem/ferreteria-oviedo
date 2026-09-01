@@ -18005,11 +18005,20 @@ function reqStockPrellenar(){
     });
   });
 
+  // ── Categoria D (V37.63): SIN VENTA en los ultimos 12 meses (por codigo) o descontinuado (DD) ──
+  var hace12m   = hastaTs - 365*86400000;
+  var vendio12m = {};
+  _vadmLineas.forEach(function(r){
+    if(!r.codigo) return;
+    var ts = venAdmParseFecha(r.fecha);
+    if(ts && ts >= hace12m && ts <= hastaTs && (parseFloat(r.cantidad) || 0) > 0) vendio12m[r.codigo] = 1;
+  });
+
   var lista = Object.keys(baseCodigosTodos).filter(function(cod){
     var p    = _vadmStockMap[cod] || {};
     var b    = baseCodigosTodos[cod];
     var desc = (p.desc || b.descripcion || '').toUpperCase();
-    if(desc.indexOf('(DD)') >= 0){ _reqDDExcluidos++; return false; }  // descontinuado → categoria D, no se envia
+    if(desc.indexOf('(DD)') >= 0 || !vendio12m[cod]){ _reqDDExcluidos++; return false; }  // categoria D, no se envia
     if(marcaSel && (p.marca || '') !== marcaSel) return false;
     if(catsOk.indexOf(abcMap[cod] || 'C') < 0) return false;
     var trans = (p.pem_trans || 0) + (p.tem_trans || 0);
@@ -18087,7 +18096,7 @@ function reqStockPrellenar(){
   // Nota informativa: descontinuados (categoria D) excluidos del envio
   if(_reqDDExcluidos > 0){
     rows = '<tr><td colspan="11" style="padding:6px 14px;background:#f3f4f6;color:#6b7280;font-size:11px;border-bottom:1px solid #e5e7eb">'+
-      '🏷️ '+_reqDDExcluidos+' descontinuado(s) (DD) de esta marca — categoria D, agrupados y excluidos del envío</td></tr>' + rows;
+      '🏷️ '+_reqDDExcluidos+' código(s) categoría D de esta marca (sin venta en 12 meses o descontinuados DD) — agrupados y excluidos del envío</td></tr>' + rows;
   }
   document.getElementById('reqStockBody').innerHTML = rows;
 

@@ -304,7 +304,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - V37.60 (2026-08-27): fix inconsistencia ventas ERP cloud ago-2026 — normalizar_totales_sql() escala lineas SSRS a VALOR_NETO SQL (corrige 1733 pares duplicados), fix NCE sign inversion, agregar_docs_sin_ssrs() recupera 163 docs omitidos por cloud; descargar_ventas_enrich.py agrega campos neto+fecha; panel 24-Jul a 23-Ago: $187.6M sin NCE vs meta ERP $187.3M (0.13% dif.); commit 442e795
 - V37.61 (2026-08-27): fix NCE duplicados SSRS v2 (escala k=-sql_neto/ssrs_sum cuando ssrs_sum<0 y sql_neto>0; 675 docs); panel $183.53M vs ERP $183.49M (0.024%); ACTUALIZAR_GITHUB.bat sin pause + check .py via git ls-files; commit 08d6d32
 - V37.62 (2026-08-31): MIGRACIÓN bot WhatsApp a cuenta Render alejandrog45 (servicio nuevo oviedo-whatsapp-bot-k6ou.onrender.com; viejo suspendido — límite 750h gratis); BOT_API + CSP connect-src a URL nueva; fix token data/: Firestore dataAccessToken/current quedó apuntando a token fantasma d1564d57 (escritor externo 16:42 sin campo 'actualizado' — sospecha: otro PC con script antiguo) → reapuntado a 8e95f5f4 con renovar_token_data.py; GUARDA PASO 6 en ACTUALIZAR_TODO.bat y _AUTO.bat: verifica token data/ vivo en Hosting post-deploy (HTTP 200), reintenta deploy 1 vez y alerta en rojo si falla — evita que el panel quede sin datos nunca más
-- V37.63 (2026-08-31): Solicitud Stock mejorada — prioridad A→B→C por marca, todos los pendientes (reqN 0=todos), descontinuados (DD) → categoría D excluidos con conteo; guardado desacoplado del portapapeles: botón "Confirmar envío" registra en Firestore con snapshot completo (desc/abc/vta/min/rep/transito/stock) + anti-duplicado mismo día+mismos códigos; importación única historial Word → historialEnviosStock (7 envíos, 63 prods) vía data/import-historial-word.json + botón "Importar historial Word"
+- V37.63 (2026-08-31): Solicitud Stock mejorada — prioridad A→B→C por marca, todos los pendientes (reqN 0=todos), categoría D = SIN VENTA en 12 meses por código (o DD en descripción), excluidos con conteo visible; guardado desacoplado del portapapeles: botón "Confirmar envío" registra en Firestore con snapshot completo (desc/abc/vta/min/rep/transito/stock) + anti-duplicado mismo día+mismos códigos; importación única historial Word → historialEnviosStock (7 envíos, 63 prods) vía data/import-historial-word.json + botón "Importar historial Word". REGLA NUEVA: deploy SOLO via ACTUALIZAR_TODO.bat PASO 4, nunca manual
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
 ### APP-INVENTARIO (proyecto separado)
@@ -370,9 +370,14 @@ NO eliminar (son base/histórico):
 
 ## REGLA DE CIERRE DE SESIÓN — DEPLOY PENDIENTE
 
+**REGLA (confirmada por el dueño 2026-08-31): el deploy NUNCA se ejecuta manualmente
+ni por el agente. El deploy SOLO se hace dentro del pipeline `ACTUALIZAR_TODO.bat`
+(PASO 4). Si hay cambios pendientes de publicar, se deja constancia y se corre el
+pipeline — nunca `firebase deploy` suelto.**
+
 Antes de terminar cualquier sesión donde se hayan modificado archivos:
 1. Comparar mtime de archivos desplegables (HTML, JS, JSON) vs último deploy
-2. Si algún archivo es más nuevo → ejecutar `firebase deploy --only hosting`
+2. Si algún archivo es más nuevo → reportar "deploy pendiente" (lo publica el próximo ACTUALIZAR_TODO.bat)
 3. Actualizar línea "Deploy cierre sesión" en este archivo
 4. Ejecutar `ACTUALIZAR_GITHUB.bat`
 

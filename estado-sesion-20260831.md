@@ -11,8 +11,9 @@
 ### 2. V37.63 — Solicitud Semanal de Stock (panel-admin.html)
 - **CAMBIO 1 — reqStockPrellenar:** orden por prioridad categoría A→B→C (antes: qty DESC);
   dentro de cada categoría más vendido DESC y quiebres primero. reqN ahora 0=TODOS los
-  pendientes de la marca (input HTML actualizado). Descontinuados `(DD)` → categoría D:
-  excluidos del envío con nota visible de conteo (`_reqDDExcluidos`).
+  pendientes de la marca (input HTML actualizado). **Categoría D = SIN VENTA en los últimos
+  12 meses por código** (corrección del dueño 31-08 23:01; también excluye (DD) de la
+  descripción como descontinuado ERP) — excluidos del envío con nota de conteo visible.
 - **CAMBIO 2 — guardado desacoplado:** copiar HTML ya NO registra en Firestore.
   Nuevo botón modal "✔️ Confirmar envío (registrar en historial)" → `reqEmailConfirmarEnvio()`.
   `_reqGuardarEnvio` ahora: anti-duplicado (mismo día + mismo set de códigos → confirm()),
@@ -33,10 +34,11 @@
 - NOTA: ACTUALIZAR_GITHUB.bat falló por identidad git (GIT_CONFIG_GLOBAL no heredado en
   shell bash) — commit hecho manual en E:\git-sync con GIT_CONFIG_GLOBAL explícito.
 
-## PENDIENTE — DEPLOY NO REALIZADO
-- `firebase deploy --only hosting` falló: "Failed to authenticate, have you run firebase login?"
-- Acción requerida: `firebase login` (interactivo) y luego PUBLICAR.bat o el deploy.
-- Sin el deploy, los cambios V37.63 y el JSON de importación NO están en producción.
+## PENDIENTE — DEPLOY NO REALIZADO (POR REGLA)
+- REGLA confirmada por el dueño 2026-08-31 23:0x: **el deploy NUNCA se ejecuta manual
+  ni por el agente — SOLO dentro de ACTUALIZAR_TODO.bat (PASO 4)**. AGENTS.md y skill
+  experto actualizados con esta regla.
+- Los cambios V37.63 y data/import-historial-word.json se publican con el próximo pipeline.
 
 ## Verificación
 - node --check OK en bloque script principal de panel-admin.html.
