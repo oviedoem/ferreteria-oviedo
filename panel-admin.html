@@ -3698,16 +3698,18 @@ Todo desde tu celular, gratis, sin apps que descargar.
           <span style="font-size:12px;color:#374151">🆕 Sin definir</span>
         </label>
       </div>
-      <!-- N ítems -->
+      <!-- N ítems (0 = todos los pendientes de la marca) -->
       <label style="font-size:12px;font-weight:600;color:#374151;display:flex;align-items:center;gap:6px">
-        Mostrar
-        <input type="number" id="reqN" value="10" min="1" max="50"
-          style="width:52px;font-size:12px;padding:4px 6px;border:1px solid #d1d5db;border-radius:6px;text-align:center">
-        ítems
+        Máx
+        <input type="number" id="reqN" value="0" min="0" max="500"
+          style="width:52px;font-size:12px;padding:4px 6px;border:1px solid #d1d5db;border-radius:6px;text-align:center"
+          title="0 = todos los productos pendientes de la marca (prioridad A, luego B y C)">
+        ítems (0=todos)
       </label>
       <button class="btn btn-sm" onclick="reqStockPrellenar()">🔄 Pre-llenar</button>
       <button class="btn btn-sm" style="background:#059669;color:white" onclick="reqStockEnviarEmail()">📧 Enviar a Adquisiciones</button>
       <button class="btn btn-sm" style="background:#4b5563;color:white" onclick="reqDescargarHistorial()" title="Descarga Excel con la base completa de códigos (PEM+SEM) y su estado de envío">⬇️ Historial enviados</button>
+      <button class="btn btn-sm" style="background:#7c3aed;color:white" onclick="reqImportarHistorialWord()" title="Uso único: importa al historial de Firestore los envíos registrados en el Word y marca sus códigos como enviados">⬆️ Importar historial Word</button>
     </div>
 
     <!-- Badge AYER -->
@@ -3985,6 +3987,11 @@ Todo desde tu celular, gratis, sin apps que descargar.
         style="background:#1e3a5f;color:white;border:none;padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">
         ✉️ Abrir cliente de correo
       </button>
+      <button onclick="reqEmailConfirmarEnvio()" id="reqEmailBtnConfirmar"
+        title="Registra el envío en el historial de Firestore y marca los códigos como enviados. Copiar el HTML ya NO registra automáticamente."
+        style="background:#7c3aed;color:white;border:none;padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">
+        ✔️ Confirmar envío (registrar en historial)
+      </button>
       <span id="reqEmailFeedback" style="font-size:12px;color:#059669;align-self:center;font-weight:600"></span>
     </div>
     <!-- Preview del email -->
@@ -4004,7 +4011,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.62<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">31-08-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.63<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">31-08-2026</span></div>
 
 <script>
 
@@ -17879,7 +17886,8 @@ function _reqStockPoblarMarcas(){
 
 var _reqStockParams = null;  // {codigo:{min,max,critico,repo,disp}} desde stock-critico.json (parametros ERP / Adquisiciones)
 var _reqBaseMin = null;      // {PEM:{codigos:{...}}, SEM:{codigos:{...}}} desde Firestore
-var _reqCodigosEnviados = []; // codigos de la ultima tabla lista para enviar
+var _reqCodigosEnviados = []; // snapshot completo de la ultima tabla lista para enviar
+var _reqDDExcluidos = 0;     // descontinuados (DD) de la marca actual — categoria D, no se envian
 function reqStockPrellenar(){
   // Cargar parametros ERP (ST_MIN/ST_MAX/ST_REPOSICION desde SQL) una vez, luego re-ejecutar
   if(_reqStockParams === null){
@@ -17900,7 +17908,8 @@ function reqStockPrellenar(){
   var conMin   = document.getElementById('reqConMin')   ? document.getElementById('reqConMin').checked   : true;
   var conRepo  = document.getElementById('reqConRepo')  ? document.getElementById('reqConRepo').checked  : true;
   var soloSinDefinir = document.getElementById('reqSoloSinDefinir') ? document.getElementById('reqSoloSinDefinir').checked : false;
-  var nItems   = Math.max(1, parseInt(document.getElementById('reqN').value) || 10);
+  var nItems   = parseInt(document.getElementById('reqN').value, 10) || 0;  // 0 = TODOS los pendientes de la marca
+  _reqDDExcluidos = 0;
 
   _reqStockPoblarMarcas();
   var marcaSel  = document.getElementById('reqMarca').value;
@@ -18000,7 +18009,7 @@ function reqStockPrellenar(){
     var p    = _vadmStockMap[cod] || {};
     var b    = baseCodigosTodos[cod];
     var desc = (p.desc || b.descripcion || '').toUpperCase();
-    if(desc.indexOf('(DD)') >= 0) return false;
+    if(desc.indexOf('(DD)') >= 0){ _reqDDExcluidos++; return false; }  // descontinuado → categoria D, no se envia
     if(marcaSel && (p.marca || '') !== marcaSel) return false;
     if(catsOk.indexOf(abcMap[cod] || 'C') < 0) return false;
     var trans = (p.pem_trans || 0) + (p.tem_trans || 0);
@@ -18031,12 +18040,18 @@ function reqStockPrellenar(){
              ocPend:(p.oc_pend || 0) };
   })
 
-  // ── 5. Ordenar: más vendido DESC, sin ventas al fondo ──
+  // ── 5. Ordenar: prioridad categoria A→B→C; dentro de cada una, mas vendido DESC y quiebres primero ──
   .sort(function(a,b){
+    var ORDEN = { 'A':0, 'B':1, 'C':2 };
+    var oa = ORDEN[a.abc] !== undefined ? ORDEN[a.abc] : 2;
+    var ob = ORDEN[b.abc] !== undefined ? ORDEN[b.abc] : 2;
+    if(oa !== ob) return oa - ob;
     if(b.qty !== a.qty) return b.qty - a.qty;
     return (a.stockActual === 0 ? 0 : 1) - (b.stockActual === 0 ? 0 : 1);
-  })
-  .slice(0, nItems);
+  });
+
+  // Tope opcional: reqN = 0 → TODOS los pendientes de la marca (comportamiento por defecto)
+  if(nItems > 0) lista = lista.slice(0, nItems);
 
   if(!lista.length){ alert('Sin productos para los filtros seleccionados.'); return; }
 
@@ -18069,6 +18084,11 @@ function reqStockPrellenar(){
     '</tr>';
   }).join('');
 
+  // Nota informativa: descontinuados (categoria D) excluidos del envio
+  if(_reqDDExcluidos > 0){
+    rows = '<tr><td colspan="11" style="padding:6px 14px;background:#f3f4f6;color:#6b7280;font-size:11px;border-bottom:1px solid #e5e7eb">'+
+      '🏷️ '+_reqDDExcluidos+' descontinuado(s) (DD) de esta marca — categoria D, agrupados y excluidos del envío</td></tr>' + rows;
+  }
   document.getElementById('reqStockBody').innerHTML = rows;
 
   // Indicador de frescura de datos OC (V37.55)
@@ -18088,6 +18108,8 @@ function reqStockPrellenar(){
 // ── Variables globales para el modal de email solicitud stock ──────────────
 var _reqEmailMailto = '';
 var _reqEmailPlain  = '';
+var _reqEnvioMeta = null;        // {marca, coberturaDias, periodoDesde, periodoHasta}
+var _reqEnvioYaGuardado = false; // anti doble-registro dentro del modal
 
 function reqStockEnviarEmail(){
   var filas = document.querySelectorAll('#reqStockTable tbody tr');
@@ -18098,8 +18120,11 @@ function reqStockEnviarEmail(){
   var desde  = document.getElementById('reqDesde').value || '';
   var hasta  = document.getElementById('reqHasta').value || '';
   var dias   = document.getElementById('reqDias').value  || '90';
-  var nItems = document.getElementById('reqN').value     || '10';
+  var nItems = document.getElementById('reqN').value     || '0';
   var hoy    = new Date().toLocaleDateString('es-CL');
+  _reqEnvioMeta = { marca: (document.getElementById('reqMarca')||{}).value || '',
+                    coberturaDias: dias, periodoDesde: desde, periodoHasta: hasta };
+  _reqEnvioYaGuardado = false;
   var _diasES = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   var diaHoy  = _diasES[new Date().getDay()];
 
@@ -18129,7 +18154,9 @@ function reqStockEnviarEmail(){
     var stAct   = tr.cells[7].textContent.trim();
     var minSol  = inps[0].value;
     var repSol  = inps[1].value;
-    _reqCodigosEnviados.push({ codigo: cod, minSol: minSol, repSol: repSol });
+    _reqCodigosEnviados.push({ codigo: cod, desc: prod, abc: abc,
+      vta: vta, minActual: minAct, repActual: repAct, transito: trans, stockActual: stAct,
+      minSol: minSol, repSol: repSol });
     var bg      = (idx % 2 === 0) ? '#f3f4f6' : '#ffffff';
     var dotHtml = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+dc+';margin-right:6px;vertical-align:middle"></span>';
     rowsHtml +=
@@ -18163,7 +18190,7 @@ function reqStockEnviarEmail(){
       '<p style="margin:0 0 18px;font-size:13px">Le envío el listado de reposición de stock para sucursal <strong>El Manzano</strong>, correspondiente al '+diaHoy+' <strong>'+hoy+'</strong>.</p>'+
 
       '<table width="714" cellpadding="0" cellspacing="0" style="background:#374151;color:white;font-weight:700;font-size:11px;letter-spacing:.6px;margin-bottom:0"><tr><td style="padding:7px 12px">'+
-        'DETALLE DE PRODUCTOS — TOP '+nItems+' ALTA ROTACIÓN'+
+        'DETALLE DE PRODUCTOS — '+idx+' PENDIENTES DE ENVÍO'+
       '</td></tr></table>'+
 
       '<table style="border-collapse:collapse;width:714px;table-layout:fixed;margin-bottom:14px">'+
@@ -18201,7 +18228,7 @@ function reqStockEnviarEmail(){
   _reqEmailPlain =
     'Estimado Francisco,\n\n'+
     'Le envío el listado de reposición de stock para El Manzano, correspondiente al '+diaHoy+' '+hoy+'.\n\n'+
-    'TOP '+nItems+' ALTA ROTACIÓN\n'+
+    'DETALLE: '+idx+' PRODUCTOS PENDIENTES DE ENVÍO\n'+
     '─'.repeat(60)+'\n'+
     plainLineas.join('\n\n')+
     '\n\n'+'─'.repeat(60)+'\n'+
@@ -18215,6 +18242,8 @@ function reqStockEnviarEmail(){
 
   document.getElementById('reqEmailPreview').innerHTML = htmlEmail;
   document.getElementById('reqEmailFeedback').textContent = '';
+  var btnC = document.getElementById('reqEmailBtnConfirmar');
+  if(btnC){ btnC.disabled = false; btnC.style.opacity = '1'; btnC.textContent = '✔️ Confirmar envío (registrar en historial)'; }
   document.getElementById('reqEmailModal').style.display = 'block';
   reqEmailCopiarHtml();
 }
@@ -18228,10 +18257,10 @@ function reqEmailCopiarHtml(){
     navigator.clipboard.write([
       new ClipboardItem({'text/html': blob, 'text/plain': blobT})
     ]).then(function(){
-      fb.textContent = '✅ HTML copiado — pega con Ctrl+V en Outlook o Gmail';
+      fb.textContent = '✅ HTML copiado — pégalo en Outlook o Gmail. Luego presiona "✔️ Confirmar envío" para registrar en el historial.';
       document.getElementById('reqEmailBtnCopiar').textContent = '✅ Copiado';
       setTimeout(function(){ document.getElementById('reqEmailBtnCopiar').textContent = '📋 Copiar HTML (para Outlook / Gmail)'; }, 3000);
-      _reqGuardarEnvio(_reqCodigosEnviados);
+      // NOTA (V37.63): el registro en historial YA NO ocurre al copiar — solo via boton Confirmar envio
     }).catch(function(){
       navigator.clipboard.writeText(_reqEmailPlain).then(function(){
         fb.textContent = '📋 Texto plano copiado (HTML no disponible en este navegador)';
@@ -18251,6 +18280,98 @@ function reqEmailCerrar(){
   document.getElementById('reqEmailModal').style.display = 'none';
 }
 
+// ── Importación única: historial de envíos desde el Word (V37.63) ──────────
+function reqImportarHistorialWord(){
+  if(!window.db){ alert('Sin conexión a Firestore.'); return; }
+  fetch(dataUrl('import-historial-word.json'))
+    .then(function(r){
+      if(r.ok) return r.json();
+      return fetch('/data/import-historial-word.json').then(function(r2){ return r2.json(); });
+    })
+    .then(function(data){
+      var envios = (data && data.envios) || [];
+      if(!envios.length){ alert('JSON de importación vacío o inválido.'); return; }
+      window.db.collection('historialEnviosStock').get().then(function(qs){
+        var existentes = {};
+        qs.forEach(function(doc){
+          var d = doc.data();
+          var key = (d.fecha||'') + '|' + (d.codigos||[]).map(function(c){ return c.codigo; }).sort().join(',');
+          existentes[key] = 1;
+        });
+        var nuevos = [], omitidos = 0;
+        envios.forEach(function(e){
+          var p = (e.fecha||'').split('-'); // dd-mm-yyyy → ISO
+          var fechaISO = p.length === 3 ? p[2]+'-'+p[1]+'-'+p[0] : e.fecha;
+          var key = fechaISO + '|' + (e.productos||[]).map(function(x){ return x.codigo; }).sort().join(',');
+          if(existentes[key]){ omitidos++; return; }
+          nuevos.push({ e:e, fechaISO:fechaISO });
+        });
+        if(!nuevos.length){
+          alert('Nada que importar: los '+envios.length+' envíos del Word ya están en el historial.');
+          return;
+        }
+        if(!window.confirm('Se importarán '+nuevos.length+' envíos del Word al historial'+
+          (omitidos ? ' ('+omitidos+' omitidos por duplicado)' : '')+
+          '.\nTambién se marcarán sus códigos como enviados en la base PEM/SEM.\n¿Continuar?')) return;
+
+        var totalProds = 0;
+        nuevos.forEach(function(item){
+          var e = item.e;
+          var cods = (e.productos||[]).map(function(x){
+            return { codigo:x.codigo, desc:x.desc, vta:x.vta, minActual:x.minActual,
+                     repActual:x.repActual, transito:x.transito, stockActual:x.stockActual,
+                     minSol:x.minSol, repSol:x.repSol };
+          });
+          totalProds += cods.length;
+          window.db.collection('historialEnviosStock').add({
+            fecha: item.fechaISO,
+            fechaTexto: e.fecha,
+            marca: '',
+            coberturaDias: e.coberturaDias || '',
+            periodoDesde: e.periodoDesde || '',
+            periodoHasta: e.periodoHasta || '',
+            origen: 'word-docx',
+            codigos: cods,
+            total: cods.length
+          }).catch(function(err){ console.warn('import historial', err); });
+        });
+
+        // Marcar códigos como enviados en base PEM/SEM (con su fecha de envío real)
+        _reqCargarBaseMin();
+        var marcados = 0;
+        ['PEM','SEM'].forEach(function(bod){
+          var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
+          if(!base) return;
+          var coleccion = window.db.collection('config').doc('baseStockMinimos_'+bod).collection('codigos');
+          var batch = window.db.batch();
+          var n = 0;
+          nuevos.forEach(function(item){
+            (item.e.productos||[]).forEach(function(x){
+              if(base[x.codigo]){
+                var upd = { enviado:true, ultimoEnvio: item.fechaISO };
+                var mn = parseInt(x.minSol,10), rp = parseInt(x.repSol,10);
+                if(!isNaN(mn)) upd.st_min   = mn;
+                if(!isNaN(rp)) upd.st_repos = rp;
+                batch.update(coleccion.doc(x.codigo), upd);
+                Object.assign(base[x.codigo], upd);
+                n++; marcados++;
+              }
+            });
+          });
+          if(n) batch.commit().catch(function(err){ console.warn('import base '+bod, err); });
+        });
+
+        alert('✅ Importación lista: '+nuevos.length+' envíos ('+totalProds+' productos) agregados al historial.\n'+
+              marcados+' códigos marcados como enviados en la base PEM/SEM.');
+        if(window.toast) toast('📥 Historial Word importado: '+nuevos.length+' envíos','ok');
+      });
+    })
+    .catch(function(e){
+      console.warn(e);
+      alert('No se pudo leer data/import-historial-word.json — verifica que esté desplegado en Hosting.');
+    });
+}
+
 function _reqCargarBaseMin(){
   if(_reqBaseMin !== null) return;
   if(!window.db) return;
@@ -18267,15 +18388,57 @@ function _reqCargarBaseMin(){
   });
 }
 
+function reqEmailConfirmarEnvio(){
+  var fb = document.getElementById('reqEmailFeedback');
+  if(_reqEnvioYaGuardado){
+    if(fb) fb.textContent = '✔️ Este envío ya fue registrado en el historial.';
+    return;
+  }
+  if(!_reqCodigosEnviados || !_reqCodigosEnviados.length){
+    alert('No hay códigos para registrar. Pre-llena la tabla y genera el correo primero.');
+    return;
+  }
+  var btn = document.getElementById('reqEmailBtnConfirmar');
+  if(btn){ btn.disabled = true; btn.style.opacity = '.6'; btn.textContent = '⏳ Registrando...'; }
+  _reqGuardarEnvio(_reqCodigosEnviados);
+}
+
 function _reqGuardarEnvio(codigos){
   if(!window.db || !codigos || !codigos.length) return;
   var fechaISO = new Date().toISOString().slice(0,10);
   var fechaStr = new Date().toLocaleDateString('es-CL');
+  var meta = _reqEnvioMeta || {};
+  var keyNueva = codigos.map(function(c){ return c.codigo; }).sort().join('|');
 
-  // Registrar historial de este envío
+  // Anti-duplicado (V37.63): mismo dia + mismo set de codigos → pedir confirmacion
+  window.db.collection('historialEnviosStock').where('fecha','==',fechaISO).get()
+    .then(function(qs){
+      var dup = false;
+      qs.forEach(function(doc){
+        var d = doc.data();
+        var keyOld = (d.codigos || []).map(function(c){ return c.codigo; }).sort().join('|');
+        if(keyOld === keyNueva) dup = true;
+      });
+      if(dup && !window.confirm('Ya existe un envío registrado HOY con los mismos códigos.\n¿Registrar de todas formas?')){
+        var btn = document.getElementById('reqEmailBtnConfirmar');
+        if(btn){ btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '✔️ Confirmar envío (registrar en historial)'; }
+        return;
+      }
+      _reqGuardarEnvioWrite(codigos, fechaISO, fechaStr, meta);
+    })
+    .catch(function(){ _reqGuardarEnvioWrite(codigos, fechaISO, fechaStr, meta); });
+}
+
+function _reqGuardarEnvioWrite(codigos, fechaISO, fechaStr, meta){
+  // Registrar historial de este envío (snapshot completo por código, V37.63)
   window.db.collection('historialEnviosStock').add({
     fecha: fechaISO,
     fechaTexto: fechaStr,
+    marca: meta.marca || '',
+    coberturaDias: meta.coberturaDias || '',
+    periodoDesde: meta.periodoDesde || '',
+    periodoHasta: meta.periodoHasta || '',
+    origen: 'panel',
     codigos: codigos,
     total: codigos.length
   }).catch(function(e){ console.warn('historial envio', e); });
@@ -18303,6 +18466,11 @@ function _reqGuardarEnvio(codigos){
     });
     if(n) batch.commit().catch(function(e){ console.warn('update base '+bod, e); });
   });
+  _reqEnvioYaGuardado = true;
+  var btn = document.getElementById('reqEmailBtnConfirmar');
+  if(btn){ btn.textContent = '✔️ Registrado en historial'; }
+  var fb = document.getElementById('reqEmailFeedback');
+  if(fb) fb.textContent = '✔️ Envío registrado ('+codigos.length+' códigos)';
   if(window.toast) toast('📧 Envío registrado en historial ('+codigos.length+' códigos)','ok');
 }
 
