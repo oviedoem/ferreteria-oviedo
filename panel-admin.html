@@ -17995,7 +17995,7 @@ function reqStockPrellenar(){
   var lista = Object.keys(baseCodigosTodos).filter(function(cod){
     var p    = _vadmStockMap[cod] || {};
     var b    = baseCodigosTodos[cod];
-    if(marcaSel && (p.marca || '') !== marcaSel) return false;  // marca primero, para contar D solo de la marca
+    if(marcaSel && (p.marca || b.marca || '') !== marcaSel) return false;  // marca primero; b.marca fallback para códigos sin stock en mapa
     var desc = (p.desc || b.descripcion || '').toUpperCase();
     var esD  = desc.indexOf('(DD)') >= 0 || !vendio12m[cod];
     if(esD){
@@ -18018,7 +18018,7 @@ function reqStockPrellenar(){
     var transito     = (p.pem_trans || 0) + (p.tem_trans || 0);
     var stockActual  = (p.pem || 0) + (p.sem || 0) + (p.cem || 0) + (p.mem || 0);
     var qty          = qtyMap[cod] || 0;
-    return { cod:cod, desc:p.desc || b.descripcion || cod, marca:p.marca||'',
+    return { cod:cod, desc:p.desc || b.descripcion || cod, marca:p.marca||b.marca||'',
              abc:abcMap[cod]||'C', qty:qty, minimoActual:minimoActual,
              transito:transito, stockActual:stockActual, reposicion:reposicion,
              ocPend:(p.oc_pend || 0) };
