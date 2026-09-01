@@ -3990,7 +3990,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.63<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">31-08-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.64<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-09-2026</span></div>
 
 <script>
 
@@ -17918,6 +17918,13 @@ function reqStockPrellenar(){
     _reqMsgBloqueo('⏳','Base de mínimos cargando','Espera un momento y vuelve a hacer clic en Pre-llenar.');
     return;
   }
+  var _codPEM = Object.keys((_reqBaseMin.PEM || {}).codigos || {}).length;
+  var _codSEM = Object.keys((_reqBaseMin.SEM || {}).codigos || {}).length;
+  if(!_codPEM && !_codSEM){
+    _reqMsgBloqueo('⏳','Descargando base de productos...','Espera un momento, se abrirá automáticamente.');
+    setTimeout(reqStockPrellenar, 1500);
+    return;
+  }
   var desdeTs   = new Date(desde).getTime();
   var hastaTs   = new Date(hasta).getTime() + 86399999;
   var diasRango = Math.max(1, Math.round((hastaTs - desdeTs) / 86400000));
@@ -17992,7 +17999,7 @@ function reqStockPrellenar(){
   var lista = Object.keys(baseCodigosTodos).filter(function(cod){
     var p    = _vadmStockMap[cod] || {};
     var b    = baseCodigosTodos[cod];
-    if(marcaSel && (p.marca || b.marca || '') !== marcaSel) return false;  // marca primero; b.marca fallback para códigos sin stock en mapa
+    if(marcaSel && (p.marca || b.marca || '').trim() !== marcaSel.trim()) return false;  // trim: ERP tiene marcas con espacios al final
     var desc = (p.desc || b.descripcion || '').toUpperCase();
     var esD  = desc.indexOf('(DD)') >= 0 || !vendio12m[cod];
     if(esD){
@@ -18353,31 +18360,33 @@ function _reqCargarBaseMin(){
   _reqBaseMin = {};
   ['PEM','SEM'].forEach(function(bod){
     _reqBaseMin[bod] = { codigos: {} };
+    // Firestore (datos con enviado/st_min/st_repos reales) — puede fallar por cuota
     window.db.collection('config').doc('baseStockMinimos_'+bod).collection('codigos').get()
       .then(function(qs){
         qs.forEach(function(doc){ _reqBaseMin[bod].codigos[doc.id] = doc.data(); });
-        // Fusionar con JSON estático de Hosting (3631 faltantes no subidos a Firestore)
-        fetch('/ADQUISICIONES/productos_faltantes_base.json?t='+Date.now())
-          .then(function(r){ return r.ok ? r.json() : []; })
-          .then(function(lista){
-            lista.forEach(function(p){
-              if(!_reqBaseMin[bod].codigos[p.codigo]){
-                // Solo agrega si no existe en Firestore — nunca pisa datos reales
-                _reqBaseMin[bod].codigos[p.codigo] = {
-                  descripcion: p.descripcion || '',
-                  marca: p.marca || '',
-                  enviado: false,
-                  st_min: 0,
-                  st_repos: 0,
-                  _fromJson: true  // marca: viene del JSON estático, no de Firestore
-                };
-              }
-            });
-          })
-          .catch(function(e){ console.warn('faltantes json', e); });
       })
-      .catch(function(e){ console.warn('baseMin '+bod, e); });
+      .catch(function(e){ console.warn('baseMin Firestore '+bod, e); });
   });
+  // JSON estático corre independiente de Firestore (funciona aunque Firestore falle por cuota)
+  fetch('/ADQUISICIONES/productos_faltantes_base.json?t='+Date.now())
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(lista){
+      ['PEM','SEM'].forEach(function(bod){
+        lista.forEach(function(p){
+          if(!_reqBaseMin[bod].codigos[p.codigo]){
+            _reqBaseMin[bod].codigos[p.codigo] = {
+              descripcion: p.descripcion || '',
+              marca: p.marca || '',
+              enviado: p.enviado || false,
+              st_min: p.st_min || 0,
+              st_repos: p.st_repos || 0,
+              _fromJson: true
+            };
+          }
+        });
+      });
+    })
+    .catch(function(e){ console.warn('faltantes json', e); });
 }
 
 function reqEmailConfirmarEnvio(){
