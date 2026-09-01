@@ -7072,7 +7072,7 @@ function renderMejoras(){
     ['Inventario','ok',      '🔍','Consulta de Stock — V37.1','Búsqueda por código o descripción. Ficha 8 bodegas: Disp/Tráns/Fís/Valor/Estado.'],
     ['Inventario','ok',      '🏭','Análisis bodegas IEM/GEM/TEM/CEM — V37.50','6 bodegas El Manzano. GEM/CEM aceptan stock negativo por diseño ERP. Días antigüedad por producto.'],
     ['Inventario','ok',      '⏰','Tarea automática 18:00 — V37.2','ACTUALIZAR_TODO_AUTO.bat corre cada día 18:00. StartWhenAvailable. Log en logs/auto_*.log.'],
-    ['Inventario','ok',      '📋','Solicitud de Stock — V37.47','Base PEM(224)+SEM(573)=797 códigos con mínimos/repos ERP. Tracking envíos, historial Excel, columna OC Pendiente integrada.'],
+    ['Inventario','ok',      '📋','Solicitud de Stock — V37.64','Base 6024 productos (catálogo ERP sin VCA/CAL) en /ADQUISICIONES/productos_faltantes_base.json. Prioridad A→B→C por marca, categoría D sin venta 12m, envíos en Firestore. JSON carga independiente de cuota Firestore.'],
     ['Inventario','ok',      '🔄','Traspasos CD — V37.45','Propuesta CD→PEM/SEM con prioridad 4 capas. Filtro bodega, checkboxes ranking, solicitud manual, export solo con cantidad.'],
     ['Inventario','ok',      '📌','Encabezados sticky Informe Stock — V37.52','position:sticky extendido a todos los menús (18 tab-pane + 34 vadm-section). Encabezados visibles al hacer scroll.'],
     ['Inventario','ok',      '🔢','OC Pendiente desde SQL — V37.55','387 OCs / 670 códigos. Columna OC Pend en Solicitud Semanal. _vadmStockMap con cb idempotente.'],
@@ -17863,7 +17863,7 @@ function _reqStockPoblarMarcas(){
 }
 
 var _reqStockParams = null;  // {codigo:{min,max,critico,repo,disp}} desde stock-critico.json (parametros ERP / Adquisiciones)
-var _reqBaseMin = null;      // {PEM:{codigos:{...}}, SEM:{codigos:{...}}} desde Firestore
+var _reqBaseMin = null;      // {PEM:{codigos:{...}}, SEM:{codigos:{...}}} desde JSON (/ADQUISICIONES/productos_faltantes_base.json) + Firestore como override
 var _reqCodigosEnviados = []; // snapshot completo de la ultima tabla lista para enviar
 var _reqDDExcluidos = 0;     // descontinuados (DD) de la marca actual — categoria D, no se envian
 function reqStockPrellenar(){
@@ -18491,10 +18491,9 @@ function reqDescargarHistorial(){
     if(window.toast) toast('Base aún cargando — espera un momento','warn'); return;
   }
 
-  // Base completa subida a Firestore (_reqBaseMin, PEM+SEM) — no se filtra por "enviado":
-  // el Excel debe reflejar todos los códigos con datos completos, marcando cuáles ya se
-  // enviaron por correo y cuándo (ese estado se va acumulando en cada código a medida que
-  // Adquisiciones envía más lotes vía _reqGuardarEnvio).
+  // Base completa (_reqBaseMin, PEM+SEM) — JSON + Firestore fusionados — no se filtra por "enviado":
+  // el Excel refleja todos los 6024 códigos con datos completos, marcando cuáles ya se
+  // enviaron por correo y cuándo (ese estado se va acumulando en cada código vía _reqGuardarEnvio).
   var filas = [];
   ['PEM','SEM'].forEach(function(bod){
     var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;

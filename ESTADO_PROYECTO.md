@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.63
-# Fecha: 2026-08-31
+# Version activa: V37.64
+# Fecha: 2026-09-01
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,23 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.63 |
-| Fecha | 2026-08-31 |
-| Deploy | ✅ 01:30 01-09-2026 (via hotspot — FortiFilter bloqueaba deploy en red local) |
-| Commit | 3020cfd (docs sync V37.63) |
-| Pendiente | — |
+| Version | V37.64 |
+| Fecha | 2026-09-01 |
+| Deploy | ✅ 13:03 01-09-2026 |
+| Commit | 55d5e0b |
+| Pendiente | completar carga Firestore (cargar_faltantes_firestore.py) cuando cuota restablezca; ACTUALIZAR_TODO.bat para ventas sep-2026 |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.64 — 2026-09-01 (Fix Solicitud Stock + eliminación rotación token)
+- **Causa raíz "Sin productos" Perfimet-Perfil:** ERP Datos.json guarda marcas con espacio final (`'Perfimet-Perfil '`). Fix: `.trim()` en comparación marca dentro de `reqStockPrellenar()` (panel-admin.html ~17995).
+- **productos_faltantes_base.json:** regenerado con 6024 productos completos (catálogo ERP menos VCA/CAL). Antes tenía solo 3631 — 2393 productos faltaban del JSON, incluyendo 81 de Perfimet-Perfil.
+- **`_reqCargarBaseMin()`:** fetch del JSON ahora corre INDEPENDIENTE de Firestore. Antes estaba anidado en el `.then()` — si Firestore fallaba por cuota 429, el JSON nunca se cargaba.
+- **Auto-retry:** si `_reqBaseMin.codigos` vacío al presionar Pre-llenar, muestra "Descargando base..." y reintenta en 1.5s automáticamente.
+- **Eliminación PASO 3.5 (rotación token):** removido de `ACTUALIZAR_TODO.bat` y `ACTUALIZAR_TODO_AUTO.bat`; `rotate-token.yml` eliminado de GitHub Actions; scripts archivados en `E:\_ARCHIVO_FERRETERIA\rotar-token-deprecado-20260901\`.
+- **Deploy:** ✅ 13:03:45. Commit: 55d5e0b.
 
 ### Sesion 2026-08-09 — Migracion ERP + Fixes Pipeline (V37.57, sin cambio panel)
 - **Migracion servidor ERP:** JustWeb migró de `http://200.6.113.97/Justweb_Foviedo` → `https://erp.justtime.cl/justweb_foviedo`. Fix en `descargar_erp.py`: BASE/BLAZOR_ROOT/XTOKEN leídos desde `credenciales_erp.ini` (antes hardcodeados en el script).

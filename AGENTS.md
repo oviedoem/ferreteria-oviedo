@@ -1,6 +1,6 @@
 # AGENTS.md — Ferretería Oviedo El Manzano
 # Instrucciones del agente + Safe-Change Skill + Historial desde 2026-06-01
-# Versión activa: V37.63 · Última actualización: 2026-08-31 (solicitud stock: prioridad ABC, guardado desacoplado, import Word)
+# Versión activa: V37.64 · Última actualización: 2026-09-01 (solicitud stock: base 6024 productos, JSON independiente Firestore, trim marcas ERP)
 
 ---
 
@@ -142,7 +142,7 @@ Proyecto activo:     PROYECTO_E:\ferreteria-oviedo\   (letra real variable — i
 Git sync (solo):     PROYECTO_E:\git-sync\        (NO es el proyecto — solo copia para git)
 Archivados:          PROYECTO_E:\ferreteria-oviedo\_HISTORICO\
 Bodegas XLSM:        PROYECTO_E:\ferreteria-oviedo\BODEGAS\
-Adquisiciones:       PROYECTO_E:\ferreteria-oviedo\ADQUISICIONES\  (inputs tab Solicitud Stock: BaseStockMinimos.xlsx, solicitud de stock.docx)
+Adquisiciones:       PROYECTO_E:\ferreteria-oviedo\ADQUISICIONES\  (fuente: productos_faltantes_base.json — 6024 productos ERP sin VCA/CAL, con trim de marcas. Historial: BaseStockMinimos_*.xlsx, solicitud de stock.docx)
 Memory Claude:       CONFIG_W:\claude-config\projects\E--ferreteria-oviedo\memory\
                      (acceso via junction C:\Users\<usuario>\.claude → CONFIG_W:\claude-config\)
 CLAUDE.md global:    CONFIG_W:\claude-config\CLAUDE.md
@@ -306,6 +306,7 @@ Si no puedes acceder a CONFIG_W ni a PROYECTO_E, dar a Claude el AGENTS.md desde
 - V37.61 (2026-08-27): fix NCE duplicados SSRS v2 (escala k=-sql_neto/ssrs_sum cuando ssrs_sum<0 y sql_neto>0; 675 docs); panel $183.53M vs ERP $183.49M (0.024%); ACTUALIZAR_GITHUB.bat sin pause + check .py via git ls-files; commit 08d6d32
 - V37.62 (2026-08-31): MIGRACIÓN bot WhatsApp a cuenta Render alejandrog45 (servicio nuevo oviedo-whatsapp-bot-k6ou.onrender.com; viejo suspendido — límite 750h gratis); BOT_API + CSP connect-src a URL nueva; fix token data/: Firestore dataAccessToken/current quedó apuntando a token fantasma d1564d57 (escritor externo 16:42 sin campo 'actualizado' — sospecha: otro PC con script antiguo) → reapuntado a 8e95f5f4 con renovar_token_data.py; GUARDA PASO 6 en ACTUALIZAR_TODO.bat y _AUTO.bat: verifica token data/ vivo en Hosting post-deploy (HTTP 200), reintenta deploy 1 vez y alerta en rojo si falla — evita que el panel quede sin datos nunca más
 - V37.63 (2026-08-31): Solicitud Stock mejorada — prioridad A→B→C por marca, todos los pendientes (reqN 0=todos), categoría D = SIN VENTA en 12 meses por código (o DD en descripción), excluidos con conteo visible; guardado desacoplado del portapapeles: botón "Confirmar envío" registra en Firestore con snapshot completo (desc/abc/vta/min/rep/transito/stock) + anti-duplicado mismo día+mismos códigos; importación única historial Word → historialEnviosStock (7 envíos, 63 prods) vía data/import-historial-word.json + botón "Importar historial Word". REGLA NUEVA: deploy SOLO via ACTUALIZAR_TODO.bat PASO 4, nunca manual
+- V37.64 (2026-09-01): fix Solicitud Stock "Sin productos" Perfimet-Perfil y otras marcas — causa raíz: ERP guarda marcas con espacio final ('Perfimet-Perfil '); fix trim() en reqStockPrellenar; productos_faltantes_base.json regenerado con 6024 productos completos (antes solo 3631); _reqCargarBaseMin fetch JSON independiente de Firestore (antes anidado en .then — si cuota 429 fallaba, JSON nunca cargaba); auto-retry 1.5s si codigos vacío al presionar Pre-llenar; eliminación PASO 3.5 rotar_token de ACTUALIZAR_TODO.bat+AUTO.bat; rotate-token.yml eliminado de GitHub Actions; scripts rotar-token archivados en E:\_ARCHIVO_FERRETERIA\. Commit 55d5e0b.
 *Historial pre-junio en _HISTORICO\20260604_AGENTS_completo.md*
 
 ### APP-INVENTARIO (proyecto separado)
