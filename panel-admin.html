@@ -18351,13 +18351,30 @@ function _reqCargarBaseMin(){
   if(_reqBaseMin !== null) return;
   if(!window.db) return;
   _reqBaseMin = {};
-  // Los codigos viven en subcoleccion config/baseStockMinimos_{bod}/codigos/{codigo}
-  // (un mapa unico con miles de claves supera el limite de indices de Firestore)
   ['PEM','SEM'].forEach(function(bod){
     _reqBaseMin[bod] = { codigos: {} };
     window.db.collection('config').doc('baseStockMinimos_'+bod).collection('codigos').get()
       .then(function(qs){
         qs.forEach(function(doc){ _reqBaseMin[bod].codigos[doc.id] = doc.data(); });
+        // Fusionar con JSON estático de Hosting (3631 faltantes no subidos a Firestore)
+        fetch('/ADQUISICIONES/productos_faltantes_base.json?t='+Date.now())
+          .then(function(r){ return r.ok ? r.json() : []; })
+          .then(function(lista){
+            lista.forEach(function(p){
+              if(!_reqBaseMin[bod].codigos[p.codigo]){
+                // Solo agrega si no existe en Firestore — nunca pisa datos reales
+                _reqBaseMin[bod].codigos[p.codigo] = {
+                  descripcion: p.descripcion || '',
+                  marca: p.marca || '',
+                  enviado: false,
+                  st_min: 0,
+                  st_repos: 0,
+                  _fromJson: true  // marca: viene del JSON estático, no de Firestore
+                };
+              }
+            });
+          })
+          .catch(function(e){ console.warn('faltantes json', e); });
       })
       .catch(function(e){ console.warn('baseMin '+bod, e); });
   });
@@ -18427,17 +18444,27 @@ function _reqGuardarEnvioWrite(codigos, fechaISO, fechaStr, meta){
     var n = 0;
     codigos.forEach(function(item){
       var cod = item.codigo;
-      if(base[cod]){
-        var stMin   = parseInt(item.minSol, 10);
-        var stRepos = parseInt(item.repSol, 10);
-        var upd = { enviado: true, ultimoEnvio: fechaISO };
-        if(!isNaN(stMin))   upd.st_min   = stMin;
-        if(!isNaN(stRepos)) upd.st_repos = stRepos;
+      var stMin   = parseInt(item.minSol, 10);
+      var stRepos = parseInt(item.repSol, 10);
+      var upd = {
+        enviado:    true,
+        ultimoEnvio: fechaISO,
+        descripcion: item.desc  || (base[cod] && base[cod].descripcion) || '',
+        marca:       item.marca || (base[cod] && base[cod].marca) || ''
+      };
+      if(!isNaN(stMin))   upd.st_min   = stMin;
+      if(!isNaN(stRepos)) upd.st_repos = stRepos;
+      if(base[cod] && base[cod]._fromJson){
+        // Producto del JSON estático: crear el doc en Firestore por primera vez
+        batch.set(coleccion.doc(cod), upd);
+      } else if(base[cod]){
         batch.update(coleccion.doc(cod), upd);
-        n++;
-        // Actualizar en memoria también
-        Object.assign(base[cod], upd);
+      } else {
+        // No estaba en ninguna fuente — crear con set igualmente
+        batch.set(coleccion.doc(cod), upd);
       }
+      n++;
+      if(base[cod]) Object.assign(base[cod], upd);
     });
     if(n) batch.commit().catch(function(e){ console.warn('update base '+bod, e); });
   });
