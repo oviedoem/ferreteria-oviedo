@@ -3669,35 +3669,16 @@ Todo desde tu celular, gratis, sin apps que descargar.
           <input type="checkbox" id="reqCatC">
           <span style="background:#ea580c;color:white;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">C</span>
         </label>
-      </div>
-      <!-- Tránsito -->
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#374151">
-        Tránsito
-        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500">
-          <input type="checkbox" id="reqConTrans" checked>
-          <span style="font-size:12px;color:#374151">Con</span>
-        </label>
-        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500">
-          <input type="checkbox" id="reqSinTrans" checked>
-          <span style="font-size:12px;color:#374151">Sin</span>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500" title="Incluir productos categoría D: sin venta en 12 meses o descontinuados (DD)">
+          <input type="checkbox" id="reqCatD">
+          <span style="background:#6b7280;color:white;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">D</span>
         </label>
       </div>
-      <!-- Parámetros ERP -->
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#374151">
-        Parámetros
-        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500" title="Mostrar solo códigos con ST_MIN configurado en ERP">
-          <input type="checkbox" id="reqConMin" checked>
-          <span style="font-size:12px;color:#374151">Con mínimo</span>
-        </label>
-        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500" title="Mostrar solo códigos con ST_REPOSICION configurado en ERP">
-          <input type="checkbox" id="reqConRepo" checked>
-          <span style="font-size:12px;color:#374151">Con repos.</span>
-        </label>
-        <label style="cursor:pointer;display:flex;align-items:center;gap:3px;font-weight:500" title="Mostrar solo códigos SIN mínimo ni reposición configurados en ERP (a definir)">
-          <input type="checkbox" id="reqSoloSinDefinir">
-          <span style="font-size:12px;color:#374151">🆕 Sin definir</span>
-        </label>
-      </div>
+      <!-- Sin definir -->
+      <label style="cursor:pointer;display:flex;align-items:center;gap:4px;font-weight:500;font-size:12px" title="Mostrar solo códigos SIN mínimo ni reposición configurados en ERP (a definir)">
+        <input type="checkbox" id="reqSoloSinDefinir">
+        <span style="font-size:12px;color:#374151">🆕 Sin definir</span>
+      </label>
       <!-- N ítems (0 = todos los pendientes de la marca) -->
       <label style="font-size:12px;font-weight:600;color:#374151;display:flex;align-items:center;gap:6px">
         Máx
@@ -17903,10 +17884,7 @@ function reqStockPrellenar(){
   var catA     = document.getElementById('reqCatA') && document.getElementById('reqCatA').checked;
   var catB     = document.getElementById('reqCatB') && document.getElementById('reqCatB').checked;
   var catC     = document.getElementById('reqCatC') && document.getElementById('reqCatC').checked;
-  var conTrans = document.getElementById('reqConTrans') ? document.getElementById('reqConTrans').checked : true;
-  var sinTrans = document.getElementById('reqSinTrans') ? document.getElementById('reqSinTrans').checked : true;
-  var conMin   = document.getElementById('reqConMin')   ? document.getElementById('reqConMin').checked   : true;
-  var conRepo  = document.getElementById('reqConRepo')  ? document.getElementById('reqConRepo').checked  : true;
+  var catD     = document.getElementById('reqCatD') && document.getElementById('reqCatD').checked;
   var soloSinDefinir = document.getElementById('reqSoloSinDefinir') ? document.getElementById('reqSoloSinDefinir').checked : false;
   var nItems   = parseInt(document.getElementById('reqN').value, 10) || 0;  // 0 = TODOS los pendientes de la marca
   _reqDDExcluidos = 0;
@@ -17994,7 +17972,7 @@ function reqStockPrellenar(){
   if(catA) catsOk.push('A');
   if(catB) catsOk.push('B');
   if(catC) catsOk.push('C');
-  if(!catsOk.length) catsOk = ['A','B','C'];
+  if(!catsOk.filter(function(c){return c!=='D';}).length) catsOk = ['A','B','C'];
 
   var baseCodigosTodos = {};
   ['PEM','SEM'].forEach(function(bod){
@@ -18017,19 +17995,16 @@ function reqStockPrellenar(){
   var lista = Object.keys(baseCodigosTodos).filter(function(cod){
     var p    = _vadmStockMap[cod] || {};
     var b    = baseCodigosTodos[cod];
+    if(marcaSel && (p.marca || '') !== marcaSel) return false;  // marca primero, para contar D solo de la marca
     var desc = (p.desc || b.descripcion || '').toUpperCase();
-    if(desc.indexOf('(DD)') >= 0 || !vendio12m[cod]){ _reqDDExcluidos++; return false; }  // categoria D, no se envia
-    if(marcaSel && (p.marca || '') !== marcaSel) return false;
-    if(catsOk.indexOf(abcMap[cod] || 'C') < 0) return false;
-    var trans = (p.pem_trans || 0) + (p.tem_trans || 0);
-    if( conTrans && !sinTrans && !(trans > 0)) return false;
-    if(!conTrans &&  sinTrans &&   trans > 0 ) return false;
-    if(soloSinDefinir){
-      if(b.st_min > 0 || b.st_repos > 0) return false;
+    var esD  = desc.indexOf('(DD)') >= 0 || !vendio12m[cod];
+    if(esD){
+      _reqDDExcluidos++;
+      if(!catD) return false;  // categoria D: excluir si el checkbox D no está marcado
     } else {
-      if(conMin  && !(b.st_min  > 0)) return false;
-      if(conRepo && !(b.st_repos > 0)) return false;
+      if(catsOk.indexOf(abcMap[cod] || 'C') < 0) return false;
     }
+    if(soloSinDefinir && (b.st_min > 0 || b.st_repos > 0)) return false;
     return true;
   })
 
@@ -18093,10 +18068,12 @@ function reqStockPrellenar(){
     '</tr>';
   }).join('');
 
-  // Nota informativa: descontinuados (categoria D) excluidos del envio
+  // Nota informativa: descontinuados (categoria D) de la marca actual
   if(_reqDDExcluidos > 0){
-    rows = '<tr><td colspan="11" style="padding:6px 14px;background:#f3f4f6;color:#6b7280;font-size:11px;border-bottom:1px solid #e5e7eb">'+
-      '🏷️ '+_reqDDExcluidos+' código(s) categoría D de esta marca (sin venta en 12 meses o descontinuados DD) — agrupados y excluidos del envío</td></tr>' + rows;
+    var _msgD = catD
+      ? '🏷️ '+_reqDDExcluidos+' código(s) categoría D incluidos (sin venta en 12 meses o descontinuados DD)'
+      : '🏷️ '+_reqDDExcluidos+' código(s) categoría D de esta marca (sin venta en 12 meses o descontinuados DD) — excluidos del envío';
+    rows = '<tr class="req-info-row"><td colspan="11" style="padding:6px 14px;background:#f3f4f6;color:#6b7280;font-size:11px;border-bottom:1px solid #e5e7eb">'+_msgD+'</td></tr>' + rows;
   }
   document.getElementById('reqStockBody').innerHTML = rows;
 
@@ -18122,7 +18099,8 @@ var _reqEnvioYaGuardado = false; // anti doble-registro dentro del modal
 
 function reqStockEnviarEmail(){
   var filas = document.querySelectorAll('#reqStockTable tbody tr');
-  if(!filas.length || filas[0].querySelector('td[colspan]')){
+  var tieneFilasDatos = Array.from(filas).some(function(tr){ return !tr.querySelector('td[colspan]'); });
+  if(!tieneFilasDatos){
     alert('Pre-llena la tabla primero.'); return;
   }
 
