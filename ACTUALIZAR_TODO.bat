@@ -405,7 +405,7 @@ if %errorlevel% neq 0 (
 echo.
 timeout /t 2 /nobreak >nul
 
-:: -- VALIDACION: JSONs de salida antes de rotar token y deploy -----------------
+:: -- VALIDACION: JSONs de salida antes de deploy --------------------------------
 echo.
 echo  +----------------------------------------------------------+
 echo  ^|  VALIDACION - Verificando integridad de JSONs generados ^|
@@ -446,17 +446,6 @@ if /i "%PRECIO_OPT%"=="E" (
 
 echo.
 timeout /t 2 /nobreak >nul
-
-:: -- PASO 3.5: Rotar token de acceso a data/ sensible (seguridad V37.28) --------
-echo.
-echo  +----------------------------------------------------------+
-echo  ^|  PASO 3.5 - Rotando proteccion de datos sensibles      ^|
-echo  +----------------------------------------------------------+
-echo.
-"%PYTHON_EXE%" "%~dp0_utilidades\rotar_token_data.py"
-if %errorlevel% neq 0 (
-    echo  [AVISO] rotar_token_data.py fallo - revisar E:\config\ y Firestore.
-)
 
 :: -- PASO 3.6: Catalogo cotizador con rotacion v3m/v6m desde SQL Server --------
 echo.

@@ -252,11 +252,6 @@ echo. >> "%LOGFILE%"
 echo [%time%] PASO 3 - Precios: OCULTOS (auto default)... >> "%LOGFILE%"
 "%PYTHON_EXE%" "CATALOGO PRODUCTOS\scripts\actualizar_config_precios.py" false >> "%LOGFILE%" 2>&1
 
-:: -- PASO 3.5: Rotar token de acceso a data/ sensible (seguridad V37.28) --
-echo. >> "%LOGFILE%"
-echo [%time%] PASO 3.5 - Rotando proteccion de datos sensibles... >> "%LOGFILE%"
-"%PYTHON_EXE%" "_utilidades\rotar_token_data.py" >> "%LOGFILE%" 2>&1
-
 :: -- PASO 4: Deploy Firebase ---------------------------------------------
 echo. >> "%LOGFILE%"
 echo [%time%] PASO 4 - Firebase deploy... >> "%LOGFILE%"

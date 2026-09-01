@@ -131,25 +131,6 @@ FUENTES DE DATOS (externas)
              │
              │ PASO 3 — prompt visibilidad precios (10s, default N)
              │
-             │ PASO 3.5 (MITIGACIÓN ACTIVA V37.28 — token rotativo, ver AGENTS.md)
-             ▼
-  ┌──────────────────────────────────────────────────────────┐
-  │ _utilidades/rotar_token_data.py                          │
-  │  → descubre dinámicamente ventas-manzano-YYYY-MM.json    │
-  │    (glob — no hardcodeado, cubre todos los meses futuros) │
-  │  → mueve los JSON sensibles (ventas/costos/stock/         │
-  │    pedidos/despachos) a data/<token-aleatorio>/           │
-  │  → borra la carpeta del token anterior                    │
-  │  → publica el token en Firestore dataAccessToken/current  │
-  │    (protegido por firestore.rules: solo admin/vendedor)   │
-  │  catalogo-dinamico.json NO se mueve: sigue público a propósito│
-  │  panel-admin.html e index.html leen el token tras login y │
-  │  construyen la URL con dataUrl() — sin rutas fijas en el  │
-  │  código fuente (mitigación, NO es auth real a nivel HTTP) │
-  │  ⚠ Storage descartado: requiere Blaze. Firestore directo  │
-  │    descartado: archivos hasta 26MB superan 1MB/doc        │
-  └──────────────────────┬─────────────────────────────────────┘
-             │
              │ PASO 4
              ▼
   ┌──────────────────────────────────────────────┐
