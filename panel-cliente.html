@@ -1961,16 +1961,17 @@ function scoreprod(p,q){
   if(marc.indexOf(q)>=0 || sub.indexOf(q)>=0) return 20;
   return 0;
 }
+function _normStr(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 function onSearch(){
-  var q = document.getElementById('searchInput').value.toLowerCase().trim();
+  var q = _normStr(document.getElementById('searchInput').value.trim());
   var raw = PRODUCTOS.filter(function(p){
     var mm = marcaFiltro==='TODOS' || p.Marca===marcaFiltro;
     if(!mm) return false;
     if(!q)  return true;
-    var cod  = (p.Codigo||'').toLowerCase();
-    var desc = (p.Descripcion||'').toLowerCase();
-    var marc = (p.Marca||'').toLowerCase();
-    var sub  = (p.SubFamilia||'').toLowerCase();
+    var cod  = _normStr(p.Codigo||'');
+    var desc = _normStr(p.Descripcion||'');
+    var marc = _normStr(p.Marca||'');
+    var sub  = _normStr(p.SubFamilia||'');
     return cod.indexOf(q)>=0 || desc.indexOf(q)>=0 || marc.indexOf(q)>=0 || sub.indexOf(q)>=0;
   });
   if(q){ raw.sort(function(a,b){ return scoreprod(b,q)-scoreprod(a,q); }); }
@@ -2913,7 +2914,11 @@ function iniciarListenerSesionRemota(nombre, app) {
       if (!snap.exists) return;
       var data = snap.data();
       // Si el admin puso activo:false, forzar logout
+      // Fix V37.65: ignorar docs obsoletos (> 3 min) — protege contra stale cuando quota Firestore falla
       if (data.activo === false) {
+        var docTs = data.ts && data.ts.toMillis ? data.ts.toMillis()
+                  : (data.ts && data.ts.seconds ? data.ts.seconds * 1000 : 0);
+        if (docTs && Date.now() - docTs > 3 * 60 * 1000) return;
         toast('🔒 Tu sesión fue cerrada por el administrador', 'warn');
         setTimeout(function() { doLogout(); }, 2000);
       }
