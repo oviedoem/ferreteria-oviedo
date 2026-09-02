@@ -895,21 +895,11 @@ function mostrarAppVend(found){
 
 // ── TOKEN data/ (mitigación seguridad V37.28) ──────────────────────────────
 // Espejo de panel-admin.html: data/*.json sensibles viven en data/<token>/
-// con nombre rotativo (ver rotar_token_data.py). Token en Firestore
-// dataAccessToken/current, protegido por firestore.rules (admin/vendedor).
+// V37.65: rotar_token_data.py eliminado — no verificar expires_at
 function _cargarDataToken(cb){
   window.db.collection('dataAccessToken').doc('current').get()
     .then(function(snap){
       var d = snap.exists ? snap.data() : {};
-      var expiraMs = (d.expires_at && d.expires_at.toMillis) ? d.expires_at.toMillis() : null;
-      if(expiraMs && Date.now() > expiraMs){
-        window._dataToken = '';
-        logout();
-        // logout() limpia #lerr — el mensaje se setea DESPUÉS para que quede visible
-        var errTok = document.getElementById('lerr');
-        if(errTok){ errTok.style.color='#c62828'; errTok.textContent='Sesión de datos vencida. Avisa al administrador para correr el pipeline y vuelve a ingresar.'; }
-        return; // token vencido (TTL 8h) -- sesion cerrada, no se invoca cb
-      }
       window._dataToken = d.token || '';
       cb();
     })

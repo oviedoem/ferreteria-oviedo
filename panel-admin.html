@@ -4424,18 +4424,10 @@ function _activarSesionAdmin(uid, nombre, role){
 // rotar_token_data.py). El token se lee de Firestore (dataAccessToken/current,
 // protegido por firestore.rules) recién aquí, tras login admin/vendedor.
 function _cargarDataToken(cb){
+  // V37.65: rotar_token_data.py eliminado — no verificar expires_at
   window.db.collection('dataAccessToken').doc('current').get()
     .then(function(snap){
       var d = snap.exists ? snap.data() : {};
-      var expiraMs = (d.expires_at && d.expires_at.toMillis) ? d.expires_at.toMillis() : null;
-      if(expiraMs && Date.now() > expiraMs){
-        window._dataToken = '';
-        doLogout();
-        // doLogout() limpia #lerr — el mensaje se setea DESPUÉS para que quede visible
-        var errTok = document.getElementById('lerr');
-        if(errTok){ errTok.style.color='#c62828'; errTok.textContent='Sesión de datos vencida. Corre el pipeline (ACTUALIZAR_TODO) y vuelve a ingresar.'; }
-        return; // token vencido (TTL 8h) -- sesion cerrada, no se invoca cb
-      }
       window._dataToken = d.token || '';
       cb();
     })
