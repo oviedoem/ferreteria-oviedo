@@ -4,7 +4,7 @@
 // BUILD_DATE se actualiza automáticamente al hacer deploy
 // ============================================================
 
-const BUILD_DATE = '2026-09-01 13:04:25'; // <- actualizado por update-sw-version.js // ← actualizado por update-sw-version.js // ← actualizado por update-sw-version.js
+const BUILD_DATE = '2026-09-02 19:04:00';
 const CACHE_NAME = 'oviedo-' + BUILD_DATE.replace(/[^0-9]/g,'').slice(0,12);
 
 // Assets estáticos que se cachean en instalación (NO incluir HTML)
@@ -28,6 +28,7 @@ const CACHE_FIRST_EXTS = ['.js', '.css', '.jpg', '.jpeg', '.png', '.gif', '.svg'
 
 // ── INSTALL: pre-cachear assets estáticos ───────────────────
 self.addEventListener('install', function(event) {
+  self.skipWaiting(); // tomar control inmediatamente sin esperar cierre de tabs
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.addAll(PRECACHE_ASSETS).catch(function() { /* continuar aunque falle */ });
