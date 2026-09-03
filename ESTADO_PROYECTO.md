@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.64
-# Fecha: 2026-09-01
+# Version activa: V37.65
+# Fecha: 2026-09-03
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,21 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.64 |
-| Fecha | 2026-09-01 |
-| Deploy | ✅ 13:03 01-09-2026 |
-| Commit | 55d5e0b |
-| Pendiente | completar carga Firestore (cargar_faltantes_firestore.py) cuando cuota restablezca; ACTUALIZAR_TODO.bat para ventas sep-2026 |
+| Version | V37.65 |
+| Fecha | 2026-09-03 |
+| Deploy | ✅ 12:08 03-09-2026 (198 archivos, 6126 productos) |
+| Commit | 7a4aa9c (pipeline) · 93e1f55 (fix GitHub Actions) |
+| Pendiente | Bot reproceso SKU v2: REPROCESAR_SKU_V2.bat + RENOMBRAR_FOTOS_V3.bat (parado en 2125/4073) |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.65 — 2026-09-03 (Fix margen panel vendedor + pipeline sep-2026)
+- **Bug margen=0 panel vendedor:** GitHub Actions desplegaba sin Datos.json → caché localStorage sin CP → margenReal=null. Fix: workflow deshabilitado (workflow_dispatch). Deploy restauró Datos.json desde ferreteria-oviedo.
+- **Pipeline sep-2026:** ACTUALIZAR_TODO.bat completo. ventas-manzano-2026-09.json (573KB), 6126 productos, catalogo-bot.json publicado. Commits 93e1f55 + 7a4aa9c.
+- **Firestore Solicitud Stock:** restaurar_enviados_firestore.py confirmado OK — 115 enviados (PEM:70 + SEM:45). Anti-regresión 16/16 archivos OK.
+- **Pendiente único:** bot reproceso SKU v2 (fotos) — REPROCESAR_SKU_V2.bat + RENOMBRAR_FOTOS_V3.bat, parado en 2125/4073.
 
 ### V37.64 — 2026-09-01 (Fix Solicitud Stock + eliminación rotación token)
 - **Causa raíz "Sin productos" Perfimet-Perfil:** ERP Datos.json guarda marcas con espacio final (`'Perfimet-Perfil '`). Fix: `.trim()` en comparación marca dentro de `reqStockPrellenar()` (panel-admin.html ~17995).
