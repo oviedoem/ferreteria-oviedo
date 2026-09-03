@@ -1,9 +1,11 @@
 name: Deploy to Firebase Hosting
 
+# DESHABILITADO: este workflow despliega sin Datos.json (3.6MB, .gitignore)
+# borrando el catálogo de hosting en cada push. El deploy lo hace ACTUALIZAR_TODO.bat
+# localmente desde E:\ferreteria-oviedo\ donde Datos.json sí existe.
+# Para rehabilitar: cambiar 'workflow_dispatch' por 'push: branches: [main]'
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
