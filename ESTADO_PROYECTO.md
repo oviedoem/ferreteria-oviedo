@@ -1,5 +1,5 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.65
+# Version activa: V37.66
 # Fecha: 2026-09-03
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -12,15 +12,23 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.65 |
+| Version | V37.66 |
 | Fecha | 2026-09-03 |
-| Deploy | ✅ 12:08 03-09-2026 (198 archivos, 6126 productos) |
-| Commit | 7a4aa9c (pipeline) · 93e1f55 (fix GitHub Actions) |
-| Pendiente | Bot reproceso SKU v2: REPROCESAR_SKU_V2.bat + RENOMBRAR_FOTOS_V3.bat (parado en 2125/4073) |
+| Deploy | ✅ pipeline VPN activa (Precio+Stock/Ventas/Deploy Firebase/Catalogo Bot/Commit GitHub) |
+| Commit | 4bb2f79 (fix ventas token subfolder) |
+| Pendiente | Bot reproceso SKU v2: reorganizado en `E:\BOT  OVIEDO_ELMANZANO WHATSSSAP\FOTOS_OVIEDO_SKU\02_reproceso_v2\REPROCESAR_SKU_V2.bat` (parado en 2425/4073) — ver PASO_A_PASO.md y PENDIENTES.md en esa carpeta |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.66 — 2026-09-03 (Fix ventas septiembre ausentes — token subfolder)
+- **Bug:** menús Análisis y Ventas por Vendedor no mostraban ventas de septiembre-2026 pese a que el ERP las tenía en línea.
+- **Causa raíz:** `main.py` (`guardar_json()`) y `descargar_ventas_erp.py` (`_generar_jsons()`) escribían `ventas-manzano*.json` en `data/` raíz, pero el panel lee via `dataUrl()` desde `data/<token>/` (patrón de rotación de token que sigue vigente para lectura aunque V37.64 eliminó el PASO de rotación activa).
+- **Fix:** ambos scripts ahora resuelven `.token-actual` y escriben en `data/<token>/`, igual que `descargar_bod.py`.
+- **Verificado en Hosting tras el deploy:** `ventas-manzano-meta.json` (63752 registros, año 2026) y `ventas-manzano-2026-09.json` (1000 registros de septiembre) presentes en `data/<token>/`.
+- `pipeline-datos-mapa.html` actualizado con nota de la ruta correcta.
+- Commit: 4bb2f79.
 
 ### V37.65 — 2026-09-03 (Fix margen panel vendedor + pipeline sep-2026)
 - **Bug margen=0 panel vendedor:** GitHub Actions desplegaba sin Datos.json → caché localStorage sin CP → margenReal=null. Fix: workflow deshabilitado (workflow_dispatch). Deploy restauró Datos.json desde ferreteria-oviedo.
@@ -226,8 +234,8 @@
 | firestore.rules | Actualizado V36.9k |
 | firebase.json | Actualizado V36.2 (security headers) |
 | descargar_erp.py | Actualizado V36.4 |
-| descargar_ventas_erp.py | Actualizado V37.2 |
-| main.py | Actualizado V36.9 |
+| descargar_ventas_erp.py | Actualizado V37.66 (fix token subfolder ventas-manzano*.json) |
+| main.py | Actualizado V37.66 (fix token subfolder ventas-manzano*.json) |
 | leer_xlsm.py | Actualizado V36.9 |
 | descargar_bod.py (BODEGAS/) | Actualizado V37.59 (documentosGRT multi-GRT, algoritmo LIFO híbrido) |
 | procesar-actualizacion.py | Actualizado V36.6 |
@@ -325,4 +333,4 @@
 - ACTUALIZAR_TODO.bat: PASO 3.6 insertado entre PASO 3.5 (rotar token) y PASO 4 (deploy)
 - Commit 5bec71d — 4 archivos: ACTUALIZAR_TODO.bat, ACTUALIZAR_GITHUB.bat, generar_catalogo_cotizador_rotacion.ps1, sw.js
 
-*ESTADO_PROYECTO.md · Version V37.61 · Auditoria seguridad 2026-08-02 · Pipeline 2026-08-27*
+*ESTADO_PROYECTO.md · Version V37.66 · Auditoria seguridad 2026-08-02 · Pipeline 2026-09-03*
