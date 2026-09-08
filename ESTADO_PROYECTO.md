@@ -16,7 +16,7 @@
 | Fecha | 2026-09-03 |
 | Deploy | ✅ pipeline VPN activa (Precio+Stock/Ventas/Deploy Firebase/Catalogo Bot/Commit GitHub) |
 | Commit | 4bb2f79 (fix ventas token subfolder) |
-| Pendiente | Bot reproceso SKU v2: reorganizado en `E:\BOT  OVIEDO_ELMANZANO WHATSSSAP\FOTOS_OVIEDO_SKU\02_reproceso_v2\REPROCESAR_SKU_V2.bat` (parado en 2425/4073) — ver PASO_A_PASO.md y PENDIENTES.md en esa carpeta |
+| Pendiente | Ninguno — el reproceso SKU v2 (`FOTOS_OVIEDO_SKU\02_reproceso_v2\`) que aquí figuraba "parado en 2425/4073" quedó completo el 2026-09-06 (4040/4073, 99.2%, máximo real alcanzable). Corregido 08-09-2026, ver `PENDIENTES.md` del bot. |
 
 ---
 
