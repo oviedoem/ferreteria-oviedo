@@ -20,7 +20,8 @@
 
 - **Proyecto activo:** `E:\ferreteria-oviedo\` — trabajar SIEMPRE aquí
 - **Git repo:** `E:\git-sync\` — NUNCA modificar directamente
-- **Versión activa:** V37.63 · 2026-08-31 · ver AGENTS.md (historial de deploys)
+- **Versión activa:** V37.66 · 2026-09-05 · ver AGENTS.md (historial de deploys) — este número estaba desactualizado (decía V37.63), corregido al cerrar sesión 05-09
+- **Última sesión (05-09-2026):** `ACTUALIZAR_TODO.bat` corrido completo (20 pasos, datos frescos + deploy). `MAPA_FLUJO_PROYECTOS.md` de `CONOCIMIENTO DEL NEGOCIO` sincronizado (estaba 15 días atrasado). Detalle en `memory/estado-sesion-20260905.md`.
 - **Stack:** HTML/CSS/JS Vanilla + Firebase Hosting + Python pipeline ERP (JustWeb SSRS)
 - **Deploy:** `firebase deploy` desde `E:\ferreteria-oviedo\`
 - **Commit:** `ACTUALIZAR_GITHUB.bat` desde `E:\ferreteria-oviedo\`
