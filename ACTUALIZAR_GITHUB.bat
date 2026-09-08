@@ -87,7 +87,8 @@ robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo\BODEGAS" "E:\git-sync\BODEGAS" ^
-  descargar_despachos.py ^
+  descargar_despachos.py descargar_pedidos.py generar_informe_stock.py ^
+  descargar_stock_critico.py descargar_oc_leadtime.py descargar_oc_pendientes.py ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\scripts" "E:\git-sync\CATALOGO PRODUCTOS\scripts" ^
