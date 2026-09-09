@@ -236,6 +236,22 @@ if not exist "data\xlsm-enrich.json.bak" echo [WARN] Sin backup disponible - sec
 :paso1j_fin
 timeout /t 8 /nobreak > nul
 
+:: -- PASO 1L: Costo promedio real por linea (SQL Server) -----------------------
+echo. >> "%LOGFILE%"
+echo [%time%] PASO 1L - Costo promedio real (SQL, sin fallback)... >> "%LOGFILE%"
+if not exist "BODEGAS\descargar_costo_promedio.py" goto :paso1l_skip
+"%PYTHON_EXE%" "BODEGAS\descargar_costo_promedio.py" >> "%LOGFILE%" 2>&1
+if %errorlevel% neq 0 goto :paso1l_fallo
+echo [OK] descargar_costo_promedio.py >> "%LOGFILE%"
+goto :paso1l_fin
+:paso1l_skip
+echo [AVISO] descargar_costo_promedio.py no encontrado - saltando >> "%LOGFILE%"
+goto :paso1l_fin
+:paso1l_fallo
+echo [AVISO] descargar_costo_promedio.py fallo - main.py usara costo SSRS como respaldo >> "%LOGFILE%"
+:paso1l_fin
+timeout /t 8 /nobreak > nul
+
 :: -- PASO 2: Ventas -------------------------------------------------------
 :ventas
 echo. >> "%LOGFILE%"

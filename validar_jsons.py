@@ -18,7 +18,10 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, 'data')
 CATALOGO_DIR = os.path.join(BASE, 'CATALOGO PRODUCTOS')
 
-# bod-* van a data/[token]/ (descargar_bod.py usa token subfolder)
+# bod-*.json y ventas-manzano*.json van a data/[token]/ (descargar_bod.py y
+# main.py/descargar_ventas_erp.py usan token subfolder desde el fix V37.65,
+# 2026-09-03). El nombre BOD_DIR quedo de cuando solo aplicaba a bodegas --
+# ya no es solo eso, pero se mantiene para no ensanchar el diff sin necesidad.
 _token_file = os.path.join(DATA_DIR, '.token-actual')
 _token = open(_token_file).read().strip() if os.path.exists(_token_file) else ''
 BOD_DIR = os.path.join(DATA_DIR, _token) if _token else DATA_DIR
@@ -70,6 +73,16 @@ SCHEMA = {
         'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'fuente', 'bod', 'total', 'registros'], 'array_field': 'registros',
     },
+    # GEM/TEM: agregadas 2026-09-10 -- el menu "Analisis de Bodegas" (panel-admin)
+    # muestra 6 bodegas (IEM/RCE/CEM/ICD/GEM/TEM) pero solo 4 estaban protegidas aqui.
+    'bod-gem-registros.json': {
+        'dir': BOD_DIR, 'kind': 'wrapped',
+        'keys': ['generado', 'fuente', 'bod', 'total', 'registros'], 'array_field': 'registros',
+    },
+    'bod-tem-registros.json': {
+        'dir': BOD_DIR, 'kind': 'wrapped',
+        'keys': ['generado', 'fuente', 'bod', 'total', 'registros'], 'array_field': 'registros',
+    },
     'pedidos-comprometidos.json': {
         'dir': DATA_DIR, 'kind': 'raw_dict',
     },
@@ -108,39 +121,54 @@ SCHEMA = {
         'dir': DATA_DIR, 'kind': 'raw_list', 'optional': True,
     },
     'ventas-manzano-meta.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'desde', 'hasta', 'total', 'anios'],
     },
     'ventas-manzano.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'ventas-manzano-2026.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'ventas-manzano-2026-01.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'ventas-manzano-2026-02.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'ventas-manzano-2026-03.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'ventas-manzano-2026-04.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'ventas-manzano-2026-05.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'ventas-manzano-2026-06.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
+        'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
+    },
+    'ventas-manzano-2026-07.json': {
+        'dir': BOD_DIR, 'kind': 'wrapped',
+        'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
+    },
+    'ventas-manzano-2026-08.json': {
+        'dir': BOD_DIR, 'kind': 'wrapped',
+        'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
+    },
+    # ventas-manzano-2026-09.json (mes actual): agregado 2026-09-10 -- antes no
+    # estaba en el schema y una corrupcion del mes en curso no bloqueaba el deploy.
+    # RECORDATORIO: agregar el mes siguiente (2026-10) aqui apenas exista el archivo.
+    'ventas-manzano-2026-09.json': {
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'total', 'registros'], 'array_field': 'registros',
     },
     'Datos.json': {
@@ -161,7 +189,7 @@ def validar_ventas_vs_enrich():
 
     No hace consultas SQL: solo lee archivos locales ya generados.
     """
-    ventas_path = os.path.join(DATA_DIR, 'ventas-manzano.json')
+    ventas_path = os.path.join(BOD_DIR, 'ventas-manzano.json')  # fix 2026-09-10: vivia en data/<token>/, no en raiz
     enrich_path = os.path.join(DATA_DIR, 'xlsm-enrich.json')
 
     if not os.path.exists(ventas_path) or not os.path.exists(enrich_path):

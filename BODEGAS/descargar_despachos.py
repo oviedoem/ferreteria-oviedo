@@ -36,6 +36,7 @@ DATA_DIR  = BASE_DIR / "data"
 _token_file = DATA_DIR / '.token-actual'
 if _token_file.exists():
     DATA_DIR = DATA_DIR / _token_file.read_text(encoding='utf-8').strip()
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 CRED_FILE = BASE_DIR / "credenciales_db.ini"
 ENC_FILE  = Path(__file__).parent.parent.parent / "config" / "credenciales_db.enc"
 

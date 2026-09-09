@@ -1353,9 +1353,12 @@ function onSearch(){
 }
 
 function calcSocio(p, m){
-  var base = p.CP>0 ? p.CP : Math.round(p.SIva/1.19);
-  if(m===0) return p.PIva;
-  return Math.round(base/(1-m/100)*1.19);
+  if(m===0) return p.PIva; // sin ajuste de margen, es el retail real -- no necesita costo
+  // Con ajuste de margen SI hace falta costo promedio real. Sin costo (producto sin
+  // OC recepcionada aun) -> nunca inventar uno desde el precio Socio. Confirmado en
+  // JustWeb 2026-09-09: son productos con OC pendiente de recepcion o sin OC, costo real 0.
+  if(!(p.CP>0)) return null;
+  return Math.round(p.CP/(1-m/100)*1.19);
 }
 
 function renderProds(){
@@ -1385,11 +1388,14 @@ function renderProds(){
       '<div class="pprecios">'+
         (window._mostrarPrecioVendedor!==false
           ? (function(){
-              var cp = p.CP>0 ? p.CP : (p.SIva>0 ? Math.round(p.SIva/1.19) : 0);
-              var margenReal = (cp>0 && p.PIva>0) ? Math.round((1 - cp*1.19/p.PIva)*100) : null;
+              var cp = p.CP>0 ? p.CP : null;
+              var margenReal = (cp!==null && p.PIva>0) ? Math.round((1 - cp*1.19/p.PIva)*100) : null;
+              var socioBox = ps!==null
+                ? '<div class="pbox '+(m!==0?'mod':'soc')+'"><div class="plbl">Precio Socio c/IVA'+(m!==0?' (MC '+m+'%)':'')+' </div><div class="pval">'+fmt(ps)+'</div></div>'
+                : '<div class="pbox" style="background:#fef3c7"><div class="plbl" style="color:#92400e">⚠️ Sin costo real (OC pendiente)</div></div>';
               return '<div class="pbox pub"><div class="plbl">Precio Retail c/IVA</div><div class="pval">'+fmt(p.PIva)+'</div></div>'+
-                '<div class="pbox '+(m!==0?'mod':'soc')+'"><div class="plbl">Precio Socio c/IVA'+(m!==0?' (MC '+m+'%)':'')+' </div><div class="pval">'+fmt(ps)+'</div></div>'+
-                (cp>0?'<div class="pbox cos" style="grid-column:1/-1"><div class="plbl">Costo prom.'+(margenReal!==null?' · Margen retail '+margenReal+'%':'')+' </div><div class="pval">'+fmt(cp)+'</div></div>':'');
+                socioBox+
+                (cp!==null?'<div class="pbox cos" style="grid-column:1/-1"><div class="plbl">Costo prom.'+(margenReal!==null?' · Margen retail '+margenReal+'%':'')+' </div><div class="pval">'+fmt(cp)+'</div></div>':'');
             })()
           : '<div class="pbox pub"><div class="plbl" style="color:#DA0000;font-weight:700">💬 Precios ocultos por admin</div></div>')+
       '</div>'+
@@ -1924,7 +1930,8 @@ var VEN_CONFIG = {
   'jjsubiabre': { nombre: 'Jaime Subiabre',          gmailUser: 'jaimesubiabre33',       gmail: 'jaimesubiabre33@gmail.com'       },
   'rflores':    { nombre: 'Rafaela Flores',          gmailUser: 'rafaelaoviedo1983',     gmail: 'rafaelaoviedo1983@gmail.com'     },
   'rvidal':     { nombre: 'Ricardo Poblete Vidal',   gmailUser: 'ricpobletev',           gmail: 'ricpobletev@gmail.com'           },
-  'agonzalez':  { nombre: 'Alejandro González',      gmailUser: 'alejandrog45',          gmail: 'alejandrog45@gmail.com'          }
+  'agonzalez':  { nombre: 'Alejandro González',      gmailUser: 'alejandrog45',          gmail: 'alejandrog45@gmail.com'          },
+  'vanessa.vasquez': { nombre: 'Vanessa Vásquez',     gmailUser: 'vvsquz',                gmail: 'vvsquz@gmail.com'                }
   // Para agregar más vendedores, agregar aquí:
   // 'nuevouser': { nombre: 'Nombre Apellido', gmailUser: 'gmailusername', gmail: 'gmailusername@gmail.com' }
 };
@@ -2045,7 +2052,9 @@ function venCargar(){
     _venDatos = docs;
     venRenderizarTabla(docs);
     venActualizarSummary(docs);
-    venRenderCategorias(lineasF||[]);
+    _venLineasBase = lineasF||[];
+    _venTipoDocSel = '';
+    _venRefrescarDesglose();
   }
 
   // 1. Intentar JSON estático (sin Firestore)
@@ -2132,10 +2141,88 @@ function venRenderizarTabla(datos){
   body.innerHTML = html;
 }
 
+var _venCatLineas = [];
+var _venCatSel = '';
+var _venLineasBase = []; // todas las lineas del periodo, sin filtrar por tipo de documento
+var _venTipoDocSel = ''; // '' = todos los tipos (clic en tabla Margen por Tipo de Documento)
+
+function _venRefrescarDesglose(){
+  venRenderTipoDoc(_venLineasBase);
+  var filtradas = _venTipoDocSel
+    ? _venLineasBase.filter(function(r){ return venTipoDocLabel(r.documento)===_venTipoDocSel; })
+    : _venLineasBase;
+  venRenderCategorias(filtradas);
+}
+
+function venTipoDocRowClick(label){
+  _venTipoDocSel = (_venTipoDocSel===label) ? '' : label;
+  _venRefrescarDesglose();
+}
+
+function venMargenFiltro(arr){
+  var elMin=document.getElementById('venMargenMin'), elMax=document.getElementById('venMargenMax');
+  var mMin=elMin&&elMin.value!==''?parseFloat(elMin.value):null;
+  var mMax=elMax&&elMax.value!==''?parseFloat(elMax.value):null;
+  if(mMin===null&&mMax===null) return arr;
+  return arr.filter(function(v){
+    var p = v.pct!==undefined ? v.pct : (v.margenPct!==undefined?v.margenPct:0);
+    if(mMin!==null&&p<mMin) return false;
+    if(mMax!==null&&p>mMax) return false;
+    return true;
+  });
+}
+
+function venTipoDocLabel(doc){
+  var d=(doc||'').toLowerCase();
+  if(d.indexOf('nota')>=0||d.indexOf('credito')>=0) return 'Nota Crédito';
+  if(d.indexOf('factura')>=0) return 'Factura';
+  if(d.indexOf('boleta')>=0)  return 'Boleta';
+  return doc||'Otro';
+}
+
+function venRenderTipoDoc(lineas){
+  var wrap = document.getElementById('venTipoDocWrap');
+  var body = document.getElementById('venTipoDocBody');
+  if(!wrap || !body) return;
+  if(!lineas.length){ wrap.style.display='none'; return; }
+  var map = {};
+  lineas.forEach(function(r){
+    var k = venTipoDocLabel(r.documento);
+    if(!map[k]) map[k] = {neto:0, costo:0, margen:0};
+    map[k].neto   += r.valorNeto || 0;
+    map[k].costo  += r.costo || 0;
+    map[k].margen += r.margen || 0;
+  });
+  var arr = Object.keys(map).map(function(k){
+    var m = map[k];
+    var pct = m.neto!==0 ? (m.margen/m.neto)*100 : 0;
+    if(m.neto<0) pct = -Math.abs(pct);
+    return {tipo:k, neto:m.neto, margen:m.margen, pct:pct};
+  });
+  arr = venMargenFiltro(arr);
+  if(!arr.length){ wrap.style.display='none'; return; }
+  arr.sort(function(a,b){ return b.neto - a.neto; });
+  body.innerHTML = arr.map(function(v){
+    var cls = v.pct >= 0 ? 'ven-pos' : 'ven-neg';
+    var isAct = (v.tipo===_venTipoDocSel);
+    var safeTipo = v.tipo.replace(/'/g,"\\'");
+    return '<tr class="ven-cat-click'+(isAct?' ven-cat-active':'')+'" style="cursor:pointer'+(isAct?';background:#fef2f2':'')+'" onclick="venTipoDocRowClick(\''+safeTipo+'\')">'+
+      '<td>'+venEsc(v.tipo)+'</td>'+
+      '<td class="r">'+venFmt(v.neto)+'</td>'+
+      '<td class="r">'+venFmt(v.margen)+'</td>'+
+      '<td class="r '+cls+'" style="font-weight:700">'+venFmtPct(v.pct)+'</td></tr>';
+  }).join('');
+  wrap.style.display = 'block';
+}
+
 function venRenderCategorias(lineas){
   var wrap = document.getElementById('venCatWrap');
   var body = document.getElementById('venCatBody');
   if(!wrap || !body) return;
+  _venCatLineas = lineas;
+  _venCatSel = '';
+  var drillWrap = document.getElementById('venCatDrillWrap');
+  if(drillWrap) drillWrap.style.display = 'none';
   if(!lineas.length){ wrap.style.display='none'; return; }
   var map = {};
   lineas.forEach(function(r){
@@ -2147,20 +2234,58 @@ function venRenderCategorias(lineas){
   });
   var arr = Object.keys(map).map(function(k){
     var m = map[k];
-    var pct = m.neto > 0 ? (m.margen/m.neto)*100 : 0;
+    var pct = m.neto!==0 ? (m.margen/m.neto)*100 : 0;
+    if(m.neto<0) pct = -Math.abs(pct);
     return {cat:k, neto:m.neto, costo:m.costo, margen:m.margen, pct:pct};
   });
+  arr = venMargenFiltro(arr);
   if(!arr.length){ wrap.style.display='none'; return; }
   arr.sort(function(a,b){ return a.pct - b.pct; }); // peor margen primero
   var html = arr.map(function(v){
     var cls = v.pct >= 0 ? 'ven-pos' : 'ven-neg';
-    return '<tr><td>'+venEsc(v.cat)+'</td>'+
+    var safeCat = v.cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<tr class="ven-cat-click" onclick="venCatDrill(\''+safeCat+'\')" style="cursor:pointer">'+
+      '<td>'+venEsc(v.cat)+'</td>'+
       '<td class="r">'+venFmt(v.neto)+'</td>'+
       '<td class="r">'+venFmt(v.margen)+'</td>'+
       '<td class="r '+cls+'" style="font-weight:700">'+venFmtPct(v.pct)+'</td></tr>';
   }).join('');
   body.innerHTML = html;
   wrap.style.display = 'block';
+}
+
+function venCatDrill(hiperFam){
+  var drillWrap = document.getElementById('venCatDrillWrap');
+  var drillBody = document.getElementById('venCatDrillBody');
+  var drillTitulo = document.getElementById('venCatDrillTitulo');
+  if(!drillWrap || !drillBody) return;
+  if(_venCatSel === hiperFam){ _venCatSel = ''; drillWrap.style.display = 'none'; return; }
+  _venCatSel = hiperFam;
+  var map = {};
+  _venCatLineas.filter(function(r){ return (r.hiperFam||'(sin categoría)') === hiperFam; })
+    .forEach(function(r){
+      var k = (r.codigo||'') + '||' + (r.descripcion||'');
+      if(!map[k]) map[k] = {codigo:r.codigo||'', desc:r.descripcion||'', neto:0, margen:0, cant:0};
+      map[k].neto   += r.valorNeto || 0;
+      map[k].margen += r.margen || 0;
+      map[k].cant   += r.cantidad || 0;
+    });
+  var arr = Object.keys(map).map(function(k){
+    var m = map[k];
+    var pct = m.neto > 0 ? (m.margen/m.neto)*100 : 0;
+    return {codigo:m.codigo, desc:m.desc, neto:m.neto, margen:m.margen, cant:m.cant, pct:pct};
+  });
+  arr.sort(function(a,b){ return a.pct - b.pct; });
+  if(drillTitulo) drillTitulo.textContent = 'Productos — ' + hiperFam;
+  drillBody.innerHTML = arr.map(function(v){
+    var cls = v.pct >= 0 ? 'ven-pos' : 'ven-neg';
+    return '<tr><td>'+venEsc(v.codigo)+' — '+venEsc(v.desc)+'</td>'+
+      '<td class="r">'+v.cant+'</td>'+
+      '<td class="r">'+venFmt(v.neto)+'</td>'+
+      '<td class="r">'+venFmt(v.margen)+'</td>'+
+      '<td class="r '+cls+'" style="font-weight:700">'+venFmtPct(v.pct)+'</td></tr>';
+  }).join('');
+  drillWrap.style.display = 'block';
 }
 
 function venActualizarSummary(datos){
@@ -2231,12 +2356,39 @@ document.addEventListener('keydown', function(e){
         <div class="vsum-sub" id="vsMargenAbs">$ margen</div>
       </div>
     </div>
+    <div class="ven-body" style="padding:10px 14px 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+      <span style="font-size:11px;font-weight:700;color:#374151">Margen% (mín/máx):</span>
+      <input type="number" id="venMargenMin" placeholder="mín" step="1"
+        style="width:56px;padding:3px 6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px"
+        onchange="_venRefrescarDesglose()">
+      <input type="number" id="venMargenMax" placeholder="máx" step="1"
+        style="width:56px;padding:3px 6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px"
+        onchange="_venRefrescarDesglose()">
+      <button style="padding:3px 9px;font-size:11px;color:#dc2626;font-weight:700;border:1.5px solid #fecaca;border-radius:6px;background:#fef2f2"
+        onclick="document.getElementById('venMargenMin').value='';document.getElementById('venMargenMax').value='0';_venRefrescarDesglose()">⚠️ Solo negativos</button>
+      <button style="padding:3px 9px;font-size:11px;border:1.5px solid #d1d5db;border-radius:6px;background:#fff"
+        onclick="document.getElementById('venMargenMin').value='';document.getElementById('venMargenMax').value='';_venRefrescarDesglose()">Limpiar</button>
+    </div>
+    <div class="ven-body" id="venTipoDocWrap" style="display:none;padding:10px 14px 0">
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px">Margen por Tipo de Documento <span style="font-weight:400;color:#9ca3af">— clic para desglosar por categoría</span></div>
+      <div class="ven-table-wrap"><table class="ven-table">
+        <thead><tr><th>Tipo</th><th class="r">Neto</th><th class="r">Margen</th><th class="r">Mgn%</th></tr></thead>
+        <tbody id="venTipoDocBody"></tbody>
+      </table></div>
+    </div>
     <div class="ven-body" id="venCatWrap" style="display:none;padding:10px 14px 0">
-      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px">Margen por categoría (peor primero)</div>
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px">Margen por categoría (peor primero) <span style="font-weight:400;color:#9ca3af">— clic para ver productos</span></div>
       <div class="ven-table-wrap"><table class="ven-table">
         <thead><tr><th>Categoría</th><th class="r">Neto</th><th class="r">Margen</th><th class="r">Mgn%</th></tr></thead>
         <tbody id="venCatBody"></tbody>
       </table></div>
+      <div id="venCatDrillWrap" style="display:none;margin-top:10px">
+        <div id="venCatDrillTitulo" style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px"></div>
+        <div class="ven-table-wrap"><table class="ven-table">
+          <thead><tr><th>Producto</th><th class="r">Uds</th><th class="r">Neto</th><th class="r">Margen</th><th class="r">Mgn%</th></tr></thead>
+          <tbody id="venCatDrillBody"></tbody>
+        </table></div>
+      </div>
     </div>
     <div class="ven-body" id="venBody">
       <div class="ven-empty"><span class="ven-empty-icon">📋</span>Selecciona un período para cargar.</div>
@@ -2244,6 +2396,6 @@ document.addEventListener('keydown', function(e){
   </div>
 </div>
 
-<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.67<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">09-09-2026</span></div>
+<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.68<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">09-09-2026</span></div>
 </body>
 </html>

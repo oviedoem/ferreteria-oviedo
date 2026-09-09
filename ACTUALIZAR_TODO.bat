@@ -380,6 +380,30 @@ color 0A
 echo.
 timeout /t 8 /nobreak >nul
 
+:: -- PASO 1L: Costo promedio real por linea (SQL Server) -----------------------
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 1L - Costo promedio real (SQL, sin fallback)     ^|
+echo  +----------------------------------------------------------+
+echo.
+echo  Costo promedio varia por compra a proveedor -- nunca se calcula ni
+echo  estima. Trae el valor real desde M_DOCUMENTOS_DETALLE (lo consume main.py).
+echo.
+if not exist "%~dp0BODEGAS\descargar_costo_promedio.py" goto :paso1l_skip
+"%PYTHON_EXE%" "%~dp0BODEGAS\descargar_costo_promedio.py"
+if %errorlevel% neq 0 goto :paso1l_fallo
+echo  [OK] costo-promedio-enrich.json actualizado desde SQL.
+goto :paso1l_fin
+:paso1l_skip
+echo  [AVISO] descargar_costo_promedio.py no encontrado -- saltando paso.
+goto :paso1l_fin
+:paso1l_fallo
+echo  [AVISO] descargar_costo_promedio.py fallo (SQL no disponible) -- main.py
+echo  usara el costo del reporte de ventas SSRS como respaldo (nunca del catalogo).
+:paso1l_fin
+echo.
+timeout /t 8 /nobreak >nul
+
 :: -- PASO 2: Ventas ------------------------------------------------------------
 :ventas
 echo.

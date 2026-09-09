@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.67
-# Fecha: 2026-09-09
+# Version activa: V37.69
+# Fecha: 2026-09-10
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,23 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.67 |
-| Fecha | 2026-09-09 |
-| Deploy | ⏳ pendiente — cambios de esta sesión (panel-admin.html, index.html) esperan el próximo `ACTUALIZAR_TODO.bat` |
+| Version | V37.69 |
+| Fecha | 2026-09-10 |
+| Deploy | ⏳ pendiente — cambios solo en panel-admin.html (capa presentación), sin tocar pipeline/SQL/catálogo |
 | Commit | ver AGENTS.md |
-| Pendiente | Revisar en JustWeb el código 25989 (Volcanita ST 15mm) — margen cayó a -53.6% en septiembre, posible error de costo/precio. Confirmar mezcla de venta de código 150124 (terciado nuevo) es intencional. |
+| Pendiente | Deploy vía ACTUALIZAR_TODO.bat cuando el dueño confirme. Revisar en JustWeb el código 25989 (Volcanita ST 15mm) — margen -53.6% confirmado real. $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.69 — 2026-09-10 (Auditoría bug de signo 37 funciones + drilldown 21 menús de venta + costo en Informe Stock)
+- **Auditoría de los 32 menús pendientes de Panel Admin** (4 agentes en paralelo) contra 2 reglas: usar `margen` directo y usar costo promedio real SQL. Hallazgo: 13 menús más con el mismo bug de signo corregido ayer en 5 funciones — corregidos uno por uno. Encontrados de paso y corregidos con autorización: 3 funciones sueltas + 16 plantillas de email. Total: **37 funciones corregidas**, verificadas con datos reales de septiembre (caso KLEVERONE: neto=-$39.706 → antes 0.0%, ahora -44.8%).
+- **Drilldown por producto agregado/reforzado en 21 menús de venta** — clic en fila/celda abre modal con código+descripción+cantidad+neto+costo+utilidad+margen%. Todos verificados matemáticamente exactos contra `ventas-manzano-2026-09.json`/`2026.json`.
+- **Bug adicional corregido en estaciones:** 37 líneas ($247.132) sin campo `codigo` quedaban fuera del agrupador por producto.
+- **Menús de stock:** confirmado con `flujo-stock-justime.html` completo que son sobre Disp/Fís/Ped, no margen. `informe-stock` corregido — costo promedio real ya se descargaba pero nunca se mostraba, agregadas columnas "Costo Prom." y "Valor Fís.".
+- **Sin cambios de pipeline, SQL ni catálogo** — el catálogo que alimenta al bot (Datos.json/catalogo-bot.json) no se tocó. Sin deploy.
+- Detalle completo en AGENTS.md y en artefacto: https://claude.ai/code/artifact/8bc1b008-0940-4725-9172-881af263b31d
 
 ### V37.67 — 2026-09-09 (Análisis de margen por categoría — Admin + Vendedor)
 - **Contexto:** dueño reportó caída de margen mensual (28% jul → 25% ago → 24% sep parcial) y pidió aislar la causa antes de tocar SQL/ERP. Revisión previa confirmó que `ventas-manzano*.json` YA tenía marca/hiperFam/familia/subFam/margen por línea (viene de PASO 1A `descargar_erp.py` → existencias_clasificadas Bloque1/2, join en `main.py`) — no hizo falta ningún query nuevo.
