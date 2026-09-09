@@ -1215,6 +1215,21 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
             <div class="vadm-periodo-pills" id="vadmPeriodoPills"></div>
           </div>
 
+          <!-- Fila 3: Filtro de rango de margen (aisla categorias que arrastran el margen) -->
+          <div class="vadm-anal-bar2" style="flex-wrap:wrap;gap:6px">
+            <span style="font-size:11px;font-weight:700;color:#374151;white-space:nowrap">Margen% categoría (min/máx):</span>
+            <input type="number" id="vadmMargenMin" placeholder="mín" step="1"
+              style="width:64px;padding:3px 6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;font-family:inherit"
+              onchange="vadmRenderAnalisis()">
+            <input type="number" id="vadmMargenMax" placeholder="máx" step="1"
+              style="width:64px;padding:3px 6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;font-family:inherit"
+              onchange="vadmRenderAnalisis()">
+            <button class="vadm-stab" style="padding:3px 9px;font-size:11px;color:#dc2626;font-weight:700"
+              onclick="document.getElementById('vadmMargenMin').value='';document.getElementById('vadmMargenMax').value='0';vadmRenderAnalisis()">⚠️ Solo negativos</button>
+            <button class="vadm-stab" style="padding:3px 9px;font-size:11px"
+              onclick="document.getElementById('vadmMargenMin').value='';document.getElementById('vadmMargenMax').value='';vadmRenderAnalisis()">Limpiar</button>
+          </div>
+
           <!-- Contenido análisis -->
           <div style="padding:14px 18px" id="vadmAnalBody">
             <div class="ven-adm-empty">Haz clic en <strong>🔄 Actualizar</strong> para cargar el análisis desde Firestore.</div>
@@ -3990,7 +4005,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.66<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-09-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.67<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">09-09-2026</span></div>
 
 <script>
 
@@ -9029,6 +9044,17 @@ function vadmBuildCatTable(datos,campo,titulo,chipClass,selVal,clickable){
     map[k].cant  +=r.cantidad||0;
   });
   var arr=Object.keys(map).map(function(k){return {key:k,neto:map[k].neto,costo:map[k].costo,margen:map[k].margen,cant:map[k].cant};});
+  var elMin=document.getElementById('vadmMargenMin'), elMax=document.getElementById('vadmMargenMax');
+  var mMin=elMin&&elMin.value!==''?parseFloat(elMin.value):null;
+  var mMax=elMax&&elMax.value!==''?parseFloat(elMax.value):null;
+  if(mMin!==null||mMax!==null){
+    arr=arr.filter(function(v){
+      var mgn=v.neto>0?(v.margen/v.neto)*100:0;
+      if(mMin!==null&&mgn<mMin) return false;
+      if(mMax!==null&&mgn>mMax) return false;
+      return true;
+    });
+  }
   arr.sort(function(a,b){return b.neto-a.neto;});
   var maxNeto=arr.length?arr[0].neto:1;
   var totalNeto=arr.reduce(function(a,r){return a+r.neto;},0);

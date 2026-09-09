@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.66
-# Fecha: 2026-09-03
+# Version activa: V37.67
+# Fecha: 2026-09-09
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,24 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.66 |
-| Fecha | 2026-09-03 |
-| Deploy | ✅ pipeline VPN activa (Precio+Stock/Ventas/Deploy Firebase/Catalogo Bot/Commit GitHub) |
-| Commit | 4bb2f79 (fix ventas token subfolder) |
-| Pendiente | Ninguno — el reproceso SKU v2 (`FOTOS_OVIEDO_SKU\02_reproceso_v2\`) que aquí figuraba "parado en 2425/4073" quedó completo el 2026-09-06 (4040/4073, 99.2%, máximo real alcanzable). Corregido 08-09-2026, ver `PENDIENTES.md` del bot. |
+| Version | V37.67 |
+| Fecha | 2026-09-09 |
+| Deploy | ⏳ pendiente — cambios de esta sesión (panel-admin.html, index.html) esperan el próximo `ACTUALIZAR_TODO.bat` |
+| Commit | ver AGENTS.md |
+| Pendiente | Revisar en JustWeb el código 25989 (Volcanita ST 15mm) — margen cayó a -53.6% en septiembre, posible error de costo/precio. Confirmar mezcla de venta de código 150124 (terciado nuevo) es intencional. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.67 — 2026-09-09 (Análisis de margen por categoría — Admin + Vendedor)
+- **Contexto:** dueño reportó caída de margen mensual (28% jul → 25% ago → 24% sep parcial) y pidió aislar la causa antes de tocar SQL/ERP. Revisión previa confirmó que `ventas-manzano*.json` YA tenía marca/hiperFam/familia/subFam/margen por línea (viene de PASO 1A `descargar_erp.py` → existencias_clasificadas Bloque1/2, join en `main.py`) — no hizo falta ningún query nuevo.
+- **panel-admin.html (tab Análisis → Categorías, `vadmBuildCatTable`):** filtro de rango de margen % (inputs min/máx + botón "⚠️ Solo negativos") sobre las filas del drilldown HiperFamilia/Familia/SubFamilia. Verificado con datos de prueba: excluye correctamente categorías con margen positivo al activar "Solo negativos".
+- **index.html (Panel Vendedor → Mis Ventas):** nueva tabla "Margen por categoría (peor primero)" agrupando por hiperFam las líneas ya filtradas por vendedor — reutiliza el mismo fetch de `ventas-manzano.json` que el panel ya hacía, cero descargas nuevas.
+- **Diagnóstico real ago-sep-2026:** caída de margen explicada por MADERA ($36M/mes, 21.8%→18.8%) y MATERIALES DE CONSTRUCCION ($62M/mes, 19.4%→18.8%) — las 2 categorías de mayor volumen, no una categoría exótica. Causas puntuales: código **150124** (terciado estructural 21mm, nuevo, $3.77M en septiembre a solo 11% margen) y código **25989** (Volcanita ST 15mm, margen se desplomó de 12.9% a **-53.6%** en septiembre — revisar costo/precio en JustWeb).
+- **Vendedor Ricardo Poblete Vidal (`rvidal`):** su caída de margen en agosto (25.2%→22.5%) replica el mismo patrón de tienda — vendió más volumen en MATERIALES DE CONSTRUCCION y MADERA justo cuando esas categorías perdían margen. Se recupera en septiembre (23.7%). Estructuralmente trabaja 1.5-2pp bajo el promedio de tienda todo el año (mezcla de clientes con más MATERIALES DE CONSTRUCCION).
+- **Hallazgo técnico importante:** el campo `costo` de `ventas-manzano*.json` NO es confiable para meses históricos — `main.py` (~L509-510) usa el costo de la línea de venta del ERP si existe, pero si no viene, cae a **`cat.get('costo')` (costo ACTUAL del catálogo)**, inflando el costo de meses pasados cuando los costos subieron. El campo `margen`/`margenPct` (cuando el ERP lo entrega directo) es el confiable — comparado contra el informe SSRS "Estadísticas de ventas por Sucursal" real, coincide dentro de ±0.2 a 1.0pp mensual. **Regla nueva: cualquier análisis de margen debe usar el campo `margen` directo, nunca recalcularlo como `valorNeto - costo`.**
+- Sin cambios de pipeline, sin SQL nuevo, sin deploy (pendiente próximo `ACTUALIZAR_TODO.bat`). Commit: ver AGENTS.md.
 
 ### V37.66 — 2026-09-03 (Fix ventas septiembre ausentes — token subfolder)
 - **Bug:** menús Análisis y Ventas por Vendedor no mostraban ventas de septiembre-2026 pese a que el ERP las tenía en línea.
