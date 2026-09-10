@@ -14,8 +14,8 @@
 |---|---|
 | Version | V37.71 |
 | Fecha | 2026-09-10 |
-| Deploy | 🔄 en curso — `ACTUALIZAR_TODO.bat` |
-| Commit | pendiente |
+| Deploy | ✅ hecho — pipeline completo corrido en vivo, commit 5b88166 |
+| Commit | 5b88166 |
 | Pendiente | `firebase login --reauth` (token CLI vencido, no bloquea nada). Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. Evaluar si agregar filtros marca/hiperFam/familia/subFam también al menú Panel Vendedor (por ahora solo tiene fecha/período ya existentes). |
 
 ---
