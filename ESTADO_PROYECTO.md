@@ -1,5 +1,5 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.70
+# Version activa: V37.71
 # Fecha: 2026-09-10
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -12,15 +12,24 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.70 |
+| Version | V37.71 |
 | Fecha | 2026-09-10 |
-| Deploy | ✅ hecho — pipeline completo corrido en vivo, commit 1422bec |
-| Commit | 1422bec |
+| Deploy | 🔄 en curso — `ACTUALIZAR_TODO.bat` |
+| Commit | pendiente |
 | Pendiente | `firebase login --reauth` (token CLI vencido, no bloquea nada). Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. Evaluar si agregar filtros marca/hiperFam/familia/subFam también al menú Panel Vendedor (por ahora solo tiene fecha/período ya existentes). |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.71 — 2026-09-10 (Análisis de Bodegas: detalle multi-documento, filtro por persona CEM, Excel con color/autofiltro)
+- **Subfilas con detalle completo** en `documentosGRT` (Bodega/Código/Descripción/Costo/Valorizado por documento, antes en blanco) — verificado exacto contra SQL en vivo (código 26297 CEM).
+- **Filtro "Filtrar por persona (CEM)"** con KPI de pendientes+$ acumulado por persona, extracción dinámica de nombres desde la observación libre del ERP (patrón "POR FACTURAR <nombre>").
+- **Fix `_x000d_`** en columna Observación del Excel (saneo de `\r\n` crudo del ERP antes de exportar).
+- **Reescritura completa de `bfExportExcel`** — de SheetJS (sin color en la versión gratuita, confirmado con prueba real) a SpreadsheetML (mismo patrón de `vadmDescargarExcel`): encabezado azul marino, filas TOTAL en negrita, documentos en lavanda/cursiva, pesos con separador de miles, AutoFilter + fila congelada. Verificado abriendo el archivo real con Excel vía automatización COM — sin aviso de reparación, autofiltro y colores confirmados leyendo la celda real.
+- **Consistencia SQL verificada en las 6 bodegas** (51+ códigos, 0 discrepancias, incluye casos de stock negativo GEM/TEM y acumulación LIFO multi-documento).
+- Sin cambios de pipeline/SQL/JSON — todo el trabajo fue en `panel-admin.html`.
+- Detalle completo en `memory/estado-sesion-20260910.md`.
 
 ### V37.70 — 2026-09-10 (Menú Margen Negativo Admin+Vendedor, pipeline corrido en vivo, deploy hecho)
 - **Menú "⚠️ Margen Negativo"** en Panel Admin (Análisis) y bloque equivalente en Panel Vendedor (Mis Ventas): separa ventas reales bajo costo (Boleta/Factura) de Notas de Crédito (devoluciones). Filtros fecha/marca/hiperFam/familia/subFam/buscador (Admin), KPI margen con/sin esas ventas, detalle línea a línea, exportar Excel (Admin).

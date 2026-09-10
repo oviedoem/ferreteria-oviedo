@@ -3497,6 +3497,9 @@ Todo desde tu celular, gratis, sin apps que descargar.
       </select>
       <input type="text" id="bfBuscar" placeholder="Código o descripción" oninput="vadmFiltrarBodFem()"
         style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:180px">
+      <select id="bfPersona" onchange="vadmFiltrarBodFem()" style="font-size:12px;padding:4px 8px;border:1.5px solid #7F77DD;border-radius:6px;background:#EEEDFE;color:#26215C;font-weight:600;display:none">
+        <option value="">Filtrar por persona (CEM)</option>
+      </select>
       <label style="font-size:12px;font-weight:600;color:#374151">Días ≥
         <input type="number" id="bfDiasMin" min="0" value="" placeholder="0" oninput="vadmFiltrarBodFem()"
           style="margin-left:4px;font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;width:60px">
@@ -4032,7 +4035,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.70<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">10-09-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.71<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">10-09-2026</span></div>
 
 <script>
 
@@ -19720,6 +19723,16 @@ var _bfDatos = [];
 
 function _bfEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+// Extrae un nombre de persona de la observación libre del ERP (ej. "POR FACTURAR MARISEL" u observación que es solo el nombre)
+function _bfExtraerNombre(obs){
+  if(!obs) return null;
+  var t=String(obs).trim();
+  var m=t.match(/factur(?!ado)\w*\s+([a-záéíóúñ]{3,20})\b/i);
+  if(m && m[1].toLowerCase()!=='por') return m[1].toLowerCase();
+  if(/^[a-záéíóúñ]{3,20}$/i.test(t)) return t.toLowerCase();
+  return null;
+}
+
 function vadmRenderBodFem(){
   var chkIEM=document.getElementById('bfChkIEM');
   var chkRCE=document.getElementById('bfChkRCE');
@@ -19747,6 +19760,21 @@ function vadmRenderBodFem(){
       tipos.sort();
       var st=document.getElementById('bfTipoDoc');
       if(st){ st.innerHTML='<option value="">Todos los tipos</option>'; tipos.forEach(function(t){ st.innerHTML+='<option value="'+t+'">'+t+'</option>'; }); }
+      var pers={};
+      _bfDatos.forEach(function(r){
+        if((r.bodega||'')!=='CEM') return;
+        var n=_bfExtraerNombre(r.observacion);
+        if(n) pers[n]=true;
+      });
+      var selP=document.getElementById('bfPersona');
+      if(selP){
+        var nombres=Object.keys(pers).sort();
+        selP.innerHTML='<option value="">Filtrar por persona (CEM)</option>'+nombres.map(function(n){
+          return '<option value="'+n+'">'+n.charAt(0).toUpperCase()+n.slice(1)+'</option>';
+        }).join('');
+        selP.style.display=nombres.length?'':'none';
+        selP.value='';
+      }
       document.getElementById('bfBuscar').value='';
       document.getElementById('bfDiasMin').value='';
       document.getElementById('bfDiasMax').value='';
@@ -19764,11 +19792,16 @@ function vadmFiltrarBodFem(){
   var tipoDoc=(document.getElementById('bfTipoDoc').value)||'';
   var diasMin=parseInt(document.getElementById('bfDiasMin').value); if(isNaN(diasMin)) diasMin=0;
   var diasMax=parseInt(document.getElementById('bfDiasMax').value); if(isNaN(diasMax)) diasMax=Infinity;
+  var persona=(document.getElementById('bfPersona').value||'').toLowerCase();
   var fil=_bfDatos.filter(function(r){
     if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
     var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
     if(d<diasMin||d>diasMax) return false;
     if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
+    if(persona){
+      if((r.bodega||'')!=='CEM') return false;
+      if((r.observacion||'').toLowerCase().indexOf(persona)<0) return false;
+    }
     return true;
   });
   var tbody=document.getElementById('bfTbody');
@@ -19804,6 +19837,13 @@ function vadmFiltrarBodFem(){
         +'<div style="font-size:10px;opacity:.75">Máx. '+bk[b].old+' días</div>'
         +'</div>';
     }).join('');
+    if(persona){
+      kh+='<div style="background:#EEEDFE;color:#26215C;border-radius:8px;padding:8px 14px;border:1.5px solid #7F77DD">'
+        +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">👤 '+_bfEsc(persona)+'</div>'
+        +'<div style="font-size:20px;font-weight:800;margin:2px 0">'+fil.length+' pendientes</div>'
+        +'<div style="font-size:11px;font-weight:600">'+venAdmFmt(tV)+' acumulado</div>'
+        +'</div>';
+    }
     kh+='<div style="background:#f1f5f9;border-radius:8px;padding:8px 14px;border:1px solid rgba(0,0,0,.1);margin-left:auto">'
       +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">TOTAL</div>'
       +'<div style="font-size:20px;font-weight:800;margin:2px 0">'+fil.length+'</div>'
@@ -19849,17 +19889,20 @@ function vadmFiltrarBodFem(){
         var gd=g.diasAntiguedad!=null?g.diasAntiguedad:'—';
         var gdc='';
         if(typeof gd==='number'){ if(gd>=90) gdc='color:#dc2626;font-weight:700'; else if(gd>=30) gdc='color:#d97706;font-weight:600'; }
+        var gVal=(g.cantidad||0)*(r.costo||0);
         return '<tr data-bfgrt="'+i+'" style="display:none;background:#eef2ff">'
-          +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe;border-left:3px solid #6366f1"><span style="color:#6366f1;font-size:9px;margin-left:4px">└</span></td>'
+          +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe;border-left:3px solid #6366f1">'+_bfEsc(r.bodega||'')+' <span style="color:#6366f1;font-size:9px;margin-left:2px">└</span></td>'
           +'<td style="padding:3px 10px;font-size:11px;color:#4f46e5;font-weight:600;border-top:1px solid #c7d2fe">'+_bfEsc(g.tipoDoc||'')+'</td>'
           +'<td style="padding:3px 10px;text-align:right;font-family:monospace;font-size:11px;border-top:1px solid #c7d2fe">'+_bfEsc(g.folio||'')+'</td>'
-          +'<td colspan="2" style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;font-family:monospace;font-size:11px;border-top:1px solid #c7d2fe">'+_bfEsc(r.codigoTecnico||'')+'</td>'
+          +'<td style="padding:3px 10px;max-width:220px;font-size:11px;border-top:1px solid #c7d2fe">'+_bfEsc(r.descripcion||'')+'</td>'
           +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
           +'<td style="padding:3px 10px;text-align:right;font-weight:700;font-size:12px;color:#374151;border-top:1px solid #c7d2fe">'+g.cantidad+'</td>'
-          +'<td colspan="2" style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;text-align:right;color:#6b7280;font-size:11px;border-top:1px solid #c7d2fe">'+((r.costo||0)>0?venAdmFmt(r.costo):'—')+'</td>'
           +'<td style="padding:3px 10px;text-align:center;white-space:nowrap;font-size:11px;border-top:1px solid #c7d2fe">'+_bfEsc(g.fechaRegistro||'')+'</td>'
           +'<td style="padding:3px 10px;text-align:right;font-size:11px;'+gdc+';border-top:1px solid #c7d2fe">'+gd+'</td>'
-          +'<td style="padding:3px 10px;border-top:1px solid #c7d2fe"></td>'
+          +'<td style="padding:3px 10px;text-align:right;font-weight:600;font-size:11px;border-top:1px solid #c7d2fe">'+(gVal!==0?venAdmFmt(gVal):'—')+'</td>'
           +'<td style="padding:3px 10px;font-size:11px;color:#6b7280;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-top:1px solid #c7d2fe" title="'+_bfEsc(g.observacion||'')+'">'+_bfEsc(g.observacion||'')+'</td>'
           +'</tr>';
       }).join('');
@@ -19881,34 +19924,92 @@ window._bfToggleGRT = function(i){
   if(ico) ico.textContent=open?'▼':'▶';
 };
 
+// Excel export — SpreadsheetML (mismo patrón con color/AutoFilter/paneles que vadmDescargarExcel)
 window.bfExportExcel = function(){
   if(!_bfDatos.length){ if(window.toast) toast('Sin datos para exportar','err'); return; }
-  if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
   var buscar =(document.getElementById('bfBuscar').value||'').trim().toLowerCase();
   var tipoDoc=(document.getElementById('bfTipoDoc').value)||'';
   var diasMin=parseInt(document.getElementById('bfDiasMin').value); if(isNaN(diasMin)) diasMin=0;
   var diasMax=parseInt(document.getElementById('bfDiasMax').value); if(isNaN(diasMax)) diasMax=Infinity;
+  var persona=(document.getElementById('bfPersona').value||'').toLowerCase();
   var fil=_bfDatos.filter(function(r){
     if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
     var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
     if(d<diasMin||d>diasMax) return false;
     if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
+    if(persona){
+      if((r.bodega||'')!=='CEM') return false;
+      if((r.observacion||'').toLowerCase().indexOf(persona)<0) return false;
+    }
     return true;
   });
   if(!fil.length){ if(window.toast) toast('Sin datos para exportar','err'); return; }
-  var rows=[['Bodega','Tipo Doc','Folio','Código','Descripción','Disp.','Físico','Dif.','Costo unit.','Fecha Reg.','Días','Valorizado','Observación']];
-  fil.forEach(function(r){
+
+  function xe(v){ if(v==null)return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function tc(v,s){ return '<Cell ss:StyleID="'+(s||'bftx')+'"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
+  function nc(v,s){ return '<Cell ss:StyleID="'+(s||'bfn')+'"><Data ss:Type="Number">'+(parseFloat(v)||0)+'</Data></Cell>'; }
+  function hc(v){ return '<Cell ss:StyleID="bfh"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }
+  function af(c){ return '<AutoFilter x:Range="R1C1:R1C'+c+'" xmlns="urn:schemas-microsoft-com:office:excel"/>'; }
+  function freeze(){ return '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions>'; }
+
+  var XS=[
+    '<Style ss:ID="Default"><Alignment ss:Vertical="Center"/></Style>',
+    '<Style ss:ID="bfh"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#1A1D3A" ss:Pattern="Solid"/></Style>',
+    '<Style ss:ID="bftx"><Alignment ss:Vertical="Center"/><Font ss:Bold="1"/></Style>',
+    '<Style ss:ID="bfaltx"><Alignment ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/></Style>',
+    '<Style ss:ID="bfdoctx"><Alignment ss:Vertical="Center"/><Font ss:Italic="1" ss:Color="#4F46E5" ss:Size="9"/><Interior ss:Color="#EEEDFE" ss:Pattern="Solid"/></Style>',
+    '<Style ss:ID="bfn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1"/><NumberFormat ss:Format="#,##0"/></Style>',
+    '<Style ss:ID="bfaln"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
+    '<Style ss:ID="bfdocn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Italic="1" ss:Color="#4F46E5" ss:Size="9"/><Interior ss:Color="#EEEDFE" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>',
+    '<Style ss:ID="bftot"><Alignment ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1A1D3A" ss:Pattern="Solid"/></Style>',
+    '<Style ss:ID="bftotn"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1A1D3A" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0"/></Style>'
+  ].join('');
+
+  var rows=['<Row ss:Height="26">',
+    hc('Bodega'),hc('Nivel'),hc('Tipo Doc'),hc('Folio'),hc('Código'),hc('Descripción'),
+    hc('Disp.'),hc('Físico'),hc('Dif.'),hc('Costo unit.'),hc('Fecha Reg.'),hc('Días'),hc('Valorizado'),hc('Observación'),
+    '</Row>'];
+  var totalVal=0;
+  fil.forEach(function(r,i){
+    var alt=i%2===0; var txS=alt?'bftx':'bfaltx'; var nS=alt?'bfn':'bfaln';
     var qty=r.fisico!=null?r.fisico:(r.disp||0);
-    rows.push([r.bodega||'',r.tipoDoc||'',r.folio||'',r.codigoTecnico||'',r.descripcion||'',
-      r.disp||0,r.fisico||0,(r.fisico||0)-(r.disp||0),r.costo||0,
-      r.fechaRegistro||'',r.diasAntiguedad!=null?r.diasAntiguedad:'',
-      qty*(r.costo||0),r.observacion||'']);
+    var val=qty*(r.costo||0); totalVal+=val;
+    rows.push('<Row>',
+      tc(r.bodega||'',txS),tc('TOTAL',txS),tc(r.tipoDoc||'',txS),tc(r.folio||'',txS),tc(r.codigoTecnico||'',txS),tc(r.descripcion||'',txS),
+      nc(r.disp||0,nS),nc(r.fisico||0,nS),nc((r.fisico||0)-(r.disp||0),nS),nc(r.costo||0,nS),
+      tc(r.fechaRegistro||'',txS),nc(r.diasAntiguedad!=null?r.diasAntiguedad:0,nS),nc(val,nS),
+      tc((r.observacion||'').replace(/\r\n?/g,' ').trim(),txS),
+      '</Row>');
+    if(r.documentosGRT && r.documentosGRT.length>1){
+      r.documentosGRT.forEach(function(g){
+        rows.push('<Row>',
+          tc(r.bodega||'','bfdoctx'),tc('  └ Documento','bfdoctx'),tc(g.tipoDoc||'','bfdoctx'),tc(g.folio||'','bfdoctx'),tc(r.codigoTecnico||'','bfdoctx'),tc(r.descripcion||'','bfdoctx'),
+          tc('','bfdoctx'),nc(g.cantidad||0,'bfdocn'),tc('','bfdoctx'),nc(r.costo||0,'bfdocn'),
+          tc(g.fechaRegistro||'','bfdoctx'),nc(g.diasAntiguedad!=null?g.diasAntiguedad:0,'bfdocn'),nc((g.cantidad||0)*(r.costo||0),'bfdocn'),
+          tc((g.observacion||'').replace(/\r\n?/g,' ').trim(),'bfdoctx'),
+          '</Row>');
+      });
+    }
   });
-  var ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:6},{wch:8},{wch:8},{wch:13},{wch:42},{wch:7},{wch:7},{wch:6},{wch:11},{wch:12},{wch:6},{wch:12},{wch:40}];
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Análisis Bodegas');
-  XLSX.writeFile(wb,'AnalisisBodegas_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  rows.push('<Row>',
+    tc('TOTAL ('+fil.length+' registros)','bftot'),tc('','bftot'),tc('','bftot'),tc('','bftot'),tc('','bftot'),tc('','bftot'),
+    tc('','bftot'),tc('','bftot'),tc('','bftot'),tc('','bftot'),tc('','bftot'),tc('','bftot'),nc(totalVal,'bftotn'),tc('','bftot'),
+    '</Row>');
+
+  var xml='<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>'+
+    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:x="urn:schemas-microsoft-com:office:excel">'+
+    '<Styles>'+XS+'</Styles>'+
+    '<Worksheet ss:Name="Análisis Bodegas"><Table ss:DefaultRowHeight="17">'+
+    '<Column ss:Width="45"/><Column ss:Width="70"/><Column ss:Width="55"/><Column ss:Width="55"/><Column ss:Width="90"/><Column ss:Width="260"/>'+
+    '<Column ss:Width="50"/><Column ss:Width="50"/><Column ss:Width="45"/><Column ss:Width="75"/><Column ss:Width="75"/><Column ss:Width="45"/><Column ss:Width="85"/><Column ss:Width="260"/>'+
+    rows.join('')+'</Table>'+freeze()+af(14)+'</Worksheet></Workbook>';
+
+  var blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var fname='AnalisisBodegas_'+new Date().toISOString().slice(0,10)+'.xls';
+  var a=document.createElement('a'); a.href=url; a.download=fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
   if(window.toast) toast('📊 Excel exportado','ok');
 };
 

@@ -20,8 +20,9 @@
 
 - **Proyecto activo:** `E:\ferreteria-oviedo\` — trabajar SIEMPRE aquí
 - **Git repo:** `E:\git-sync\` — NUNCA modificar directamente
-- **Versión activa:** V37.70 · 2026-09-10 · ver AGENTS.md (historial de deploys) · **DEPLOY HECHO, commit 1422bec**
-- **Última sesión (10-09-2026, continuación noche):** nuevo menú "⚠️ Margen Negativo" en Panel Admin (Análisis) — ventas reales (Boleta/Factura) vendidas bajo costo, separadas de Notas de Crédito (devoluciones), con filtros fecha/vendedor/marca/hiperFamilia/familia/subFamilia/buscador, KPI margen CON vs SIN esas ventas, tabla por vendedor, detalle línea a línea (cliente/RUT/fecha/folio/documento/código/descripción/cantidad/costo/neto/margen) y exportar Excel. Corregido el bug real del `errorlevel` en cascada de `ACTUALIZAR_TODO.bat` (pendiente de la sesión anterior) probándolo en vivo: PASO 3 respondió N correctamente. Pipeline completo corrido y monitoreado en tiempo real — todos los pasos OK, deploy + commit GitHub exitosos. Verificado en producción con Chrome real: cifras cruzadas contra reporte SSRS real del ERP (código 26191 MALLA TIPO ACMA C92, -34.9% repetido en varios clientes — mismo patrón en ambas fuentes). **Ver `memory/estado-sesion-20260910.md` completo.**
+- **Versión activa:** V37.71 · 2026-09-10 · ver AGENTS.md (historial de deploys) · **DEPLOY PENDIENTE (en curso)**
+- **Última sesión (10-09-2026, continuación noche):** Análisis de Bodegas — subfilas con detalle completo por documento (Bodega/Código/Descripción/Costo/Valorizado, antes en blanco), filtro "Filtrar por persona (CEM)" con KPI de acumulado (extracción dinámica de nombres desde observación), fix `_x000d_` en Excel, y reescritura completa de `bfExportExcel` a SpreadsheetML con color/negrita/AutoFilter (el patrón SheetJS anterior no soporta color en su versión gratuita) — verificado abriendo el archivo real con Excel vía COM (sin aviso de reparación, autofiltro y colores confirmados). Consistencia SQL en vivo verificada en las 6 bodegas (51+ códigos, 0 discrepancias, 2 agentes en paralelo + verificación propia). **Ver `memory/estado-sesion-20260910.md` completo.**
+- **Sesión previa misma noche (V37.70):** menú "⚠️ Margen Negativo" en Panel Admin y Vendedor (ventas reales bajo costo vs NC), pipeline completo corrido en vivo, deploy+commit 1422bec — detalle completo en `memory/estado-sesion-20260910.md`.
 - **Sesión 09-09-2026 (resumen, detalle en `memory/estado-sesion-20260909.md`):** costo promedio real desde SQL (`descargar_costo_promedio.py`, PASO 1L) reemplaza el fallback a costo del catálogo. Margen por Tipo de Documento con drilldown en Panel Admin y Vendedor. Fix `calcSocio()`. Investigación "líneas SSRS duplicadas" cerrada (1 documento aislado, no un patrón).
 - **Stack:** HTML/CSS/JS Vanilla + Firebase Hosting + Python pipeline ERP (JustWeb SSRS)
 - **Deploy:** `firebase deploy` desde `E:\ferreteria-oviedo\`
@@ -51,12 +52,23 @@ NO TOCO:     [qué queda igual y por qué]
 ```
 Un prompt = una función tocada. Si el fix requiere 2 funciones → dos prompts separados.
 
-### Al terminar cualquier sesión con cambios
-1. `firebase deploy` si hay archivos HTML/JS/JSON más nuevos que el último deploy
-2. `ACTUALIZAR_GITHUB.bat` para commitear
-3. Actualizar versión en AGENTS.md
-4. Actualizar el badge visual `.version-badge` en panel-admin.html (texto `AG ● VXX.XX ● DD-MM-YYYY`, buscar `version-badge` en el HTML) — **SOLO en este paso de cierre de sesión, nunca después de cada mejora/fix individual dentro de la sesión**
-5. Guardar `estado-sesion-YYYYMMDD.md` en memory/ (ver formato abajo)
+### Al terminar cualquier sesión con cambios — CHECKLIST COMPLETO (9 puntos, verificado 2026-09-10)
+No asumir que "actualizar todo" es solo AGENTS.md — son 9 archivos/pasos distintos, cada uno con su propósito. Marcar cada uno, no saltarse ninguno:
+
+1. **Deploy** — `ACTUALIZAR_TODO.bat` (pipeline+deploy) si hay cambios de HTML/JS/JSON. Si el cambio es solo capa de presentación (sin tocar pipeline/SQL), igual correr el `.bat` completo — es la única forma de deploy autorizada, nunca `firebase deploy` manual.
+2. **Commit a GitHub** — `ACTUALIZAR_GITHUB.bat` (commit+push con lista blanca de archivos vía robocopy). Esto **dispara automáticamente** la regeneración de `negocio.md` del bot (Centro de Comandos) leyendo este CLAUDE.md — no hace falta correr `ACTUALIZAR_CONTEXTO_BOT.bat` a mano salvo que se necesite el paso pesado de SQL/ERP de ese proyecto.
+3. **Badge de versión** (`.version-badge` / bloque fixed bottom-right, texto `AG ● VXX.XX ● DD-MM-YYYY`) — actualizar **solo en los paneles que realmente cambiaron esta sesión**: `panel-admin.html`, `index.html` (Panel Vendedor), `panel-cliente.html` son 3 archivos independientes con su propio badge — no forzar los 3 si solo se tocó uno. **Solo en este paso de cierre, nunca después de cada fix individual dentro de la sesión.**
+4. **`AGENTS.md`** — bump "Versión activa" (aparece 2 veces: línea 3 del header y en la sección PROYECTO) + nuevo bloque de changelog arriba del anterior (no reemplazar historial viejo).
+5. **`CLAUDE.md`** (este archivo) — bump línea "Versión activa" + resumen de "Última sesión" (reemplazar o condensar el detalle de la sesión previa si ya quedó guardado completo en su propio `estado-sesion-*.md`).
+6. **`ESTADO_PROYECTO.md`** — bump versión (aparece 2 veces: header y tabla `VERSION ACTUAL`) + nueva sección en "ULTIMOS CAMBIOS (V37.x)".
+7. **`memory/estado-sesion-YYYYMMDD.md`** — crear nuevo, o **continuar el mismo archivo** si la sesión sigue siendo la misma versión activa (ej. una sesión larga que retoma de noche) en vez de crear uno separado con fecha distinta y duplicar contenido.
+8. **`MEMORY.md`** (índice, en `~/.claude/projects/.../memory/`) — actualizar la línea del `estado-sesion` más reciente con el resumen final, mantener "últimas 7" (recortar la más antigua si se pasa).
+9. **`pipeline-datos-mapa.html`** — actualizar **solo si el cambio agrega/modifica un menú, fuente de datos o flujo documentado ahí** (nueva tarjeta en tab 6 "Menús Panel Admin", bump de versión en el subtítulo). **No está en la lista blanca de `ACTUALIZAR_GITHUB.bat`** — queda actualizado en `E:\ferreteria-oviedo\` (la fuente real que se lee) pero no se sube a git, esto es esperado, no es un error.
+
+10. **REVISAR siempre (editar solo si aplica) — `E:\CONOCIMIENTO DEL NEGOCIO\CLAUDE.md`**: el bot/Centro de Comandos lee el CLAUDE.md de **cada proyecto** (13/13 según el log de la última corrida) para armar `negocio.md` — si este cambio contradice o vuelve obsoleta una regla escrita ahí (ej. cómo se hace deploy, qué panel muestra qué), corregirla ahí también; si no toca nada de eso, no editar nada (no mezclar proyectos sin necesidad real).
+11. **REVISAR solo si el cambio es de flujo físico de stock — `flujo-stock-justime.html`** (en `CONOCIMIENTO DEL NEGOCIO\`): no aplica a cambios de ventas/margen, solo a movimiento Disp/Fís/Ped/Tránsito.
+
+**Por qué importa el orden 1→11:** el bot y el Centro de Comandos dependen de que TODOS estos archivos queden consistentes entre sí al mismo tiempo — un `AGENTS.md` actualizado pero un `CLAUDE.md` con la versión vieja (o viceversa) deja al bot con información contradictoria la próxima vez que alguien pregunte "¿qué versión está activa?". No cerrar la sesión con solo 1 o 2 de los 11 hechos.
 
 ### Formato estado-sesion (OBLIGATORIO al cerrar sesión con cambios)
 ```
