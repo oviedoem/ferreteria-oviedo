@@ -452,9 +452,12 @@ echo.
 echo   Auto: Precios OCULTOS (N) en 10 segundos si no respondes.
 echo.
 choice /c SNE /t 10 /d N /m "Tu eleccion"
-if errorlevel 3 set PRECIO_OPT=E
-if errorlevel 2 set PRECIO_OPT=N
-if errorlevel 1 set PRECIO_OPT=S
+:: Fix 2026-09-10: "if errorlevel N" significa "N o mayor" -- con 3 ifs
+:: independientes (no else-if) la ultima linea (errorlevel 1) siempre pisaba
+:: el resultado a S salvo que se eligiera S. Comparacion exacta corrige esto.
+if %ERRORLEVEL% EQU 3 set PRECIO_OPT=E
+if %ERRORLEVEL% EQU 2 set PRECIO_OPT=N
+if %ERRORLEVEL% EQU 1 set PRECIO_OPT=S
 
 if /i "%PRECIO_OPT%"=="S" (
     echo  Precio: VISIBLE para clientes

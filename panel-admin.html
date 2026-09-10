@@ -1030,6 +1030,7 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
           <button class="vadm-stab" id="vstab-sector" onclick="vadmSubTab('sector')" aria-label="Por Sector"><svg aria-hidden="true"><use href="#i-pin"/></svg> Por Sector</button>
           <button class="vadm-stab" id="vstab-impacto"   onclick="vadmSubTab('impacto')" aria-label="Q vs $"><svg aria-hidden="true"><use href="#i-trenddown"/></svg> Q vs $</button>
           <button class="vadm-stab" id="vstab-marcavend" onclick="vadmSubTab('marcavend')" aria-label="Marca × Vendedor"><svg aria-hidden="true"><use href="#i-award"/></svg> Marca × Vendedor</button>
+          <button class="vadm-stab" id="vstab-margenneg" onclick="vadmSubTab('margenneg')" aria-label="Margen Negativo"><svg aria-hidden="true"><use href="#i-alert"/></svg> ⚠️ Margen Negativo</button>
         </div>
         <!-- RANKINGS -->
         <div class="vadm-subtabs vadm-subtabs-rank" id="vstabs-rankings" style="display:none">
@@ -1400,6 +1401,29 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
             <div class="ven-adm-empty">Haz clic en <strong>🔄 Actualizar</strong> para ver la matriz Marca × Vendedor.</div>
           </div>
         </div><!-- /vsec-marcavend -->
+
+        <!-- ── SUB-TAB: MARGEN NEGATIVO ── -->
+        <div class="vadm-section" id="vsec-margenneg">
+          <div class="vadm-anal-bar" style="flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-size:11px;font-weight:700;color:#374151">Desde</span>
+              <input type="date" id="vmnDesde" class="ven-adm-input" style="padding:5px 10px;font-size:12px">
+              <span style="font-size:11px;font-weight:700;color:#374151">Hasta</span>
+              <input type="date" id="vmnHasta" class="ven-adm-input" style="padding:5px 10px;font-size:12px">
+              <select id="vmnMarca" class="arbol-fsel"><option value="">Todas las marcas</option></select>
+              <select id="vmnHiperFam" class="arbol-fsel" onchange="vadmRenderMargenNeg()"><option value="">Toda HiperFamilia</option></select>
+              <select id="vmnFam" class="arbol-fsel" onchange="vadmRenderMargenNeg()"><option value="">Toda Familia</option></select>
+              <select id="vmnSubFam" class="arbol-fsel" onchange="vadmRenderMargenNeg()"><option value="">Toda SubFamilia</option></select>
+              <input type="text" id="vmnBuscar" class="ven-adm-input" placeholder="🔍 Buscar código, descripción, marca, vendedor…" style="padding:5px 10px;font-size:12px;min-width:220px" oninput="vadmRenderMargenNeg()">
+              <button class="ven-adm-btn" onclick="vadmRenderMargenNeg()">🔍 Analizar</button>
+              <button class="ven-adm-btn" onclick="vadmExportMargenNegExcel()">📥 Exportar Excel</button>
+            </div>
+            <div id="vmnStatus" style="font-size:12px;color:#9ca3af;padding:2px 0"></div>
+          </div>
+          <div style="padding:14px 18px" id="vmnBody">
+            <div class="ven-adm-empty">Selecciona un rango de fechas (opcional) y haz clic en <strong>🔍 Analizar</strong> para ver las ventas reales (Boleta/Factura) vendidas bajo costo.</div>
+          </div>
+        </div><!-- /vsec-margenneg -->
 
         <!-- ── SUB-TAB: ENTRE FECHAS ── -->
         <div class="vadm-section" id="vsec-entrefechas">
@@ -4008,7 +4032,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.68<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">09-09-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.69<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">10-09-2026</span></div>
 
 <script>
 
@@ -8347,6 +8371,7 @@ function vadmSubTab(id){
   if(id==='vendrank'     && _vadmLineas.length) vadmRenderVendRank();
   if(id==='vendpro'      && _vadmLineas.length) vadmRenderVendPro();
   if(id==='marcavend'    && _vadmLineas.length) vadmRenderMarcaVend();
+  if(id==='margenneg'    && _vadmLineas.length) vadmRenderMargenNeg();
   if(id==='clientes'     && _vadmLineas.length) vadmRenderClientes();
   if(id==='tipodoc'      && _vadmLineas.length) vadmRenderTipoDoc();
   if(id==='facturacion'  && _vadmLineas.length) vadmRenderFacturacion();
@@ -11076,6 +11101,182 @@ function vadmBuscarEntreFechas(){
     '</div>'+
     '<div><div class="vadm-section-title">🏆 Top 10 Productos</div>'+
       '<div class="ven-adm-table-wrap"><table class="vtbl">'+tblHdr(['#','Código','Descripción','Neto','Part%'])+'<tbody>'+pRows+'</tbody></table></div></div>';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── MARGEN NEGATIVO — ventas reales (Boleta/Factura) vendidas bajo costo ────────
+// Fuente: _vadmLineas (misma que Categorías/Entre Fechas). Usa margen/margenPct
+// directo, NUNCA recalcula como valorNeto-costo (regla fija del proyecto).
+// Se excluyen Notas de Crédito del cálculo principal (Neto<=0 = devolución,
+// no es una venta bajo costo) — se muestran aparte como contexto.
+// ══════════════════════════════════════════════════════════════════════════════
+var _vmnDatosMalas = [];
+
+function _vmnParseFecha(s){ // "DD/MM/YYYY" → Date
+  var p=(s||'').split('/'); return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null;
+}
+
+function vadmRenderMargenNeg(){
+  var st=document.getElementById('vmnStatus'), bd=document.getElementById('vmnBody');
+  if(!_vadmLineas.length){ bd.innerHTML='<div class="ven-adm-empty">Sin datos. Actualiza Categorías primero.</div>'; return; }
+
+  var desde=document.getElementById('vmnDesde').value;
+  var hasta=document.getElementById('vmnHasta').value;
+  var marca=document.getElementById('vmnMarca').value;
+  var hiperFam=document.getElementById('vmnHiperFam').value;
+  var fam=document.getElementById('vmnFam').value;
+  var subFam=document.getElementById('vmnSubFam').value;
+  var buscar=(document.getElementById('vmnBuscar').value||'').toLowerCase().trim();
+
+  // Universo: mismos filtros compartidos que Categorías (vendedor/bodega/tipoDoc)
+  var universo = vadmDatosFiltrados();
+
+  if(desde && hasta){
+    var dDesde=new Date(desde), dHasta=new Date(hasta); dHasta.setHours(23,59,59);
+    universo = universo.filter(function(r){ var d=_vmnParseFecha(r.fecha); return d && d>=dDesde && d<=dHasta; });
+  }
+  if(marca)    universo = universo.filter(function(r){ return r.marca===marca; });
+  if(hiperFam) universo = universo.filter(function(r){ return r.hiperFam===hiperFam; });
+  if(fam)      universo = universo.filter(function(r){ return r.familia===fam; });
+  if(subFam)   universo = universo.filter(function(r){ return r.subFam===subFam; });
+  if(buscar){
+    universo = universo.filter(function(r){
+      return (r.codigo||'').toLowerCase().indexOf(buscar)>=0 ||
+             (r.descripcion||'').toLowerCase().indexOf(buscar)>=0 ||
+             (r.marca||'').toLowerCase().indexOf(buscar)>=0 ||
+             (r.hiperFam||'').toLowerCase().indexOf(buscar)>=0 ||
+             (r.familia||'').toLowerCase().indexOf(buscar)>=0 ||
+             (r.subFam||'').toLowerCase().indexOf(buscar)>=0 ||
+             (r.nombre||r.vendedorErp||'').toLowerCase().indexOf(buscar)>=0 ||
+             (r.cliente||'').toLowerCase().indexOf(buscar)>=0;
+    });
+  }
+
+  // Poblar selects dinámicamente (solo si están vacíos, para no perder la selección activa)
+  _vmnPoblarSelect('vmnMarca',    universo, 'marca');
+  _vmnPoblarSelect('vmnHiperFam', universo, 'hiperFam');
+  _vmnPoblarSelect('vmnFam',      universo, 'familia');
+  _vmnPoblarSelect('vmnSubFam',   universo, 'subFam');
+
+  if(!universo.length){ bd.innerHTML='<div class="ven-adm-empty">Sin registros con esos filtros.</div>'; st.textContent='0 registros'; return; }
+
+  // Ventas reales bajo costo: Neto>0 y margen<0 (excluye devoluciones)
+  var malas = universo.filter(function(r){ return (r.margen||0)<0 && (r.valorNeto||0)>0; });
+  // Notas de Crédito con margen $ negativo (contexto, no es el problema)
+  var ncNeg = universo.filter(function(r){ return (r.margen||0)<0 && (r.valorNeto||0)<=0; });
+  _vmnDatosMalas = malas;
+
+  function totales(arr){
+    var n=arr.reduce(function(s,r){return s+(r.valorNeto||0);},0);
+    var m=arr.reduce(function(s,r){return s+(r.margen||0);},0);
+    var p=n!==0?(m/n)*100:0; if(n<0) p=-Math.abs(p);
+    return {neto:n,margen:m,pct:p};
+  }
+  var totAll = totales(universo);
+  var totSin = totales(universo.filter(function(r){ return malas.indexOf(r)<0; }));
+  var docsAll = new Set(); universo.forEach(function(r){ if(r.numero)docsAll.add(r.numero); });
+  var docsMalas = new Set(); malas.forEach(function(r){ if(r.numero)docsMalas.add(r.numero); });
+
+  st.textContent=universo.length+' líneas · '+docsAll.size+' docs'+(desde&&hasta?' · '+desde+' → '+hasta:'');
+
+  var kpiHtml='<div class="vadm-kpi-row">'+
+    '<div class="vadm-kpi"><div class="vadm-kpi-val" style="color:#dc2626">'+venAdmFmtPct(totAll.pct)+'</div><div class="vadm-kpi-lbl">Margen CON estas ventas</div></div>'+
+    '<div class="vadm-kpi"><div class="vadm-kpi-val" style="color:#059669">'+venAdmFmtPct(totSin.pct)+'</div><div class="vadm-kpi-lbl">Margen SIN estas ventas</div></div>'+
+    '<div class="vadm-kpi"><div class="vadm-kpi-val" style="color:#dc2626">'+venAdmFmt(malas.reduce(function(s,r){return s+(r.margen||0);},0))+'</div><div class="vadm-kpi-lbl">$ Perdido</div></div>'+
+    '<div class="vadm-kpi"><div class="vadm-kpi-val">'+docsMalas.size+'</div><div class="vadm-kpi-lbl">Documentos afectados</div></div>'+
+    '<div class="vadm-kpi"><div class="vadm-kpi-val">'+malas.length+'</div><div class="vadm-kpi-lbl">Líneas afectadas</div></div>'+
+    '</div>';
+
+  var diffPts=(totSin.pct-totAll.pct).toFixed(1);
+  var explicacion='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin:10px 0;font-size:12px;color:#7f1d1d">'+
+    '📌 De '+universo.length+' líneas en este filtro, <strong>'+malas.length+'</strong> se vendieron bajo costo (Boleta/Factura reales, no devoluciones), '+
+    'restando <strong>'+diffPts+' puntos</strong> de margen. Sin ellas, el margen sube de <strong>'+venAdmFmtPct(totAll.pct)+'</strong> a <strong>'+venAdmFmtPct(totSin.pct)+'</strong>.'+
+    (ncNeg.length?' <span style="color:#6b7280">('+ncNeg.length+' líneas de Nota de Crédito con margen $ negativo NO están incluidas aquí — son devoluciones, no ventas bajo costo.)</span>':'')+
+    '</div>';
+
+  // Por vendedor (solo si hay más de uno en el universo)
+  var vendedores={}; universo.forEach(function(r){ var k=r.nombre||r.vendedorErp||r.gmailUser||'?'; vendedores[k]=1; });
+  var vHtml='';
+  if(Object.keys(vendedores).length>1){
+    var mapV={};
+    universo.forEach(function(r){
+      var k=r.nombre||r.vendedorErp||r.gmailUser||'?';
+      if(!mapV[k])mapV[k]={all:[],malas:[]};
+      mapV[k].all.push(r);
+    });
+    malas.forEach(function(r){
+      var k=r.nombre||r.vendedorErp||r.gmailUser||'?';
+      if(mapV[k]) mapV[k].malas.push(r);
+    });
+    var vRows=Object.entries(mapV).sort(function(a,b){ return b[1].malas.length-a[1].malas.length; }).map(function(e){
+      var tA=totales(e[1].all), tS=totales(e[1].all.filter(function(r){return e[1].malas.indexOf(r)<0;}));
+      var perdido=e[1].malas.reduce(function(s,r){return s+(r.margen||0);},0);
+      return '<tr><td style="padding:6px 10px;font-size:11px;font-weight:600">'+venAdmEsc(e[0])+'</td>'+
+        '<td class="r" style="padding:6px 8px;color:#dc2626">'+venAdmFmtPct(tA.pct)+'</td>'+
+        '<td class="r" style="padding:6px 8px;color:#059669">'+venAdmFmtPct(tS.pct)+'</td>'+
+        '<td class="r" style="padding:6px 8px;color:#dc2626;font-weight:700">'+venAdmFmt(perdido)+'</td>'+
+        '<td class="r" style="padding:6px 8px;font-size:11px">'+e[1].malas.length+'</td></tr>';
+    }).join('');
+    vHtml='<div style="margin:14px 0"><div class="vadm-section-title">👥 Por Vendedor — margen con vs sin ventas bajo costo</div>'+
+      '<div class="ven-adm-table-wrap"><table class="vtbl"><thead><tr style="background:#1e1b4b;color:#fff">'+
+      '<th style="padding:8px 10px;font-size:11px">Vendedor</th><th style="padding:8px 6px;font-size:11px;text-align:right">Margen CON</th>'+
+      '<th style="padding:8px 6px;font-size:11px;text-align:right">Margen SIN</th><th style="padding:8px 6px;font-size:11px;text-align:right">$ Perdido</th>'+
+      '<th style="padding:8px 6px;font-size:11px;text-align:right">Líneas</th></tr></thead><tbody>'+vRows+'</tbody></table></div></div>';
+  }
+
+  // Detalle: ordenado de mayor a menor pérdida
+  var detRows=malas.slice().sort(function(a,b){ return (a.margen||0)-(b.margen||0); }).map(function(r){
+    var mgn=r.margenPct; if(mgn===undefined||mgn===null||mgn===0){ mgn=r.valorNeto?( (r.margen/r.valorNeto)*100 ):0; }
+    var fp=vadmFPago(r.documento);
+    var numSafe=(r.numero||'').toString().replace(/'/g,"\\'");
+    return '<tr class="vadm-cat-click" onclick="vadmAbrirDocModal(\''+numSafe+'\')" title="Ver documento completo">'+
+      '<td style="padding:5px 8px;font-size:10px">'+venAdmEsc(r.cliente||'')+'</td>'+
+      '<td style="padding:5px 8px;font-size:10px;font-family:monospace;color:#6b7280">'+venAdmEsc(r.rut||'—')+'</td>'+
+      '<td style="padding:5px 8px;font-size:10px">'+venAdmEsc(r.fecha||'')+'</td>'+
+      '<td style="padding:5px 8px;font-size:10px">'+venAdmEsc(r.numero||'')+'</td>'+
+      '<td style="padding:5px 8px;font-size:10px"><span class="'+fp.cls+'">'+fp.icon+' '+fp.label+'</span></td>'+
+      '<td style="padding:5px 8px;font-size:10px;font-family:monospace;color:#6b7280">'+venAdmEsc(r.codigo||'')+'</td>'+
+      '<td style="padding:5px 8px;font-size:10px;max-width:260px">'+venAdmEsc(r.descripcion||'')+'</td>'+
+      '<td class="r" style="padding:5px 8px;font-size:10px">'+(r.cantidad||0)+'</td>'+
+      '<td class="r" style="padding:5px 8px;font-size:10px">'+venAdmFmt(r.costo||0)+'</td>'+
+      '<td class="r" style="padding:5px 8px;font-size:10px">'+venAdmFmt(r.valorNeto||0)+'</td>'+
+      '<td class="r" style="padding:5px 8px;font-size:10px;color:#dc2626;font-weight:700">'+venAdmFmt(r.margen||0)+'</td>'+
+      '<td class="r" style="padding:5px 8px;font-size:10px;color:#dc2626;font-weight:700">'+venAdmFmtPct(mgn)+'</td></tr>';
+  }).join('');
+
+  var detHtml='<div style="margin-top:10px"><div class="vadm-section-title">🔻 Detalle — ventas bajo costo (mayor a menor pérdida)</div>'+
+    '<div class="ven-adm-table-wrap"><table class="vtbl"><thead><tr style="background:#1e1b4b;color:#fff">'+
+    ['Cliente','RUT','Fecha','Folio','Documento','Código','Descripción','Cant.','Costo','Neto','Margen $','Margen %'].map(function(c,i){
+      return '<th style="padding:7px '+(i===0?'8px':'6px')+';font-size:10px;'+(i>=7?'text-align:right':'')+'">'+c+'</th>';
+    }).join('')+
+    '</tr></thead><tbody>'+detRows+'</tbody></table></div></div>';
+
+  bd.innerHTML=kpiHtml+explicacion+vHtml+detHtml;
+}
+
+function _vmnPoblarSelect(id, universo, campo){
+  var el=document.getElementById(id); if(!el) return;
+  var cur=el.value;
+  var vals={}; universo.forEach(function(r){ if(r[campo]) vals[r[campo]]=1; });
+  var opts=Object.keys(vals).sort();
+  var etiquetas={marca:'Todas las marcas',hiperFam:'Toda HiperFamilia',familia:'Toda Familia',subFam:'Toda SubFamilia'};
+  el.innerHTML='<option value="">'+(etiquetas[campo]||'Todos')+'</option>'+
+    opts.map(function(v){ return '<option value="'+venAdmEsc(v)+'">'+venAdmEsc(v)+'</option>'; }).join('');
+  if(cur && vals[cur]) el.value=cur;
+}
+
+function vadmExportMargenNegExcel(){
+  if(!_vmnDatosMalas.length){ alert('Primero haz clic en 🔍 Analizar para generar los datos.'); return; }
+  var data=[['Cliente','RUT','Fecha','Folio','Documento','Código','Descripción','Cantidad','Costo','Neto','Margen $','Margen %']];
+  _vmnDatosMalas.slice().sort(function(a,b){ return (a.margen||0)-(b.margen||0); }).forEach(function(r){
+    var mgn=r.valorNeto?((r.margen/r.valorNeto)*100):0;
+    data.push([r.cliente||'',r.rut||'',r.fecha||'',r.numero||'',vadmFPago(r.documento).label,r.codigo||'',r.descripcion||'',r.cantidad||0,r.costo||0,r.valorNeto||0,r.margen||0,mgn.toFixed(1)+'%']);
+  });
+  var ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:26},{wch:14},{wch:12},{wch:10},{wch:12},{wch:14},{wch:45},{wch:9},{wch:12},{wch:12},{wch:12},{wch:10}];
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Margen Negativo');
+  XLSX.writeFile(wb, 'margen_negativo_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
