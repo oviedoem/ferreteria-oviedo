@@ -1,5 +1,5 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.69
+# Version activa: V37.70
 # Fecha: 2026-09-10
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -12,15 +12,21 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.69 |
+| Version | V37.70 |
 | Fecha | 2026-09-10 |
-| Deploy | ⏳ pendiente — cambios solo en panel-admin.html (capa presentación), sin tocar pipeline/SQL/catálogo |
-| Commit | ver AGENTS.md |
-| Pendiente | Deploy vía ACTUALIZAR_TODO.bat cuando el dueño confirme. Revisar en JustWeb el código 25989 (Volcanita ST 15mm) — margen -53.6% confirmado real. $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
+| Deploy | ✅ hecho — pipeline completo corrido en vivo, commit 1422bec |
+| Commit | 1422bec |
+| Pendiente | `firebase login --reauth` (token CLI vencido, no bloquea nada). Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. Evaluar si agregar filtros marca/hiperFam/familia/subFam también al menú Panel Vendedor (por ahora solo tiene fecha/período ya existentes). |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.70 — 2026-09-10 (Menú Margen Negativo Admin+Vendedor, pipeline corrido en vivo, deploy hecho)
+- **Menú "⚠️ Margen Negativo"** en Panel Admin (Análisis) y bloque equivalente en Panel Vendedor (Mis Ventas): separa ventas reales bajo costo (Boleta/Factura) de Notas de Crédito (devoluciones). Filtros fecha/marca/hiperFam/familia/subFam/buscador (Admin), KPI margen con/sin esas ventas, detalle línea a línea, exportar Excel (Admin).
+- Validado contra reporte SSRS real del ERP bajado por el dueño — mismo patrón de negativos reales vs NC, mismo producto problemático (26191) con el mismo -34.9% en ambas fuentes.
+- Pipeline `ACTUALIZAR_TODO.bat` corrido completo en vivo, monitoreado paso a paso — todos los pasos OK, deploy + commit GitHub exitosos. Fix del `errorlevel` (pendiente de ayer) probado en vivo y confirmado funcionando.
+- Detalle completo en `memory/estado-sesion-20260910.md`.
 
 ### V37.69 — 2026-09-10 (Auditoría bug de signo 37 funciones + drilldown 21 menús de venta + costo en Informe Stock)
 - **Auditoría de los 32 menús pendientes de Panel Admin** (4 agentes en paralelo) contra 2 reglas: usar `margen` directo y usar costo promedio real SQL. Hallazgo: 13 menús más con el mismo bug de signo corregido ayer en 5 funciones — corregidos uno por uno. Encontrados de paso y corregidos con autorización: 3 funciones sueltas + 16 plantillas de email. Total: **37 funciones corregidas**, verificadas con datos reales de septiembre (caso KLEVERONE: neto=-$39.706 → antes 0.0%, ahora -44.8%).
