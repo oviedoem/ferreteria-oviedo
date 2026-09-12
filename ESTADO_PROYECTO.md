@@ -348,6 +348,22 @@
 
 ## PENDIENTES CONOCIDOS
 
+### 🔴 URGENTE — Portal de reportes ERP Justime sin autenticación (12-09-2026, reportado por el dueño)
+
+**No es un problema del repo `ferreteria-oviedo` ni de Firebase — es del proveedor ERP (Justime/JustWeb, `erp.justtime.cl`).**
+
+- El dueño accedió desde el celular a un reporte SSRS en vivo (`.../visorrs.aspx`, "Ventas por Vendedor" con Cliente/N°Doc/Hiper Familia/Familia) **sin que pidiera usuario ni contraseña**, conectado al hotspot de otro celular (red genérica, sin VPN de la ferretería) — es decir, accesible desde cualquier punto de internet, no solo desde la red interna.
+- Se descartó que sea un problema de VPN/red de la ferretería: el PC, conectado a esa misma red, sí exige VPN para la conexión SQL Server del pipeline (`descargar_erp.py`) — la VPN interna funciona bien para eso. El problema es específicamente el **visor web de reportes** del ERP, que parece no exigir login (o la sesión queda abierta indefinidamente en el navegador del celular).
+- `visorrs.aspx` es la página genérica del visor SSRS (no un link de "compartir" de un solo reporte) → si no exige login, **potencialmente cualquiera con la URL base podría navegar otros reportes del ERP**, no solo el que se vio (ventas con nombre de cliente, documentos, montos — datos reales de negocio).
+- **Acción recomendada (fuera del alcance de este repo — no se puede arreglar desde acá):**
+  1. Contactar a soporte de Justime/JustWeb **cuanto antes** y reportar que `visorrs.aspx` responde sin pedir autenticación.
+  2. Preguntarles si el portal usa autenticación integrada de Windows (que podría estar fallando/bypasseando fuera de la red corporativa) o autenticación propia, y por qué no se está exigiendo.
+  3. Mientras tanto: cerrar sesión / borrar cookies del navegador del celular que mostró el reporte, y evitar reabrir el link hasta confirmar el fix con el proveedor.
+  4. Pedirles revisar si hay más URLs del portal (no solo `visorrs.aspx`) con el mismo problema.
+- **Referencia:** la IP vieja del mismo ERP (`200.6.113.97`, ya dada de baja) está documentada más abajo en este archivo como filtrada en el repo — la migración fue a `https://erp.justtime.cl/justweb_foviedo` (ver `AGENTS.md:78`), que es presumiblemente el mismo dominio donde vive este `visorrs.aspx`.
+
+---
+
 ### Seguridad GitHub 12-09-2026 (revisión solo lectura, nada corregido aún — decisión del dueño)
 
 - **Repo público:** `oviedoem/ferreteria-oviedo` está marcado **Public** en GitHub. Expuesto a cualquiera: código completo de los 3 paneles, `firestore.rules`, y toda la documentación interna (`AGENTS.md`, `CLAUDE.md`, `ESTADO_PROYECTO.md`, `MEMORY.md`, `IDS_REFERENCIA.md`, `MAPA_FLUJO_PROYECTOS.md`) — incluye debilidades de seguridad conocidas y sin resolver descritas en texto plano (ej. rate limiting solo en localStorage, CSP con `unsafe-inline`). Decisión pendiente: pasar a privado (ver nota de GitHub Pages abajo antes de hacerlo).
