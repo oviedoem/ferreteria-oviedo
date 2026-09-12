@@ -348,6 +348,14 @@
 
 ## PENDIENTES CONOCIDOS
 
+### Seguridad GitHub 12-09-2026 (revisión solo lectura, nada corregido aún — decisión del dueño)
+
+- **Repo público:** `oviedoem/ferreteria-oviedo` está marcado **Public** en GitHub. Expuesto a cualquiera: código completo de los 3 paneles, `firestore.rules`, y toda la documentación interna (`AGENTS.md`, `CLAUDE.md`, `ESTADO_PROYECTO.md`, `MEMORY.md`, `IDS_REFERENCIA.md`, `MAPA_FLUJO_PROYECTOS.md`) — incluye debilidades de seguridad conocidas y sin resolver descritas en texto plano (ej. rate limiting solo en localStorage, CSP con `unsafe-inline`). Decisión pendiente: pasar a privado (ver nota de GitHub Pages abajo antes de hacerlo).
+- **IP real filtrada:** `200.6.113.97` (servidor ERP viejo, dado de baja) en texto plano en `AGENTS.md:78` y `ESTADO_PROYECTO.md:80,117` — viola la regla propia del proyecto de no subir IPs reales. Fix de bajo riesgo: reemplazar por placeholder en un commit normal (NO reescribir historial — rompería el PR #14 abierto y desincroniza el PC local).
+- **`firebase.json` despliega los `.md` internos:** `"public": "."` con `ignore` que no incluye `*.md` → es probable que `AGENTS.md`, `CLAUDE.md`, etc. se sirvan directo en `ferreteria-oviedo.web.app/AGENTS.md` (no se pudo confirmar en vivo por restricción de red del entorno de revisión, pero la config lo indica). Verificado que ningún panel hace `fetch()` de esos `.md` en tiempo de ejecución → agregar `"**/*.md"` al `ignore` es de riesgo cero.
+- **GitHub Pages activo sin documentar:** workflow `pages-build-deployment` con 342 corridas, disparado en cada push a `main`, sirviendo la raíz completa del repo (sin el filtro de `firebase.json`) en `oviedoem.github.io/ferreteria-oviedo` — canal de deploy paralelo no mencionado en `CLAUDE.md`. Confirmar con el dueño si se usa para algo antes de tocarlo: si la cuenta de GitHub es plan gratuito, pasar el repo a privado apaga Pages automáticamente.
+- **3 ramas huérfanas sin actividad:** `exemption-press`, `hangup-survival`, `rocklike-preteen` — idénticas entre sí y al commit `dc02e99` (mismo que la base del PR #1, 28-05-2026), sin commits propios, sin PR asociado. Todo indica sesiones de Claude Code abandonadas sin cambios, no compromiso de cuenta (único colaborador, todas las corridas de Actions son del dueño). Borrado seguro cuando se quiera limpiar — no son base de ningún PR abierto.
+
 - **RANKING.xlsm / PRECIOS.xlsm** siguen siendo manuales (tabs ranking-unidades y precios-diff) — migrar a SQL en sesión futura si se desea (igual que se hizo con VENTAS.xlsm→enrich SQL)
 - descargar_erp.py falla silencioso: si falla agregar `await page.screenshot(path="debug.png")` antes del click
 - PASO 1A (descargar_erp.py) puede fallar por Windows Defender Network Protection bloqueando la IP del ERP de forma intermitente — ver `FIX_DEFENDER_PASO1A.bat` en el escritorio del dueño (requiere Administrador, no automatizable por Claude Code)
