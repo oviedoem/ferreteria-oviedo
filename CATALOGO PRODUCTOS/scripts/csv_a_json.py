@@ -16,7 +16,7 @@ df = pd.read_csv(base / "Datos.csv", dtype={"CODIGO": str}, encoding="utf-8-sig"
 # Convertir numéricos a entero
 for col in ["PRECIO_IVA", "SOCIO_IVA", "COSTO_PROMEDIO",
             "PEM_DISP", "PEM_TRANS", "PEM_BOD", "SEM_DISP", "SEM_BOD",
-            "CEM_DISP", "CEM_BOD", "MEM_DISP",
+            "CEM_DISP", "CEM_BOD", "MEM_DISP", "MEM_BOD",
             "IEM_DISP", "IEM_TRANS", "TEM_DISP", "TEM_TRANS", "RCE_DISP",
             "CD_DISP", "CD_TRANS"]:
     if col in df.columns:
@@ -56,6 +56,14 @@ mapa = {
 }  # ← llave de cierre que faltaba
 
 df = df.rename(columns={k: v for k, v in mapa.items() if k in df.columns})
+
+# Columnas criticas: si falta alguna, el catalogo queda incompleto para TODO
+# el sistema (panel + bot WhatsApp) sin ningun aviso -- fallar fuerte, no en silencio.
+CRITICAS = ["codigo", "descripcion", "precioiva"]
+faltantes = [c for c in CRITICAS if c not in df.columns]
+if faltantes:
+    raise SystemExit(f"[ERROR] Datos.csv sin columnas criticas {faltantes} -- no se genera Datos.json")
+
 cols_app = [v for v in mapa.values() if v in df.columns]
 registros = df[cols_app].where(df[cols_app].notna(), None).to_dict(orient="records")
 

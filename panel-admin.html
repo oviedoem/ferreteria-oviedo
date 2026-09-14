@@ -19733,6 +19733,20 @@ function _bfExtraerNombre(obs){
   return null;
 }
 
+// Parche manual: documentos donde el ERP no registro el nombre en la observacion
+// pero el dueño confirmo a quien pertenecen (verificado en JustWeb). Agregar aca
+// SOLO casos puntuales confirmados -- esto NO reemplaza corregir la observacion
+// real en JustWeb, que sigue siendo la fuente de verdad para todo lo demas.
+// Clave: "codigoTecnico|folio".
+var _bfPersonaOverride = {
+  'TABL0012|105995': 'felipe'  // OSB ECO 9MM, boleta 1101140 -- confirmado 2026-09-10, sin observacion en ERP
+};
+function _bfPersonaDeDoc(codigo, folio, obs){
+  var ov=_bfPersonaOverride[codigo+'|'+folio];
+  if(ov) return ov;
+  return _bfExtraerNombre(obs);
+}
+
 function vadmRenderBodFem(){
   var chkIEM=document.getElementById('bfChkIEM');
   var chkRCE=document.getElementById('bfChkRCE');
@@ -19763,8 +19777,17 @@ function vadmRenderBodFem(){
       var pers={};
       _bfDatos.forEach(function(r){
         if((r.bodega||'')!=='CEM') return;
-        var n=_bfExtraerNombre(r.observacion);
+        var n=_bfPersonaDeDoc(r.codigoTecnico, r.folio, r.observacion);
         if(n) pers[n]=true;
+        // Tambien escanear documentosGRT -- si una persona nunca es dueña del
+        // documento mas reciente de ningun producto, no debe quedar invisible
+        // en el selector (mismo bug de fondo que el filtro, ver 2026-09-10).
+        if(r.documentosGRT&&r.documentosGRT.length){
+          r.documentosGRT.forEach(function(g){
+            var gn=_bfPersonaDeDoc(r.codigoTecnico, g.folio, g.observacion);
+            if(gn) pers[gn]=true;
+          });
+        }
       });
       var selP=document.getElementById('bfPersona');
       if(selP){
@@ -19793,17 +19816,46 @@ function vadmFiltrarBodFem(){
   var diasMin=parseInt(document.getElementById('bfDiasMin').value); if(isNaN(diasMin)) diasMin=0;
   var diasMax=parseInt(document.getElementById('bfDiasMax').value); if(isNaN(diasMax)) diasMax=Infinity;
   var persona=(document.getElementById('bfPersona').value||'').toLowerCase();
-  var fil=_bfDatos.filter(function(r){
-    if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
-    var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
-    if(d<diasMin||d>diasMax) return false;
-    if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
-    if(persona){
-      if((r.bodega||'')!=='CEM') return false;
-      if((r.observacion||'').toLowerCase().indexOf(persona)<0) return false;
-    }
-    return true;
-  });
+  var fil;
+  if(persona){
+    // Filtro por persona: opera a nivel de DOCUMENTO individual, no de producto.
+    // Un producto puede acumular documentos de distintas personas (ej. TABL0080
+    // CEM: 3 docs de Felipe + 2 de Lara sumando el mismo fisico) -- filtrar solo
+    // por la observacion del documento mas reciente (r.observacion) mostraba de
+    // mas (arrastraba los de otra persona) u ocultaba de mas (si esa persona no
+    // era la del documento mas reciente, el producto entero desaparecia).
+    // Bug real detectado y verificado 2026-09-10 -- ver estado-sesion.
+    fil=[];
+    _bfDatos.forEach(function(r){
+      if((r.bodega||'')!=='CEM') return;
+      if(tipoDoc && r.tipoDoc!==tipoDoc) return;
+      if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return;
+      var docs=(r.documentosGRT&&r.documentosGRT.length)?r.documentosGRT:[{
+        tipoDoc:r.tipoDoc, folio:r.folio, fechaRegistro:r.fechaRegistro,
+        cantidad:r.fisico, observacion:r.observacion, diasAntiguedad:r.diasAntiguedad
+      }];
+      docs.forEach(function(g){
+        if(_bfPersonaDeDoc(r.codigoTecnico, g.folio, g.observacion)!==persona) return;
+        var d=g.diasAntiguedad!=null?g.diasAntiguedad:Infinity;
+        if(d<diasMin||d>diasMax) return;
+        fil.push({
+          bodega:r.bodega, tipoDoc:g.tipoDoc, folio:g.folio,
+          codigoTecnico:r.codigoTecnico, descripcion:r.descripcion,
+          disp:g.cantidad, fisico:g.cantidad, costo:r.costo,
+          fechaRegistro:g.fechaRegistro, diasAntiguedad:g.diasAntiguedad,
+          observacion:g.observacion
+        });
+      });
+    });
+  } else {
+    fil=_bfDatos.filter(function(r){
+      if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
+      var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
+      if(d<diasMin||d>diasMax) return false;
+      if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
+      return true;
+    });
+  }
   var tbody=document.getElementById('bfTbody');
   var empty=document.getElementById('bfEmpty');
   var tabla=document.getElementById('bfTabla');
@@ -19824,7 +19876,11 @@ function vadmFiltrarBodFem(){
       if(!bk[b]) bk[b]={n:0,val:0,old:0};
       bk[b].n++;
       bk[b].val+=(r.fisico!=null?r.fisico:(r.disp||0))*(r.costo||0);
-      bk[b].old=Math.max(bk[b].old,r.diasAntiguedad||0);
+      var rDias=r.diasAntiguedad||0;
+      if(r.documentosGRT&&r.documentosGRT.length){
+        r.documentosGRT.forEach(function(g){ rDias=Math.max(rDias,g.diasAntiguedad||0); });
+      }
+      bk[b].old=Math.max(bk[b].old,rDias);
     });
     var BC={'IEM':'background:#eff6ff;color:#1e40af','RCE':'background:#dcfce7;color:#166534','CEM':'background:#fef3c7;color:#92400e','ICD':'background:#f5f3ff;color:#5b21b6','GEM':'background:#fce7f3;color:#9d174d','TEM':'background:#e0f2fe;color:#075985'};
     var tV=fil.reduce(function(a,r){ return a+(r.fisico!=null?r.fisico:(r.disp||0))*(r.costo||0); },0);
@@ -19932,17 +19988,41 @@ window.bfExportExcel = function(){
   var diasMin=parseInt(document.getElementById('bfDiasMin').value); if(isNaN(diasMin)) diasMin=0;
   var diasMax=parseInt(document.getElementById('bfDiasMax').value); if(isNaN(diasMax)) diasMax=Infinity;
   var persona=(document.getElementById('bfPersona').value||'').toLowerCase();
-  var fil=_bfDatos.filter(function(r){
-    if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
-    var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
-    if(d<diasMin||d>diasMax) return false;
-    if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
-    if(persona){
-      if((r.bodega||'')!=='CEM') return false;
-      if((r.observacion||'').toLowerCase().indexOf(persona)<0) return false;
-    }
-    return true;
-  });
+  var fil;
+  if(persona){
+    // Mismo criterio a nivel de documento que vadmFiltrarBodFem (ver comentario ahi) --
+    // el export debe reflejar exactamente lo que se ve filtrado en pantalla.
+    fil=[];
+    _bfDatos.forEach(function(r){
+      if((r.bodega||'')!=='CEM') return;
+      if(tipoDoc && r.tipoDoc!==tipoDoc) return;
+      if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return;
+      var docs=(r.documentosGRT&&r.documentosGRT.length)?r.documentosGRT:[{
+        tipoDoc:r.tipoDoc, folio:r.folio, fechaRegistro:r.fechaRegistro,
+        cantidad:r.fisico, observacion:r.observacion, diasAntiguedad:r.diasAntiguedad
+      }];
+      docs.forEach(function(g){
+        if(_bfPersonaDeDoc(r.codigoTecnico, g.folio, g.observacion)!==persona) return;
+        var d=g.diasAntiguedad!=null?g.diasAntiguedad:Infinity;
+        if(d<diasMin||d>diasMax) return;
+        fil.push({
+          bodega:r.bodega, tipoDoc:g.tipoDoc, folio:g.folio,
+          codigoTecnico:r.codigoTecnico, descripcion:r.descripcion,
+          disp:g.cantidad, fisico:g.cantidad, costo:r.costo,
+          fechaRegistro:g.fechaRegistro, diasAntiguedad:g.diasAntiguedad,
+          observacion:g.observacion
+        });
+      });
+    });
+  } else {
+    fil=_bfDatos.filter(function(r){
+      if(tipoDoc && r.tipoDoc!==tipoDoc) return false;
+      var d=r.diasAntiguedad!=null?r.diasAntiguedad:Infinity;
+      if(d<diasMin||d>diasMax) return false;
+      if(buscar && (r.codigoTecnico||'').toLowerCase().indexOf(buscar)<0 && (r.descripcion||'').toLowerCase().indexOf(buscar)<0) return false;
+      return true;
+    });
+  }
   if(!fil.length){ if(window.toast) toast('Sin datos para exportar','err'); return; }
 
   function xe(v){ if(v==null)return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
