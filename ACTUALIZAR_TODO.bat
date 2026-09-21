@@ -507,7 +507,7 @@ echo.
 
 "%NODE_EXE%" "%~dp0update-sw-version.js" 2>nul
 
-call "%FIREBASE_CMD%" deploy --only hosting
+call "%FIREBASE_CMD%" deploy --only hosting --account ferreteriaoviedo.elmanzano@gmail.com
 if %errorlevel% neq 0 (
     color 0C
     echo.
@@ -542,7 +542,7 @@ if %errorlevel% neq 0 (
     goto :paso5_fin
 )
 
-call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo
+call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo --account ferreteriaoviedo.elmanzano@gmail.com
 if %errorlevel% neq 0 (
     color 0E
     echo  [AVISO] Firebase deploy Hosting fallo - el bot seguira con el catalogo anterior.
@@ -570,7 +570,7 @@ for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://fer
 if "%TOKCODE%"=="200" goto :paso6_ok
 
 echo  [REINTENTO] Token no visible en Hosting (HTTP %TOKCODE%) - re-publicando...
-call "%FIREBASE_CMD%" deploy --only hosting
+call "%FIREBASE_CMD%" deploy --only hosting --account ferreteriaoviedo.elmanzano@gmail.com
 set "TOKCODE=000"
 for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
 if "%TOKCODE%"=="200" goto :paso6_ok
@@ -579,7 +579,7 @@ color 0C
 echo.
 echo  ============================================================
 echo   [ALERTA] PANEL QUEDARA SIN DATOS - token no subio (HTTP %TOKCODE%)
-echo   Ejecuta manualmente:  firebase deploy --only hosting
+echo   Ejecuta manualmente:  firebase deploy --only hosting --account ferreteriaoviedo.elmanzano@gmail.com
 echo   y recarga esta URL hasta que responda:
 echo   https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json
 echo  ============================================================
