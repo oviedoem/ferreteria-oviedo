@@ -282,7 +282,7 @@ if exist "E:\ferreteria-oviedo\CATALOGO PRODUCTOS\Datos.json" (
     echo [AVISO] Datos.json no encontrado - deploy puede borrar catalogo >> "%LOGFILE%"
 )
 
-call "%FIREBASE_CMD%" deploy --only hosting >> "%LOGFILE%" 2>&1
+call "%FIREBASE_CMD%" deploy --only hosting --account ferreteriaoviedo.elmanzano@gmail.com >> "%LOGFILE%" 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] firebase deploy fallo - revisar autenticacion >> "%LOGFILE%"
 ) else (
@@ -305,7 +305,7 @@ if %errorlevel% neq 0 (
     echo [AVISO] generate_catalogo_bot.ps1 fallo - bot queda con catalogo anterior >> "%LOGFILE%"
     goto :fin
 )
-call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo >> "%LOGFILE%" 2>&1
+call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo --account ferreteriaoviedo.elmanzano@gmail.com >> "%LOGFILE%" 2>&1
 if %errorlevel% neq 0 (
     echo [AVISO] Firebase deploy catalogo-bot fallo - bot queda con catalogo anterior >> "%LOGFILE%"
 ) else (
@@ -322,7 +322,7 @@ set "TOKCODE=000"
 for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
 if "%TOKCODE%"=="200" goto :verif_ok
 echo [%time%] [ALERTA] token NO visible en Hosting HTTP %TOKCODE% - reintentando deploy >> "%LOGFILE%"
-call "%FIREBASE_CMD%" deploy --only hosting >> "%LOGFILE%" 2>&1
+call "%FIREBASE_CMD%" deploy --only hosting --account ferreteriaoviedo.elmanzano@gmail.com >> "%LOGFILE%" 2>&1
 set "TOKCODE=000"
 for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
 if "%TOKCODE%"=="200" goto :verif_ok
