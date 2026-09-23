@@ -189,6 +189,23 @@ Regla: **`/animate-app` y `/sleek-mobile` siempre junto con `/web-design-guideli
 
 ---
 
+### Sesión 2026-09-23 — Pipeline completo corrido (datos frescos + deploy)
+
+**Resumen:** `ACTUALIZAR_TODO.bat` corrido completo como parte de un lote de
+mantenimiento del ecosistema — precio/stock, ventas, deploy Firebase, catálogo
+bot, commit y push automáticos, todo `[OK]`. Warning no bloqueante ya conocido:
+"No se pudo obtener token Firebase: HTTP Error 401" al ajustar visibilidad de
+precio (cae a "oculto" por default seguro, ajustar manual en panel admin si
+hace falta cambiarlo).
+
+**Commit:** `a36ed08` ("V37 2026-09-23 -- actualizacion automatica")
+
+**Pendiente:** ninguno de esta sesión — investigar en otro momento el 401 del
+token Firebase en el ajuste de visibilidad de precio (no urgente, tiene default
+seguro).
+
+---
+
 ### Sesión 2026-08-20 (Claude Code) — Fix búsqueda stock panel-admin + proteger Datos.json en deploy
 
 **Resumen:** Mejora búsqueda Consulta de Stock: búsqueda AND por tokens (antes era substring completo), normalización de tildes y dimensiones "100x100"→"100 100", datalist HTML5 para sugerencias nativas. Bug introducido: mis deploys borraron Datos.json de Hosting (no estaba en git-sync). Fix: pipeline ACTUALIZAR_TODO.bat copia Datos.json antes del deploy.
