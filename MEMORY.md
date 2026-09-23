@@ -1,6 +1,7 @@
 ## Índice de memoria — proyecto E:\ferreteria-oviedo
 
 ### Estado de sesión (recientes)
+- [estado-sesion-20260922](estado-sesion-20260922.md) — V37.72: root cause del checkpoint de ventas incremental (congelado 6 semanas, formato de fecha `dd-mm-yyyy` vs `dd/mm/yyyy`) corregido y verificado en vivo; bug de redirección en 2 .bat (creaba basura en raíz) corregido; hooks post-commit eliminados de 7 repos; reordenamiento de raíz (docs/, archivado _HISTORICO + xlsx viejos fuera del proyecto). Incluye también el bloque de una tarea autónoma anterior el mismo día (fix cuenta cruzada en ACTUALIZAR_TODO_AUTO.bat, deploy de stock/OC quedó pendiente de autorización). Deploy general del día sigue pendiente.
 - [estado-sesion-20260901](estado-sesion-20260901.md) — V37.63: Deploy bloqueado FortiFilter NDIS (red local), resuelto via hotspot moto g22. Panel restaurado. Docs sync, commit 3020cfd.
 - [estado-sesion-20260831](estado-sesion-20260831.md) — V37.63: Solicitud Stock prioridad A→B→C + DD→categoría D, guardado desacoplado (botón Confirmar), import historial Word. Commit 20e8126. Deploy hecho 01-09 ~01:20 via hotspot.
 - [estado-sesion-20260822](estado-sesion-20260822.md) — V37.58: pipeline TODO2 22-08 OK, fix rotar_token despachos-panel, análisis TRIM confirmado OK, docs actualizados, commit f838206.

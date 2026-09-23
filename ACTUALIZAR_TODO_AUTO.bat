@@ -179,7 +179,7 @@ timeout /t 8 /nobreak > nul
 
 :: -- PASO 1M: Tiempo de transito proveedor (OC -> GRC/GRT/GIB desde SQL) -----
 echo. >> "%LOGFILE%"
-echo [%time%] PASO 1M - Tiempo transito proveedor (OC->recepcion) SQL... >> "%LOGFILE%"
+echo [%time%] PASO 1M - Tiempo transito proveedor (OC-^>recepcion) SQL... >> "%LOGFILE%"
 if exist "BODEGAS\descargar_oc_leadtime.py" (
     "%PYTHON_EXE%" "BODEGAS\descargar_oc_leadtime.py" >> "%LOGFILE%" 2>&1
     if %errorlevel% neq 0 (

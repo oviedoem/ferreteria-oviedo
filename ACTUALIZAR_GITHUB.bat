@@ -72,10 +72,14 @@ robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
   firebase.json firestore.rules firestore.indexes.json storage.rules ^
   sw.js update-sw-version.js firebase-config.js manifest.json ^
   manifest-admin.json manifest-cliente.json ^
-  AGENTS.md MEMORY.md ESTADO_PROYECTO.md CLAUDE.md README.md ^
-  IDS_REFERENCIA.md MAPA_FLUJO_PROYECTOS.md ^
+  AGENTS.md MEMORY.md ESTADO_PROYECTO.md CLAUDE.md ^
   validar_jsons.py .gitignore ^
   ACTUALIZAR_GITHUB.bat ACTUALIZAR_TODO.bat ACTUALIZAR_TODO_AUTO.bat PUBLICAR.bat ^
+  /XO /NP /NJH /NFL
+
+REM 2026-09-22: README.md, IDS_REFERENCIA.md y MAPA_FLUJO_PROYECTOS.md se movieron a docs\
+robocopy "E:\ferreteria-oviedo\docs" "E:\git-sync\docs" ^
+  README.md IDS_REFERENCIA.md MAPA_FLUJO_PROYECTOS.md ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo\.opencodereview" "E:\git-sync\.opencodereview" ^

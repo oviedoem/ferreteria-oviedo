@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.71
-# Fecha: 2026-09-10
+# Version activa: V37.72
+# Fecha: 2026-09-22
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,24 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.71 |
-| Fecha | 2026-09-10 |
-| Deploy | ✅ hecho — pipeline completo corrido en vivo, commit 5b88166 |
-| Commit | 5b88166 |
-| Pendiente | `firebase login --reauth` (token CLI vencido, no bloquea nada). Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. Evaluar si agregar filtros marca/hiperFam/familia/subFam también al menú Panel Vendedor (por ahora solo tiene fecha/período ya existentes). |
+| Version | V37.72 |
+| Fecha | 2026-09-22 |
+| Deploy | pendiente correr ACTUALIZAR_TODO.bat completo tras los fixes de hoy |
+| Commit | pendiente (ver nota gitignore en changelog V37.72) |
+| Pendiente | Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.72 — 2026-09-22 (fix checkpoint ventas incremental congelado 6 semanas + bug redirección .bat)
+- **Root cause del checkpoint de ventas**: `_max_fecha_producto()` en `descargar_ventas_erp.py` solo parseaba `F.Emision` en formato `dd/mm/yyyy`; las filas nuevas del path HTTP directo vienen en `dd-mm-yyyy` y se ignoraban silenciosamente, congelando el máximo en 2026-08-08 por ~6 semanas. Corregido para probar ambos formatos. Verificado en vivo: antes 11.344 filas descargadas → 0 nuevas; después, checkpoint detecta hoy correctamente.
+- **Guardrail nuevo**: alerta de log si el scraping devuelve 0 filas crudas para un rango con venta esperada (confirmado con Gemini).
+- **Paquete `holidays` instalado** — antes solo se excluían domingos del cálculo de días laborales, ahora también feriados chilenos reales.
+- **Bug de redirección en 2 `.bat`** (`ACTUALIZAR_TODO.bat`, `ACTUALIZAR_TODO_AUTO.bat`): un `->` sin escapar en un `echo` creaba archivos basura en la raíz cada corrida — corregido, basura eliminada (incluye 5 copias históricas del mismo bug repitiéndose desde 27-ago en `_HISTORICO\`).
+- **Panel Centro de Control**: filtrado el aviso cosmético "No es compatible la redirección de entradas".
+- **Limpieza**: todos los `__pycache__` del árbol eliminados.
+- **Nota**: `VENTAS EL MANZANO/` sigue gitignoreada a propósito (decisión de seguridad 2026-06-02, documentada en AGENTS.md) — estos fixes viven en `E:\ferreteria-oviedo\` y su espejo `E:\git-sync\`, no llegan a GitHub, por diseño.
 
 ### V37.71 — 2026-09-10 (Análisis de Bodegas: detalle multi-documento, filtro por persona CEM, Excel con color/autofiltro)
 - **Subfilas con detalle completo** en `documentosGRT` (Bodega/Código/Descripción/Costo/Valorizado por documento, antes en blanco) — verificado exacto contra SQL en vivo (código 26297 CEM).

@@ -290,7 +290,7 @@ timeout /t 8 /nobreak >nul
 :: -- PASO 1M: Tiempo de transito proveedor (OC -> GRC/GRT/GIB desde SQL) ---------
 echo.
 echo  +----------------------------------------------------------+
-echo  ^|  PASO 1M - Tiempo transito proveedor (OC->recepcion) SQL ^|
+echo  ^|  PASO 1M - Tiempo transito proveedor (OC-^>recepcion) SQL ^|
 echo  +----------------------------------------------------------+
 echo.
 echo  Generando oc-leadtime.json (dias OC -> GRC/GRT/GIB por codigo/proveedor)...
@@ -524,7 +524,7 @@ if %errorlevel% neq 0 (
 :: No bloquea: si falla, el bot seguira con el catalogo anterior en Hosting.
 echo.
 echo  +----------------------------------------------------------+
-echo  ^|  PASO 5/5 - Catalogo Bot -> Firebase Hosting          ^|
+echo  ^|  PASO 5/5 - Catalogo Bot -^> Firebase Hosting          ^|
 echo  +----------------------------------------------------------+
 echo.
 set DATOS_JSON=%~dp0CATALOGO PRODUCTOS\Datos.json
