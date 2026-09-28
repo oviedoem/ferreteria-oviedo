@@ -3962,11 +3962,14 @@ Todo desde tu celular, gratis, sin apps que descargar.
               <img id="bot-bc-preview" style="display:none;max-width:240px;max-height:160px;margin:12px auto 0;border-radius:6px">
             </div>
             <div style="margin-top:12px">
-              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:4px">Caption (texto del mensaje)</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">Caption (texto del mensaje)</span>
+                <button id="bot-bc-sugerir" onclick="botMonSugerirCaption()" disabled style="padding:3px 9px;border:1px solid #d1d5db;border-radius:5px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✨ Sugerir con IA</button>
+              </div>
               <textarea id="bot-bc-caption" placeholder="Ej: 🔨 OFERTA SEMANA: Tornillos 10% descuento · Válido hasta el viernes · Consulta en tienda" style="width:100%;padding:9px 11px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;min-height:72px;box-sizing:border-box"></textarea>
             </div>
             <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
-              <button id="bot-bc-btn" onclick="botMonEnviarBroadcast()" disabled style="padding:8px 16px;border:none;border-radius:6px;background:#25d366;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📢 Enviar a todos los contactos</button>
+              <button id="bot-bc-btn" onclick="botMonEnviarBroadcast()" disabled style="padding:8px 16px;border:none;border-radius:6px;background:#25d366;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📢 Enviar a contactos activos (24h)</button>
               <span id="bot-bc-hint2" style="font-size:12px;color:#6b7280">Selecciona una imagen primero</span>
             </div>
             <div id="bot-bc-progress" style="display:none;margin-top:12px">
@@ -22179,13 +22182,46 @@ function _botMonSetImage(file) {
     img.src = ev.target.result; img.style.display = 'block';
     document.getElementById('bot-bc-hint').textContent = '✅ ' + file.name;
     document.getElementById('bot-bc-btn').disabled = false;
+    document.getElementById('bot-bc-sugerir').disabled = false;
     document.getElementById('bot-bc-hint2').textContent = 'Listo para enviar';
   };
   r.readAsDataURL(file);
 }
+function botMonSugerirCaption() {
+  if (!window._botBcImg) return;
+  let pin = sessionStorage.getItem('bot_broadcast_pin');
+  if (!pin) {
+    pin = prompt('PIN del bot:');
+    if (!pin) return;
+    sessionStorage.setItem('bot_broadcast_pin', pin);
+  }
+  const btn = document.getElementById('bot-bc-sugerir');
+  btn.disabled = true; btn.textContent = '⏳ Pensando...';
+  const base64 = window._botBcImg.data.split(',')[1];
+  _botMonFetch('/api/sugerir-caption', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imagen_base64: base64, mimetype: window._botBcImg.type, pin })
+  })
+    .then(res => {
+      if (res.ok && res.caption) document.getElementById('bot-bc-caption').value = res.caption;
+      else alert('No se pudo sugerir un caption: ' + (res.error || 'sin respuesta'));
+    })
+    .catch(e => {
+      if (e.message.includes('401')) sessionStorage.removeItem('bot_broadcast_pin');
+      alert('Error pidiendo sugerencia: ' + e.message);
+    })
+    .finally(() => { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; });
+}
 function botMonEnviarBroadcast() {
   if (!window._botBcImg) return;
-  if (!confirm('¿Enviar el flyer a TODOS los contactos del bot?')) return;
+  let pin = sessionStorage.getItem('bot_broadcast_pin');
+  if (!pin) {
+    pin = prompt('PIN del bot (protege el broadcast de envíos no autorizados):');
+    if (!pin) return;
+    sessionStorage.setItem('bot_broadcast_pin', pin);
+  }
+  if (!confirm('¿Enviar el flyer a los contactos que escribieron en las últimas 24h? (regla de WhatsApp/Meta — no se manda a todos, solo a quien te escribió recientemente)')) return;
   const btn = document.getElementById('bot-bc-btn');
   btn.disabled = true;
   document.getElementById('bot-bc-progress').style.display = 'block';
@@ -22196,7 +22232,7 @@ function botMonEnviarBroadcast() {
   _botMonFetch('/api/broadcast', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imagen_base64: base64, mimetype: window._botBcImg.type, caption })
+    body: JSON.stringify({ imagen_base64: base64, mimetype: window._botBcImg.type, caption, pin })
   })
     .then(res => {
       document.getElementById('bot-bc-bar').style.width = '100%';
@@ -22205,7 +22241,12 @@ function botMonEnviarBroadcast() {
         : '❌ ' + (res.error || 'Error desconocido');
     })
     .catch(e => {
-      document.getElementById('bot-bc-status').textContent = '❌ Error de conexión — ¿el bot está despierto? ' + e.message;
+      if (e.message.includes('401')) {
+        sessionStorage.removeItem('bot_broadcast_pin');
+        document.getElementById('bot-bc-status').textContent = '❌ PIN incorrecto — vuelve a intentar.';
+      } else {
+        document.getElementById('bot-bc-status').textContent = '❌ Error de conexión — ¿el bot está despierto? ' + e.message;
+      }
     })
     .finally(() => { btn.disabled = false; });
 }
@@ -22218,6 +22259,7 @@ window.botMonCargarContactos = botMonCargarContactos;
 window.botMonFile = botMonFile;
 window.botMonDrop = botMonDrop;
 window.botMonEnviarBroadcast = botMonEnviarBroadcast;
+window.botMonSugerirCaption = botMonSugerirCaption;
 
 })();
 </script>
