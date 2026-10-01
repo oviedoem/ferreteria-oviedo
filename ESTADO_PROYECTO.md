@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.72
-# Fecha: 2026-09-22
+# Version activa: V37.73
+# Fecha: 2026-10-01
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,23 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.72 |
-| Fecha | 2026-09-22 |
-| Deploy | pendiente correr ACTUALIZAR_TODO.bat completo tras los fixes de hoy |
-| Commit | pendiente (ver nota gitignore en changelog V37.72) |
+| Version | V37.73 |
+| Fecha | 2026-10-01 |
+| Deploy | hecho 2026-10-01 (ACTUALIZAR_TODO.bat completo, 2 corridas) |
+| Commit | 703a97e (+ ab47303) |
 | Pendiente | Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.73 — 2026-10-01 (pipeline completo + fix .bat línea 296 + badge en los 3 paneles)
+- **Pipeline completo en vivo**: ERP, SQL, Firebase, Catálogo Bot y GitHub OK. Ventas incrementales 26-09 → 01-10 (1780 filas nuevas), confirma el fix del checkpoint de V37.72. Datos al 01-10-2026.
+- **Fix `ACTUALIZAR_TODO.bat` línea 296** (PASO 1M): `->` sin escapar en un `echo` causaba "El sistema no puede encontrar la ruta" (el fix del 22-09 lo había omitido). Ahora `-^>`.
+- **Badge V37.73** en `panel-admin.html`, `panel-cliente.html` e `index.html` (vendedor). Verificado en vivo.
+- **Catálogos verificados**: `catalogo-bot.json` OK (6164, sin BOM, idéntico en Hosting). Catálogo de fotos (`oviedo-catalogo-fotos`, otro proyecto) desactualizado vs bot (38 productos faltan, 630 precios / 1327 stocks distintos) — no tocado.
+- **Costos IA**: el contador de personas lo agregó una sesión del BOT (`monitor.html`, "Contactos únicos"); no está en Costos IA de panel-admin (lee Firestore `bot_costos`). Pendiente decidir fuente (API del bot vs Firestore).
+- **Avisos no bloqueantes**: HTTP 401 al obtener token Firebase en PASO 3 (precios: ajuste manual en panel admin); `timeout` de Git pisa el de Windows (cosmético).
 
 ### V37.72 — 2026-09-22 (fix checkpoint ventas incremental congelado 6 semanas + bug redirección .bat)
 - **Root cause del checkpoint de ventas**: `_max_fecha_producto()` en `descargar_ventas_erp.py` solo parseaba `F.Emision` en formato `dd/mm/yyyy`; las filas nuevas del path HTTP directo vienen en `dd-mm-yyyy` y se ignoraban silenciosamente, congelando el máximo en 2026-08-08 por ~6 semanas. Corregido para probar ambos formatos. Verificado en vivo: antes 11.344 filas descargadas → 0 nuevas; después, checkpoint detecta hoy correctamente.
