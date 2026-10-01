@@ -293,7 +293,7 @@ echo  +----------------------------------------------------------+
 echo  ^|  PASO 1M - Tiempo transito proveedor (OC-^>recepcion) SQL ^|
 echo  +----------------------------------------------------------+
 echo.
-echo  Generando oc-leadtime.json (dias OC -> GRC/GRT/GIB por codigo/proveedor)...
+echo  Generando oc-leadtime.json (dias OC -^> GRC/GRT/GIB por codigo/proveedor)...
 echo  (usado en tab Consulta de Stock)
 echo.
 if exist "%~dp0BODEGAS\descargar_oc_leadtime.py" (
