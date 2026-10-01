@@ -3,14 +3,28 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── FUNCIONES HELPER ──────────────────────────────────────
+    // FIX SEGURIDAD 2026-09-26: registroAprobado/estado solo se chequeaban en el
+    // JS del panel (panel-cliente.html) — un cliente/vendedor con registro
+    // pendiente o bloqueado podía igual leer cotizaciones/cupones llamando a
+    // Firestore directo, porque estas reglas solo miraban el campo `role`.
+    // Ahora `estaActivo()` bloquea a nivel de reglas, no solo en la UI.
+    function datosUsuario() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function estaActivo() {
+      let u = datosUsuario();
+      return u.estado != 'bloqueado' && u.registroAprobado != false;
+    }
+
     function esAdmin() {
       return request.auth != null &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+             datosUsuario().role == 'admin' && estaActivo();
     }
 
     function esVendedor() {
       return request.auth != null &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendedor';
+             datosUsuario().role == 'vendedor' && estaActivo();
     }
 
     function estaAutenticado() {
@@ -166,19 +180,6 @@ service cloud.firestore {
 
     match /bot_config/{docId} {
       allow read: if esAdmin();
-      allow write: if false;
-    }
-
-
-    // ── VENTAS HISTÓRICAS (colecciones legacy / fallback) ─────────────────
-    // ventasLineas: fallback cuando ventas-manzano.json no está en Hosting
-    // ventas: colección legacy de último recurso en venAdmCargar
-    match /ventasLineas/{docId} {
-      allow read: if esAdmin() || esVendedor();
-      allow write: if false;
-    }
-    match /ventas/{docId} {
-      allow read: if esAdmin() || esVendedor();
       allow write: if false;
     }
 
