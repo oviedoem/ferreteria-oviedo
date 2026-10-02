@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.73
-# Fecha: 2026-10-01
+# Version activa: V37.74
+# Fecha: 2026-10-02
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,20 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.73 |
-| Fecha | 2026-10-01 |
-| Deploy | hecho 2026-10-01 (ACTUALIZAR_TODO.bat completo, 2 corridas) |
-| Commit | 703a97e (+ ab47303) |
-| Pendiente | Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
+| Version | V37.74 |
+| Fecha | 2026-10-02 |
+| Deploy | ACTUALIZAR_TODO.bat 2026-10-02 (ver estado-sesion-20261002) |
+| Commit | automatico de ACTUALIZAR_TODO.bat (hash en estado-sesion-20261002); bot: fd5f7bd |
+| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.74 — 2026-10-02 (menú Bot WhatsApp con PIN, solo panel-admin)
+- El bot (commit fd5f7bd) exige PIN por POST en `/api/conversaciones` y `/api/errores-ia`, con límite de 8 intentos fallidos por IP (429) y logs sin teléfono completo (HMAC con `HASH_SECRET`).
+- `panel-admin.html`: `_botMonFetch` envía el PIN para esas rutas (clave sessionStorage `bot_broadcast_pin`); sin PIN o con PIN malo los KPIs de estado se ven y las conversaciones muestran aviso. Lectura corregida a `txt`/`dir` (antes salían vacías).
+- Revisado con Gemini, ChatGPT y Meta AI. Badge V37.74 solo en panel-admin.
 
 ### V37.73 — 2026-10-01 (pipeline completo + fix .bat línea 296 + badge en los 3 paneles)
 - **Pipeline completo en vivo**: ERP, SQL, Firebase, Catálogo Bot y GitHub OK. Ventas incrementales 26-09 → 01-10 (1780 filas nuevas), confirma el fix del checkpoint de V37.72. Datos al 01-10-2026.

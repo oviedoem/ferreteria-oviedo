@@ -4038,7 +4038,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.73<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-10-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.74<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">02-10-2026</span></div>
 
 <script>
 
@@ -22051,9 +22051,23 @@ function botMonSubTab(sub, btn) {
   if (sub==='broadcast' && !window._botMonLoaded.broadcast) { window._botMonLoaded.broadcast=true; botMonCargarContactos(true, true); }
 }
 
+const _BOT_RUTAS_PIN = ['/api/conversaciones', '/api/errores-ia'];
 function _botMonFetch(path, opts) {
+  if (_BOT_RUTAS_PIN.includes(path)) {   // el bot exige POST con {pin} en el body
+    let pin = sessionStorage.getItem('bot_broadcast_pin');   // mismo PIN que el broadcast
+    if (!pin) {
+      pin = prompt('PIN del bot:');
+      if (!pin) { const e = new Error('PIN faltante'); e.pinError = true; return Promise.reject(e); }
+      sessionStorage.setItem('bot_broadcast_pin', pin);
+    }
+    opts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) };
+  }
   return fetch(BOT_API + path, opts).then(r => {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) {
+      const e = new Error('HTTP ' + r.status);
+      if (r.status === 401 && _BOT_RUTAS_PIN.includes(path)) { sessionStorage.removeItem('bot_broadcast_pin'); e.pinError = true; }
+      throw e;
+    }
     return r.json();
   });
 }
@@ -22064,7 +22078,7 @@ function botMonCargarEstado(manual) {
   const err  = document.getElementById('bot-estado-err');
   const dash = document.getElementById('bot-estado-dash');
   load.style.display = 'block'; err.style.display = 'none'; if (!manual) dash.style.display = 'none';
-  Promise.all([_botMonFetch('/api/estado'), _botMonFetch('/api/conversaciones')])
+  Promise.all([_botMonFetch('/api/estado'), _botMonFetch('/api/conversaciones').catch(e => e.pinError ? e : Promise.reject(e))])
     .then(([est, convs]) => {
       load.style.display = 'none'; dash.style.display = 'block';
       const clp = n => '$' + Math.round(n||0).toLocaleString('es-CL');
@@ -22085,14 +22099,15 @@ function botMonCargarEstado(manual) {
         </div>`).join('');
       const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const mask = jid => { const n2 = (jid||'').replace(/@.+/,''); return n2.length>4 ? '···'+n2.slice(-4) : n2; };
+      const pinErr = convs instanceof Error;
       const list = (Array.isArray(convs) ? convs : []).slice(0,40);
       document.getElementById('bot-convs').innerHTML = list.length ? list.map(x =>
         `<div style="display:grid;grid-template-columns:80px 1fr 60px;gap:8px;padding:7px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;align-items:center">
           <span style="color:#6b7280;font-family:monospace;font-size:11px">${esc(mask(x.jid))}</span>
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${x.esBot?'color:#059669':''}">${x.esBot?'🤖 ':''}${esc((x.texto||'').slice(0,120))}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${(x.dir==='out'||x.esBot)?'color:#059669':''}">${(x.dir==='out'||x.esBot)?'🤖 ':''}${esc((x.txt ?? x.texto ?? '').slice(0,120))}</span>
           <span style="color:#6b7280;font-size:10px;text-align:right">${x.ts ? new Date(x.ts).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
         </div>`).join('')
-        : '<div style="padding:24px;text-align:center;color:#6b7280;font-size:13px">Sin conversaciones aún — espera a que lleguen mensajes.</div>';
+        : '<div style="padding:24px;text-align:center;color:#6b7280;font-size:13px">' + (pinErr ? '🔒 PIN incorrecto o faltante — presiona ↻ Actualizar para ingresarlo.' : 'Sin conversaciones aún — espera a que lleguen mensajes.') + '</div>';
     })
     .catch(e => {
       load.style.display = 'none';
