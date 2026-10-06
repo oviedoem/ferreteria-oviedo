@@ -16,7 +16,7 @@
 | Fecha | 2026-10-06 |
 | Deploy | HECHO 2026-10-06 01:34 (ACTUALIZAR_TODO.bat, todo OK) + arreglo 01:43 (`firebase deploy --only hosting`, solo panel-admin.html y sw.js) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
-| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 sigue en -35 % (decision del dueño: subir precio o revisar costo de importacion en JustWeb); liquidacion de $15,3 M: tabla entregada, decision del dueño. Contador de personas: HECHO (ver abajo). Sigue abierto: catalogo de fotos desactualizado vs el bot. |
+| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 sigue en -35 % (decision del dueño: subir precio o revisar costo de importacion en JustWeb); liquidacion de $15,3 M: tabla entregada, decision del dueño. Contador de personas: HECHO (ver abajo). Catalogo de fotos: SINCRONIZADO 2026-10-06 (oviedo-catalogo-fotos b68b181, 0 diferencias, 13 productos nuevos sin foto). |
 
 ---
 
