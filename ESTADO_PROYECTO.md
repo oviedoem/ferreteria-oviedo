@@ -16,7 +16,7 @@
 | Fecha | 2026-10-06 |
 | Deploy | HECHO 2026-10-06 01:34 (ACTUALIZAR_TODO.bat, todo OK) + arreglo 01:43 (`firebase deploy --only hosting`, solo panel-admin.html y sw.js) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
-| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
+| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 sigue en -35 % (decision del dueño: subir precio o revisar costo de importacion en JustWeb); liquidacion de $15,3 M: tabla entregada, decision del dueño. Siguen abiertos: contador de personas en Costos IA (decidir fuente: API del bot vs Firestore) y catalogo de fotos desactualizado vs el bot. |
 
 ---
 
@@ -27,6 +27,12 @@
 - Usa endpoints del bot: `/api/estado`, `/api/embudo`, `/api/costos`, `/api/uptime` (públicos) y `/api/canal-semanal`, `/api/conversaciones` (PIN). No cambia pipeline, SQL ni datos.
 - Badge V37.75 solo en panel-admin. Desplegado el 2026-10-06 01:34.
 - Arreglo 01:43 (mismo V37.75): se exportaron a `window` `botDashAbrir`, `botDashCargar` y `_botDashProtegido` (los botones "Ver" y "↻ Actualizar" fallaban con `not defined` porque el bloque del bot es una IIFE) y se quitó la entrada "Dashboard" del menú lateral por duplicar la pestaña interna. Verificado: historial semanal muestra 2026-W41 con 10 seguidores.
+
+### Revision de heredados — 2026-10-06 (solo lectura, sin cambios de datos)
+- **PASO 3 / 401:** el script `actualizar_config_precios.py` funciona hoy (OK, con `XDG_CONFIG_HOME=E:config`; cuenta por defecto del CLI = ferreteriaoviedo.elmanzano). `config/precios.mostrarPrecioCliente` = **false (precios OCULTOS) desde 2026-09-10**; la opcion N de hoy no cambio nada. Cerrado.
+- **25989 Volcanita ST 15 mm:** margen real +13 % (jul 13,8 %, ago 12,9 %, sep 15 %); el -53,6 % no se reproduce. Cerrado.
+- **26191 Malla ACMA C92:** costo promedio $20.395 neto vs precio $17.990 c/IVA = -34,9 %; ventas jul-ago 99 u. con perdida ~$454.000 neto. Punto de equilibrio c/IVA $24.270; piso 8 % ~$26.380. **Decision del dueño en JustWeb** (precio o costo de importacion).
+- **Sin venta 2026 en El Manzano (PEM+SEM):** 962 productos, $116,7 M a costo; top 7 = $15,34 M (generadores Hyundai 23334/21883/21843, tuberia MAGE0034, motosierra Stihl MOT0021, estufa AMES0126 con solo 10 % de margen, riel DUCA00135). Decision de liquidar = dueño. Ojo: solo se miraron ventas de El Manzano.
 
 ### V37.74 — 2026-10-02 (menú Bot WhatsApp con PIN, solo panel-admin)
 - El bot (commit fd5f7bd) exige PIN por POST en `/api/conversaciones` y `/api/errores-ia`, con límite de 8 intentos fallidos por IP (429) y logs sin teléfono completo (HMAC con `HASH_SECRET`).
