@@ -16,7 +16,7 @@
 | Fecha | 2026-10-06 |
 | Deploy | HECHO 2026-10-06 01:34 (ACTUALIZAR_TODO.bat, todo OK) + arreglo 01:43 (`firebase deploy --only hosting`, solo panel-admin.html y sw.js) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
-| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 sigue en -35 % (decision del dueño: subir precio o revisar costo de importacion en JustWeb); liquidacion de $15,3 M: tabla entregada, decision del dueño. Siguen abiertos: contador de personas en Costos IA (decidir fuente: API del bot vs Firestore) y catalogo de fotos desactualizado vs el bot. |
+| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 sigue en -35 % (decision del dueño: subir precio o revisar costo de importacion en JustWeb); liquidacion de $15,3 M: tabla entregada, decision del dueño. Contador de personas: HECHO (ver abajo). Sigue abierto: catalogo de fotos desactualizado vs el bot. |
 
 ---
 
@@ -33,6 +33,11 @@
 - **25989 Volcanita ST 15 mm:** margen real +13 % (jul 13,8 %, ago 12,9 %, sep 15 %); el -53,6 % no se reproduce. Cerrado.
 - **26191 Malla ACMA C92:** costo promedio $20.395 neto vs precio $17.990 c/IVA = -34,9 %; ventas jul-ago 99 u. con perdida ~$454.000 neto. Punto de equilibrio c/IVA $24.270; piso 8 % ~$26.380. **Decision del dueño en JustWeb** (precio o costo de importacion).
 - **Sin venta 2026 en El Manzano (PEM+SEM):** 962 productos, $116,7 M a costo; top 7 = $15,34 M (generadores Hyundai 23334/21883/21843, tuberia MAGE0034, motosierra Stihl MOT0021, estufa AMES0126 con solo 10 % de margen, riel DUCA00135). Decision de liquidar = dueño. Ojo: solo se miraron ventas de El Manzano.
+
+### Contador "Personas atendidas" — 2026-10-06 (solo panel-admin, sin tocar el bot)
+- Tarjeta acumulada en Costos IA y en el Dashboard del bot: telefonos distintos (`jid`, sin `sistema`) en TODO el historial de `bot_costos` (Firestore, no se borra al reiniciar). Hoy: 21 personas en 232 consultas (API 40 dias); el panel leera el historial completo.
+- Funciones `_botPersonasContar`/`_botPersonasMostrar` en la IIFE del bloque del bot (no necesitan `window`). Cache local 6 h (`localStorage bot_personas_cache_v1`) y el total nunca baja del ultimo valor guardado. Costo: ~232 lecturas cada 6 h. Si el historial supera ~5000 registros, mover el conteo al bot en un push que ya reinicie Render.
+- Publicado con `firebase deploy --only hosting` (0 lineas quitadas, 35 agregadas).
 
 ### V37.74 — 2026-10-02 (menú Bot WhatsApp con PIN, solo panel-admin)
 - El bot (commit fd5f7bd) exige PIN por POST en `/api/conversaciones` y `/api/errores-ia`, con límite de 8 intentos fallidos por IP (429) y logs sin teléfono completo (HMAC con `HASH_SECRET`).

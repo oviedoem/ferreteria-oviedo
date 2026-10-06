@@ -21939,6 +21939,7 @@ function botAdminCargar() {
       const data = snap.docs.map(d => d.data());
       _botRender(data);
       _botRenderExtras(data);
+      try { _botPersonasMostrar('bot-kpis2'); } catch (e) {}
       document.getElementById('bot-loading').style.display = 'none';
       document.getElementById('bot-dash').style.display    = 'block';
     })
@@ -21948,6 +21949,38 @@ function botAdminCargar() {
       el.style.display  = 'block';
       el.textContent    = 'Error al cargar: ' + e.message;
     });
+}
+
+// Personas atendidas (acumulado): teléfonos distintos en todo el historial de bot_costos (no se borra al reiniciar el bot).
+// Caché local 6 h para no releer; el total nunca baja respecto al último valor guardado.
+function _botPersonasContar() {
+  if (window._botPersonasP) return window._botPersonasP;
+  const KEY = 'bot_personas_cache_v1', TTL = 6 * 3600 * 1000;
+  let prev = null;
+  try { prev = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  if (prev && Date.now() - prev.t < TTL) return (window._botPersonasP = Promise.resolve(prev));
+  window._botPersonasP = firebase.firestore().collection('bot_costos').get().then(snap => {
+    const set = new Set();
+    snap.forEach(d => { const j = d.data().jid; if (j && j !== 'sistema') set.add(j); });
+    const res = { t: Date.now(), total: Math.max(set.size, prev ? prev.total : 0), consultas: snap.size };
+    try { localStorage.setItem(KEY, JSON.stringify(res)); } catch (e) {}
+    return res;
+  }).catch(() => { window._botPersonasP = null; return prev; });
+  return window._botPersonasP;
+}
+function _botPersonasMostrar(contId) {
+  _botPersonasContar().then(r => {
+    const cont = document.getElementById(contId);
+    if (!cont) return;
+    const old = document.getElementById('bot-personas-' + contId);
+    if (old) old.remove();
+    cont.insertAdjacentHTML('beforeend',
+      `<div id="bot-personas-${contId}" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px">
+        <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Personas atendidas</div>
+        <div style="font-size:19px;font-weight:700;color:#059669;margin-top:3px;font-variant-numeric:tabular-nums">${r ? r.total.toLocaleString('es-CL') : '–'}</div>
+        <div style="font-size:10px;color:#6b7280;margin-top:2px">${r ? 'acumulado · teléfonos distintos en ' + r.consultas.toLocaleString('es-CL') + ' consultas' : 'no se pudo leer ahora'}</div>
+      </div>`);
+  });
 }
 
 function _botRender(data) {
@@ -22301,6 +22334,8 @@ function botDashCargar() {
         _botDashCard('Contactos únicos', est.contactos ?? '–', 'en memoria del bot', '#2563eb'),
         _botDashCard('Uptime', h + 'h ' + m + 'm', 'desde el último inicio', '#2563eb'),
       ].join('');
+
+      try { _botPersonasMostrar('bot-dash-kpis'); } catch (e) {}
 
       document.getElementById('bot-dash-canal').innerHTML = [
         _botDashCard('Seguidores', est.canal_seguidores ?? '–', est.canal_error ? 'no se pudo leer ahora' : 'Canal WhatsApp', '#059669'),
