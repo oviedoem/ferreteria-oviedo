@@ -1,5 +1,5 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.75
+# Version activa: V37.76
 # Fecha: 2026-10-06
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -12,15 +12,20 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.75 |
+| Version | V37.76 |
 | Fecha | 2026-10-06 |
 | Deploy | HECHO 2026-10-06 01:34 (ACTUALIZAR_TODO.bat, todo OK) + arreglo 01:43 (`firebase deploy --only hosting`, solo panel-admin.html y sw.js) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
-| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 CERRADO (el dueño confirmo el 2026-10-06 que su margen esta OK; sin accion); liquidacion de $15,3 M: tabla entregada, decision del dueño. Contador de personas: HECHO (ver abajo). Catalogo de fotos: SINCRONIZADO 2026-10-06 (oviedo-catalogo-fotos b68b181, 0 diferencias, 13 productos nuevos sin foto). |
+| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 CERRADO (el dueño confirmo el 2026-10-06 que su margen esta OK; sin accion); liquidacion de $15,3 M: DESCARTADA por el dueño (2026-10-06). Contador de personas: CERRADO (publicado en panel-admin; el bot ya tiene su contador "Contactos unicos"). Tabla semanal de seguidores: CERRADA (bot guarda `canal_semanal`, historial visible en el Dashboard: 2026-W41 con 10 seguidores). Precios ocultos en panel-cliente: decision del dueño 2026-10-06, "esta bien asi", sin accion. Catalogo de fotos: SINCRONIZADO 2026-10-06 (oviedo-catalogo-fotos b68b181, 0 diferencias, 13 productos nuevos sin foto). |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.76 — 2026-10-06 (Solicitud Stock: sin repetidos + Excel de historial)
+- `panel-admin.html` → `reqStockPrellenar`: un código enviado en PEM o SEM ya no se reofrece (95 códigos tenían estado distinto entre bodegas; los 8 COX del 2026-06-23 salían de nuevo).
+- `reqDescargarHistorial`/`_reqArmarFilasHistorial`/`_reqExportarHistorialXlsx`: Excel `HistorialSolicitudStock_*.xlsx` con tabla continua + autofiltro, 1 fila por envío de cada código (lee `historialEnviosStock`, solo lectura), pendientes como "No", columna Marca y datos del momento del envío (stock, rotación 2m, mínimo y reposición solicitados, cobertura, período). Historial intacto.
+- Badge V37.76 solo en panel-admin.
 
 ### V37.75 — 2026-10-06 (menú "Dashboard" del bot en panel-admin)
 - `panel-admin.html`: grupo "Bot WhatsApp" gana el menú lateral "Dashboard" y la subpestaña "📊 Dashboard": banner de alerta con el estado real de WhatsApp, KPIs de costo/consultas/uptime, bloque Canal (seguidores + embudo), seguidores por semana y conversaciones recientes (PIN, sin prompts al entrar) y monitores UptimeRobot.
@@ -32,7 +37,7 @@
 - **PASO 3 / 401:** el script `actualizar_config_precios.py` funciona hoy (OK, con `XDG_CONFIG_HOME=E:config`; cuenta por defecto del CLI = ferreteriaoviedo.elmanzano). `config/precios.mostrarPrecioCliente` = **false (precios OCULTOS) desde 2026-09-10**; la opcion N de hoy no cambio nada. Cerrado.
 - **25989 Volcanita ST 15 mm:** margen real +13 % (jul 13,8 %, ago 12,9 %, sep 15 %); el -53,6 % no se reproduce. Cerrado.
 - **26191 Malla ACMA C92:** costo promedio $20.395 neto vs precio $17.990 c/IVA = -34,9 %; ventas jul-ago 99 u. con perdida ~$454.000 neto. Punto de equilibrio c/IVA $24.270; piso 8 % ~$26.380. **CERRADO: el dueño confirmo el 2026-10-06 que el margen esta OK; sin accion ni cambio de precio.**
-- **Sin venta 2026 en El Manzano (PEM+SEM):** 962 productos, $116,7 M a costo; top 7 = $15,34 M (generadores Hyundai 23334/21883/21843, tuberia MAGE0034, motosierra Stihl MOT0021, estufa AMES0126 con solo 10 % de margen, riel DUCA00135). Decision de liquidar = dueño. Ojo: solo se miraron ventas de El Manzano.
+- **Sin venta 2026 en El Manzano (PEM+SEM):** 962 productos, $116,7 M a costo; top 7 = $15,34 M (generadores Hyundai 23334/21883/21843, tuberia MAGE0034, motosierra Stihl MOT0021, estufa AMES0126 con solo 10 % de margen, riel DUCA00135). Liquidacion DESCARTADA por el dueño (2026-10-06), cerrado. Ojo: solo se miraron ventas de El Manzano.
 
 ### Contador "Personas atendidas" — 2026-10-06 (solo panel-admin, sin tocar el bot)
 - Tarjeta acumulada en Costos IA y en el Dashboard del bot: telefonos distintos (`jid`, sin `sistema`) en TODO el historial de `bot_costos` (Firestore, no se borra al reiniciar). Hoy: 21 personas en 232 consultas (API 40 dias); el panel leera el historial completo.

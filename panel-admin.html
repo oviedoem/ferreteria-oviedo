@@ -4061,7 +4061,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.75<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">06-10-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.76<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">06-10-2026</span></div>
 
 <script>
 
@@ -19143,12 +19143,20 @@ function reqStockPrellenar(){
   if(catC) catsOk.push('C');
   if(!catsOk.filter(function(c){return c!=='D';}).length) catsOk = ['A','B','C'];
 
+  // El envío es por código (el correo suma PEM+SEM): si PEM o SEM lo marcan enviado, ya se mandó.
+  // Antes bastaba un "No" en una bodega para volver a ofrecerlo (95 códigos con estado distinto entre bodegas).
+  var enviadoEnAlguna = {};
+  ['PEM','SEM'].forEach(function(bod){
+    var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
+    if(!base) return;
+    Object.keys(base).forEach(function(cod){ if(base[cod].enviado) enviadoEnAlguna[cod] = 1; });
+  });
   var baseCodigosTodos = {};
   ['PEM','SEM'].forEach(function(bod){
     var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
     if(!base) return;
     Object.keys(base).forEach(function(cod){
-      if(!base[cod].enviado) baseCodigosTodos[cod] = base[cod];
+      if(!enviadoEnAlguna[cod]) baseCodigosTodos[cod] = base[cod];
     });
   });
 
@@ -19652,96 +19660,92 @@ function _reqGuardarEnvioWrite(codigos, fechaISO, fechaStr, meta){
 
 function reqDescargarHistorial(){
   if(typeof XLSX === 'undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
+  if(!window.db){ if(window.toast) toast('Sin conexión a Firestore','err'); return; }
   if(!_reqBaseMin || (!_reqBaseMin.PEM && !_reqBaseMin.SEM)){
     if(window.toast) toast('Base aún cargando — espera un momento','warn'); return;
   }
+  // Solo lectura: el historial (historialEnviosStock) y la base PEM/SEM no se modifican.
+  // 1 fila por cada envío de cada código (se conserva todo el historial) + los códigos nunca enviados al final como "No".
+  window.db.collection('historialEnviosStock').get().then(function(qs){
+    var envios = [];
+    qs.forEach(function(doc){ envios.push(doc.data()); });
+    _reqExportarHistorialXlsx(_reqArmarFilasHistorial(envios));
+  }).catch(function(e){
+    console.warn('historial envios', e);
+    if(window.toast) toast('No se pudo leer el historial de envíos','err');
+  });
+}
 
-  // Base completa (_reqBaseMin, PEM+SEM) — JSON + Firestore fusionados — no se filtra por "enviado":
-  // el Excel refleja todos los 6024 códigos con datos completos, marcando cuáles ya se
-  // enviaron por correo y cuándo (ese estado se va acumulando en cada código vía _reqGuardarEnvio).
-  var filas = [];
-  ['PEM','SEM'].forEach(function(bod){
-    var base = _reqBaseMin && _reqBaseMin[bod] && _reqBaseMin[bod].codigos;
-    if(!base) return;
-    Object.keys(base).forEach(function(cod){
-      var b = base[cod];
-      var p = (_vadmStockMap && _vadmStockMap[cod]) || {};
+// Construye filas {marca,codigo,desc,enviado,fecha,stock,rotacion,minSol,repSol,cobertura,periodo}
+function _reqArmarFilasHistorial(envios){
+  var num = function(v){ var n = parseFloat(String(v).replace(',','.')); return (v === '' || v == null || isNaN(n)) ? '' : n; };
+  var stk = _vadmStockMap || {};
+  var baseP = (_reqBaseMin && _reqBaseMin.PEM && _reqBaseMin.PEM.codigos) || {};
+  var baseS = (_reqBaseMin && _reqBaseMin.SEM && _reqBaseMin.SEM.codigos) || {};
+  var marcaDe = function(cod, fallback){
+    return ((stk[cod] && stk[cod].marca) || (baseP[cod] && baseP[cod].marca) || (baseS[cod] && baseS[cod].marca) || fallback || '').trim();
+  };
+  var descDe = function(cod, fallback){
+    return fallback || (stk[cod] && stk[cod].desc) || (baseP[cod] && baseP[cod].descripcion) || (baseS[cod] && baseS[cod].descripcion) || '';
+  };
+  var filas = [], conHistorial = {};
+
+  envios.forEach(function(e){
+    (e.codigos || []).forEach(function(c){
+      if(!c || !c.codigo) return;
+      conHistorial[c.codigo] = 1;
       filas.push({
-        bodega:      bod,
-        marca:       p.marca || b.marca || '',
-        codigo:      cod,
-        descripcion: p.desc  || b.descripcion || '',
-        st_critico:  b.st_critico || 0,
-        st_min:      b.st_min     || 0,
-        st_max:      b.st_max     || 0,
-        st_repos:    b.st_repos   || 0,
-        enviado:     b.enviado ? 'Sí' : 'No',
-        fecha:       b.ultimoEnvio || ''
+        marca: marcaDe(c.codigo, e.marca), codigo: c.codigo, desc: descDe(c.codigo, c.desc),
+        enviado: 'Sí', fecha: e.fecha || '',
+        stock: num(c.stockActual), rotacion: num(c.vta), minSol: num(c.minSol), repSol: num(c.repSol),
+        cobertura: e.coberturaDias || '',
+        periodo: (e.periodoDesde && e.periodoHasta) ? e.periodoDesde+' al '+e.periodoHasta : ''
       });
     });
   });
 
-  if(!filas.length){
-    if(window.toast) toast('Base sin códigos cargados','warn'); return;
-  }
-
-  // Ordenar: Marca ASC, pendientes (Enviado=No) primero, luego Código ASC
-  filas.sort(function(a,b){
-    if(a.marca !== b.marca) return a.marca.localeCompare(b.marca);
-    if(a.enviado !== b.enviado) return a.enviado === 'No' ? -1 : 1;
-    return a.codigo.localeCompare(b.codigo);
+  // Códigos marcados enviados en la base pero sin detalle en el historial: se conserva lo que haya (fecha, mínimo, reposición)
+  var cods = {};
+  Object.keys(baseP).forEach(function(c){ cods[c] = 1; });
+  Object.keys(baseS).forEach(function(c){ cods[c] = 1; });
+  Object.keys(cods).forEach(function(cod){
+    if(conHistorial[cod]) return;
+    var bp = baseP[cod] || {}, bs = baseS[cod] || {};
+    var envB = bp.enviado || bs.enviado;
+    var fila = { marca: marcaDe(cod), codigo: cod, desc: descDe(cod), enviado: envB ? 'Sí' : 'No', fecha: '',
+                 stock: '', rotacion: '', minSol: '', repSol: '', cobertura: '', periodo: '' };
+    if(envB){
+      var src = bp.enviado ? bp : bs;
+      fila.fecha = src.ultimoEnvio || '';
+      fila.minSol = num(src.st_min); fila.repSol = num(src.st_repos);
+    }
+    filas.push(fila);
   });
 
-  _reqExportarHistorialXlsx(filas);
+  // Marca ASC, Código ASC, fecha DESC (envío más reciente primero)
+  filas.sort(function(a,b){
+    if(a.marca !== b.marca) return a.marca.localeCompare(b.marca);
+    if(a.codigo !== b.codigo) return a.codigo.localeCompare(b.codigo);
+    return String(b.fecha).localeCompare(String(a.fecha));
+  });
+  return filas;
 }
 
 function _reqExportarHistorialXlsx(filas){
-  var hoy = new Date().toLocaleDateString('es-CL');
-  var totalEnviados = filas.filter(function(f){ return f.enviado === 'Sí'; }).length;
-  var data = [];
-
-  // Título
-  data.push(['Base de Stock Mínimos — Ferretería Oviedo El Manzano', '', '', '', '', '', '', '', '', '']);
-  data.push(['Generado: '+hoy+'   |   Total códigos: '+filas.length+'   |   Enviados: '+totalEnviados, '', '', '', '', '', '', '', '', '']);
-  data.push([]);
-
-  // Cabecera (mismo orden que email de solicitud + Bodega + Marca + Enviado + Fecha)
-  data.push(['Bodega','Marca','Código','Descripción','ST Crítico','ST Mínimo','ST Máximo','ST Repos.','Enviado','Fecha Envío']);
-
-  // Filas de datos, con separador visual por marca
-  var marcaActual = null;
-  filas.forEach(function(f, i){
-    if(f.marca !== marcaActual){
-      if(marcaActual !== null) data.push([]);  // línea en blanco entre marcas
-      data.push(['— '+f.marca+' —', '', '', '', '', '', '', '', '', '']);
-      marcaActual = f.marca;
-    }
-    data.push([
-      f.bodega, f.marca, f.codigo, f.descripcion,
-      f.st_critico, f.st_min, f.st_max, f.st_repos, f.enviado, f.fecha
-    ]);
+  if(!filas.length){ if(window.toast) toast('Base sin códigos cargados','warn'); return; }
+  // Tabla continua: cabecera en la fila 1, sin títulos, sin separadores ni filas vacías (el filtro de Excel necesita eso)
+  var data = [['Marca','Código','Descripción','Enviado','Fecha envío','Stock al enviar','Rotación 2m al enviar','Mínimo solicitado','Reposición solicitada','Cobertura (días)','Período analizado']];
+  filas.forEach(function(f){
+    data.push([f.marca, f.codigo, f.desc, f.enviado, f.fecha, f.stock, f.rotacion, f.minSol, f.repSol, f.cobertura, f.periodo]);
   });
-
   var ws = XLSX.utils.aoa_to_sheet(data);
-
-  // Ancho de columnas
-  ws['!cols'] = [
-    {wch:7},   // Bodega
-    {wch:20},  // Marca
-    {wch:13},  // Código
-    {wch:48},  // Descripción
-    {wch:10},  // ST Crítico
-    {wch:10},  // ST Mínimo
-    {wch:10},  // ST Máximo
-    {wch:10},  // ST Repos
-    {wch:9},   // Enviado
-    {wch:12},  // Fecha
-  ];
-
+  ws['!cols'] = [{wch:18},{wch:13},{wch:48},{wch:9},{wch:12},{wch:14},{wch:18},{wch:16},{wch:19},{wch:14},{wch:25}];
+  ws['!autofilter'] = { ref: 'A1:K'+data.length };
   var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Base Stock Mínimos');
-  XLSX.writeFile(wb, 'BaseStockMinimos_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  if(window.toast) toast('📊 Excel descargado — '+filas.length+' códigos ('+totalEnviados+' enviados)','ok');
+  XLSX.utils.book_append_sheet(wb, ws, 'Historial Stock');
+  XLSX.writeFile(wb, 'HistorialSolicitudStock_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  var nSi = filas.filter(function(f){ return f.enviado === 'Sí'; }).length;
+  if(window.toast) toast('📊 Excel descargado — '+nSi+' envíos registrados, '+(filas.length-nSi)+' códigos pendientes','ok');
 }
 
 // ── ANÁLISIS BODEGAS IEM / RCE ────────────────────────────────────────────────
