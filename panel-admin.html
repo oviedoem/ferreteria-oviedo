@@ -926,7 +926,8 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Bot WhatsApp <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('bot',this);botAdminCargar()" aria-label="Costos IA"><span class="tag" style="--gcolor:#25d366" aria-hidden="true"><svg><use href="#i-bot"/></svg></span> Costos IA</button>
+        <button class="nav-btn" onclick="showTab('bot',this);botDashAbrir()" aria-label="Dashboard del bot"><span class="tag" style="--gcolor:#25d366" aria-hidden="true"><svg><use href="#i-dashboard"/></svg></span> Dashboard</button>
+        <button class="nav-btn" onclick="showTab('bot',this);botMonSubTab('costos',document.querySelector('.bot-subtab[data-sub=costos]'));botAdminCargar()" aria-label="Costos IA"><span class="tag" style="--gcolor:#25d366" aria-hidden="true"><svg><use href="#i-bot"/></svg></span> Costos IA</button>
       </div>
     </div>
   </nav>
@@ -3856,11 +3857,34 @@ Todo desde tu celular, gratis, sin apps que descargar.
         <div class="card-title"><span>🤖</span> Bot WhatsApp — Monitor</div>
         <!-- Sub-pestañas del monitor -->
         <div style="display:flex;gap:2px;border-bottom:2px solid #e5e7eb;margin-bottom:14px;flex-wrap:wrap">
+          <button class="bot-subtab" data-sub="dashboard" onclick="botMonSubTab('dashboard',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">📊 Dashboard</button>
           <button class="bot-subtab" data-sub="costos" onclick="botMonSubTab('costos',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#059669;border-bottom:2px solid #25d366;margin-bottom:-2px;cursor:pointer;font-family:inherit">💰 Costos IA</button>
           <button class="bot-subtab" data-sub="estado" onclick="botMonSubTab('estado',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">📡 Estado en vivo</button>
           <button class="bot-subtab" data-sub="contactos" onclick="botMonSubTab('contactos',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">👥 Contactos</button>
           <button class="bot-subtab" data-sub="broadcast" onclick="botMonSubTab('broadcast',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">📢 Broadcast</button>
           <button class="bot-subtab" data-sub="uptime" onclick="botMonSubTab('uptime',this)" style="padding:8px 14px;border:none;background:none;font-size:12px;font-weight:700;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit">📈 Uptime</button>
+        </div>
+
+        <!-- SUB: DASHBOARD (resumen: conexión real, canal, embudo, costos, monitores) -->
+        <div id="bot-sub-dashboard" style="display:none">
+          <div id="bot-dash-loading" style="display:none;text-align:center;padding:24px;color:#6b7280;font-size:13px">Conectando con el bot (si está dormido puede tardar ~1 min)...</div>
+          <div id="bot-dash-err" style="display:none;color:#dc2626;padding:16px;font-size:13px"></div>
+          <div id="bot-dash-body" style="display:none">
+            <div id="bot-dash-alerta" style="display:none;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:600"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">Estado del bot</div>
+              <button onclick="botDashCargar()" style="padding:5px 12px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">↻ Actualizar</button>
+            </div>
+            <div id="bot-dash-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Canal de WhatsApp</div>
+            <div id="bot-dash-canal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Seguidores del Canal por semana</div>
+            <div id="bot-dash-semanas" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:18px"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Conversaciones recientes</div>
+            <div id="bot-dash-convs" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:18px"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">Monitores UptimeRobot</div>
+            <div id="bot-dash-uptime" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden"></div>
+          </div>
         </div>
 
         <!-- SUB: COSTOS IA (datos Firestore) -->
@@ -4038,7 +4062,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.74<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">02-10-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.75<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">06-10-2026</span></div>
 
 <script>
 
@@ -22036,7 +22060,7 @@ function _botRenderExtras(data) {
 // Navegación de sub-pestañas (carga perezosa: cada sección se carga la primera vez)
 window._botMonLoaded = window._botMonLoaded || {};
 function botMonSubTab(sub, btn) {
-  ['costos','estado','contactos','broadcast','uptime'].forEach(s => {
+  ['dashboard','costos','estado','contactos','broadcast','uptime'].forEach(s => {
     const pane = document.getElementById('bot-sub-'+s);
     if (pane) pane.style.display = (s===sub) ? 'block' : 'none';
   });
@@ -22045,13 +22069,14 @@ function botMonSubTab(sub, btn) {
     b.style.color = act ? '#059669' : '#6b7280';
     b.style.borderBottomColor = act ? '#25d366' : 'transparent';
   });
+  if (sub==='dashboard' && !window._botMonLoaded.dashboard) { window._botMonLoaded.dashboard=true; botDashCargar(); }
   if (sub==='estado'    && !window._botMonLoaded.estado)    { window._botMonLoaded.estado=true;    botMonCargarEstado(); }
   if (sub==='contactos' && !window._botMonLoaded.contactos) { window._botMonLoaded.contactos=true; botMonCargarContactos(); }
   if (sub==='uptime'    && !window._botMonLoaded.uptime)    { window._botMonLoaded.uptime=true;    botMonCargarUptime(); }
   if (sub==='broadcast' && !window._botMonLoaded.broadcast) { window._botMonLoaded.broadcast=true; botMonCargarContactos(true, true); }
 }
 
-const _BOT_RUTAS_PIN = ['/api/conversaciones', '/api/errores-ia'];
+const _BOT_RUTAS_PIN = ['/api/conversaciones', '/api/errores-ia', '/api/canal-semanal'];
 function _botMonFetch(path, opts) {
   if (_BOT_RUTAS_PIN.includes(path)) {   // el bot exige POST con {pin} en el body
     let pin = sessionStorage.getItem('bot_broadcast_pin');   // mismo PIN que el broadcast
@@ -22178,6 +22203,128 @@ function botMonCargarUptime() {
     .catch(e => {
       load.style.display = 'none';
       panel.innerHTML = '<div style="padding:24px;text-align:center;color:#dc2626;font-size:13px">No se pudo conectar con el bot. Detalle: ' + e.message + '</div>';
+    });
+}
+
+// ── Dashboard del bot (equivalente al Dashboard de monitor.html del bot, más estado real y embudo del Canal) ──
+function botDashAbrir() {
+  botMonSubTab('dashboard', document.querySelector('.bot-subtab[data-sub="dashboard"]'));
+}
+function _botDashEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _botDashCard(lbl, val, sub, color) {
+  return `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px">
+    <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">${_botDashEsc(lbl)}</div>
+    <div style="font-size:17px;font-weight:700;color:${color};margin-top:3px;font-variant-numeric:tabular-nums">${_botDashEsc(val)}</div>
+    <div style="font-size:10px;color:#6b7280;margin-top:2px">${_botDashEsc(sub)}</div>
+  </div>`;
+}
+function _botDashRenderSemanas(d) {
+  if (!Array.isArray(d) || !d.length) return '<div style="padding:18px;text-align:center;color:#6b7280;font-size:13px">Aún sin semanas registradas: se guarda sola al leer los seguidores del Canal.</div>';
+  const fila = (a, b, c, head) => `<div style="display:grid;grid-template-columns:90px 1fr 70px;gap:8px;padding:7px 12px;border-bottom:1px solid #e5e7eb;font-size:${head?11:12}px;${head?'color:#6b7280;font-weight:600':''}"><span style="font-family:monospace">${a}</span><span>${b}</span><span style="text-align:right;color:#6b7280">${c}</span></div>`;
+  return fila('Semana','Seguidores','Cambio',true) + d.map(f => {
+    const v = f.variacion == null ? '–' : (f.variacion > 0 ? '+' : '') + f.variacion;
+    return fila(_botDashEsc(f.semana), _botDashEsc(f.seguidores), _botDashEsc(v), false);
+  }).join('');
+}
+function _botDashRenderConvs(d) {
+  const list = (Array.isArray(d) ? d : []).slice().reverse().slice(0, 15);
+  if (!list.length) return '<div style="padding:18px;text-align:center;color:#6b7280;font-size:13px">Sin conversaciones aún — espera a que lleguen mensajes.</div>';
+  const mask = jid => { const n = (jid||'').replace(/@.+/,''); return n.length > 4 ? '···' + n.slice(-4) : n; };
+  return list.map(x => {
+    const bot = x.dir === 'out' || x.esBot;
+    const hora = x.ts ? new Date(x.ts).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' }) : '';
+    return `<div style="display:grid;grid-template-columns:80px 1fr 60px;gap:8px;padding:7px 12px;border-bottom:1px solid #e5e7eb;font-size:12px;align-items:center">
+      <span style="color:#6b7280;font-family:monospace;font-size:11px">${_botDashEsc(mask(x.jid))}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bot?'color:#059669':''}">${bot?'🤖 ':''}${_botDashEsc((x.txt ?? x.texto ?? '').slice(0,120))}</span>
+      <span style="color:#6b7280;font-size:10px;text-align:right">${_botDashEsc(hora)}</span>
+    </div>`;
+  }).join('');
+}
+// Bloques con PIN: solo se consultan solos si el PIN ya está en la sesión (no abre prompts al entrar al Dashboard)
+const _botDashProt = {
+  'bot-dash-semanas': { path: '/api/canal-semanal',  render: _botDashRenderSemanas },
+  'bot-dash-convs':   { path: '/api/conversaciones', render: _botDashRenderConvs },
+};
+function _botDashProtegido(id, forzar) {
+  const el = document.getElementById(id), cfg = _botDashProt[id];
+  if (!el || !cfg) return;
+  const btn = txt => `<div style="padding:18px;text-align:center;color:#6b7280;font-size:13px">${txt} <button data-id="${id}" onclick="_botDashProtegido(this.dataset.id,true)" style="margin-left:6px;padding:5px 12px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Ver</button></div>`;
+  if (!forzar && !sessionStorage.getItem('bot_broadcast_pin')) { el.innerHTML = btn('🔒 Protegido con PIN.'); return; }
+  el.innerHTML = '<div style="padding:18px;text-align:center;color:#6b7280;font-size:13px">Cargando…</div>';
+  _botMonFetch(cfg.path)
+    .then(d => { el.innerHTML = cfg.render(d); })
+    .catch(e => { el.innerHTML = e.pinError ? btn('🔒 PIN incorrecto o faltante.') : '<div style="padding:18px;text-align:center;color:#dc2626;font-size:13px">No se pudo leer (' + _botDashEsc(e.message) + ')</div>'; });
+}
+
+function botDashCargar() {
+  const load = document.getElementById('bot-dash-loading');
+  const err  = document.getElementById('bot-dash-err');
+  const body = document.getElementById('bot-dash-body');
+  load.style.display = 'block'; err.style.display = 'none';
+  Promise.allSettled([_botMonFetch('/api/estado'), _botMonFetch('/api/embudo'), _botMonFetch('/api/costos'), _botMonFetch('/api/uptime')])
+    .then(([estR, embR, cosR, uptR]) => {
+      load.style.display = 'none';
+      if (estR.status !== 'fulfilled') {
+        body.style.display = 'none'; err.style.display = 'block';
+        err.textContent = 'No se pudo conectar con el bot (puede estar dormido en Render — espera ~1 min y presiona de nuevo Dashboard). Detalle: ' + estR.reason.message;
+        return;
+      }
+      body.style.display = 'block';
+      const est = estR.value, emb = embR.status === 'fulfilled' ? embR.value : null;
+      const clp = n => '$' + Math.round(n || 0).toLocaleString('es-CL');
+      const usd = n => '$' + (n || 0).toFixed(4);
+      const mes = new Date().toISOString().slice(0, 7);
+      const costos = cosR.status === 'fulfilled' && Array.isArray(cosR.value) ? cosR.value : [];
+      const suma = (arr, k) => arr.reduce((s, r) => s + (r[k] || 0), 0);
+      const delMes = costos.filter(r => (r.fecha || '').startsWith(mes));
+      const h = Math.floor((est.uptime || 0) / 3600), m = Math.floor((est.uptime || 0) % 3600 / 60);
+
+      // Banner de alerta cuando WhatsApp no está operativo (connected es el estado real del socket)
+      const al = document.getElementById('bot-dash-alerta');
+      if (est.connected) { al.style.display = 'none'; }
+      else {
+        al.style.display = 'block';
+        al.style.background = '#fef2f2'; al.style.color = '#b91c1c'; al.style.border = '1px solid #fecaca';
+        al.textContent = est.sesion_cerrada ? '🔴 WhatsApp cerró la sesión del bot: hay que escanear el QR en la página /qr del bot desde el celular.'
+          : est.reemplazado ? '🟠 La sesión la tomó otra instancia (normal durante un redeploy). Si el bot no responde en unos minutos, reiniciar el servicio en Render.'
+          : '🔴 WhatsApp desconectado. Puede ser una reconexión de unos segundos: presiona ↻ Actualizar en un momento.';
+      }
+
+      const estadoWA = est.connected ? '🟢 Conectado' : est.sesion_cerrada ? '🔴 Sesión cerrada' : est.reemplazado ? '🟠 Sesión tomada' : '🔴 Caído';
+      document.getElementById('bot-dash-kpis').innerHTML = [
+        _botDashCard('Conexión WhatsApp', estadoWA, (est.proveedor || 'claude').toUpperCase() + ' · ' + (est.modelo || ''), est.connected ? '#059669' : '#dc2626'),
+        _botDashCard('Consultas hoy', est.mensajes_hoy ?? '–', 'consultas IA', '#059669'),
+        _botDashCard('Costo hoy', clp(est.costo_hoy_clp), usd(est.costo_hoy_usd) + ' USD', '#dc2626'),
+        _botDashCard('Costo este mes', clp(suma(delMes, 'costo_clp')), usd(suma(delMes, 'costo_usd')) + ' USD', '#d97706'),
+        _botDashCard('Costo total', clp(suma(costos, 'costo_clp')), 'últimos 40 días (histórico: pestaña Costos IA)', '#7c3aed'),
+        _botDashCard('Contactos únicos', est.contactos ?? '–', 'en memoria del bot', '#2563eb'),
+        _botDashCard('Uptime', h + 'h ' + m + 'm', 'desde el último inicio', '#2563eb'),
+      ].join('');
+
+      document.getElementById('bot-dash-canal').innerHTML = [
+        _botDashCard('Seguidores', est.canal_seguidores ?? '–', est.canal_error ? 'no se pudo leer ahora' : 'Canal WhatsApp', '#059669'),
+        _botDashCard('Invitados por el bot', est.canal_invitaciones ?? 0, 'invitaciones enviadas', '#2563eb'),
+        _botDashCard('Activos 24 h', emb ? emb.activos_24h : '–', 'escribieron hoy', '#d97706'),
+        _botDashCard('Elegibles', emb ? emb.elegibles : '–', 'pueden recibir la invitación', '#059669'),
+        _botDashCard('No quieren', emb ? emb.no_elegibles : '–', 'respondieron "no" a la invitación', '#6b7280'),
+      ].join('');
+
+      const up = document.getElementById('bot-dash-uptime');
+      const mons = uptR.status === 'fulfilled' && uptR.value && Array.isArray(uptR.value.monitors) ? uptR.value.monitors : null;
+      up.innerHTML = mons ? mons.map(mm => {
+        const ok = mm.status === 2, ratio = parseFloat(mm.all_time_uptime_ratio || 100).toFixed(2);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:12px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${ok?'#059669':'#dc2626'};flex-shrink:0"></div>
+          <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_botDashEsc(mm.friendly_name)}</div>
+          <div style="color:${ok?'#059669':'#dc2626'};font-weight:700;font-variant-numeric:tabular-nums">${ratio}%</div>
+          <span style="background:${ok?'#d1fae5':'#fef3c7'};color:${ok?'#059669':'#d97706'};border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700">${ok?'UP':'DOWN'}</span>
+        </div>`;
+      }).join('') : '<div style="padding:18px;text-align:center;color:#6b7280;font-size:13px">Sin datos de UptimeRobot.</div>';
+
+      _botDashProtegido('bot-dash-semanas');
+      _botDashProtegido('bot-dash-convs');
     });
 }
 

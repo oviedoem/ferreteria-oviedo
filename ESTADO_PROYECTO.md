@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.74
-# Fecha: 2026-10-02
+# Version activa: V37.75
+# Fecha: 2026-10-06
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,20 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.74 |
-| Fecha | 2026-10-02 |
-| Deploy | ACTUALIZAR_TODO.bat 2026-10-02 (ver estado-sesion-20261002) |
-| Commit | automatico de ACTUALIZAR_TODO.bat (hash en estado-sesion-20261002); bot: fd5f7bd |
+| Version | V37.75 |
+| Fecha | 2026-10-06 |
+| Deploy | PENDIENTE: correr ACTUALIZAR_TODO.bat (V37.75 solo cambia panel-admin.html; V37.74 se desplego el 2026-10-02) |
+| Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
 | Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Revisar en JustWeb el código 25989 (Volcanita ST 15mm, margen -53.6%) y código 26191 (MALLA TIPO ACMA C92, -34.9% repetido — posible error sistemático de costo/precio, confirmado en 2 fuentes distintas). $15M en 7 productos con cero venta en 2026 (generadores, motosierra Stihl, estufa) para evaluar liquidación. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.75 — 2026-10-06 (menú "Dashboard" del bot en panel-admin)
+- `panel-admin.html`: grupo "Bot WhatsApp" gana el menú lateral "Dashboard" y la subpestaña "📊 Dashboard": banner de alerta con el estado real de WhatsApp, KPIs de costo/consultas/uptime, bloque Canal (seguidores + embudo), seguidores por semana y conversaciones recientes (PIN, sin prompts al entrar) y monitores UptimeRobot.
+- Usa endpoints del bot: `/api/estado`, `/api/embudo`, `/api/costos`, `/api/uptime` (públicos) y `/api/canal-semanal`, `/api/conversaciones` (PIN). No cambia pipeline, SQL ni datos.
+- Badge V37.75 solo en panel-admin. Deploy pendiente de `ACTUALIZAR_TODO.bat`.
 
 ### V37.74 — 2026-10-02 (menú Bot WhatsApp con PIN, solo panel-admin)
 - El bot (commit fd5f7bd) exige PIN por POST en `/api/conversaciones` y `/api/errores-ia`, con límite de 8 intentos fallidos por IP (429) y logs sin teléfono completo (HMAC con `HASH_SECRET`).
