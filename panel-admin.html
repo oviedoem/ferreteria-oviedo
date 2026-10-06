@@ -19688,12 +19688,17 @@ function _reqArmarFilasHistorial(envios){
   var descDe = function(cod, fallback){
     return fallback || (stk[cod] && stk[cod].desc) || (baseP[cod] && baseP[cod].descripcion) || (baseS[cod] && baseS[cod].descripcion) || '';
   };
-  var filas = [], conHistorial = {};
+  var filas = [], conHistorial = {}, vistos = {};
 
   envios.forEach(function(e){
     (e.codigos || []).forEach(function(c){
       if(!c || !c.codigo) return;
       conHistorial[c.codigo] = 1;
+      // Un envío importado dos veces (p. ej. Word 2026-06-23) está en Firestore como 2 documentos idénticos:
+      // en el Excel se muestra una sola vez. Firestore no se toca; envíos distintos el mismo día se conservan.
+      var clave = [c.codigo, e.fecha, c.stockActual, c.vta, c.minSol, c.repSol, e.coberturaDias, e.periodoDesde, e.periodoHasta].join('|');
+      if(vistos[clave]) return;
+      vistos[clave] = 1;
       filas.push({
         marca: marcaDe(c.codigo, e.marca), codigo: c.codigo, desc: descDe(c.codigo, c.desc),
         enviado: 'Sí', fecha: e.fecha || '',

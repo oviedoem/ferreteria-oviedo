@@ -25,6 +25,7 @@
 ### V37.76 — 2026-10-06 (Solicitud Stock: sin repetidos + Excel de historial)
 - `panel-admin.html` → `reqStockPrellenar`: un código enviado en PEM o SEM ya no se reofrece (95 códigos tenían estado distinto entre bodegas; los 8 COX del 2026-06-23 salían de nuevo).
 - `reqDescargarHistorial`/`_reqArmarFilasHistorial`/`_reqExportarHistorialXlsx`: Excel `HistorialSolicitudStock_*.xlsx` con tabla continua + autofiltro, 1 fila por envío de cada código (lee `historialEnviosStock`, solo lectura), pendientes como "No", columna Marca y datos del momento del envío (stock, rotación 2m, mínimo y reposición solicitados, cobertura, período). Historial intacto.
+- Ajuste mismo día: `_reqArmarFilasHistorial` colapsa envíos idénticos en el Excel (el del 2026-06-23 está duplicado en Firestore, 2 docs `word-docx` iguales; Firestore intacto). Verificado en Firestore que el envío real del 06-10 guardó bien (1 doc, 10 códigos, PEM y SEM marcados enviado con st_min/st_repos).
 - Badge V37.76 solo en panel-admin.
 
 ### V37.75 — 2026-10-06 (menú "Dashboard" del bot en panel-admin)
