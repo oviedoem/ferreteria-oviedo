@@ -926,7 +926,6 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
     <div class="sidebar-group">
       <button class="sidebar-group-toggle" onclick="toggleSidebarGroup(this)">Bot WhatsApp <span class="sgt-chevron">▼</span></button>
       <div class="sidebar-group-items collapsed">
-        <button class="nav-btn" onclick="showTab('bot',this);botDashAbrir()" aria-label="Dashboard del bot"><span class="tag" style="--gcolor:#25d366" aria-hidden="true"><svg><use href="#i-dashboard"/></svg></span> Dashboard</button>
         <button class="nav-btn" onclick="showTab('bot',this);botMonSubTab('costos',document.querySelector('.bot-subtab[data-sub=costos]'));botAdminCargar()" aria-label="Costos IA"><span class="tag" style="--gcolor:#25d366" aria-hidden="true"><svg><use href="#i-bot"/></svg></span> Costos IA</button>
       </div>
     </div>
@@ -22422,6 +22421,9 @@ window.botMonFile = botMonFile;
 window.botMonDrop = botMonDrop;
 window.botMonEnviarBroadcast = botMonEnviarBroadcast;
 window.botMonSugerirCaption = botMonSugerirCaption;
+window.botDashAbrir = botDashAbrir;
+window.botDashCargar = botDashCargar;
+window._botDashProtegido = _botDashProtegido;
 
 })();
 </script>
