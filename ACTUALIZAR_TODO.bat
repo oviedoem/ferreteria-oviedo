@@ -23,6 +23,11 @@ if exist "E:\npm-global\firebase.cmd" (
 ) else (
     set FIREBASE_CMD=firebase
 )
+set FIREBASE_AUTH=--account ferreteriaoviedo.elmanzano@gmail.com
+if exist "E:\config\firebase_ci.token" (
+    set /p FIREBASE_TOKEN=<"E:\config\firebase_ci.token"
+    if defined FIREBASE_TOKEN set FIREBASE_AUTH=--token "%FIREBASE_TOKEN%"
+)
 if exist "E:\nodejs-portable\node.exe" set PATH=E:\nodejs-portable;%PATH%
 
 echo.
@@ -507,7 +512,7 @@ echo.
 
 "%NODE_EXE%" "%~dp0update-sw-version.js" 2>nul
 
-call "%FIREBASE_CMD%" deploy --only hosting --account ferreteriaoviedo.elmanzano@gmail.com
+call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo %FIREBASE_AUTH%
 if %errorlevel% neq 0 (
     color 0C
     echo.
@@ -542,7 +547,7 @@ if %errorlevel% neq 0 (
     goto :paso5_fin
 )
 
-call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo --account ferreteriaoviedo.elmanzano@gmail.com
+call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo %FIREBASE_AUTH%
 if %errorlevel% neq 0 (
     color 0E
     echo  [AVISO] Firebase deploy Hosting fallo - el bot seguira con el catalogo anterior.
@@ -570,7 +575,7 @@ for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://fer
 if "%TOKCODE%"=="200" goto :paso6_ok
 
 echo  [REINTENTO] Token no visible en Hosting (HTTP %TOKCODE%) - re-publicando...
-call "%FIREBASE_CMD%" deploy --only hosting --account ferreteriaoviedo.elmanzano@gmail.com
+call "%FIREBASE_CMD%" deploy --only hosting --project ferreteria-oviedo %FIREBASE_AUTH%
 set "TOKCODE=000"
 for /f %%C in ('curl.exe -s -o nul -w "%%{http_code}" --max-time 20 "https://ferreteria-oviedo.web.app/data/%TOKEN_ACT%/ventas-manzano-meta.json"') do set "TOKCODE=%%C"
 if "%TOKCODE%"=="200" goto :paso6_ok

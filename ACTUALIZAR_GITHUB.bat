@@ -109,6 +109,11 @@ robocopy "E:\ferreteria-oviedo\VENTAS EL MANZANO" "E:\git-sync\VENTAS EL MANZANO
 :: ============================================================
 cd /d E:\git-sync
 
+:: Identidad del repositorio para commits de Ferreteria Oviedo.
+:: Se fija localmente en git-sync para no afectar otros repositorios/cuentas.
+"%GIT_EXE%" config user.name "oviedoem"
+"%GIT_EXE%" config user.email "ferreteriaoviedo.elmanzano@gmail.com"
+
 echo.
 echo Archivos a commitear:
 "%GIT_EXE%" status --short
