@@ -9,6 +9,7 @@ set PYTHON_EXE=python
 set NODE_EXE=node
 set GIT_EXE=git
 set FIREBASE_EXE=firebase
+set GIT_CONFIG_GLOBAL=E:\config\gitconfig
 
 if exist "E:\python-portable\python.exe" (
     set PYTHON_EXE=E:\python-portable\python.exe
