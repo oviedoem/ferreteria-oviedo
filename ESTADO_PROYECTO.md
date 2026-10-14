@@ -33,6 +33,7 @@
 
 ### V37.77 — 2026-10-12 (sesión de ChatGPT; resumen tomado de CLAUDE.md)
 - `ACTUALIZAR_TODO.bat` usa `E:\config\firebase_ci.token` con `--token` si existe (fallback `--account`); `catalogo-bot.json` regenerado y publicado (6.180 productos); identidad/credencial de `git-sync` corregidas. Sin `estado-sesion` en la memoria de Claude. Ese catálogo salió con el defecto de codificación corregido en V37.78.
+- V37.79 (2026-10-14, sesión de Claude; ver `memory/estado-sesion-20261014.md`): `ACTUALIZAR_TODO.bat` ahora publica con la cuenta de servicio `E:\configerreteria-oviedo-b143e8e7b77d.json` (el token `firebase_ci.token` queda como respaldo); `main.py consolidar()` y `descargar_ventas_erp.py` rellenan `cantidad` desde SQL (`VENTAS EL MANZANO\cantidad-enrich.json`, escrito por `descargar_costo_promedio.py`): 812 recuperadas, filas con cantidad 0 en 2026 de 2.418 a 1.606; `firebase.json` excluye `data/costo-promedio-enrich.json` y `data/xlsm-enrich.json` (estaban públicos); secretos sin consumidores cifrados a `*.enc`; `E:\herremientas` archivada. Mapa del pipeline actualizado.
 
 ### V37.76 — 2026-10-06 (Solicitud Stock: sin repetidos + Excel de historial)
 - `panel-admin.html` → `reqStockPrellenar`: un código enviado en PEM o SEM ya no se reofrece (95 códigos tenían estado distinto entre bodegas; los 8 COX del 2026-06-23 salían de nuevo).
