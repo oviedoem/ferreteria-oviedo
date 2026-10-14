@@ -28,6 +28,14 @@ if exist "E:\config\firebase_ci.token" (
     set /p FIREBASE_TOKEN=<"E:\config\firebase_ci.token"
     if defined FIREBASE_TOKEN set FIREBASE_AUTH=--token "%FIREBASE_TOKEN%"
 )
+:: 2026-10-14: FIREBASE_TOKEN (login:ci) esta deprecado. Si existe la cuenta de servicio
+:: de la ferreteria (rol de Hosting verificado con un canal de prueba) se usa esa y el token
+:: queda solo como respaldo para cuando falte la clave.
+if exist "E:\config\ferreteria-oviedo-b143e8e7b77d.json" (
+    set GOOGLE_APPLICATION_CREDENTIALS=E:\config\ferreteria-oviedo-b143e8e7b77d.json
+    set FIREBASE_AUTH=
+    set FIREBASE_TOKEN=
+)
 if exist "E:\nodejs-portable\node.exe" set PATH=E:\nodejs-portable;%PATH%
 
 echo.

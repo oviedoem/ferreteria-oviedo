@@ -34,6 +34,8 @@
       "FLUJOS .MD/**",
       "backups/**",
       "_HISTORICO/**",
+      "data/costo-promedio-enrich.json",
+      "data/xlsm-enrich.json",
       "_utilidades/**",
       "logs/**",
       "**/*.docx",
