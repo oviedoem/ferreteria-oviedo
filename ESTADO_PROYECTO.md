@@ -14,7 +14,7 @@
 |---|---|
 | Version | V37.78 |
 | Fecha | 2026-10-13 |
-| Deploy | PENDIENTE para V37.78 (solo `generate_catalogo_bot.ps1`): se publica en la próxima corrida de `ACTUALIZAR_TODO.bat`. Último deploy confirmado: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT); antes 2026-10-06 01:34 (+ arreglo 01:43, solo panel-admin.html y sw.js) |
+| Deploy | HECHO 2026-10-13 21:16 (V37.78, `ACTUALIZAR_TODO.bat` manual del dueño, todo OK; commit `c1c00fe`). Antes: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT) y 2026-10-06 01:34 (+ arreglo 01:43) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
 | Pendiente vigente | Revisar catálogo público y fotos faltantes. No tocar ofertas salvo actualización de stock o retiro por stock total cero. Los pendientes antiguos del bot/Plan Canal se administran en el `CLAUDE.md` del bot y no son pendientes de este catálogo. |
 
@@ -23,10 +23,13 @@
 ## ULTIMOS CAMBIOS (V37.x)
 
 ### V37.78 — 2026-10-13 (catálogo del bot: codificación UTF-8, limpieza de espacios y guardia)
+- Orden y comando (sin deploy): regla 14 "nada suelto en la raíz" en `docs/00_LEER_PRIMERO.md`; `verificar_blindaje.py` avisa de entradas nuevas en la raíz; comando global `/inicio-sesion-proyectos` para abrir sesión en este proyecto y en el bot.
+- Hosting + blindaje (se aplica en el próximo `ACTUALIZAR_TODO.bat`): `firebase.json` ignora ahora `**/*.md`, `docs/**` y `**/pipeline-datos-mapa.html` (antes `AGENTS.md`, `CLAUDE.md`, `ESTADO_PROYECTO.md`, `MEMORY.md`, `memory/*.md` y `docs/*` estaban públicos). Nuevo `_utilidades/verificar_blindaje.py` (solo lectura) con referencia en `_utilidades/blindaje_baseline.json`.
+- Regla estricta (docs, sin deploy): primera línea de `CLAUDE.md` y `AGENTS.md` obliga a leer `docs/` (empezando por `docs/00_LEER_PRIMERO.md`) y a basar toda mejora en el flujo vigente. Guía nueva `docs/00_LEER_PRIMERO.md`; `ACTUALIZAR_GITHUB.bat` la incluye en su lista blanca de `docs\`.
 - `generate_catalogo_bot.ps1` (PASO 5): leía `Datos.json` sin `-Encoding UTF8` → el `catalogo-bot.json` publicado tenía más de 700 productos con acentos/eñes rotos (el ERP y `Datos.json` estaban bien). Ahora lee UTF-8, limpia espacios dobles/duros/tabs/saltos (función `Limpiar`) y aborta si hay menos de 6.000 productos o acentos rotos.
 - No cambia paneles ni menús: ningún panel (admin, cliente, vendedor `index.html`, cotizador) ni `sw.js` ni `firebase.json` referencian `catalogo-bot.json`; solo lo descarga el bot de WhatsApp. Código, precio y stock idénticos al publicado.
 - Verificado SIN publicar: 0 acentos rotos y 0 diferencias en 9 campos × 6.180 productos contra el generador independiente del bot. Respaldos en `E:\_ARCHIVO_FERRETERIA\`. Sin badge (no cambió ningún panel).
-- **Pendiente de publicar** con la próxima corrida de `ACTUALIZAR_TODO.bat`. El bot ya limpia al cargar (commit `dc95cea` del bot).
+- **Publicado el 2026-10-13 21:16** (`ACTUALIZAR_TODO.bat` manual, commit `c1c00fe`): Hosting con 6.180 productos, 0 acentos rotos, 0 espacios irregulares (hash `3af1c517bd8e`); paneles HTTP 200. El bot ya limpia al cargar (commit `dc95cea` del bot) y recoge el catálogo nuevo al reiniciarse.
 
 ### V37.77 — 2026-10-12 (sesión de ChatGPT; resumen tomado de CLAUDE.md)
 - `ACTUALIZAR_TODO.bat` usa `E:\config\firebase_ci.token` con `--token` si existe (fallback `--account`); `catalogo-bot.json` regenerado y publicado (6.180 productos); identidad/credencial de `git-sync` corregidas. Sin `estado-sesion` en la memoria de Claude. Ese catálogo salió con el defecto de codificación corregido en V37.78.

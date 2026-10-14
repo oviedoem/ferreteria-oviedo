@@ -80,7 +80,7 @@ robocopy "E:\ferreteria-oviedo" "E:\git-sync" ^
 
 REM 2026-09-22: README.md, IDS_REFERENCIA.md y MAPA_FLUJO_PROYECTOS.md se movieron a docs\
 robocopy "E:\ferreteria-oviedo\docs" "E:\git-sync\docs" ^
-  README.md IDS_REFERENCIA.md MAPA_FLUJO_PROYECTOS.md ^
+  README.md IDS_REFERENCIA.md MAPA_FLUJO_PROYECTOS.md 00_LEER_PRIMERO.md ^
   /XO /NP /NJH /NFL
 
 robocopy "E:\ferreteria-oviedo\.opencodereview" "E:\git-sync\.opencodereview" ^
