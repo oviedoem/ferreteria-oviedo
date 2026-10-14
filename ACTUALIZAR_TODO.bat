@@ -610,7 +610,7 @@ if %errorlevel% neq 0 (
     echo  [OK] Cambios commiteados y pusheados a GitHub.
 )
 echo.
-timeout /t 2 /nobreak >nul
+"%SystemRoot%\System32\timeout.exe" /t 2 /nobreak >nul
 
 color 0A
 echo.
