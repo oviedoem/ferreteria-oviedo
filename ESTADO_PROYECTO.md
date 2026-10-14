@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.76
-# Fecha: 2026-10-06
+# Version activa: V37.78
+# Fecha: 2026-10-13
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,24 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.76 |
-| Fecha | 2026-10-06 |
-| Deploy | HECHO 2026-10-06 01:34 (ACTUALIZAR_TODO.bat, todo OK) + arreglo 01:43 (`firebase deploy --only hosting`, solo panel-admin.html y sw.js) |
+| Version | V37.78 |
+| Fecha | 2026-10-13 |
+| Deploy | PENDIENTE para V37.78 (solo `generate_catalogo_bot.ps1`): se publica en la próxima corrida de `ACTUALIZAR_TODO.bat`. Último deploy confirmado: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT); antes 2026-10-06 01:34 (+ arreglo 01:43, solo panel-admin.html y sw.js) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
-| Pendiente | Plan Canal v1.3 del bot: P1, P4, P5, P6, P7 sin empezar. Firestore con cuota agotada (respaldo de sesion/contactos del bot falla, `contactos` en 0 tras reinicio). Heredado: Confirmar con push/fetch real que la credencial GitHub de `ferreteria-oviedo` ya no pide login interactivo. Heredados al 2026-10-06: 401 del PASO 3 = NO se reproduce (ver abajo); 25989 ya no es negativo (+13 %); 26191 CERRADO (el dueño confirmo el 2026-10-06 que su margen esta OK; sin accion); liquidacion de $15,3 M: DESCARTADA por el dueño (2026-10-06). Contador de personas: CERRADO (publicado en panel-admin; el bot ya tiene su contador "Contactos unicos"). Tabla semanal de seguidores: CERRADA (bot guarda `canal_semanal`, historial visible en el Dashboard: 2026-W41 con 10 seguidores). Precios ocultos en panel-cliente: decision del dueño 2026-10-06, "esta bien asi", sin accion. Catalogo de fotos: SINCRONIZADO 2026-10-06 (oviedo-catalogo-fotos b68b181, 0 diferencias, 13 productos nuevos sin foto). |
+| Pendiente vigente | Revisar catálogo público y fotos faltantes. No tocar ofertas salvo actualización de stock o retiro por stock total cero. Los pendientes antiguos del bot/Plan Canal se administran en el `CLAUDE.md` del bot y no son pendientes de este catálogo. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### V37.78 — 2026-10-13 (catálogo del bot: codificación UTF-8, limpieza de espacios y guardia)
+- `generate_catalogo_bot.ps1` (PASO 5): leía `Datos.json` sin `-Encoding UTF8` → el `catalogo-bot.json` publicado tenía más de 700 productos con acentos/eñes rotos (el ERP y `Datos.json` estaban bien). Ahora lee UTF-8, limpia espacios dobles/duros/tabs/saltos (función `Limpiar`) y aborta si hay menos de 6.000 productos o acentos rotos.
+- No cambia paneles ni menús: ningún panel (admin, cliente, vendedor `index.html`, cotizador) ni `sw.js` ni `firebase.json` referencian `catalogo-bot.json`; solo lo descarga el bot de WhatsApp. Código, precio y stock idénticos al publicado.
+- Verificado SIN publicar: 0 acentos rotos y 0 diferencias en 9 campos × 6.180 productos contra el generador independiente del bot. Respaldos en `E:\_ARCHIVO_FERRETERIA\`. Sin badge (no cambió ningún panel).
+- **Pendiente de publicar** con la próxima corrida de `ACTUALIZAR_TODO.bat`. El bot ya limpia al cargar (commit `dc95cea` del bot).
+
+### V37.77 — 2026-10-12 (sesión de ChatGPT; resumen tomado de CLAUDE.md)
+- `ACTUALIZAR_TODO.bat` usa `E:\config\firebase_ci.token` con `--token` si existe (fallback `--account`); `catalogo-bot.json` regenerado y publicado (6.180 productos); identidad/credencial de `git-sync` corregidas. Sin `estado-sesion` en la memoria de Claude. Ese catálogo salió con el defecto de codificación corregido en V37.78.
 
 ### V37.76 — 2026-10-06 (Solicitud Stock: sin repetidos + Excel de historial)
 - `panel-admin.html` → `reqStockPrellenar`: un código enviado en PEM o SEM ya no se reofrece (95 códigos tenían estado distinto entre bodegas; los 8 COX del 2026-06-23 salían de nuevo).
