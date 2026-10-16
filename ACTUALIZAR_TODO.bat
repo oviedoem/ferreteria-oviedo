@@ -1,4 +1,11 @@
 @echo off
+if not defined OVIEDO_REG if exist "E:\CONOCIMIENTO DEL NEGOCIO\control-center\registrar-corrida.js" goto :con_registro
+goto :inicio_real
+:con_registro
+set OVIEDO_REG=1
+"E:\nodejs-portable\node.exe" "E:\CONOCIMIENTO DEL NEGOCIO\control-center\registrar-corrida.js" ferreteria "%~f0" %*
+exit /b %errorlevel%
+:inicio_real
 chcp 1252 >nul
 title FERRETERIA OVIEDO - Actualizacion completa
 cd /d "%~dp0"
@@ -167,7 +174,7 @@ echo  (genera ventas-xlsm-YYYY.json, ranking-unidades.json, precios-diff.json)
 echo.
 if exist "%~dp0VENTAS EL MANZANO\VENTAS.xlsm" (
     "%PYTHON_EXE%" "%~dp0VENTAS EL MANZANO\leer_xlsm.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] leer_xlsm.py fallo. Continuando sin datos XLSM.
         color 0A
@@ -191,7 +198,7 @@ echo  (genera bod-iem-registros.json, bod-rce-registros.json, bod-cem-registros.
 echo.
 if exist "%~dp0BODEGAS\descargar_bod.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_bod.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] descargar_bod.py fallo. Bodegas usaran JSON anterior si existe.
         color 0A
@@ -215,7 +222,7 @@ echo  (genera pedidos-comprometidos.json, pedidos-detalle.json)
 echo.
 if exist "%~dp0BODEGAS\descargar_pedidos.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_pedidos.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] descargar_pedidos.py fallo. Panel mostrara Ped=0 hasta proximo intento.
         color 0A
@@ -239,7 +246,7 @@ echo  (genera despachos-comprometidos.json, despachos-detalle.json)
 echo.
 if exist "%~dp0BODEGAS\descargar_despachos.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_despachos.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] descargar_despachos.py fallo. Panel mostrara Dif sin drill-down hasta proximo intento.
         color 0A
@@ -263,7 +270,7 @@ echo  (St_Bod=fisico real, St_DVen+St_Ped=comprometido todas las sucursales)
 echo.
 if exist "%~dp0BODEGAS\generar_informe_stock.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\generar_informe_stock.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] generar_informe_stock.py fallo. Informe Stock mostrara Fis=0 hasta proximo intento.
         color 0A
@@ -287,7 +294,7 @@ echo  (parametros de Adquisiciones para tab Solicitud Semanal de Stock)
 echo.
 if exist "%~dp0BODEGAS\descargar_stock_critico.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_stock_critico.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] descargar_stock_critico.py fallo. Solicitud Semanal usara stock-critico.json anterior.
         color 0A
@@ -311,7 +318,7 @@ echo  (usado en tab Consulta de Stock)
 echo.
 if exist "%~dp0BODEGAS\descargar_oc_leadtime.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_oc_leadtime.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] descargar_oc_leadtime.py fallo. Consulta de Stock usara oc-leadtime.json anterior.
         color 0A
@@ -335,7 +342,7 @@ echo  (columna OC Pend en Solicitud Semanal de Stock)
 echo.
 if exist "%~dp0BODEGAS\descargar_oc_pendientes.py" (
     "%PYTHON_EXE%" "%~dp0BODEGAS\descargar_oc_pendientes.py"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0C
         echo  [AVISO] descargar_oc_pendientes.py fallo. Panel usara oc-pend-resumen.json anterior.
         color 0A
@@ -498,7 +505,7 @@ echo  (genera catalogo-cotizador.json - incluido en deploy PASO 4)
 echo.
 if exist "%~dp0generar_catalogo_cotizador_rotacion.ps1" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0generar_catalogo_cotizador_rotacion.ps1"
-    if %errorlevel% neq 0 (
+    if errorlevel 1 (
         color 0E
         echo  [AVISO] catalogo-cotizador con rotacion fallo - se usara el JSON anterior.
         color 0A
