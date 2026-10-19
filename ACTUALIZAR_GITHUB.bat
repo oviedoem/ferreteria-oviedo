@@ -61,7 +61,7 @@ for /f "delims=" %%F in ('E:\git-portable\mingw64\bin\git.exe -C E:\git-sync ls-
 if %BLOQUEO%==1 (
     echo.
     echo PUSH CANCELADO. Elimina los archivos listados antes de continuar.
-    pause
+    if not defined AUTO_MODE pause
     exit /b 1
 )
 
@@ -135,7 +135,7 @@ if errorlevel 1 (
     echo [INFO] No se detecto credencial de GitHub para 'oviedoem'.
     echo [INFO] Abriendo navegador para login GitHub...
     echo [INFO] Inicia sesion con: ferreteriaoviedo.elmanzano@gmail.com
-    "E:\git-portable\mingw64\bin\git-credential-manager.exe" github login
+    if not defined AUTO_MODE "E:\git-portable\mingw64\bin\git-credential-manager.exe" github login
 )
 
 :: Verificar que la cuenta autenticada sea 'oviedoem' (ferreteriaoviedo.elmanzano)
@@ -146,7 +146,7 @@ if errorlevel 1 (
     echo BLOQUEADO: no se detecto la cuenta 'oviedoem' en las credenciales de GitHub.
     echo Verifica con: cmdkey /list  ^(target git:https://github.com^)
     echo Vuelve a iniciar sesion con ferreteriaoviedo.elmanzano antes de pushear.
-    pause
+    if not defined AUTO_MODE pause
     exit /b 1
 )
 

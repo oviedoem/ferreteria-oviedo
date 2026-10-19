@@ -45,5 +45,8 @@ Este proyecto usa la cuenta de **Ferretería** (`ferreteriaoviedo.elmanzano@gmai
 
 ## Rutas nuevas (2026-10-14)
 - `_utilidades/cifrar_secreto_config.py` — cifra con DPAPI un archivo plano de `E:\config` (`<archivo>.enc`), verifica por huella, no imprime ni borra.
+- `_utilidades/refrescar_catalogo_bot.py` — (2026-10-16) lo llama el PASO 5 de `ACTUALIZAR_TODO.bat` tras publicar `catalogo-bot.json`: pide al bot en Render recargar el catálogo sin reiniciarlo. Lee el PIN de `E:\config\bot_panel_pin.txt.enc` (DPAPI, lo crea el dueño con `cifrar_secreto_config.py`); no bloqueante, nunca imprime el PIN.
+- `_utilidades/cifrar_pin_bot_desde_env.py` — copia una sola vez el `PANEL_PIN` del `.env` del bot a `E:\config\bot_panel_pin.txt.enc` (DPAPI); no imprime el PIN ni deja archivos planos.
+- `_utilidades/actualizar_catalogo_fotos_pipeline.py` — (2026-10-16) lo llama `ACTUALIZAR_TODO.bat` tras el PASO 5: aplica precio/stock (solo `p/pe/se`) al catálogo de fotos con `actualizar_precio_stock_catalogo.py --aplicar` y publica solo `catalogo_data.js` y `destacados_data.js` en `oviedoem/oviedo-catalogo-fotos` (comprueba repo, remoto y usuario; no bloqueante; no publica si hay cambios ajenos). `--simular` no escribe ni publica.
 - `VENTAS EL MANZANO/cantidad-enrich.json` — cantidad real por `numero|codigo` desde SQL (la escribe `BODEGAS/descargar_costo_promedio.py`; la leen `main.py` y `descargar_ventas_erp.py`). Carpeta ignorada por Hosting y GitHub; interna.
 - `E:\_ARCHIVO_FERRETERIA/respaldo-E-cantidades-20261014`, `respaldo-F-firebase-token-20261014`, `respaldo-hosting-ignore-enrich-20261014` y `herremientas-20261014` (con `MANIFIESTO.md`) — respaldos y archivo de esta sesión. Detalle: `memory/estado-sesion-20261014.md`.

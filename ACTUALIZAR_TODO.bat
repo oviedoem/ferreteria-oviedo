@@ -6,6 +6,8 @@ set OVIEDO_REG=1
 "E:\nodejs-portable\node.exe" "E:\CONOCIMIENTO DEL NEGOCIO\control-center\registrar-corrida.js" ferreteria "%~f0" %*
 exit /b %errorlevel%
 :inicio_real
+set "AUTO_MODE="
+if /i "%~1"=="/auto" set "AUTO_MODE=1"
 chcp 1252 >nul
 title FERRETERIA OVIEDO - Actualizacion completa
 cd /d "%~dp0"
@@ -54,7 +56,7 @@ echo.
 echo  Presiona cualquier tecla para iniciar...
 echo  (auto-inicio en 10 segundos)
 echo.
-timeout /t 10 /nobreak >nul
+if not defined AUTO_MODE timeout /t 10 /nobreak >nul
 
 echo.
 echo  +----------------------------------------------------------+
@@ -69,7 +71,7 @@ if %errorlevel% neq 0 (
     echo.
     echo  [ERROR] Python no esta instalado o no esta en el PATH.
     echo.
-    pause
+    if not defined AUTO_MODE pause
     exit /b 1
 )
 for /f "tokens=*" %%v in ('"%PYTHON_EXE%" --version 2^>^&1') do echo         %%v
@@ -81,7 +83,7 @@ if %errorlevel% neq 0 (
     echo.
     echo  [ERROR] Firebase CLI no encontrado. Ejecuta: npm install -g firebase-tools
     echo.
-    pause
+    if not defined AUTO_MODE pause
     exit /b 1
 )
 for /f "tokens=*" %%v in ('call "%FIREBASE_CMD%" --version 2^>^&1') do echo         Firebase %%v
@@ -90,7 +92,7 @@ echo  [CHECK] Script descargar_erp.py...
 if not exist "%~dp0CATALOGO PRODUCTOS\scripts\descargar_erp.py" (
     color 0C
     echo  [ERROR] No se encontro descargar_erp.py
-    pause
+    if not defined AUTO_MODE pause
     exit /b 1
 )
 echo         OK
@@ -99,7 +101,7 @@ echo  [CHECK] Script descargar_ventas_erp.py...
 if not exist "%~dp0VENTAS EL MANZANO\descargar_ventas_erp.py" (
     color 0C
     echo  [ERROR] No se encontro descargar_ventas_erp.py
-    pause
+    if not defined AUTO_MODE pause
     exit /b 1
 )
 echo         OK
@@ -136,7 +138,7 @@ echo  Procesando actualizar.xlsx -^> Datos.xlsx...
 if %errorlevel% neq 0 (
     color 0C
     echo  [ERROR] procesar-actualizacion.py fallo.
-    pause
+    if not defined AUTO_MODE pause
     goto :ventas
 )
 
@@ -145,7 +147,7 @@ echo  Convirtiendo Datos.xlsx -^> Datos.csv...
 if %errorlevel% neq 0 (
     color 0C
     echo  [ERROR] xlsx_a_csv.py fallo.
-    pause
+    if not defined AUTO_MODE pause
     goto :ventas
 )
 
@@ -471,6 +473,7 @@ echo   E  =  NO VISIBLE         (sin cambios - default seguro)
 echo.
 echo   Auto: Precios OCULTOS (N) en 10 segundos si no respondes.
 echo.
+if defined AUTO_MODE (set "PRECIO_OPT=N" & goto :precio_decidido)
 choice /c SNE /t 10 /d N /m "Tu eleccion"
 :: Fix 2026-09-10: "if errorlevel N" significa "N o mayor" -- con 3 ifs
 :: independientes (no else-if) la ultima linea (errorlevel 1) siempre pisaba
@@ -478,6 +481,7 @@ choice /c SNE /t 10 /d N /m "Tu eleccion"
 if %ERRORLEVEL% EQU 3 set PRECIO_OPT=E
 if %ERRORLEVEL% EQU 2 set PRECIO_OPT=N
 if %ERRORLEVEL% EQU 1 set PRECIO_OPT=S
+:precio_decidido
 
 if /i "%PRECIO_OPT%"=="S" (
     echo  Precio: VISIBLE para clientes
@@ -534,7 +538,7 @@ if %errorlevel% neq 0 (
     echo  [ERROR] Firebase deploy fallo.
     echo  Ejecuta: firebase login --reauth
     echo.
-    pause
+    if not defined AUTO_MODE pause
     exit /b 1
 )
 
@@ -568,9 +572,16 @@ if %errorlevel% neq 0 (
     echo  [AVISO] Firebase deploy Hosting fallo - el bot seguira con el catalogo anterior.
 ) else (
     echo  [OK] catalogo-bot.json publicado en ferreteria-oviedo.web.app
+    rem 2026-10-16 refresca el bot en Render sin reiniciarlo, no bloqueante, PIN cifrado
+    "%PYTHON_EXE%" -I "%~dp0_utilidades\refrescar_catalogo_bot.py"
 )
 
 :paso5_fin
+
+rem 2026-10-16 catalogo de fotos, precio y stock, sin bloquear el pipeline
+echo.
+echo  [Catalogo de fotos] precio y stock -^> GitHub Pages
+"%PYTHON_EXE%" -I "%~dp0_utilidades\actualizar_catalogo_fotos_pipeline.py"
 
 :: -- PASO 6: Verificacion token data/ en vivo (fix 2026-08-31) ----------------
 :: Si el deploy no subio la carpeta del token, el panel queda sin datos
@@ -638,7 +649,7 @@ echo   [OK] Catalogo Bot
 echo   [OK] Commit GitHub
 echo  ============================================================
 echo.
-pause
+if not defined AUTO_MODE pause
 exit /b 0
 
 :error
@@ -650,5 +661,5 @@ echo   Revisa el detalle de validar_jsons.py arriba.
 echo   El deploy NO se ejecuto. Los JSONs anteriores siguen activos.
 echo  ============================================================
 echo.
-pause
+if not defined AUTO_MODE pause
 exit /b 1

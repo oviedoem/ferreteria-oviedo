@@ -22,6 +22,9 @@
 
 ## ULTIMOS CAMBIOS (V37.x)
 
+### 2026-10-16 — infraestructura del pipeline (sin cambio de versión)
+Sesión del 16-10-2026 (Claude), sin cambio de versión ni de paneles (V37.79), solo infraestructura del pipeline: (1) `ACTUALIZAR_TODO.bat` enganchado al registro de corridas del Centro de Control (encabezado de 7 líneas, CRLF); (2) los 9 `if %errorlevel% neq 0` dentro de bloques (pasos 1C–1N y 3.6) pasan a `if errorlevel 1`; (3) modo `/auto`: `ACTUALIZAR_TODO.bat /auto` sin pausas ni preguntas (precios ocultos), `ACTUALIZAR_TODO_AUTO.bat` es ahora un lanzador de 5 líneas y `ACTUALIZAR_GITHUB.bat` respeta `AUTO_MODE`; (4) blindaje guardado con `--guardar` por orden del dueño (0 fallas); (5) corrida completa manual 18:42–18:54 en [OK] (commit `d052e1b`); (6) `docs/pipeline-datos-mapa.html` actualizado; (7) 4 obsoletos archivados con MANIFIESTO en `E:\_ARCHIVO_FERRETERIA\ferreteria-obsoletos-20261016`; (8) herramienta de orden `E:\CONOCIMIENTO DEL NEGOCIO\control-center\orden\ORDEN_PROYECTOS.bat`; (9) el bot de Render solo recarga el catálogo al arrancar: se refrescó a mano con `/api/refrescar-catalogo`. Detalle y pendientes: `memory/estado-sesion-20261016.md`.
+
 ### V37.78 — 2026-10-13 (catálogo del bot: codificación UTF-8, limpieza de espacios y guardia)
 - Orden y comando (sin deploy): regla 14 "nada suelto en la raíz" en `docs/00_LEER_PRIMERO.md`; `verificar_blindaje.py` avisa de entradas nuevas en la raíz; comando global `/inicio-sesion-proyectos` para abrir sesión en este proyecto y en el bot.
 - Hosting + blindaje (se aplica en el próximo `ACTUALIZAR_TODO.bat`): `firebase.json` ignora ahora `**/*.md`, `docs/**` y `**/pipeline-datos-mapa.html` (antes `AGENTS.md`, `CLAUDE.md`, `ESTADO_PROYECTO.md`, `MEMORY.md`, `memory/*.md` y `docs/*` estaban públicos). Nuevo `_utilidades/verificar_blindaje.py` (solo lectura) con referencia en `_utilidades/blindaje_baseline.json`.
@@ -33,7 +36,7 @@
 
 ### V37.77 — 2026-10-12 (sesión de ChatGPT; resumen tomado de CLAUDE.md)
 - `ACTUALIZAR_TODO.bat` usa `E:\config\firebase_ci.token` con `--token` si existe (fallback `--account`); `catalogo-bot.json` regenerado y publicado (6.180 productos); identidad/credencial de `git-sync` corregidas. Sin `estado-sesion` en la memoria de Claude. Ese catálogo salió con el defecto de codificación corregido en V37.78.
-- V37.79 (2026-10-14, sesión de Claude; ver `memory/estado-sesion-20261014.md`): `ACTUALIZAR_TODO.bat` ahora publica con la cuenta de servicio `E:\configerreteria-oviedo-b143e8e7b77d.json` (el token `firebase_ci.token` queda como respaldo); `main.py consolidar()` y `descargar_ventas_erp.py` rellenan `cantidad` desde SQL (`VENTAS EL MANZANO\cantidad-enrich.json`, escrito por `descargar_costo_promedio.py`): 812 recuperadas, filas con cantidad 0 en 2026 de 2.418 a 1.606; `firebase.json` excluye `data/costo-promedio-enrich.json` y `data/xlsm-enrich.json` (estaban públicos); secretos sin consumidores cifrados a `*.enc`; `E:\herremientas` archivada. Mapa del pipeline actualizado.
+- V37.79 (2026-10-14, sesión de Claude; ver `memory/estado-sesion-20261014.md`): `ACTUALIZAR_TODO.bat` ahora publica con la cuenta de servicio `E:\config\ferreteria-oviedo-b143e8e7b77d.json` (el token `firebase_ci.token` queda como respaldo); `main.py consolidar()` y `descargar_ventas_erp.py` rellenan `cantidad` desde SQL (`VENTAS EL MANZANO\cantidad-enrich.json`, escrito por `descargar_costo_promedio.py`): 812 recuperadas, filas con cantidad 0 en 2026 de 2.418 a 1.606; `firebase.json` excluye `data/costo-promedio-enrich.json` y `data/xlsm-enrich.json` (estaban públicos); secretos sin consumidores cifrados a `*.enc`; `E:\herremientas` archivada. Mapa del pipeline actualizado.
 
 ### V37.76 — 2026-10-06 (Solicitud Stock: sin repetidos + Excel de historial)
 - `panel-admin.html` → `reqStockPrellenar`: un código enviado en PEM o SEM ya no se reofrece (95 códigos tenían estado distinto entre bodegas; los 8 COX del 2026-06-23 salían de nuevo).
@@ -147,7 +150,7 @@
 ### Incidente Hosting — 2026-08-03 (Kimi Work, sin cambio de versión)
 - **Síntoma:** paneles rotos — vendedor mostraba precio neto (fallback `SIva/1.19`) en vez de costo promedio; menús de análisis sin datos; iconos 404.
 - **Causa raíz:** el GitHub Action `rotate-token.yml` (cron diario 06:00 UTC) despliega Hosting desde el repo. Como `CATALOGO PRODUCTOS/`, `icons/`, `cotizador.html` y demás archivos generados localmente NO están en el repo, cada deploy del Action los borraba del CDN. `Datos.json` quedó 404 → los paneles caían al fallback.
-- **Fix:** redeploy completo desde la carpeta local `E:erreteria-oviedo` (fuente de verdad del sitio) + **schedule del Action desactivado** (queda solo `workflow_dispatch`). La rotación de token la sigue haciendo el pipeline local.
+- **Fix:** redeploy completo desde la carpeta local `E:\ferreteria-oviedo` (fuente de verdad del sitio) + **schedule del Action desactivado** (queda solo `workflow_dispatch`). La rotación de token la sigue haciendo el pipeline local.
 - **NO reactivar el cron** sin antes modificar `rotate_token.py` para preservar el sitio completo (descargar todos los archivos del release activo, no solo `/data/<token>/`).
 - panel-admin.html quedó con el menú "Bot WhatsApp → Costos IA" (commit a30da41, aditivo) aplicado sobre la versión local.
 
