@@ -8671,7 +8671,7 @@ function _vadmAplicarDatos(arr, status, fuente){
         vendedor:   r.vendedor      ||'',
         nombre:     nombre,
         responsable:'',
-        cliente:    (r.cliente||'').replace(/\s*\.\-\s*$/, '').trim(),
+        cliente:    (r.razonSocial||r.cliente||'').replace(/\s*\.\-\s*$/, '').trim(),
         rut:        r.rut           ||'',
         hiperFam:   r.hiperFam      ||'',
         familia:    r.familia       ||'',
