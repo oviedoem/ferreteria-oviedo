@@ -1779,6 +1779,7 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
             <button class="ven-adm-btn" onclick="isbGenerar()">🔄 Generar</button>
             <button class="ven-adm-btn" onclick="isbExportCSV()">📄 CSV</button>
             <button class="ven-adm-btn" onclick="isbExportExcel()">📊 Excel</button>
+            <button class="ven-adm-btn" onclick="isbAbrirTomados()" title="Notas de venta y ventas mesón pendientes de facturar, por días y folio">⏳ Pedidos tomados <span id="isbTomBadge" style="display:none;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:4px"></span></button>
             <span id="isbContador" style="font-size:11px;color:#9ca3af"></span>
           </div>
           <div class="vadm-anal-bar" id="isbFiltroBar" style="display:none;gap:10px;flex-wrap:wrap;align-items:center">
@@ -4061,7 +4062,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.76<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">06-10-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.80<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">24-10-2026</span></div>
 
 <script>
 
@@ -21300,6 +21301,7 @@ window.isbGenerar = function(){
     _isbRaw=res[0]||{};
     _isbPedidosDetalle=res[1]||{};
     _isbDespachosDetalle=res[2]||{};
+    try{ _tomActualizarBadge(); }catch(e){}
     pedidosDone=true;
     tryRender();
   });
@@ -21537,9 +21539,9 @@ window.isbAbrirDetalle = function(cod, bod, tipo){
     }
     var bgRow=idx%2===0?'':'background:#f9fafb';
     th+='<tr style="'+bgRow+'">'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-size:11px;color:#1e40af;white-space:nowrap">'+_esc(d.tipoDocLabel||d.tipoDoc||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-size:11px;color:#1e40af;white-space:nowrap">'+_esc(d.tipoDocLabel||d.tipoDoc||'')+(d.sucursalNombre&&d.sucursalNombre!=='El Manzano'?' <span style="color:#9ca3af">· '+_esc(d.sucursalNombre)+'</span>':'')+'</td>'
       +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600">'+_esc(d.numero||'')+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;white-space:nowrap">'+_esc(d.fechaEmision||'')+'</td>'
+      +'<td style="padding:4px 8px;border:1px solid #e2e8f0;white-space:nowrap">'+_esc(d.fechaEmision||'')+' <span style="color:#9ca3af;font-size:10px">('+_tomDias(d.fechaEmision)+' d)</span></td>'
       +'<td style="padding:4px 8px;border:1px solid #e2e8f0;white-space:nowrap">'+(d.fechaEntrega||'—')+atrasoHtml+'</td>'
       +'<td style="padding:4px 8px;border:1px solid #e2e8f0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_esc(d.cliente||'')+'">'+_esc(d.cliente||'—')+'</td>'
       +'<td style="padding:4px 8px;border:1px solid #e2e8f0;color:#6b7280">'+_esc(d.vendedor||'—')+'</td>'
@@ -21556,6 +21558,263 @@ window.isbAbrirDetalle = function(cod, bod, tipo){
 
 window.isbCerrarDetalle = function(){
   var m=document.getElementById('isbDetalleModal'); if(m) m.style.display='none';
+};
+
+/* ── V37.80: PEDIDOS TOMADOS por días (NVM/VMN/VMP/NVC/NVW pendientes de facturar) ──
+   Fuente: pedidos-detalle.json (PASO 1E, SQL, solo lectura). Una fila por documento+producto+bodega.
+   No modifica el ERP: sirve para ubicar por folio los pedidos viejos y anularlos/eliminarlos en el ERP. */
+var TOM_ALERTA_DIAS = 7;   // el badge del botón cuenta documentos con más días que este umbral
+var TOM_TRAMOS = [
+  {k:'t0',  lbl:'0-1 d',     min:0,   max:1},
+  {k:'t1',  lbl:'2-7 d',     min:2,   max:7},
+  {k:'t2',  lbl:'8-30 d',    min:8,   max:30},
+  {k:'t3',  lbl:'31-90 d',   min:31,  max:90},
+  {k:'t4',  lbl:'91-180 d',  min:91,  max:180},
+  {k:'t5',  lbl:'+180 d',    min:181, max:99999}
+];
+var _tomLineas = [];
+var _tomTramoSel = '';
+var _tomOrden = 'dias';
+var _tomVerAnteriores = false;   // false = solo el año en curso; true = solo años anteriores (para ubicar y eliminar en el ERP)
+
+function _tomDias(fechaStr){
+  var m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(fechaStr||'').trim());
+  if(!m) return 0;
+  var f=new Date(+m[3],+m[2]-1,+m[1]);
+  var h=new Date(); h.setHours(0,0,0,0);
+  return Math.max(0,Math.round((h-f)/86400000));
+}
+function _tomClaveDoc(l){ return l.tipoDoc+'|'+(l.sucursalDoc||'')+'|'+l.numero; }
+function _tomClp(n){ return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+
+function _tomConstruir(){
+  // Solo documentos que sacan Disponible de PEM/SEM esperando boleta o factura: Nota de Venta (NVM) y
+  // Venta Mesón (VMN/VMP). Nota de Venta Calzada (NVC, bodega abierta CEM) no afecta el disponible: fuera.
+  var BODS=['pem','sem'], TIPOS={NVM:1,VMN:1,VMP:1}, out=[];
+  var mapa=window._vadmStockMap||{};
+  Object.keys(_isbPedidosDetalle||{}).forEach(function(cod){
+    BODS.forEach(function(b){
+      ((_isbPedidosDetalle[cod]||{})[b]||[]).forEach(function(d){
+        if(!TIPOS[d.tipoDoc]) return;
+        var desc=d.descripcion||((mapa[cod]||{}).desc)||'';
+        out.push({
+          cod:cod, bod:b.toUpperCase(), desc:desc,
+          tipoDoc:d.tipoDoc||'', tipoLabel:(d.tipoDocLabel||d.tipoDoc||''),
+          numero:String(d.numero||''), sucursalDoc:d.sucursalDoc||'', sucursal:d.sucursalNombre||'',
+          fEmision:d.fechaEmision||'', fRegistro:d.fechaRegistro||'', fEntrega:d.fechaEntrega||'',
+          atraso:d.atraso||0, cliente:d.cliente||'', rut:d.rut||'', vendedor:d.vendedor||'',
+          cant:d.cant||0, cantOrig:d.cantOriginal||0, valor:d.valorNeto||0,
+          lugar:d.lugarEntrega||'', dias:_tomDias(d.fechaEmision),
+          anio:+(String(d.fechaEmision||'').split('/')[2])||0
+        });
+      });
+    });
+  });
+  _tomLineas=out;
+}
+
+function _tomActualizarBadge(){
+  _tomConstruir();
+  var b=document.getElementById('isbTomBadge'); if(!b) return;
+  var docs={}, nViejos=0, anioAct=new Date().getFullYear();
+  _tomLineas.forEach(function(l){
+    if(l.anio && l.anio<anioAct) return;   // años anteriores: solo en su ficha aparte
+    var k=_tomClaveDoc(l);
+    if(!docs[k]){ docs[k]=1; if(l.dias>TOM_ALERTA_DIAS) nViejos++; }
+  });
+  if(!_tomLineas.length){ b.style.display='none'; return; }
+  b.style.display='inline-block';
+  b.textContent=nViejos+' doc. con +'+TOM_ALERTA_DIAS+' d';
+  b.style.background=nViejos>0?'#dc2626':'#16a34a';
+}
+
+function _tomCrearModal(){
+  if(document.getElementById('isbTomadosModal')) return;
+  var m=document.createElement('div');
+  m.id='isbTomadosModal';
+  m.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;overflow-y:auto;padding:20px 12px';
+  m.onclick=function(e){ if(e.target===m) window.isbTomCerrar(); };
+  m.innerHTML='<div style="max-width:1400px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    +'<div style="background:#b45309;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">'
+    +'<span style="color:#fff;font-weight:700;font-size:15px">⏳ Pedidos tomados por días — Nota de Venta / Venta Mesón (PEM y SEM) sin facturar</span>'
+    +'<button onclick="isbTomCerrar()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;line-height:28px">✕</button></div>'
+    +'<div style="padding:12px 20px;font-size:12px;color:#6b7280;border-bottom:1px solid #e5e7eb">'
+    +'Cada fila es un producto de PEM o SEM sacado del Disponible por una Nota de Venta o Venta Mesón que aún no se factura ni se boletea. Si el cliente no volvió, el producto queda retenido: '
+    +'busque el <b>folio</b> y anúlelo o elimínelo en el ERP para que vuelva al disponible y se pueda vender. (Nota de Venta Calzada no se muestra: no afecta el disponible.) Este panel solo lee el ERP, no modifica nada. Datos SQL (pueden tener 1-2 días de desfase).</div>'
+    +'<div id="isbTomKpi" style="padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap"></div>'
+    +'<div style="padding:0 20px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+    +'<select id="isbTomBod" onchange="isbTomFiltrar()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px"><option value="">PEM + SEM</option><option>PEM</option><option>SEM</option></select>'
+    +'<select id="isbTomTipo" onchange="isbTomFiltrar()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px"></select>'
+    +'<select id="isbTomSuc" onchange="isbTomFiltrar()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px"></select>'
+    +'<select id="isbTomVend" onchange="isbTomFiltrar()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px"></select>'
+    +'<select id="isbTomOrden" onchange="isbTomFiltrar()" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">'
+    +'<option value="dias">Más antiguos primero</option><option value="nuevos">Más nuevos primero</option><option value="cant">Mayor cantidad</option><option value="valor">Mayor valor</option><option value="folio">Por folio</option></select>'
+    +'<input type="text" id="isbTomBuscar" oninput="isbTomFiltrar()" placeholder="Folio, código, producto, cliente, RUT, vendedor…" style="font-size:12px;padding:4px 10px;border:1px solid #d1d5db;border-radius:4px;min-width:280px">'
+    +'<button class="ven-adm-btn" onclick="isbTomCSV()">📄 CSV</button>'
+    +'<button class="ven-adm-btn" onclick="isbTomExcel()">📊 Excel</button>'
+    +'<span id="isbTomResumen" style="font-size:12px;color:#6b7280"></span></div>'
+    +'<div id="isbTomBody" style="padding:0 20px 20px;overflow-x:auto;font-size:12px"></div></div>';
+  document.body.appendChild(m);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') window.isbTomCerrar(); });
+}
+
+function _tomLlenarSelect(id, etiquetaTodos, valores){
+  var s=document.getElementById(id); if(!s) return;
+  var actual=s.value;
+  s.innerHTML='<option value="">'+etiquetaTodos+'</option>';
+  valores.forEach(function(v){ var o=document.createElement('option'); o.value=v; o.textContent=v; s.appendChild(o); });
+  if(actual && valores.indexOf(actual)>=0) s.value=actual;
+}
+
+function _tomFiltradas(ignorarTramo){
+  var bod=document.getElementById('isbTomBod').value;
+  var tipo=document.getElementById('isbTomTipo').value;
+  var suc=document.getElementById('isbTomSuc').value;
+  var vend=document.getElementById('isbTomVend').value;
+  var q=(document.getElementById('isbTomBuscar').value||'').toLowerCase().trim();
+  var anioAct=new Date().getFullYear();
+  return _tomLineas.filter(function(l){
+    var ant=l.anio && l.anio<anioAct;
+    if(_tomVerAnteriores ? !ant : ant) return false;
+    if(bod && l.bod!==bod) return false;
+    if(tipo && l.tipoDoc!==tipo) return false;
+    if(suc && (l.sucursal||'—')!==suc) return false;
+    if(vend && (l.vendedor||'—')!==vend) return false;
+    if(!ignorarTramo && _tomTramoSel){
+      var t=TOM_TRAMOS.filter(function(x){ return x.k===_tomTramoSel; })[0];
+      if(t && (l.dias<t.min || l.dias>t.max)) return false;
+    }
+    if(q){
+      var hay=(l.numero+' '+l.cod+' '+l.desc+' '+l.cliente+' '+l.rut+' '+l.vendedor+' '+l.tipoLabel).toLowerCase();
+      if(hay.indexOf(q)<0) return false;
+    }
+    return true;
+  });
+}
+
+window.isbTomFiltrar = function(){
+  var base=_tomFiltradas(true);
+  // KPI por tramo (documentos distintos y unidades), calculados sin el filtro de tramo
+  var kpi='<div onclick="isbTomTramo(\'\')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:2px solid '+(_tomTramoSel===''?'#b45309':'#e5e7eb')+';background:#fffbeb"><div style="font-size:10px;color:#92400e;font-weight:700">TODOS</div><div style="font-size:14px;font-weight:800">'+base.length+' líneas</div></div>';
+  TOM_TRAMOS.forEach(function(t){
+    var docs={}, u=0, v=0;
+    base.forEach(function(l){ if(l.dias>=t.min && l.dias<=t.max){ docs[_tomClaveDoc(l)]=1; u+=l.cant; v+=l.valor; } });
+    var nd=Object.keys(docs).length;
+    var rojo=t.min>TOM_ALERTA_DIAS && nd>0;
+    kpi+='<div onclick="isbTomTramo(\''+t.k+'\')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:2px solid '+(_tomTramoSel===t.k?'#b45309':'#e5e7eb')+';background:'+(rojo?'#fef2f2':'#f9fafb')+'">'
+      +'<div style="font-size:10px;font-weight:700;color:'+(rojo?'#b91c1c':'#6b7280')+'">'+t.lbl+'</div>'
+      +'<div style="font-size:14px;font-weight:800">'+nd+' doc.</div>'
+      +'<div style="font-size:10px;color:#6b7280">'+u+' u · '+_tomClp(v)+'</div></div>';
+  });
+  // Ficha aparte: pedidos de años anteriores (no deberían existir; se ubican por folio para eliminarlos en el ERP)
+  var anioAct=new Date().getFullYear(), dAnt={}, uAnt=0;
+  _tomLineas.forEach(function(l){ if(l.anio && l.anio<anioAct){ dAnt[_tomClaveDoc(l)]=1; uAnt+=l.cant; } });
+  var nAnt=Object.keys(dAnt).length;
+  if(_tomVerAnteriores){
+    kpi='<div onclick="isbTomAnteriores(false)" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:2px solid #b45309;background:#fffbeb;font-weight:700;font-size:12px">← Volver a '+anioAct+'</div>'
+      +'<div style="padding:6px 12px;border-radius:8px;background:#fee2e2;font-size:12px;font-weight:700;color:#7f1d1d">Años anteriores: '+nAnt+' documentos · '+uAnt+' u — eliminar en el ERP con el folio</div>';
+  } else if(nAnt>0){
+    kpi+='<div onclick="isbTomAnteriores(true)" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:2px solid #7f1d1d;background:#fee2e2"><div style="font-size:10px;font-weight:700;color:#7f1d1d">AÑOS ANTERIORES</div><div style="font-size:14px;font-weight:800">'+nAnt+' doc.</div><div style="font-size:10px;color:#7f1d1d">'+uAnt+' u · revisar</div></div>';
+  }
+  document.getElementById('isbTomKpi').innerHTML=kpi;
+
+  var f=_tomFiltradas(false);
+  var ord=document.getElementById('isbTomOrden').value;
+  f.sort(function(a,b){
+    if(ord==='nuevos') return a.dias-b.dias || (a.numero<b.numero?-1:1);
+    if(ord==='cant')   return b.cant-a.cant;
+    if(ord==='valor')  return b.valor-a.valor;
+    if(ord==='folio')  return (+a.numero||0)-(+b.numero||0) || (a.numero<b.numero?-1:1);
+    return b.dias-a.dias || (a.numero<b.numero?-1:1);
+  });
+  window._isbTomListaActual=f;
+
+  var TD='padding:4px 7px;border:1px solid #e2e8f0';
+  var h='<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f1f5f9">'
+    +['Días','Folio','Documento','Sucursal','Bod.','Código','Producto','Cant. pend.','Neto pend.','Tomado','F. Entrega','Cliente','RUT','Vendedor'].map(function(t){ return '<th style="'+TD+';text-align:left;white-space:nowrap">'+t+'</th>'; }).join('')
+    +'</tr></thead><tbody>';
+  var docs={}, tu=0, tv=0;
+  f.forEach(function(l,i){
+    docs[_tomClaveDoc(l)]=1; tu+=l.cant; tv+=l.valor;
+    var col=l.dias>180?'#7f1d1d':l.dias>30?'#b91c1c':l.dias>TOM_ALERTA_DIAS?'#d97706':'#166534';
+    var bg=l.dias>180?'#fee2e2':l.dias>TOM_ALERTA_DIAS?'#fff7ed':'#fff';
+    var atr=l.atraso>0?' <span style="background:#fef2f2;color:#b91c1c;border-radius:4px;padding:1px 4px;font-size:10px;font-weight:700">+'+l.atraso+'d</span>':'';
+    h+='<tr style="background:'+bg+'">'
+      +'<td style="'+TD+';font-weight:800;color:'+col+';text-align:right">'+l.dias+'</td>'
+      +'<td style="'+TD+';font-weight:800;font-family:monospace;font-size:13px">'+_esc(l.numero)+'</td>'
+      +'<td style="'+TD+';color:#1e40af;white-space:nowrap">'+_esc(l.tipoLabel)+' <span style="color:#9ca3af">('+_esc(l.tipoDoc)+')</span></td>'
+      +'<td style="'+TD+';white-space:nowrap">'+_esc(l.sucursal||'—')+'</td>'
+      +'<td style="'+TD+';font-weight:700">'+_esc(l.bod)+'</td>'
+      +'<td style="'+TD+';font-weight:700">'+_esc(l.cod)+'</td>'
+      +'<td style="'+TD+';min-width:220px">'+_esc(l.desc)+'</td>'
+      +'<td style="'+TD+';text-align:right;font-weight:700">'+l.cant+(l.cantOrig&&l.cantOrig!==l.cant?' <span style="color:#9ca3af;font-weight:400">/'+l.cantOrig+'</span>':'')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(l.valor?_tomClp(l.valor):'—')+'</td>'
+      +'<td style="'+TD+';white-space:nowrap">'+_esc(l.fRegistro||l.fEmision)+'</td>'
+      +'<td style="'+TD+';white-space:nowrap">'+_esc(l.fEntrega||'—')+atr+'</td>'
+      +'<td style="'+TD+';max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_esc(l.cliente)+'">'+_esc(l.cliente||'—')+'</td>'
+      +'<td style="'+TD+';white-space:nowrap">'+_esc(l.rut||'—')+'</td>'
+      +'<td style="'+TD+';color:#6b7280">'+_esc(l.vendedor||'—')+'</td></tr>';
+  });
+  h+='</tbody><tfoot><tr style="background:#f1f5f9;font-weight:700"><td colspan="7" style="'+TD+';text-align:right">TOTAL ('+Object.keys(docs).length+' documentos · '+f.length+' líneas)</td>'
+    +'<td style="'+TD+';text-align:right">'+tu+'</td><td style="'+TD+';text-align:right">'+_tomClp(tv)+'</td><td colspan="5" style="'+TD+'"></td></tr></tfoot></table>';
+  document.getElementById('isbTomBody').innerHTML=f.length?h:'<p style="color:#6b7280">Sin pedidos tomados con esos filtros.</p>';
+  document.getElementById('isbTomResumen').textContent=Object.keys(docs).length+' documentos · '+tu+' unidades';
+};
+
+window.isbTomTramo = function(k){ _tomTramoSel=k; window.isbTomFiltrar(); };
+window.isbTomAnteriores = function(v){ _tomVerAnteriores=!!v; _tomTramoSel=''; window.isbTomFiltrar(); };
+
+window.isbAbrirTomados = function(){
+  _tomCrearModal();
+  if(!_tomLineas.length) _tomConstruir();
+  var uniq=function(fn){ var s={}; _tomLineas.forEach(function(l){ var v=fn(l); if(v) s[v]=1; }); return Object.keys(s).sort(); };
+  _tomLlenarSelect('isbTomTipo','Todos los documentos',uniq(function(l){ return l.tipoDoc; }));
+  _tomLlenarSelect('isbTomSuc','Todas las sucursales',uniq(function(l){ return l.sucursal||'—'; }));
+  _tomLlenarSelect('isbTomVend','Todos los vendedores',uniq(function(l){ return l.vendedor||'—'; }));
+  _tomTramoSel=''; _tomVerAnteriores=false;
+  document.getElementById('isbTomadosModal').style.display='block';
+  if(!_tomLineas.length){
+    document.getElementById('isbTomKpi').innerHTML='';
+    document.getElementById('isbTomBody').innerHTML='<p style="color:#6b7280">Sin datos de pedidos. Pulse «🔄 Generar» primero o ejecute ACTUALIZAR_TODO.bat.</p>';
+    return;
+  }
+  window.isbTomFiltrar();
+};
+
+window.isbTomCerrar = function(){
+  var m=document.getElementById('isbTomadosModal'); if(m) m.style.display='none';
+};
+
+function _tomFilas(){
+  var rows=[['Días','Folio','Tipo doc','Documento','Sucursal','Bodega','Código','Producto','Cant. pendiente','Cant. original','Neto pendiente','Tomado','F. Entrega','Atraso entrega (d)','Cliente','RUT','Vendedor','Lugar entrega']];
+  (window._isbTomListaActual||[]).forEach(function(l){
+    rows.push([l.dias,l.numero,l.tipoDoc,l.tipoLabel,l.sucursal,l.bod,l.cod,l.desc,l.cant,l.cantOrig,l.valor,l.fRegistro||l.fEmision,l.fEntrega,l.atraso,l.cliente,l.rut,l.vendedor,l.lugar]);
+  });
+  return rows;
+}
+
+window.isbTomCSV = function(){
+  var rows=_tomFilas();
+  if(rows.length<2){ if(window.toast) toast('Sin datos para exportar','err'); return; }
+  var csv=rows.map(function(r){ return r.map(function(x){ return '"'+String(x==null?'':x).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url;
+  a.download='PedidosTomados_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  if(window.toast) toast('📄 CSV exportado','ok');
+};
+
+window.isbTomExcel = function(){
+  var rows=_tomFilas();
+  if(rows.length<2){ if(window.toast) toast('Sin datos para exportar','err'); return; }
+  if(typeof XLSX==='undefined'){ if(window.toast) toast('Librería XLSX no disponible','err'); return; }
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:6},{wch:10},{wch:8},{wch:26},{wch:16},{wch:7},{wch:13},{wch:40},{wch:9},{wch:9},{wch:12},{wch:17},{wch:11},{wch:9},{wch:30},{wch:12},{wch:14},{wch:20}];
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Pedidos tomados');
+  XLSX.writeFile(wb,'PedidosTomados_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  if(window.toast) toast('📊 Excel exportado','ok');
 };
 
 })();

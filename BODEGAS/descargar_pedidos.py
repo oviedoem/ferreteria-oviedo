@@ -11,7 +11,12 @@ Genera dos JSONs desde SQL Server para el módulo Informe Stock:
       Fuente: M_DOCUMENTOS_DETALLE filtrado por tipos de venta abiertos.
       Si la query falla por schema inesperado, escribe {} y loguea el error.
 
-Tipos de doc incluidos: NVM, VMN, VMP  (notas de venta que incrementan ST_PEDIDO).
+Tipos de doc incluidos: todos los de M_DOCUMENTOS.TIPOSTOCK='St_Pedido'
+(NVM, VMN, VMP, NVC, NVW, MKP, NVF, NVL, NVR: los que incrementan ST_PEDIDO).
+V37.80: el detalle se filtra por BODEGA (no por sucursal del documento: Litueche, Ventas
+Empresas, Distribucion y Ventas Web tambien reservan en PEM/SEM/CEM/MEM), solo ESTADO='Vigente'
+(Pendiente/Nulo = anulado o auto-eliminado, el ERP no lo cuenta) y sin limite de antiguedad,
+para poder ubicar por folio los pedidos tomados hace mucho.
 Ver sección TIPOS DE DOC COMPROMISO en AGENTS.md para la lista actualizada.
 """
 
@@ -40,13 +45,9 @@ ENC_FILE  = Path(__file__).parent.parent.parent / "config" / "credenciales_db.en
 # Bodegas comerciales para Informe Stock
 BODEGAS_OBJETIVO = ['PEM', 'SEM', 'CEM', 'MEM']
 
-# Tipos de documento que RESERVAN stock (pedidos abiertos, sin salida física).
-# Documentados en AGENTS.md sección TIPOS DE DOC COMPROMISO.
+# Documentos que RESERVAN stock (pedidos abiertos, sin salida física): los que el ERP marca con
+# M_DOCUMENTOS.TIPOSTOCK = 'St_Pedido' (ver SQL_DETALLE). Documentados en AGENTS.md.
 # EXCLUIDOS: FCN/FVE (factura), BVE (boleta), NCV/NCE (nota crédito) — ya salieron.
-DOC_TIPOS_PEDIDO = ('NVM', 'VMN', 'VMP')
-
-# Período de búsqueda para pedidos-detalle (últimos N meses)
-MESES_HISTORICO = 6
 
 # ── Queries ──────────────────────────────────────────────────────────────────
 
@@ -85,15 +86,18 @@ WITH agg AS (
         E.CODIGO_TECNICO,
         E.IDBODEGA,
         SUM(CAST(ISNULL(E.CANTIDAD_PENDIENTE, 0) AS INT)) AS CANT_PEND,
-        MIN(CAST(E.FECHA_EMISION AS DATE))                AS FECHA_EM
+        MIN(CAST(E.FECHA_EMISION AS DATE))                AS FECHA_EM,
+        SUM(CAST(ISNULL(E.CANTIDAD, 0) AS INT))           AS CANT_ORIG,
+        MAX(LTRIM(RTRIM(ISNULL(E.DESCRIPCION, ''))))      AS DESCRIP,
+        SUM(CASE WHEN ISNULL(E.CANTIDAD, 0) > 0
+                 THEN ISNULL(E.VALOR_NETO, 0) * ISNULL(E.CANTIDAD_PENDIENTE, 0) / E.CANTIDAD
+                 ELSE 0 END)                              AS VALOR_PEND
     FROM Foviedo.dbo.M_DOCUMENTOS_DETALLE E
     INNER JOIN Foviedo.dbo.M_DOCUMENTOS MD2
         ON MD2.IDDOCUMENTO = E.IDDOCUMENTO
     WHERE E.IDBODEGA IN ({ph_bodegas})
-      AND E.IDSUCURSAL = '04'
-      AND MD2.DOC IN ({ph_docs})
+      AND MD2.TIPOSTOCK = 'St_Pedido'
       AND ISNULL(E.CANTIDAD_PENDIENTE, 0) > 0
-      AND E.FECHA_EMISION >= ?
     GROUP BY E.IDDOCUMENTO, E.IDNUMERO, E.IDSUCURSAL,
              E.CODIGO_TECNICO, E.IDBODEGA
 )
@@ -111,7 +115,14 @@ SELECT
     ISNULL(enc.ESTADO, '')                                                        AS ESTADO,
     ISNULL(ent.RAZON_SOCIAL, '')                                                 AS CLIENTE,
     ISNULL(ent.RUT, '')                                                           AS RUT_ENT,
-    ISNULL(ent.DIGITO, '')                                                        AS DIGITO_ENT
+    ISNULL(ent.DIGITO, '')                                                        AS DIGITO_ENT,
+    agg.CANT_ORIG,
+    agg.DESCRIP,
+    agg.VALOR_PEND,
+    agg.IDSUCURSAL                                                                AS SUC_DOC,
+    LTRIM(RTRIM(ISNULL(suc.SUCURSAL, '')))                                       AS SUC_NOMBRE,
+    enc.FECHA_REGISTRO,
+    ISNULL(enc.LUGAR_ENTREGA, '')                                                 AS LUGAR_ENTREGA
 FROM agg
 INNER JOIN Foviedo.dbo.M_DOCUMENTOS MD
     ON MD.IDDOCUMENTO = agg.IDDOCUMENTO
@@ -123,7 +134,9 @@ LEFT JOIN Foviedo.dbo.M_DOCUMENTOS_ENCABEZADO enc
     AND enc.IDSUCURSAL  = agg.IDSUCURSAL
 LEFT JOIN Foviedo.dbo.M_ENTIDADES ent
     ON ent.IDENTIDAD = CAST(enc.IDENTIDAD AS NVARCHAR(20))
-WHERE (enc.ESTADO IS NULL OR enc.ESTADO <> 'N')
+LEFT JOIN Foviedo.dbo.C_SUCURSALES suc
+    ON suc.IDSUCURSAL = agg.IDSUCURSAL
+WHERE enc.ESTADO = 'Vigente'
 ORDER BY agg.CODIGO_TECNICO, agg.IDBODEGA, agg.FECHA_EM DESC
 """
 
@@ -248,15 +261,12 @@ def generar_detalle(cursor, idbodega_map):
                                 "tipoOrden":"New Order", "cliente":..., "rut":...,
                                 "vendedor":..., "cant":N, "idDocReal":N, "urlERP":""}]}}
     """
-    _fi_date     = datetime.date.today() - datetime.timedelta(days=MESES_HISTORICO * 30)
-    fecha_inicio = datetime.datetime(_fi_date.year, _fi_date.month, _fi_date.day)  # datetime → pyodbc pasa como datetime, no nvarchar
-    log(f'[detalle] Buscando docs desde {_fi_date.isoformat()} — tipos: {DOC_TIPOS_PEDIDO}')
+    log('[detalle] Buscando docs St_Pedido vigentes con cantidad pendiente (sin limite de fecha ni de sucursal)')
 
     ids    = list(idbodega_map.values())
     ph_bod = ','.join(['?'] * len(ids))
-    ph_doc = ','.join(['?'] * len(DOC_TIPOS_PEDIDO))
-    sql    = SQL_DETALLE.format(ph_bodegas=ph_bod, ph_docs=ph_doc)
-    params = ids + list(DOC_TIPOS_PEDIDO) + [fecha_inicio]
+    sql    = SQL_DETALLE.format(ph_bodegas=ph_bod)
+    params = ids
 
     try:
         cursor.execute(sql, *params)
@@ -299,6 +309,25 @@ def generar_detalle(cursor, idbodega_map):
 
         rut_str = f'{rut_base}-{digito}' if rut_base and digito else rut_base
 
+        cant_orig  = int(row[14]) if row[14] else 0
+        descrip    = str(row[15] or '').strip()
+        valor_pend = int(round(float(row[16]))) if row[16] else 0
+        suc_doc    = str(row[17] or '').strip()
+        suc_nombre = str(row[18] or '').strip()
+        f_reg      = row[19]
+        lugar_ent  = str(row[20] or '').strip()
+        f_em_date  = fecha_em if hasattr(fecha_em, 'year') else None
+        if f_em_date is None and fecha_em:
+            try:
+                f_em_date = datetime.date.fromisoformat(str(fecha_em)[:10])
+            except Exception:
+                f_em_date = None
+        dias = (hoy - f_em_date).days if f_em_date else 0
+        if hasattr(f_reg, 'strftime'):
+            f_reg_str = f_reg.strftime('%d/%m/%Y %H:%M')
+        else:
+            f_reg_str = str(f_reg or '')[:16]
+
         result[cod][bod].append({
             'tipoDoc':      tipo_doc,
             'tipoDocLabel': tipo_label,
@@ -313,6 +342,15 @@ def generar_detalle(cursor, idbodega_map):
             'cant':         cant,
             'idDocReal':    id_doc,
             'urlERP':       '',
+            # V37.80: campos del boton "Pedidos tomados" (aditivos; el modal anterior no los usa)
+            'descripcion':   descrip,
+            'cantOriginal':  cant_orig,
+            'valorNeto':     valor_pend,
+            'sucursalDoc':   suc_doc,
+            'sucursalNombre': suc_nombre,
+            'fechaRegistro': f_reg_str,
+            'lugarEntrega':  lugar_ent,
+            'dias':          dias,
         })
 
     result_plain = {cod: dict(bods) for cod, bods in result.items()}
