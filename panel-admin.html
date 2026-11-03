@@ -2158,14 +2158,12 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
         <div style="overflow-x:auto"><div id="tablaPrecios"><p style="color:#9ca3af;font-size:13px">Cargando...</p></div></div>
       </div>
       <div class="card">
-        <div class="card-title"><span>📋</span> Instrucciones para actualizar precios</div>
+        <div class="card-title"><span>📋</span> Cómo se actualizan los precios</div>
         <ol style="font-size:13px;line-height:2;padding-left:18px;color:#374151">
-          <li>Usa el archivo del catálogo desde Firebase Hosting</li>
-          <li>Edita los valores en las columnas <strong>PrecioIVA</strong> o <strong>SocioIVA</strong></li>
-          <li>Ve a <strong>Archivo → Compartir → Publicar en la web</strong></li>
-          <li>Selecciona la hoja, formato <strong>CSV</strong> y copia el enlace</li>
-          <li>Pega el enlace en la sección <strong>🔗 URL / Conexión</strong></li>
-          <li>Las apps cliente y vendedor actualizarán precios automáticamente</li>
+          <li>Los precios y el stock vienen del ERP (SSRS); no se editan a mano en esta pantalla</li>
+          <li>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> (o ▶ Ejecutar en el Centro de Control Oviedo): el PASO 1A descarga el ERP y genera <code>Datos.json</code></li>
+          <li>Los cambios de precio AYER vs HOY (lista 14, precio con IVA) se ven en <strong>Diff Precios</strong> y se envían por correo a los vendedores (PASO 2B), solo si hay variaciones</li>
+          <li>Las apps cliente y vendedor leen el nuevo catálogo vía Service Worker al publicarse</li>
         </ol>
       </div>
     </div>
@@ -2496,7 +2494,7 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
           <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));venAdmCargar()">
             <div class="tc-icon">📈</div>
             <div class="tc-title">Ventas El Manzano</div>
-            <div class="tc-desc">Análisis ABC, quiebre de stock, detalle por vendedor y ranking de clientes. Se actualiza automáticamente a las 18:00 vía tarea programada.</div>
+            <div class="tc-desc">Análisis ABC, quiebre de stock, detalle por vendedor y ranking de clientes. Se actualiza al ejecutar ACTUALIZAR_TODO.bat desde el Centro de Control; hoy no hay tarea automática activa.</div>
             <div class="tc-link">Ir a Ventas →</div>
           </div>
           <div class="tut-card-v2" onclick="showTab('url',document.querySelector('[onclick*=\'url\']'))">
@@ -2537,8 +2535,8 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
           </div>
           <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('inventario');setTimeout(function(){vadmSubTab('quiebre');},200);},300)">
             <div class="tc-icon">📊</div>
-            <div class="tc-title">Informe Stock V37.57</div>
-            <div class="tc-desc">22 columnas: Disp/Fís/Ped/Dif × 4 bodegas. Clic en Ped → pedidos comprometidos (NVM/VMN/VMP). Clic en Dif → despachos BVE/FVE pendientes. Encabezados sticky al hacer scroll.</div>
+            <div class="tc-title">Informe Stock V37.80</div>
+            <div class="tc-desc">22 columnas: Disp/Fís/Ped/Dif × 4 bodegas. Clic en Ped → pedidos comprometidos por bodega (solo Vigente; NVM/VMN/VMP). Botón ⏳ Pedidos tomados → notas de venta pendientes por tramo de días, con folio, cliente y vendedor (CSV/Excel; solo lectura). Clic en Dif → despachos BVE/FVE pendientes.</div>
             <div class="tc-link">Ir a Inventario →</div>
           </div>
           <div class="tut-card-v2" onclick="showTab('ventas',document.querySelector('[onclick*=\'ventas\']'));setTimeout(function(){vadmGrupo('adquisiciones');setTimeout(function(){vadmSubTab('solicitud-stock');},200);},300)">
@@ -2589,11 +2587,11 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
         </p>
         <ol style="font-size:13px;line-height:2.2;padding-left:18px;color:#374151;margin-bottom:12px">
           <li>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> en <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">E:\ferreteria-oviedo\</code></li>
-          <li><strong>[0]</strong> Descarga precios desde VisorRS (CSV) y stock desde el ERP → <code>actualizar.xlsx</code></li>
-          <li><strong>[1]</strong> <code>procesar-actualizacion.py</code> → <code>Datos.xlsx</code></li>
-          <li><strong>[2]</strong> <code>xlsx_a_csv.py</code> → <code>Datos.csv</code></li>
-          <li><strong>[3]</strong> <code>csv_a_json.py</code> → <code>Datos.json</code></li>
-          <li><strong>[4]</strong> <code>firebase deploy</code> → sitio publicado. Los paneles actualizan solos vía Service Worker</li>
+          <li><strong>[1A–1B]</strong> Descarga precios y stock del ERP (SSRS, 8 bodegas) → <code>Datos.json</code></li>
+          <li><strong>[1D–1N]</strong> SQL: bodegas, pedidos, despachos, informe de stock, stock crítico y OC → <code>data/[token]/</code></li>
+          <li><strong>[2]</strong> Ventas del ERP + costo real de SQL → <code>ventas-manzano-*.json</code></li>
+          <li><strong>[2B]</strong> Variaciones de precio AYER vs HOY (lista 14) → <code>precios-diff.json</code> + correo a vendedores si hay cambios</li>
+          <li><strong>[4–7]</strong> Validación de JSONs → <code>firebase deploy</code> → catálogo del bot y de fotos → verificación del token → commit a GitHub. Los paneles actualizan solos vía Service Worker</li>
         </ol>
         <div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e">
           Si el bat pregunta visibilidad de precios y no respondes en 10 segundos, avanza con precios ocultos (opción N por defecto).
@@ -2603,13 +2601,13 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
       <div class="card">
         <div class="card-title"><span>📈</span> Cómo actualizar las ventas El Manzano</div>
         <p style="font-size:12px;color:#6b7280;margin-bottom:14px;line-height:1.6">
-          Las ventas se descargan automáticamente desde el ERP cada día a las <strong>18:00 (6 PM)</strong> vía tarea programada de Windows (ACTUALIZAR_TODO_AUTO.bat).
-          También puedes actualizarlas manualmente en cualquier momento.
+          Las ventas se actualizan al ejecutar <strong>ACTUALIZAR_TODO.bat</strong> desde el Centro de Control Oviedo (un clic en el PC).
+          Hoy no hay tarea programada activa.
         </p>
         <ol style="font-size:13px;line-height:2.2;padding-left:18px;color:#374151;margin-bottom:14px">
           <li>Ejecuta <strong>ACTUALIZAR_TODO.bat</strong> en <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">E:\ferreteria-oviedo\</code></li>
-          <li>El bat descarga precios + stock ERP (SSRS + VisorRS), procesa el catálogo, descarga ventas ERP y enriquece con XLSM del Servidor 2</li>
-          <li>Genera <code>data/&lt;token&gt;/ventas-manzano-YYYY-MM.json</code> (splits mensual + anual, carpeta rotativa) y hace deploy a Firebase Hosting</li>
+          <li>El bat descarga precios + stock ERP (SSRS + VisorRS), procesa el catálogo, descarga ventas ERP y las enriquece con SQL (costo real, cliente, bodega)</li>
+          <li>Genera <code>data/&lt;token&gt;/ventas-manzano-YYYY-MM.json</code> (mensual + anual; carpeta con token) y hace deploy a Firebase Hosting</li>
           <li>En el panel, ve a <strong>Ventas</strong> y haz clic en <strong>Actualizar</strong> para ver los datos nuevos</li>
         </ol>
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px">
@@ -2916,26 +2914,19 @@ Todo desde tu celular, gratis, sin apps que descargar.
 
         <!-- Daemon -->
         <div class="mejora-card">
-          <div class="mejora-card-icon" style="background:#eff6ff">🤖</div>
+          <div class="mejora-card-icon" style="background:#eff6ff">🎛️</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Daemon de automatización — Firestore Command Queue</span>
-              <span class="mejora-status plan">Planificado</span>
+              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Centro de Control Oviedo — reemplaza al daemon planificado</span>
+              <span class="mejora-status done">✓ Completado V37.80</span>
             </div>
             <div style="font-size:12px;color:#6b7280;line-height:1.6;margin-bottom:8px">
-              Un proceso Python corriendo en el PC detecta botones presionados desde el panel y ejecuta
-              cualquier script (.py / .bat) sin tocar el PC físicamente. Dispara actualizaciones de ventas,
-              catálogo, precios, reportes y más, desde el panel o desde el celular.
+              Panel local en el PC (localhost:4173): botón ▶ Ejecutar por proyecto, consola en vivo y calendario de corridas con su log.
+              Hace lo que pedía el daemon (disparar los .bat sin abrir el PC) sin Firestore ni lecturas extra.
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <span style="font-size:10px;padding:2px 8px;background:#eff6ff;border-radius:8px;color:#1e40af;font-weight:600">Costo: $0</span>
-              <span style="font-size:10px;padding:2px 8px;background:#f0fdf4;border-radius:8px;color:#166534;font-weight:600">~2.880 lecturas/día adicionales</span>
-              <span style="font-size:10px;padding:2px 8px;background:#f9fafb;border-radius:8px;color:#374151;font-weight:600">VPN requerida para ERP</span>
-            </div>
-            <div style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:8px;font-size:11px;color:#374151;border:1px solid #e2e8f0">
-              <strong>Comandos planificados:</strong> actualizar_ventas · actualizar_catalogo · actualizar_precios · enviar_reporte · publicar_compras<br>
-              <strong>Archivos a crear:</strong> <code>daemon_firestore.py</code> · <code>INICIAR_DAEMON.bat</code> · <code>DETENER_DAEMON.bat</code><br>
-              <strong>Ver detalle completo en:</strong> <code>ARQUITECTURA_FIREBASE.md</code> (sección "Mejora planificada")
+              <span style="font-size:10px;padding:2px 8px;background:#f9fafb;border-radius:8px;color:#374151;font-weight:600">PC encendido y VPN para el ERP</span>
             </div>
           </div>
         </div>
@@ -2945,13 +2936,13 @@ Todo desde tu celular, gratis, sin apps que descargar.
           <div class="mejora-card-icon" style="background:#f0fdf4">⚙️</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Task Scheduler — Automatización horaria sin daemon</span>
-              <span class="mejora-status" style="background:#dcfce7;color:#15803d;border:1px solid #86efac">✓ Completado V37.2</span>
+              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Task Scheduler 18:00 — hoy inactivo</span>
+              <span class="mejora-status wip">Inactivo</span>
             </div>
             <div style="font-size:12px;color:#6b7280;line-height:1.6">
-              Implementado V37.2 (2026-05-27): ACTUALIZAR_TODO_AUTO.bat corre cada día a las 18:00 vía
-              Task Scheduler de Windows. StartWhenAvailable=true: si el PC estaba apagado, corre al
-              encenderse. Log en <code>logs/auto_YYYYMMDD_HH00.log</code>.
+              V37.2 (2026-05-27) creó la tarea de las 18:00 con ACTUALIZAR_TODO_AUTO.bat. Hoy no hay tarea activa
+              (verificado 16-10-2026): se actualiza con un clic desde el Centro de Control o con
+              <code>ACTUALIZAR_TODO.bat /auto</code>. Puede recrearse con <code>_utilidades\ACTIVAR_EN_ESTE_EQUIPO.bat</code>.
             </div>
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
               <span style="font-size:10px;padding:2px 8px;background:#f0fdf4;border-radius:8px;color:#166534;font-weight:600">Costo: $0 — nativo Windows</span>
@@ -2992,13 +2983,52 @@ Todo desde tu celular, gratis, sin apps que descargar.
             </div>
           </div>
         </div>
+        <div class="mejora-card">
+          <div class="mejora-card-icon" style="background:#fffbeb">💲</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Variaciones de precio AYER vs HOY + correo a vendedores</span>
+              <span class="mejora-status done">✓ Completado 03-11-2026</span>
+            </div>
+            <div style="font-size:12px;color:#6b7280;line-height:1.6">
+              PASO 2B del pipeline: lee la lista 14 del ERP (precio con IVA), compara con el día anterior, alimenta el menú
+              <strong>Diff Precios</strong> y envía el correo por Outlook a los vendedores solo si hay cambios. Reemplaza al libro LP_E_MANZANO.xlsm.
+            </div>
+          </div>
+        </div>
+        <div class="mejora-card">
+          <div class="mejora-card-icon" style="background:#fff7ed">⏳</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Pedidos tomados — notas de venta pendientes</span>
+              <span class="mejora-status done">✓ Completado V37.80</span>
+            </div>
+            <div style="font-size:12px;color:#6b7280;line-height:1.6">
+              Botón en Informe Stock con las notas de venta (NVM/VMN/VMP) que tienen stock tomado, por tramo de días, con folio, cliente y vendedor.
+              Detalla los pedidos por bodega, solo Vigente. Solo lectura: se liberan anulando el documento en el ERP.
+            </div>
+          </div>
+        </div>
+        <div class="mejora-card">
+          <div class="mejora-card-icon" style="background:#f0fdf4">🔍</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:700;color:#1a1a1a">Consulta de Stock — rotación y margen sin depender de otro menú</span>
+              <span class="mejora-status done">✓ Completado V37.81</span>
+            </div>
+            <div style="font-size:12px;color:#6b7280;line-height:1.6">
+              La ficha ahora carga sus propias ventas de los últimos 90 días. Antes dependía de lo que otro menú hubiera cargado y
+              mostraba «sin venta» en códigos que sí vendían.
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Encabezado con stats -->
       <div class="card" style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.57</div>
-          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-07-03</span>
+          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.81</div>
+          <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-11-03</span>
         </div>
         <div id="mejorasStats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
         <div id="listaMejoras"></div>
@@ -4062,7 +4092,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.80<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">24-10-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.81<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-11-2026</span></div>
 
 <script>
 
@@ -7132,16 +7162,16 @@ function renderMejoras(){
     // ── CATÁLOGO ──
     // ── INVENTARIO ──
     ['Inventario','ok',      '🚚','Despachos Pendientes — V37.10','BVE/FVE cobradas sin guía de despacho. Observación derivada por fechas: Entrega de empaque / Por despachar. Email y Excel. Fuente: despachos-detalle.json, sin nuevas descargas.'],
-    ['Inventario','ok',      '📊','Informe Stock ERP 22 cols — V37.8','Disp/Fís/Ped/Dif × PEM/SEM/CEM/MEM. Modales Ped y Dif con detalle de docs BVE/FVE/NVM.'],
-    ['Inventario','ok',      '🔍','Consulta de Stock — V37.1','Búsqueda por código o descripción. Ficha 8 bodegas: Disp/Tráns/Fís/Valor/Estado.'],
+    ['Inventario','ok',      '📊','Informe Stock ERP 22 cols + Pedidos tomados — V37.80','Disp/Fís/Ped/Dif × PEM/SEM/CEM/MEM. Modales Ped y Dif con detalle de docs; botón Pedidos tomados por tramo de días (solo Vigente, por bodega).'],
+    ['Inventario','ok',      '🔍','Consulta de Stock — V37.81','Búsqueda por código o descripción. Ficha 8 bodegas: Disp/Tráns/Fís/Valor/Estado, mín/crítico/máx ERP, tránsito OC y rotación/margen con sus propias ventas de 90 días.'],
     ['Inventario','ok',      '🏭','Análisis bodegas IEM/GEM/TEM/CEM — V37.50','6 bodegas El Manzano. GEM/CEM aceptan stock negativo por diseño ERP. Días antigüedad por producto.'],
-    ['Inventario','ok',      '⏰','Tarea automática 18:00 — V37.2','ACTUALIZAR_TODO_AUTO.bat corre cada día 18:00. StartWhenAvailable. Log en logs/auto_*.log.'],
+    ['Inventario','pending', '⏰','Tarea automática 18:00 — inactiva','Hoy se ejecuta desde el Centro de Control (un clic) o ACTUALIZAR_TODO.bat /auto. Se recrea con _utilidades/ACTIVAR_EN_ESTE_EQUIPO.bat.'],
     ['Inventario','ok',      '📋','Solicitud de Stock — V37.64','Base 6024 productos (catálogo ERP sin VCA/CAL) en /ADQUISICIONES/productos_faltantes_base.json. Prioridad A→B→C por marca, categoría D sin venta 12m, envíos en Firestore. JSON carga independiente de cuota Firestore.'],
     ['Inventario','ok',      '🔄','Traspasos CD — V37.45','Propuesta CD→PEM/SEM con prioridad 4 capas. Filtro bodega, checkboxes ranking, solicitud manual, export solo con cantidad.'],
     ['Inventario','ok',      '📌','Encabezados sticky Informe Stock — V37.52','position:sticky extendido a todos los menús (18 tab-pane + 34 vadm-section). Encabezados visibles al hacer scroll.'],
     ['Inventario','ok',      '🔢','OC Pendiente desde SQL — V37.55','387 OCs / 670 códigos. Columna OC Pend en Solicitud Semanal. _vadmStockMap con cb idempotente.'],
     // ── CATÁLOGO ──
-    ['Catálogo',  'ok',      '📦','Catálogo 6.011 productos','Pipeline ERP → Excel → JSON → Hosting. Se actualiza con ACTUALIZAR_TODO.bat.'],
+    ['Catálogo',  'ok',      '📦','Catálogo ~6.190 productos','Pipeline ERP → Excel → JSON → Hosting. Se actualiza con ACTUALIZAR_TODO.bat.'],
     ['Catálogo',  'ok',      '🟢','Stock badges (verde/amarillo/rojo)','Cantidad en tiempo real desde JSON. 3 niveles de color, legible en móvil.'],
     ['Catálogo',  'ok',      '💰','Toggle precios por panel','Admin controla visibilidad independiente: cliente / vendedor.'],
     ['Catálogo',  'ok',      '🛒','Carrito/PDF modo sin precios','Carrito muestra stock. PDF cambia a "Solicitud de Productos" automáticamente.'],
@@ -7162,8 +7192,10 @@ function renderMejoras(){
     ['Marketing', 'pending', '📅','Promociones programadas','Crear promos con fecha inicio/fin → se activan automáticamente en catálogo.'],
     ['Marketing', 'pending', '🔔','Notificaciones push (FCM)','Avisar a clientes sobre precios especiales o stock crítico vía push gratuito.'],
     // ── SEGURIDAD ──
-    ['Seguridad', 'ok',      '🔐','Token rotativo glob dinámico — V37.56','Carpeta data con nombre aleatorio rotativa mensual (julio público). Previene fuga de datos históricos.'],
+    ['Seguridad', 'ok',      '🔐','Carpeta data con token — V37.65','Los JSON sensibles viven en data/[token]/ (nombre aleatorio fijo; la rotación automática se eliminó). Las copias viejas sin token se archivaron el 03-11-2026.'],
     ['Seguridad', 'ok',      '🛡️','Fix XSS venAdmEsc — V37.56','venAdmEsc(bk) escapado con textContent. Cumple regla FO-002 del checklist de seguridad.'],
+    ['Inventario','ok',      '💲','Variaciones de precio + correo — 03-11-2026','Lista 14 SQL (precio con IVA) AYER vs HOY. PASO 2B envía por Outlook a vendedores solo si hay cambios; menú Diff Precios lee precios-diff.json. Reemplaza LP_E_MANZANO.xlsm.'],
+    ['Sistema',   'ok',      '🎛️','Centro de Control Oviedo — V37.80','Panel local (localhost:4173): ▶ Ejecutar por proyecto, consola en vivo y calendario de corridas con logs. Reemplaza al daemon planificado.'],
   ];
 
   var ok   = items.filter(function(m){return m[1]==='ok';}).length;
@@ -20150,6 +20182,41 @@ function _csCargarLeadTime(cb){
     .catch(function(){ _csLeadTime = {}; cb(); });
 }
 
+// Ventas de los últimos 90 días de la ficha (fix 03-11-2026). Antes la ficha leía _vadmLineas, que depende del menú
+// abierto antes y por defecto trae solo el mes actual: códigos con venta salían "sin venta" y "sin ventas registradas".
+var _csVentas90 = null;          // {codigo:{q:{PEM:u,SEM:u,...}, n:lineas, sm:suma margenPct, nm:lineas con margen}}
+var _csVentas90Cb = null;
+function _csCargarVentas90(cb){
+  if(_csVentas90){ cb(); return; }
+  if(_csVentas90Cb){ _csVentas90Cb.push(cb); return; }
+  _csVentas90Cb = [cb];
+  var hoy = new Date(), desdeTs = hoy.getTime() - 90*24*3600*1000, meses = [];
+  var d = new Date(new Date(desdeTs).getFullYear(), new Date(desdeTs).getMonth(), 1);
+  while(d <= hoy){ meses.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); d = new Date(d.getFullYear(), d.getMonth()+1, 1); }
+  var ts = Math.floor(Date.now()/3600000), agg = {};
+  Promise.all(meses.map(function(ym){
+    return fetch(dataUrl('ventas-manzano-'+ym+'.json')+'?t='+ts)
+      .then(function(r){ return r.ok ? r.json() : {registros:[]}; })
+      .catch(function(){ return {registros:[]}; });
+  })).then(function(arr){
+    arr.forEach(function(j){
+      (j.registros||[]).forEach(function(r){
+        if(!r.codigo) return;
+        var f = venAdmParseFecha(r.fecha);
+        if(!f || f < desdeTs) return;
+        var a = agg[r.codigo] || (agg[r.codigo] = {q:{}, n:0, sm:0, nm:0});
+        if(r.bodegaCorta){ var bk = String(r.bodegaCorta).toUpperCase(); a.q[bk] = (a.q[bk]||0) + (r.cantidad||0); }
+        a.n++;
+        if(r.margenPct){ a.sm += r.margenPct; a.nm++; }
+      });
+    });
+    _csVentas90 = agg;
+  }).catch(function(){ _csVentas90 = {}; }).then(function(){
+    var cbs = _csVentas90Cb || []; _csVentas90Cb = null;
+    cbs.forEach(function(f){ f(); });
+  });
+}
+
 var _csBodegas = [
   { key:'pem', trans:'pem_trans', label:'PEM', nombre:'Patio El Manzano',          tipo:'Comercial' },
   { key:'sem', trans:null,        label:'SEM', nombre:'Sala El Manzano',           tipo:'Comercial' },
@@ -20257,7 +20324,9 @@ function vadmRenderStockConsulta(cod){
   _csCodActual = cod;
   // Carga lazy de parámetros ERP por bodega + tiempo de tránsito proveedor antes de pintar la ficha
   _csCargarStockCritico(function(){
-    _csCargarLeadTime(function(){ _csPintarFicha(cod, p); });
+    _csCargarLeadTime(function(){
+      _csCargarVentas90(function(){ _csPintarFicha(cod, p); });
+    });
   });
 }
 
@@ -20401,12 +20470,16 @@ function _csPintarFicha(cod, p){
   // de este código (campo r.margenPct, mismo dato que ya usa el resto del panel) — NO se calcula
   // un markup propio (precio/costo) porque el ERP no expone ese concepto a nivel de catálogo,
   // solo a nivel de transacción de venta. Ver conversación 2026-06-28: "saca lógica markup, debe ser igual que el ERP".
-  var ventasCod = (_vadmLineas||[]).filter(function(r){ return r.codigo===cod && r.margenPct; });
-  var margenPctProm = ventasCod.length
-    ? ventasCod.reduce(function(s,r){ return s+r.margenPct; },0) / ventasCod.length
-    : 0;
+  // Fix 03-11-2026: usa las ventas de 90 días propias de la ficha (_csVentas90); _vadmLineas queda solo como respaldo.
+  var _v90 = (_csVentas90 && Object.keys(_csVentas90).length) ? _csVentas90 : null;
+  var ventasCod = _v90 ? [] : (_vadmLineas||[]).filter(function(r){ return r.codigo===cod && r.margenPct; });
+  var _a90 = _v90 ? _v90[cod] : null;
+  var nVentasMg = _v90 ? (_a90 ? _a90.nm : 0) : ventasCod.length;
+  var margenPctProm = _v90
+    ? (_a90 && _a90.nm ? _a90.sm / _a90.nm : 0)
+    : (ventasCod.length ? ventasCod.reduce(function(s,r){ return s+r.margenPct; },0) / ventasCod.length : 0);
   var markupEl  = document.getElementById('csFMarkup');
-  markupEl.textContent = ventasCod.length ? margenPctProm.toFixed(1)+'% ('+ventasCod.length+' ventas)' : '— (sin ventas registradas)';
+  markupEl.textContent = nVentasMg ? margenPctProm.toFixed(1)+'% ('+nVentasMg+' ventas'+(_v90?' · 90 días':'')+')' : '— (sin ventas'+(_v90?' en 90 días':' registradas')+')';
   markupEl.style.color = margenPctProm>25 ? '#059669' : margenPctProm>10 ? '#d97706' : '#dc2626';
 
   // Tiempo de tránsito proveedor (OC -> GRC/GRT/GIB), desde oc-leadtime.json — se pinta primero
@@ -20450,7 +20523,8 @@ function _csPintarFicha(cod, p){
     // IEM/TEM/RCE/CD son auxiliares/logísticas y no tienen ventas — ver AGENTS.md BODSTOCK)
     var dh90 = typeof _vadmDiasHabilesN==='function' ? _vadmDiasHabilesN(90) : 90;
     var qtyPorBodega = {};
-    (_vadmLineas||[]).forEach(function(r){
+    if(_v90){ qtyPorBodega = (_v90[cod]||{}).q || {}; }   // fix 03-11-2026: ventas 90d propias de la ficha
+    else (_vadmLineas||[]).forEach(function(r){
       if(r.codigo!==cod || !r.bodegaCorta) return;
       if(!venAdmParseFecha || !venAdmParseFecha(r.fecha)) return;
       var hoyTs=Date.now(), d90=90*24*3600*1000;

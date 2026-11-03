@@ -12,7 +12,7 @@ Aplica a Claude, ChatGPT/Codex, Kimi, Gemini y a cualquier persona. **Antes de m
 
 1. **Toda mejora parte del flujo actual** (mapa + `AGENTS.md`). Prohibido proponer o aplicar cambios basados en versiones antiguas, en el historial o en memoria.
 2. **Safe Change Protocol:** antes de cambiar código declarar `TOCO / ARCHIVO / RAZÓN / NO TOCO`. Un prompt = una función tocada.
-3. **El único deploy autorizado es `ACTUALIZAR_TODO.bat`** (lo corre el dueño o con su orden expresa) y el commit va por `ACTUALIZAR_GITHUB.bat`. Nunca `firebase deploy` manual ni editar `E:\git-sync\` a mano.
+3. **Deploy (regla corregida 03-11-2026; el token de `data/` ya no rota):** cambios solo estáticos de los paneles → `_utilidades\PUBLICAR_ESTATICOS.bat`; datos o pipeline → `ACTUALIZAR_TODO.bat` (los corre el dueño o con su orden expresa) y el commit va por `ACTUALIZAR_GITHUB.bat`. Nunca `firebase deploy` suelto ni editar `E:\git-sync\` a mano.
 4. **No tocar** `firebase-config.js`, `credenciales_db.ini` ni `Datos.json` a mano. Tokens y credenciales siempre en `E:\config\`, nunca en git ni en documentos.
 5. **`catalogo-bot.json` lo genera el PASO 5** (`generate_catalogo_bot.ps1`) y solo lo consume el bot de WhatsApp (descarga de Hosting al arrancar). No cambiar sus campos (`c d m f sf hf p pe se`) ni su formato sin coordinar con el bot (`oviedo-whatsapp-bot`, su `docs/00_LEER_PRIMERO.md`). Ningún panel lo lee.
 6. **Los `.ps1` y `.bat` del pipeline se escriben solo en ASCII**: Windows PowerShell 5.1 lee los `.ps1` sin BOM como ANSI y un acento o un escape convertido en carácter real rompe el script. Probar siempre a un archivo temporal antes de dejarlo en el pipeline.

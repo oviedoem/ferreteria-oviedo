@@ -1,5 +1,5 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.80
+# Version activa: V37.81
 # Fecha: 2026-11-03
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -12,9 +12,9 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.80 |
-| Fecha | 2026-10-24 |
-| Deploy | PENDIENTE (V37.80 «Pedidos tomados» + PASO 2B de variaciones de precio: lo lanza el dueño con `ACTUALIZAR_TODO.bat`). Último intento 2026-10-24 11:10 desde el Centro de Control (ok_con_avisos; el PASO 1A falló por login ERP, ya corregido). Antes: HECHO 2026-10-13 21:16 (V37.78, `ACTUALIZAR_TODO.bat` manual del dueño, todo OK; commit `c1c00fe`). Antes: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT) y 2026-10-06 01:34 (+ arreglo 01:43) |
+| Version | V37.81 |
+| Fecha | 2026-11-03 |
+| Deploy | V37.81 HECHO 2026-11-03 con `_utilidades\PUBLICAR_ESTATICOS.bat` (Consulta de Stock + textos estáticos; verificado en vivo, badge V37.81). Antes: HECHO 2026-11-03 17:24 (V37.80 «Pedidos tomados» + PASO 2B de variaciones de precio; `ACTUALIZAR_TODO.bat` desde el Centro de Control con extensión, estado ok, commit `c1a9b6a`). Intento previo 2026-10-24 11:10 (el PASO 1A falló por login ERP, ya corregido). Antes: HECHO 2026-10-13 21:16 (V37.78, `ACTUALIZAR_TODO.bat` manual del dueño, todo OK; commit `c1c00fe`). Antes: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT) y 2026-10-06 01:34 (+ arreglo 01:43) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
 | Pendiente vigente | Revisar catálogo público y fotos faltantes. No tocar ofertas salvo actualización de stock o retiro por stock total cero. Los pendientes antiguos del bot/Plan Canal se administran en el `CLAUDE.md` del bot y no son pendientes de este catálogo. |
 
@@ -22,8 +22,11 @@
 
 ## ULTIMOS CAMBIOS (V37.x)
 
+### 2026-11-03 (V37.81) — Consulta de Stock y textos estáticos del panel admin
+`panel-admin.html`: la ficha de Consulta de Stock ya no mostraba rotación ni margen cuando otro menú no había cargado las ventas (`_vadmLineas` traía solo el mes actual o nada): ahora carga sus propias ventas de 90 días (`_csCargarVentas90`). Verificado: 2.016 de 2.455 códigos con venta en 90 días no tenían ninguna venta en noviembre, por eso salían «sin venta». También se actualizaron los textos estáticos (Estado del sistema, Mejoras planificadas, guías de catálogo/ventas/precios, tarjeta Informe Stock). Badge V37.81. Publicada el 03-11 con el nuevo lanzador `_utilidades\PUBLICAR_ESTATICOS.bat`: **regla de deploy corregida** (el token de `data/` ya no rota, así que un cambio estático no necesita `ACTUALIZAR_TODO.bat`). Detalle en AGENTS.md.
+
 ### 2026-11-03 — variaciones de precio por pipeline, Python reparado y data/ ordenado (sin cambio de versión)
-Detalle completo en `memory/estado-sesion-20261103.md` y en AGENTS.md. (1) `BODEGAS/enviar_variaciones_precios.py` (PASO 2B del `.bat`) reemplaza a `LP_E_MANZANO.xlsm`: lista 14 SQL AYER vs HOY → `data/<token>/precios-diff.json` (menú «Cambios de Precio AYER vs HOY») y correo Outlook (`agonzalez@oviedo.cl`) a 8 destinatarios solo si hay variaciones; base en `VENTAS EL MANZANO/precios-lista14-base.json`, destinatarios en `VENTAS EL MANZANO/correos-precios.txt`. (2) `validar_jsons.py` valida `data/<token>/` (antes miraba copias viejas de la raíz); `precios-diff` acepta lista vacía. (3) `E:\python-portable` reparado (faltaban `typing_extensions` y `google-auth`); E: y W: son copias separadas. (4) 23 copias viejas sin token de `data/` raíz archivadas (`E:\_ARCHIVO_FERRETERIA\data-raiz-copias-viejas-20261103`); `enviar_reporte_vendedores.py` lee `data/<token>/`. (5) Prueba de login ERP y SQL OK con las credenciales actuales. Pendiente: correr `ACTUALIZAR_TODO.bat`, revisar `descargar_despachos.py` (filtra sucursal 04), `--guardar` del blindaje (4 fallas esperadas; solo con orden del dueño). Riesgo: si falla el PASO 1A o el PASO 2, el `.bat` no aborta.
+Detalle completo en `memory/estado-sesion-20261103.md` y en AGENTS.md. (1) `BODEGAS/enviar_variaciones_precios.py` (PASO 2B del `.bat`) reemplaza a `LP_E_MANZANO.xlsm`: lista 14 SQL AYER vs HOY → `data/<token>/precios-diff.json` (menú «Cambios de Precio AYER vs HOY») y correo Outlook (`agonzalez@oviedo.cl`) a 8 destinatarios solo si hay variaciones; base en `VENTAS EL MANZANO/precios-lista14-base.json`, destinatarios en `VENTAS EL MANZANO/correos-precios.txt`. (2) `validar_jsons.py` valida `data/<token>/` (antes miraba copias viejas de la raíz); `precios-diff` acepta lista vacía. (3) `E:\python-portable` reparado (faltaban `typing_extensions` y `google-auth`); E: y W: son copias separadas. (4) 23 copias viejas sin token de `data/` raíz archivadas (`E:\_ARCHIVO_FERRETERIA\data-raiz-copias-viejas-20261103`); `enviar_reporte_vendedores.py` lee `data/<token>/`. (5) Prueba de login ERP y SQL OK con las credenciales actuales. Corrida real hecha el 03-11 17:24 (ok; PASO 1A `Login OK`, PASO 2B sin variaciones: no envió correo; deploy, catálogo del bot y commit OK). Pendiente: revisar `descargar_despachos.py` (filtra sucursal 04), `--guardar` del blindaje (2 fallas esperadas: `panel-admin.html` y `docs/00_LEER_PRIMERO.md`; solo con orden del dueño). Riesgo: si falla el PASO 1A o el PASO 2, el `.bat` no aborta.
 
 ### 2026-10-20 — ventas: costo real, documentos sin SSRS, clientes y fletes (sin cambio de version)
 Ventas: costo real de SQL en cada numero+codigo (paso 3.6b; NC con costo negativo), 239 documentos que el SSRS omite expandidos a sus lineas reales de SQL (producto, bodega, vendedor, tipo de documento y costo), cliente = razon social del documento, codigos de texto (DESPACHO TIENDA, FLETE VENTA...) separados con familia del ERP, bodega real donde faltaba, fix del catalogo de fotos y log() robusto ante cp1252. Corrida real 20-10 16:08 ok, 0 avisos: 0 claves de costo distintas de SQL (antes 414), vendedor ? $16,6 M a $0, documentos con mas de un cliente 7.216 a 0, margen 26,49 % a 26,72 %. Detalle en memory/estado-sesion-20261020.md y en el mapa. Pendiente: blindaje `--guardar` (orden del dueno), badge de panel-admin, codigo DESPACHO.
