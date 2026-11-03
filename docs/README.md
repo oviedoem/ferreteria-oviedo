@@ -1,3 +1,6 @@
+⛔ REGLA ESTRICTA: antes de tocar este proyecto, lee TODA la carpeta `docs/` empezando por `docs/00_LEER_PRIMERO.md` (y `AGENTS.md`); toda mejora (Claude, ChatGPT/Codex, Kimi u otra IA) debe basarse en el flujo actual de `docs/pipeline-datos-mapa.html` y `AGENTS.md`. Sin excepciones.
+⛔ Deploy y cierre (corregido 03-11-2026): cambios solo estáticos de los paneles → `_utilidades\PUBLICAR_ESTATICOS.bat`; datos o pipeline → `ACTUALIZAR_TODO.bat`; siempre con orden expresa del dueño. Nada queda pendiente: cada punto termina HECHO-VERIFICADO, PROGRAMADO, DELEGADO o BLOQUEADO con su motivo.
+
 # Ferretería Oviedo — Sistema de Gestión Comercial
 
 Panel web interno para la sucursal **El Manzano** de Ferretería Oviedo MTS.  

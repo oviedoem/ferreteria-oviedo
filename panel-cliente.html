@@ -983,7 +983,8 @@ function registerSession(nombre, app) {
     localStorage.setItem('ov_sessions', JSON.stringify(s));
 
     if(window.db){
-      var sesUid   = nombre.replace(/\s+/g,'_')+'_'+app;
+      // fix 03-11-2026: las reglas de Firestore exigen que el id del doc sea el uid de Firebase Auth (antes 'Nombre_app' y el set se rechazaba en silencio)
+      var sesUid   = (currentUser && currentUser.uid) ? currentUser.uid : nombre.replace(/\s+/g,'_')+'_'+app;
       var deviceId = (typeof getDeviceId === 'function') ? getDeviceId() : sesUid;
 
       // Datos enriquecidos si el usuario entró con Firebase Auth
@@ -1031,7 +1032,7 @@ function clearSession(nombre, app) {
     s = s.filter(function(x){ return !(x.user===nombre&&x.app===app); });
     localStorage.setItem('ov_sessions', JSON.stringify(s));
     if(window.db){
-      var uid = nombre.replace(/\s+/g,'_')+'_'+app;
+      var uid = (currentUser && currentUser.uid) ? currentUser.uid : nombre.replace(/\s+/g,'_')+'_'+app;
       window.db.collection('sesiones_activas').doc(uid).delete().catch(function(){});
     }
   }catch(e){}
@@ -2907,7 +2908,7 @@ var _sesionRemolaUnsubscribe = null;
 
 function iniciarListenerSesionRemota(nombre, app) {
   if (!window.db) return;
-  var uid = nombre.replace(/\s+/g,'_') + '_' + app;
+  var uid = (currentUser && currentUser.uid) ? currentUser.uid : nombre.replace(/\s+/g,'_') + '_' + app;
   if (_sesionRemolaUnsubscribe) { try{ _sesionRemolaUnsubscribe(); }catch(e){} }
   _sesionRemolaUnsubscribe = window.db.collection('sesiones_activas').doc(uid)
     .onSnapshot(function(snap) {
@@ -3589,6 +3590,6 @@ function registrarAccesoCli(uid, nombre, role){
 
 
 </script>
-<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.73<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">01-10-2026</span></div>
+<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.83<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-11-2026</span></div>
 </body>
 </html>

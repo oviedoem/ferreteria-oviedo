@@ -573,9 +573,9 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 .vadm-group .vgrp-icon{display:block;font-size:16px;margin-bottom:2px}
 /* ── Subtabs — ya tienen scroll, solo asegurar touch ─────────────────────── */
 .vadm-subtabs{display:flex;gap:0;border-bottom:2px solid #f3f4f6;padding:0 10px;margin-bottom:0;
-  background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;
-  position:relative;mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
-  -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%)}
+  background:#fff;overflow:visible;flex-wrap:wrap;position:relative}
+/* V37.82: las sub-pestañas se envuelven en varias filas. Antes iban en una sola fila con scroll oculto y fundido:
+   en PC no se veían todas (ej. Margen Negativo) y en celular había que adivinar el deslizar. */
 .vadm-subtabs::-webkit-scrollbar{display:none}
 /* Nota de Crédito badge */
 .ven-doc-nc{background:#fef3c7;color:#92400e}
@@ -604,6 +604,8 @@ input[type=range].bnr-range::-webkit-slider-thumb{-webkit-appearance:none;appear
 .vadm-subtabs-inv{background:#f0fdf4;border-bottom-color:#bbf7d0}
 .vadm-stab-inv.active{color:#047857;border-bottom-color:#059669;font-weight:700}
 .vadm-stab-inv:hover:not(.active){color:#065f46}
+/* V37.82: celular — pestañas, grupos y filtros más compactos y envueltos (todo visible sin deslizar) */
+@media(max-width:700px){.vadm-stab{padding:8px 10px;font-size:11px}.vadm-vend-bar{flex-wrap:wrap}.vadm-groups{flex-wrap:wrap}.vadm-group{flex:1 0 30%;min-width:0}}
 .vadm-section{display:none}.vadm-section.active{display:block}
 /* análisis upload */
 .vadm-upload-zone{border:2px dashed #d1d5db;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:.15s;background:#fafafa;margin-bottom:16px}
@@ -2219,13 +2221,12 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
         <div data-coop-hide style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-top:14px">
           <div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px">🔄 Cómo actualizar el catálogo</div>
           <ol style="font-size:12px;color:#14532d;line-height:1.9;padding-left:16px;margin:0">
-            <li>Ejecutar <strong>ACTUALIZAR_TODO.bat</strong> desde <code>E:\ferreteria-oviedo\</code></li>
-            <li><strong>[0]</strong> <code>descargar_erp.py</code> — descarga precios (VisorRS → CSV) + stock (HTTP) → <code>actualizar.xlsx</code></li>
-            <li><strong>[1]</strong> <code>procesar-actualizacion.py</code> — <code>actualizar.xlsx</code> → <code>Datos.xlsx</code></li>
-            <li><strong>[2]</strong> <code>xlsx_a_csv.py</code> — <code>Datos.xlsx</code> → <code>Datos.csv</code></li>
-            <li><strong>[3]</strong> <code>csv_a_json.py</code> — <code>Datos.csv</code> → <code>Datos.json</code></li>
-            <li><strong>[4]</strong> <code>firebase deploy</code> — publica a Firebase Hosting</li>
-            <li>Los paneles detectan la nueva versión automáticamente vía Service Worker</li>
+            <li>Ejecutar <strong>ACTUALIZAR_TODO.bat</strong> desde <code>E:\ferreteria-oviedo\</code> (o ▶ Ejecutar en el Centro de Control Oviedo)</li>
+            <li><strong>[1A–1B]</strong> <code>descargar_erp.py</code> + <code>procesar-actualizacion.py</code> — precios y stock del ERP (SSRS, 8 bodegas) → <code>Datos.json</code></li>
+            <li><strong>[1D–1N]</strong> SQL: bodegas, pedidos, despachos, informe de stock, stock crítico y OC → <code>data/[token]/</code></li>
+            <li><strong>[2 / 2B]</strong> Ventas con costo real de SQL; variaciones de precio AYER vs HOY y correo a vendedores</li>
+            <li><strong>[4–7]</strong> Validación de JSONs → <code>firebase deploy</code> (solo Hosting) → catálogo del bot y de fotos → commit a GitHub</li>
+            <li>Los paneles detectan la nueva versión automáticamente vía Service Worker. Un cambio solo estático de los paneles se publica con <code>_utilidades\PUBLICAR_ESTATICOS.bat</code>, sin correr todo el pipeline</li>
           </ol>
         </div>
       </div>
@@ -2259,7 +2260,7 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
         <div class="card-title"><span>📊</span> Ventas El Manzano</div>
         <div data-coop-hide style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:14px">
           <div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px">URL activa — Firebase Hosting</div>
-          <div style="font-size:12px;font-family:monospace;color:#1e40af;word-break:break-all">https://ferreteria-oviedo.web.app/data/ventas-manzano.json</div>
+          <div style="font-size:12px;font-family:monospace;color:#1e40af;word-break:break-all">https://ferreteria-oviedo.web.app/data/[token]/ventas-manzano.json <span style="color:#6b7280">(carpeta con token; el panel arma la ruta solo)</span></div>
         </div>
         <button class="btn btn-primary" style="margin-bottom:12px" onclick="testVentasManzano()">🔄 Probar conexión</button>
         <div id="ventasTestResult"></div>
@@ -2267,7 +2268,7 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
           <div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px">🔄 Cómo actualizar las ventas</div>
           <ol style="font-size:12px;color:#14532d;line-height:1.9;padding-left:16px;margin:0">
             <li>Ejecutar <strong>ACTUALIZAR_TODO.bat</strong> desde <code>E:\ferreteria-oviedo\</code></li>
-            <li>El bat descarga precios + stock ERP, procesa el catálogo, descarga ventas y publica JSON + catálogo a Firebase Hosting</li>
+            <li>El bat descarga precios + stock ERP, procesa el catálogo, descarga ventas (con costo real de SQL) y publica JSON + catálogo a Firebase Hosting</li>
             <li>El panel Admin → Ventas muestra los datos actualizados al hacer clic en Actualizar</li>
           </ol>
         </div>
@@ -2297,7 +2298,7 @@ div:has(> table > thead#tcdThead){max-height:65vh;overflow-y:auto}
           <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:4px">⚠️ Cómo agregar un vendedor nuevo</div>
           <ol style="font-size:12px;color:#78350f;line-height:1.9;padding-left:16px;margin:0">
             <li>Agregar una línea en <code>VEN_CONFIG</code> en <strong>panel-admin.html</strong></li>
-            <li>Ejecutar <strong>firebase deploy --only hosting</strong> para publicar el cambio</li>
+            <li>Publicar el cambio con <strong>_utilidades\PUBLICAR_ESTATICOS.bat</strong> (solo Hosting; no hace falta el pipeline completo)</li>
             <li>En el próximo <strong>🔄 Actualizar</strong> del módulo Ventas, el vendedor aparece automáticamente</li>
           </ol>
         </div>
@@ -3027,7 +3028,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
       <!-- Encabezado con stats -->
       <div class="card" style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.81</div>
+          <div class="card-title" style="margin:0"><span>💡</span> Estado del sistema · V37.83</div>
           <span style="font-size:10px;color:var(--gris);font-weight:500">Ferretería Oviedo · 2026-11-03</span>
         </div>
         <div id="mejorasStats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
@@ -3658,12 +3659,22 @@ Todo desde tu celular, gratis, sin apps que descargar.
         </div>
       </div>
       <style>
-        .cs-xls{border-collapse:collapse;width:100%;font-size:12px}
+        /* V37.82: tabla compacta (antes 12px y padding 10px: más ancha que el panel y se cortaba la columna Estado) */
+        .cs-xls{border-collapse:collapse;width:100%;font-size:11.5px}
         .cs-xls th,.cs-xls td{border:1px solid #94a3b8}
-        .cs-xls thead th{background:#1a1d3a;color:#fff;padding:7px 10px}
-        .cs-xls tbody td{padding:6px 10px}
+        .cs-xls thead th{background:#1a1d3a;color:#fff;padding:6px;white-space:normal;line-height:1.25;font-size:11px}
+        .cs-xls tbody td{padding:5px 6px}
+        .cs-scroll-hint{display:none}
+        @media(max-width:700px){
+          .cs-xls{font-size:10.5px}.cs-xls thead th{padding:5px 4px;font-size:10px}.cs-xls tbody td{padding:4px}
+          .cs-scroll-hint{display:block;font-size:10px;color:#6b7280;text-align:right;margin:2px 4px 4px}
+          #csTablaResult th,#csTablaResult td{padding:5px 6px !important;font-size:11px !important}
+          .cs-xls th:first-child,.cs-xls td:first-child{position:sticky;left:0;z-index:3;background-color:#fff}
+          .cs-xls thead th:first-child{background-color:#1a1d3a}
+        }
       </style>
-      <div style="overflow-x:auto">
+      <div class="cs-scroll-hint">← desliza para ver todas las columnas →</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table class="cs-xls" id="csBodTabla">
           <thead style="position:sticky;top:0;z-index:15">
             <tr>
@@ -4092,7 +4103,7 @@ Todo desde tu celular, gratis, sin apps que descargar.
 </div>
 
 <div id="toast"></div>
-<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.81<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-11-2026</span></div>
+<div class="version-badge"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.83<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-11-2026</span></div>
 
 <script>
 
@@ -7181,8 +7192,8 @@ function renderMejoras(){
     ['Cotizaciones','ok',    '📄','PDF profesional con correlativo','Numeración atómica Firestore. Logo, tabla IVA, nota de pie, datos cliente.'],
     ['Cotizaciones','ok',    '📊','Gráficos históricos Chart.js','Volumen día/semana/mes con tendencia. Selector de período.'],
     ['Cotizaciones','ok',    '🏷️','Cupones de descuento','Admin genera %, vendedor aplica, cliente descarga PDF con descuento.'],
-    ['Cotizaciones','pending','📈','Estadísticas por vendedor','Ranking: más cotizaciones, producto top, monto total mensual → descargable.'],
-    ['Cotizaciones','pending','📁','Exportar cotizaciones Excel','Filtrar por fecha/vendedor y exportar a .xlsx desde el historial admin.'],
+    ['Cotizaciones','ok',     '📈','Análisis por vendedor — VendedorPRO','Rankings → VendedorPRO: venta neta, margen, boletas/facturas, ticket promedio, líneas por boleta y ficha por vendedor; además Vendedores, Vend × Marca y NC Vendedor.'],
+    ['Cotizaciones','ok',     '📁','Exportar cotizaciones a Excel','Botón 📊 Excel en cada cotización y exportación del historial filtrado a Excel.'],
     // ── MARKETING ──
     ['Marketing', 'ok',      '🖼️','Banner dinámico Firestore','Upload + Cropper.js. Ajuste posición/brillo/contraste/altura. Preview en vivo.'],
     ['Marketing', 'ok',      '✏️','Editor de texto banner','Editar horarios Lun-Vie / Sáb y posición del texto (izquierda/derecha).'],
@@ -7370,27 +7381,44 @@ function cargarAuditLog(){
   var el=document.getElementById('auditLogList');
   if(!el||!window.db){ return; }
   el.innerHTML='<div style="font-size:11px;color:var(--gris)">Cargando...</div>';
-  window.db.collection('auditLog').orderBy('ts','desc').limit(20).get()
-    .then(function(qs){
-      try{ quotaTrackRead(qs.size); }catch(e){}
-      if(qs.empty){ el.innerHTML='<div style="font-size:11px;color:var(--gris)">Sin registros aún. Se registran tras el próximo login.</div>'; return; }
-      var iconos={admin:'👤',cooperador:'🔒',vendedor:'💼',cliente:'🛒'};
-      el.innerHTML=qs.docs.map(function(d){
-        var x=d.data();
-        var colores={admin:'#ede9fe',cooperador:'#fef9c3',vendedor:'#dbeafe',cliente:'#dcfce7'};
-        var textCol={admin:'#6d28d9',cooperador:'#92400e',vendedor:'#1d4ed8',cliente:'#15803d'};
-        var rolKey=x.role||x.panel||'admin';
-        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:4px">'+
-          '<span style="font-size:13px">'+(iconos[rolKey]||'👤')+'</span>'+
-          '<div style="flex:1;min-width:0">'+
-            '<span style="font-weight:600;font-size:12px;color:var(--dark)">'+venAdmEsc(x.nombre||x.uid||'–')+'</span>'+
-            '<span style="display:inline-block;margin-left:6px;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+(colores[rolKey]||'#f3f4f6')+';color:'+(textCol[rolKey]||'#374151')+'">'+venAdmEsc(rolKey)+'</span>'+
-            '<span style="display:inline-block;margin-left:4px;font-size:9px;color:var(--gris)">'+venAdmEsc(x.panel||'admin')+'</span>'+
-          '</div>'+
-          '<span style="color:var(--gris);font-size:10px;white-space:nowrap">'+venAdmEsc(x.fecha||'')+'</span>'+
-        '</div>';
-      }).join('');
-    }).catch(function(e){ el.innerHTML='<div style="font-size:11px;color:#dc2626">Error: '+venAdmEsc(e.message||'')+'</div>'; });
+  // Fix 03-11-2026: los paneles cliente/vendedor ya no pueden escribir auditLog (reglas: solo admin), por eso el historial
+  // de ingresos sale de sesionesLog (lo escribe cada usuario autenticado) junto con auditLog (acciones del admin).
+  var pAud = window.db.collection('auditLog').orderBy('ts','desc').limit(20).get().catch(function(){ return null; });
+  var pSes = window.db.collection('sesionesLog').orderBy('ultimoAcceso','desc').limit(20).get().catch(function(){ return null; });
+  Promise.all([pAud,pSes]).then(function(rs){
+    var items=[];
+    if(rs[0]){
+      try{ quotaTrackRead(rs[0].size); }catch(e){}
+      rs[0].docs.forEach(function(d){ var x=d.data();
+        var t=x.ts, ms=(t && t.toMillis) ? t.toMillis() : (+t||0);   // ts puede ser Timestamp (acciones del admin) o ms (registros viejos)
+        items.push({nombre:(x.nombre||x.email||x.uid||'–')+(x.accion?' · '+x.accion:''), rol:x.role||x.panel||'admin', panel:x.panel||'admin', ms:ms, txt:x.fecha||(ms?new Date(ms).toLocaleString('es-CL'):'')}); });
+    }
+    if(rs[1]){
+      try{ quotaTrackRead(rs[1].size); }catch(e){}
+      rs[1].docs.forEach(function(d){ var x=d.data();
+        var ms = x.ultimoAcceso && x.ultimoAcceso.toMillis ? x.ultimoAcceso.toMillis() : 0;
+        items.push({nombre:x.nombreCompleto||x.email||'–', rol:String(x.role||x.panelTipo||'cliente').toLowerCase(),
+          panel:String(x.panelTipo||'').toLowerCase()||'–', ms:ms, txt:ms?new Date(ms).toLocaleString('es-CL'):''}); });
+    }
+    items.sort(function(a,b){ return b.ms-a.ms; });
+    items=items.slice(0,20);
+    if(!items.length){ el.innerHTML='<div style="font-size:11px;color:var(--gris)">Sin registros aún. Se registran tras el próximo login.</div>'; return; }
+    var iconos={admin:'👤',cooperador:'🔒',vendedor:'💼',cliente:'🛒'};
+    var colores={admin:'#ede9fe',cooperador:'#fef9c3',vendedor:'#dbeafe',cliente:'#dcfce7'};
+    var textCol={admin:'#6d28d9',cooperador:'#92400e',vendedor:'#1d4ed8',cliente:'#15803d'};
+    el.innerHTML=items.map(function(x){
+      var k=colores[x.rol]?x.rol:(colores[x.panel]?x.panel:'admin');
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:4px">'+
+        '<span style="font-size:13px">'+(iconos[k]||'👤')+'</span>'+
+        '<div style="flex:1;min-width:0">'+
+          '<span style="font-weight:600;font-size:12px;color:var(--dark)">'+venAdmEsc(x.nombre)+'</span>'+
+          '<span style="display:inline-block;margin-left:6px;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+colores[k]+';color:'+textCol[k]+'">'+venAdmEsc(x.rol)+'</span>'+
+          '<span style="display:inline-block;margin-left:4px;font-size:9px;color:var(--gris)">'+venAdmEsc(x.panel)+'</span>'+
+        '</div>'+
+        '<span style="color:var(--gris);font-size:10px;white-space:nowrap">'+venAdmEsc(x.txt)+'</span>'+
+      '</div>';
+    }).join('');
+  }).catch(function(e){ el.innerHTML='<div style="font-size:11px;color:#dc2626">Error: '+venAdmEsc(e.message||'')+'</div>'; });
 }
 
 // ── TOAST ────────────────────────────────────────────

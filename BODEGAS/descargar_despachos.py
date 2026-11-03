@@ -84,7 +84,7 @@ FROM Foviedo.dbo.M_DOCUMENTOS_DETALLE E
 INNER JOIN Foviedo.dbo.M_DOCUMENTOS MD ON MD.IDDOCUMENTO = E.IDDOCUMENTO
 INNER JOIN Foviedo.dbo.P_BODEGAS B     ON B.IDBODEGA     = E.IDBODEGA
 WHERE E.IDBODEGA IN ({placeholders})
-  AND E.IDSUCURSAL = '04'
+  -- 03-11-2026: sin filtro de sucursal; las bodegas PEM/SEM/CEM/MEM ya acotan a El Manzano (docs de suc 09/10/14 tambien sacan stock de ellas)
   AND MD.DOC IN ({doc_placeholders})
   AND ISNULL(E.CANTIDAD_PENDIENTE, 0) > 0
   AND E.FECHA_EMISION >= ?
@@ -122,7 +122,7 @@ WITH agg AS (
     INNER JOIN Foviedo.dbo.M_DOCUMENTOS MD2
         ON MD2.IDDOCUMENTO = E.IDDOCUMENTO
     WHERE E.IDBODEGA IN ({ph_bodegas})
-      AND E.IDSUCURSAL = '04'
+      -- 03-11-2026: sin filtro de sucursal; las bodegas PEM/SEM/CEM/MEM ya acotan a El Manzano (docs de suc 09/10/14 tambien sacan stock de ellas)
       AND MD2.DOC IN ({ph_docs})
       AND ISNULL(E.CANTIDAD_PENDIENTE, 0) > 0
       AND E.FECHA_EMISION >= ?
@@ -231,7 +231,7 @@ LEFT JOIN Foviedo.dbo.M_DOCUMENTOS_ENCABEZADO enc
 LEFT JOIN Foviedo.dbo.M_ENTIDADES ent
     ON ent.IDENTIDAD = CAST(enc.IDENTIDAD AS NVARCHAR(20))
 WHERE E.IDBODEGA IN ({ph_bodegas})
-  AND E.IDSUCURSAL = '04'
+  -- 03-11-2026: sin filtro de sucursal; las bodegas PEM/SEM/CEM/MEM ya acotan a El Manzano (docs de suc 09/10/14 tambien sacan stock de ellas)
   AND MD.DOC IN ({ph_docs})
   AND ISNULL(E.CANTIDAD_PENDIENTE, 0) > 0
   AND E.FECHA_EMISION >= ?
