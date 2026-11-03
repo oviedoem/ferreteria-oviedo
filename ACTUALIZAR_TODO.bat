@@ -451,6 +451,31 @@ if %errorlevel% neq 0 (
 echo.
 timeout /t 2 /nobreak >nul
 
+:: -- PASO 2B: Variaciones de precio AYER vs HOY + correo a vendedores (03-11-2026) --
+:: Reemplaza a LP_E_MANZANO.xlsm. Lista 14 SQL (precio con IVA); solo envia correo si hay variaciones.
+echo.
+echo  +----------------------------------------------------------+
+echo  ^|  PASO 2B - Variaciones de precio y correo a vendedores ^|
+echo  +----------------------------------------------------------+
+echo.
+echo  Lista 14 (precio con IVA) AYER vs HOY -^> precios-diff.json + correo Outlook
+echo  (menu Cambios de Precio AYER vs HOY; reemplaza LP_E_MANZANO.xlsm)
+echo.
+if exist "%~dp0BODEGAS\enviar_variaciones_precios.py" (
+    "%PYTHON_EXE%" "%~dp0BODEGAS\enviar_variaciones_precios.py" --enviar
+    if errorlevel 1 (
+        color 0C
+        echo  [AVISO] enviar_variaciones_precios.py fallo. El menu de precios usara el JSON anterior y no se envio correo.
+        color 0A
+    ) else (
+        echo  [OK] Variaciones de precio procesadas.
+    )
+) else (
+    echo  [AVISO] enviar_variaciones_precios.py no encontrado -- saltando paso.
+)
+echo.
+timeout /t 2 /nobreak >nul
+
 :: -- VALIDACION: JSONs de salida antes de deploy --------------------------------
 echo.
 echo  +----------------------------------------------------------+

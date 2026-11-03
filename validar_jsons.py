@@ -43,9 +43,11 @@ SCHEMA = {
         'dir': DATA_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'fuente', 'total', 'registros'], 'array_field': 'registros',
     },
+    # precios-diff.json: lo genera BODEGAS/enviar_variaciones_precios.py (03-11-2026) en data/<token>/;
+    # lista vacia es legitima (dia sin cambios de precio), por eso sin array_field.
     'precios-diff.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
-        'keys': ['generado', 'fuente', 'total', 'registros'], 'array_field': 'registros',
+        'dir': BOD_DIR, 'kind': 'wrapped',
+        'keys': ['generado', 'fuente', 'total', 'registros'],
     },
     'ventas-xlsm-2026.json': {
         'dir': DATA_DIR, 'kind': 'wrapped',
@@ -84,41 +86,41 @@ SCHEMA = {
         'keys': ['generado', 'fuente', 'bod', 'total', 'registros'], 'array_field': 'registros',
     },
     'pedidos-comprometidos.json': {
-        'dir': DATA_DIR, 'kind': 'raw_dict',
+        'dir': BOD_DIR, 'kind': 'raw_dict',
     },
     'pedidos-detalle.json': {
-        'dir': DATA_DIR, 'kind': 'raw_dict',
+        'dir': BOD_DIR, 'kind': 'raw_dict',
     },
     'despachos-comprometidos.json': {
-        'dir': DATA_DIR, 'kind': 'raw_dict',
+        'dir': BOD_DIR, 'kind': 'raw_dict',
     },
     'despachos-detalle.json': {
-        'dir': DATA_DIR, 'kind': 'raw_dict',
+        'dir': BOD_DIR, 'kind': 'raw_dict',
     },
     # despachos-panel.json eliminado 2026-08-20: fusionar_despachos.py archivado, panel usa despachos-detalle.json
     'informe-stock.json': {
-        'dir': DATA_DIR, 'kind': 'raw_dict',
+        'dir': BOD_DIR, 'kind': 'raw_dict',
     },
     'stock-critico.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'fuente', 'bodegas', 'productos', 'porBodega'], 'array_field': 'productos',
     },
     'oc-leadtime.json': {
-        'dir': DATA_DIR, 'kind': 'wrapped',
+        'dir': BOD_DIR, 'kind': 'wrapped',
         'keys': ['generado', 'fuente', 'ventanaDias', 'productos'], 'array_field': 'productos',
     },
     # oc-pendientes.json (detalle) no se valida: lista vacia es legitima (0 OCs activas)
     'oc-pend-resumen.json': {
-        'dir': DATA_DIR, 'kind': 'raw_dict', 'optional': True,
+        'dir': BOD_DIR, 'kind': 'raw_dict', 'optional': True,
     },
     'xlsm-enrich.json': {
         'dir': DATA_DIR, 'kind': 'raw_dict',
     },
     'recepciones-pendientes.json': {
-        'dir': DATA_DIR, 'kind': 'raw_list', 'optional': True,
+        'dir': BOD_DIR, 'kind': 'raw_list', 'optional': True,
     },
     'despachos-pendientes-erp.json': {
-        'dir': DATA_DIR, 'kind': 'raw_list', 'optional': True,
+        'dir': BOD_DIR, 'kind': 'raw_list', 'optional': True,
     },
     'ventas-manzano-meta.json': {
         'dir': BOD_DIR, 'kind': 'wrapped',

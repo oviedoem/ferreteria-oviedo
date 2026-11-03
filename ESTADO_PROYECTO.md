@@ -1,6 +1,6 @@
 ﻿# ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
 # Version activa: V37.80
-# Fecha: 2026-10-24
+# Fecha: 2026-11-03
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -12,15 +12,18 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.78 |
-| Fecha | 2026-10-13 |
-| Deploy | HECHO 2026-10-13 21:16 (V37.78, `ACTUALIZAR_TODO.bat` manual del dueño, todo OK; commit `c1c00fe`). Antes: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT) y 2026-10-06 01:34 (+ arreglo 01:43) |
+| Version | V37.80 |
+| Fecha | 2026-10-24 |
+| Deploy | PENDIENTE (V37.80 «Pedidos tomados» + PASO 2B de variaciones de precio: lo lanza el dueño con `ACTUALIZAR_TODO.bat`). Último intento 2026-10-24 11:10 desde el Centro de Control (ok_con_avisos; el PASO 1A falló por login ERP, ya corregido). Antes: HECHO 2026-10-13 21:16 (V37.78, `ACTUALIZAR_TODO.bat` manual del dueño, todo OK; commit `c1c00fe`). Antes: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT) y 2026-10-06 01:34 (+ arreglo 01:43) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
 | Pendiente vigente | Revisar catálogo público y fotos faltantes. No tocar ofertas salvo actualización de stock o retiro por stock total cero. Los pendientes antiguos del bot/Plan Canal se administran en el `CLAUDE.md` del bot y no son pendientes de este catálogo. |
 
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### 2026-11-03 — variaciones de precio por pipeline, Python reparado y data/ ordenado (sin cambio de versión)
+Detalle completo en `memory/estado-sesion-20261103.md` y en AGENTS.md. (1) `BODEGAS/enviar_variaciones_precios.py` (PASO 2B del `.bat`) reemplaza a `LP_E_MANZANO.xlsm`: lista 14 SQL AYER vs HOY → `data/<token>/precios-diff.json` (menú «Cambios de Precio AYER vs HOY») y correo Outlook (`agonzalez@oviedo.cl`) a 8 destinatarios solo si hay variaciones; base en `VENTAS EL MANZANO/precios-lista14-base.json`, destinatarios en `VENTAS EL MANZANO/correos-precios.txt`. (2) `validar_jsons.py` valida `data/<token>/` (antes miraba copias viejas de la raíz); `precios-diff` acepta lista vacía. (3) `E:\python-portable` reparado (faltaban `typing_extensions` y `google-auth`); E: y W: son copias separadas. (4) 23 copias viejas sin token de `data/` raíz archivadas (`E:\_ARCHIVO_FERRETERIA\data-raiz-copias-viejas-20261103`); `enviar_reporte_vendedores.py` lee `data/<token>/`. (5) Prueba de login ERP y SQL OK con las credenciales actuales. Pendiente: correr `ACTUALIZAR_TODO.bat`, revisar `descargar_despachos.py` (filtra sucursal 04), `--guardar` del blindaje (4 fallas esperadas; solo con orden del dueño). Riesgo: si falla el PASO 1A o el PASO 2, el `.bat` no aborta.
 
 ### 2026-10-20 — ventas: costo real, documentos sin SSRS, clientes y fletes (sin cambio de version)
 Ventas: costo real de SQL en cada numero+codigo (paso 3.6b; NC con costo negativo), 239 documentos que el SSRS omite expandidos a sus lineas reales de SQL (producto, bodega, vendedor, tipo de documento y costo), cliente = razon social del documento, codigos de texto (DESPACHO TIENDA, FLETE VENTA...) separados con familia del ERP, bodega real donde faltaba, fix del catalogo de fotos y log() robusto ante cp1252. Corrida real 20-10 16:08 ok, 0 avisos: 0 claves de costo distintas de SQL (antes 414), vendedor ? $16,6 M a $0, documentos con mas de un cliente 7.216 a 0, margen 26,49 % a 26,72 %. Detalle en memory/estado-sesion-20261020.md y en el mapa. Pendiente: blindaje `--guardar` (orden del dueno), badge de panel-admin, codigo DESPACHO.
@@ -413,7 +416,7 @@ Sesión del 16-10-2026 (Claude), sin cambio de versión ni de paneles (V37.79), 
 
 ## PENDIENTES CONOCIDOS
 
-- **RANKING.xlsm / PRECIOS.xlsm** siguen siendo manuales (tabs ranking-unidades y precios-diff) — migrar a SQL en sesión futura si se desea (igual que se hizo con VENTAS.xlsm→enrich SQL)
+- **RANKING.xlsm** sigue siendo manual (tab ranking-unidades; ningún panel lo consume hoy). `precios-diff` ya migró a SQL (PASO 2B, 03-11-2026); `PRECIOS.xlsm` ya no se usa
 - descargar_erp.py falla silencioso: si falla agregar `await page.screenshot(path="debug.png")` antes del click
 - PASO 1A (descargar_erp.py) puede fallar por Windows Defender Network Protection bloqueando la IP del ERP de forma intermitente — ver `FIX_DEFENDER_PASO1A.bat` en el escritorio del dueño (requiere Administrador, no automatizable por Claude Code)
 
