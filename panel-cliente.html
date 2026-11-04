@@ -125,7 +125,8 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 .prod-actions{display:flex;align-items:center;gap:6px}
 .qty-wrap{display:flex;align-items:center;gap:3px;background:var(--gris-light);border-radius:8px;padding:3px 6px}
 .qty-btn{width:26px;height:26px;border:none;background:var(--naranja);color:white;border-radius:5px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
-.qty-val{width:30px;text-align:center;font-size:15px;font-weight:700}
+.qty-val{width:54px;text-align:center;font-size:15px;font-weight:700;border:1px solid transparent;border-radius:5px;background:#fff;padding:3px 0;font-family:var(--font);-moz-appearance:textfield}
+.qty-val:focus{outline:none;border-color:var(--naranja)}
 .btn-add{padding:9px 16px;background:var(--naranja);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s;white-space:nowrap}
 .btn-add:hover{background:var(--naranja2)}
 
@@ -434,6 +435,42 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 .cupon-flotante .cf-hint{font-size:10px;opacity:.75;line-height:1.3}
 .cupon-flotante .cf-cerrar{position:absolute;top:6px;right:8px;font-size:14px;cursor:pointer;opacity:.7;background:none;border:none;color:white;padding:0;font-family:inherit}
 
+/* ===== V37.85 DISENO MOVIL (04-11-2026) - SOLO CSS: no cambia logica, ids, onclick ni colores corporativos ===== */
+.prod-card{border-radius:14px;border:1px solid #e4e4e4;box-shadow:0 2px 8px rgba(32,32,32,.07)}
+.prod-nombre{font-size:16px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.prod-codigo{font-size:12px;white-space:normal;overflow-wrap:anywhere;text-align:right}
+.prod-marca{font-size:13px;line-height:1.4}
+.precio-val{font-size:20px;font-variant-numeric:tabular-nums}
+.qty-wrap{gap:4px;padding:4px 6px;border-radius:12px}
+.qty-btn{width:44px;height:44px;border-radius:10px;font-size:20px}
+.qty-val{width:60px;min-height:44px;font-size:16px}
+.prod-actions{flex-wrap:wrap;gap:8px}
+.btn-add{min-height:48px;font-size:15px;border-radius:10px}
+.precio-consultar-wa{min-height:44px;font-size:13px}
+@media(max-width:600px){.prod-bottom{flex-direction:column;align-items:stretch}.prod-actions{width:100%}.btn-add{flex:1}}
+#searchInput{min-height:48px;font-size:16px}
+.filters{gap:8px;padding-bottom:6px}
+.filter-btn{min-height:40px;padding:8px 14px;font-size:13px}
+.cart-fab{min-height:56px;bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+.productos-list{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+#waFloatContainer{z-index:250}
+#productosList button:focus-visible,#productosList input:focus-visible,#searchInput:focus-visible{outline:3px solid #202020;outline-offset:2px}
+/* ===== V37.85b ICONOS Y MICRO-INTERACCIONES (04-11-2026) - SOLO CSS: iconos de linea SVG que heredan color (reemplazan emojis); sin cambios de logica ===== */
+.ic{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.ic-search{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E")}
+.ic-cart{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4h2l2.4 11h10.2L20 7H6.2'/%3E%3Ccircle cx='9' cy='19' r='1.4'/%3E%3Ccircle cx='17' cy='19' r='1.4'/%3E%3C/svg%3E")}
+.ic-clip{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='4' width='14' height='17' rx='2'/%3E%3Cpath d='M9 4h6v3H9z M9 12h6 M9 16h4'/%3E%3C/svg%3E")}
+.ic-doc{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3h7l5 5v13H7z M14 3v5h5 M10 13h6 M10 17h4'/%3E%3C/svg%3E")}
+.ic-trash{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13 M10 11v6 M14 11v6'/%3E%3C/svg%3E")}
+.ic-refresh{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 0 1 15.5-6.2L21 8 M21 3v5h-5 M21 12a9 9 0 0 1-15.5 6.2L3 16 M3 21v-5h5'/%3E%3C/svg%3E")}
+.ic-clock{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
+.ic-chat{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.3A8 8 0 1 1 21 12z'/%3E%3C/svg%3E")}
+.sico .ic,.search-icon .ic{width:20px;height:20px;color:#6b7280}
+.stock-badge::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:4px;flex-shrink:0;vertical-align:middle}
+.badd,.bunit,.qbtn,.btn-add,.qty-btn,.fbtn,.filter-btn{transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
+.badd:active,.bunit:active,.qbtn:active,.btn-add:active,.qty-btn:active{transform:scale(.96)}
+#sinput:focus,#searchInput:focus{border-color:#DA0000;box-shadow:0 0 0 3px rgba(218,0,0,.15);outline:none}
+@media (prefers-reduced-motion:reduce){.badd,.bunit,.qbtn,.btn-add,.qty-btn,.fbtn,.filter-btn{transition:none}.badd:active,.bunit:active,.qbtn:active,.btn-add:active,.qty-btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -497,7 +534,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 <header>
   <img src="logo_oviedo.jpg" alt="Ferreterías Oviedo" style="height:40px;width:auto;flex-shrink:0;display:block">
   <div class="horario-wrap" id="horarioWrap" style="position:relative">
-    <button class="btn-horario" id="sucursalInfoBtn" onclick="toggleSucursalInfo()">🕐 Horario</button>
+    <button class="btn-horario" id="sucursalInfoBtn" onclick="toggleSucursalInfo()"><i class="ic ic-clock"></i> Horario</button>
     <div class="sucursal-popover" id="sucursalPopover" style="display:none">
       <div class="sucursal-loc">
         <a href="https://maps.app.goo.gl/umCSP9Mz2JZ9xv1b6" target="_blank" rel="noopener" title="Ver en Google Maps" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:5px">
@@ -624,7 +661,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
 <!-- BÚSQUEDA -->
 <div class="search-section">
   <div class="search-wrap">
-    <span class="search-icon">🔍</span>
+    <span class="search-icon"><i class="ic ic-search"></i></span>
     <input type="text" id="searchInput" placeholder="Buscar producto, código o marca..." oninput="onSearch()">
   </div>
   <div class="filters" id="filtersBar"></div>
@@ -648,7 +685,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
     <div class="cart-handle"></div>
     <div class="cart-title">
       <div style="display:flex;align-items:center;gap:8px">
-        <span>🛒</span>
+        <span><i class="ic ic-cart"></i></span>
         <span>Mi Cotización</span>
         <span id="cartCount" style="background:#DA0000;color:white;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:800;min-width:28px;text-align:center"></span>
       </div>
@@ -657,7 +694,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
     <div id="cartItems"></div>
     <div id="cartTotals"></div>
     <div class="cliente-form" style="margin-top:12px">
-      <div class="form-tit">📋 Tus datos</div>
+      <div class="form-tit"><i class="ic ic-clip"></i> Tus datos</div>
       <div class="form-group"><label class="form-label" for="cliNombre">Nombre completo / Empresa</label><input class="form-input" id="cliNombre" placeholder="Ej: Juan Pérez o Constructora SA"></div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label" for="cliRut">RUT</label><input class="form-input" id="cliRut" placeholder="12.345.678-9"></div>
@@ -666,8 +703,8 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
       <div class="form-group"><label class="form-label" for="cliDir">Dirección / Ciudad</label><input class="form-input" id="cliDir" placeholder="Calle, número, ciudad"></div>
       <div class="form-group"><label class="form-label" for="cliObs">Observaciones</label><input class="form-input" id="cliObs" placeholder="Forma de pago, plazo entrega..."></div>
     </div>
-    <button class="btn-pdf" onclick="generarPDF()">📄 Descargar cotización PDF</button>
-    <button class="btn-wa-cot" id="btnWaCot" onclick="waCotizacionCliente()">💬 Continuar por WhatsApp</button>
+    <button class="btn-pdf" onclick="generarPDF()"><i class="ic ic-doc"></i> Descargar cotización PDF</button>
+    <button class="btn-wa-cot" id="btnWaCot" onclick="waCotizacionCliente()"><i class="ic ic-chat"></i> Continuar por WhatsApp</button>
 
     <!-- ── CUPÓN DE DESCUENTO ───────────────────────────────────────── -->
     <div id="cuponBox" style="display:none;margin-top:14px;border:2.5px solid #DA0000;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(218,0,0,.15)">
@@ -717,7 +754,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
     </div>
     <!-- ── FIN CUPÓN ─────────────────────────────────────────────────── -->
 
-    <button class="btn-vaciar" onclick="vaciarCarrito()">🗑 Vaciar carrito</button>
+    <button class="btn-vaciar" onclick="vaciarCarrito()"><i class="ic ic-trash"></i> Vaciar carrito</button>
 
     <!-- ── BUSCAR CUPÓN POR CORRELATIVO ──────────────────────────────── -->
     <div style="margin-top:10px;border:1.5px solid #e5e7eb;border-radius:10px;overflow:hidden">
@@ -767,7 +804,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
     <div class="wa-menu-header">
       <div class="wa-menu-hicon">🔧</div>
       <div class="wa-menu-htxt">
-        <div class="wa-menu-title">💬 Contactar por WhatsApp</div>
+        <div class="wa-menu-title"><i class="ic ic-chat"></i> Contactar por WhatsApp</div>
         <div class="wa-menu-sub">Elige con quién hablar</div>
       </div>
       <button class="wa-menu-close-btn" onclick="waMenuCerrar()" title="Cerrar">✕</button>
@@ -828,7 +865,7 @@ header{background:#1a1a1a;border-bottom:3px solid #DA0000;padding:10px 16px;disp
     <div class="cpc-handle"></div>
     <div class="cpc-header">
       <div>
-        <div class="cpc-header-title">💬 Contactar por WhatsApp</div>
+        <div class="cpc-header-title"><i class="ic ic-chat"></i> Contactar por WhatsApp</div>
         <div class="cpc-header-sub">Elige con quién hablar</div>
       </div>
       <button class="cpc-close" onclick="cpcCerrar()">✕</button>
@@ -2005,16 +2042,16 @@ function renderProductos(){
     var safeCod = _cliEsc(rawCod);
     var sk = p.Stock||0;
     var stockHtml = sk>10
-      ? '<span class="stock-badge stock-ok">🟢 STOCK: '+sk+'</span>'
+      ? '<span class="stock-badge stock-ok">STOCK: '+sk+'</span>'
       : sk>0
-        ? '<span class="stock-badge stock-low">⚠️ Últimas '+sk+'</span>'
-        : '<span class="stock-badge stock-out">🔴 SIN STOCK</span>';
+        ? '<span class="stock-badge stock-low">Últimas '+sk+'</span>'
+        : '<span class="stock-badge stock-out">SIN STOCK</span>';
     var precioHtml = window._mostrarPrecio
       ? '<div class="precio-publico">'+
           '<div class="precio-label">Precio IVA incl.</div>'+
           '<div class="precio-val">'+fmt(p.PrecioIVA)+'</div>'+
         '</div>'
-      : '<button class="precio-consultar-wa" onclick="waConsultarProducto(\''+jsCod+'\')">💬 Consultar precio</button>';
+      : '<button class="precio-consultar-wa" onclick="waConsultarProducto(\''+jsCod+'\')"><i class="ic ic-chat"></i> Consultar precio</button>';
     return '<div class="prod-card">'+
       '<div class="prod-header">'+
         '<div class="prod-nombre">'+_cliEsc(p.Descripcion)+'</div>'+
@@ -2026,7 +2063,7 @@ function renderProductos(){
         '<div class="prod-actions">'+
           '<div class="qty-wrap">'+
             '<button class="qty-btn" onclick="chgQty(\''+jsCod+'\',-1)">−</button>'+
-            '<span class="qty-val" id="qty_'+rawCod+'">1</span>'+
+            '<input class="qty-val" id="qty_'+rawCod+'" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" value="1" aria-label="Cantidad" onfocus="this.select()" oninput="qtyIn(this)" onblur="qtyFix(this)">'+
             '<button class="qty-btn" onclick="chgQty(\''+jsCod+'\',1)">+</button>'+
           '</div>'+
           '<button class="btn-add" onclick="addCart(\''+jsCod+'\')">+ Agregar</button>'+
@@ -2529,17 +2566,20 @@ function _cargarConfigPrecios(){
 function chgQty(c,d){
   var el = document.getElementById('qty_'+c);
   if(!el) return;
-  var v = parseInt(el.textContent)+d;
+  var v = (parseInt(el.value,10)||1)+d;
   if(v<1) v=1;
-  el.textContent = v;
+  el.value = v;
 }
+// Cantidad manual: solo digitos al escribir; vacio/0 vuelve a 1 al salir del campo
+function qtyIn(el){ el.value = el.value.replace(/[^0-9]/g,''); }
+function qtyFix(el){ var v = parseInt(el.value,10); el.value = (v>=1)?v:1; }
 
 function addCart(codigo){
   var p = null;
   for(var i=0;i<PRODUCTOS.length;i++){ if(PRODUCTOS[i].Codigo===codigo){p=PRODUCTOS[i];break;} }
   if(!p) return;
   var qtyEl = document.getElementById('qty_'+codigo);
-  var qty = qtyEl ? parseInt(qtyEl.textContent)||1 : 1;
+  var qty = qtyEl ? parseInt(qtyEl.value,10)||1 : 1;
   var idx = -1;
   for(var j=0;j<carrito.length;j++){ if(carrito[j].Codigo===codigo){idx=j;break;} }
   if(idx>=0) carrito[idx].qty += qty;
@@ -2550,7 +2590,7 @@ function addCart(codigo){
 
 function updateBadge(){
   var badge = document.getElementById('cartBadge');
-  var n = carrito.reduce(function(a,c){return a+c.qty;},0);
+  var n = carrito.length; // ITEMS distintos (no unidades)
   badge.textContent = n;
   badge.style.display = n > 0 ? 'flex' : 'none';
   // Animación de pulso al actualizar
@@ -3590,6 +3630,6 @@ function registrarAccesoCli(uid, nombre, role){
 
 
 </script>
-<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.83<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-11-2026</span></div>
+<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.86<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">04-11-2026</span></div>
 </body>
 </html>

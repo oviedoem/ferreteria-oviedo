@@ -2,8 +2,8 @@
 ⛔ Deploy y cierre (corregido 03-11-2026): cambios solo estáticos de los paneles → `_utilidades\PUBLICAR_ESTATICOS.bat`; datos o pipeline → `ACTUALIZAR_TODO.bat`; siempre con orden expresa del dueño. Nada queda pendiente: cada punto termina HECHO-VERIFICADO, PROGRAMADO, DELEGADO o BLOQUEADO con su motivo.
 
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.83
-# Fecha: 2026-11-03
+# Version activa: V37.86
+# Fecha: 2026-11-04
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
 # V37.26 a V37.49 vive solo en AGENTS.md (changelog completo por sesion). Aqui se
@@ -15,8 +15,8 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.83 |
-| Fecha | 2026-11-03 |
+| Version | V37.86 |
+| Fecha | 2026-11-04 |
 | Deploy | V37.83 (sesiones remotas + historial de accesos) y V37.82 (menú Configuración ERP, sub-pestañas de Ventas, tabla Stock por bodega, Mejoras, JSON de despachos por bodega) HECHOS 2026-11-03 con `_utilidades\PUBLICAR_ESTATICOS.bat`, verificados en vivo. Antes: V37.81 HECHO 2026-11-03 con `_utilidades\PUBLICAR_ESTATICOS.bat` (Consulta de Stock + textos estáticos; verificado en vivo, badge V37.81). Antes: HECHO 2026-11-03 17:24 (V37.80 «Pedidos tomados» + PASO 2B de variaciones de precio; `ACTUALIZAR_TODO.bat` desde el Centro de Control con extensión, estado ok, commit `c1a9b6a`). Intento previo 2026-10-24 11:10 (el PASO 1A falló por login ERP, ya corregido). Antes: HECHO 2026-10-13 21:16 (V37.78, `ACTUALIZAR_TODO.bat` manual del dueño, todo OK; commit `c1c00fe`). Antes: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT) y 2026-10-06 01:34 (+ arreglo 01:43) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
 | Pendiente vigente | Revisar catálogo público y fotos faltantes. No tocar ofertas salvo actualización de stock o retiro por stock total cero. Los pendientes antiguos del bot/Plan Canal se administran en el `CLAUDE.md` del bot y no son pendientes de este catálogo. |
@@ -24,6 +24,15 @@
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### 2026-11-04 (V37.86, PUBLICADA) — Íconos de línea SVG y micro-interacciones en Panel Vendedor y Cliente
+Emojis de la interfaz (lupa, carrito, datos, PDF, papelera, reloj, chat, actualizar) reemplazados por íconos de línea que heredan el color (CSS máscara); puntos de color en las etiquetas de stock; respuesta al toque en botones; foco rojo en el buscador; reduced-motion. `onclick`/`id`/funciones idénticos; mensajes de WhatsApp intactos. Pruebas 15/15 en cada panel. Publicada con `_utilidades\PUBLICAR_ESTATICOS.bat` con orden del dueño. Detalle en AGENTS.md.
+
+### 2026-11-04 (V37.85) — Diseño móvil de Panel Vendedor y Panel Cliente (solo CSS)
+Lote de CSS al final del `<style>` de `index.html` y `panel-cliente.html` (0 líneas JS/HTML cambiadas): tipografía más legible, controles táctiles de 44–48 px, «Agregar» a todo el ancho, buscador/filtros/botón Cotización más grandes, hojas con scroll; vendedor con encabezado que no desborda y «Horario» legible; cliente con el asesor bajo el carrito. Colores corporativos, carrito, PDF, Mis Ventas y login intactos. Publicado con `_utilidades\PUBLICAR_ESTATICOS.bat`. Detalle en AGENTS.md.
+
+### 2026-11-04 (V37.84) — Cantidad manual y contador de ítems en Panel Vendedor y Panel Cliente
+El selector de cantidad ahora es un campo numérico editable (además de − / +): se puede escribir 300 directo. `qtyIn()` deja solo dígitos y `qtyFix()` devuelve 1 si queda vacío o en 0. Solo `index.html` y `panel-cliente.html`; precios, margen, carrito y PDF intactos. Publicación pendiente con `_utilidades\PUBLICAR_ESTATICOS.bat` (orden del dueño). El icono negro «Cotización» ahora cuenta ítems distintos (1, 2, 3…) y no unidades. Panel Vendedor: el Precio Socio cambia en vivo desde «% Unit», botón «↺ Actualizar MG» para volver al precio original (el margen no se guarda). El margen global fue retirado: solo queda el margen unitario. El PDF no cambia. Detalle en AGENTS.md.
 
 ### 2026-11-03 (noche) — Despachos por bodega, no por sucursal 04 (sin cambio de versión)
 `BODEGAS/descargar_despachos.py` ya no filtra `IDSUCURSAL='04'`: los BVE/FVE de las sucursales 09, 10 y 14 (8 documentos, 340 u.) también sacan stock de PEM/SEM/CEM/MEM y no salían en el menú Despachos. Local: lista 57→66 documentos, detalle 110→131 productos. Publicado el 03-11. Dif no cambia. Detalle en AGENTS.md.

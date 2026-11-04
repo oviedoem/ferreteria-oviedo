@@ -73,6 +73,8 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
 /* MARGEN GLOBAL */
 .mbar{background:linear-gradient(90deg,var(--og-lite),#fff);border-bottom:2px solid rgba(232,69,10,.2);padding:9px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .mlbl{font-size:13px;font-weight:700;color:var(--og)}
+.mreset{border:1.5px solid var(--og);background:#fff;color:var(--og);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ff)}
+.mreset:active{background:var(--og);color:#fff}
 .mwrap{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid rgba(232,69,10,.35);border-radius:8px;padding:5px 10px}
 .minput{width:54px;font-size:16px;font-weight:700;color:var(--og);text-align:center;border:none;outline:none;font-family:var(--ff)}
 .mfml{font-size:10px;color:var(--grm);font-style:italic}
@@ -116,7 +118,8 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
 .pacts{padding:0 13px 11px;display:flex;gap:6px;align-items:center}
 .qwrap{display:flex;align-items:center;gap:3px;background:var(--grl);border-radius:8px;padding:3px 6px}
 .qbtn{width:26px;height:26px;border:none;background:var(--og);color:#fff;border-radius:5px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--ff)}
-.qval{width:28px;text-align:center;font-size:14px;font-weight:700}
+.qval{width:52px;text-align:center;font-size:14px;font-weight:700;border:1px solid transparent;border-radius:5px;background:#fff;padding:3px 0;font-family:var(--ff);-moz-appearance:textfield}
+.qval:focus{outline:none;border-color:var(--og)}
 .badd{flex:1;padding:9px;background:var(--og);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ff)}
 .badd:active{background:var(--og2)}
 .bunit{padding:9px 11px;background:#fff;color:var(--og);border:1.5px solid var(--og);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ff);white-space:nowrap}
@@ -239,6 +242,50 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
 .ven-loading{text-align:center;padding:40px;color:#6b7280}
 .ven-spinner{width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:#DA0000;border-radius:50%;animation:vspin .7s linear infinite;margin:0 auto 8px}
 @keyframes vspin{to{transform:rotate(360deg)}}
+/* ===== V37.85 DISENO MOVIL (04-11-2026) - SOLO CSS: no cambia logica, ids, onclick ni colores corporativos ===== */
+.pcard{border-radius:14px;border:1px solid #e4e4e4;box-shadow:0 2px 8px rgba(32,32,32,.07)}
+.pnom{font-size:16px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.pcod{font-size:12px;white-space:normal;overflow-wrap:anywhere;text-align:right}
+.pmarca{font-size:13px;line-height:1.4}
+.plbl{font-size:11px;letter-spacing:.3px}
+.pval{font-size:20px;font-variant-numeric:tabular-nums}
+.qwrap{gap:4px;padding:4px 6px;border-radius:12px}
+.qbtn{width:44px;height:44px;border-radius:10px;font-size:20px}
+.qval{width:60px;min-height:44px;font-size:16px}
+.pacts{flex-wrap:wrap;gap:8px}
+.badd{min-height:48px;font-size:15px;border-radius:10px}
+.bunit{min-height:48px;font-size:13px;border-radius:10px}
+@media(max-width:600px){.bunit{order:1;flex:1 1 auto}.badd{order:2;flex:1 0 100%}}
+header{flex-wrap:wrap;row-gap:6px}
+.htitle{flex:1 1 80px;min-width:0}
+.htitle p{overflow-wrap:anywhere}
+#horarioWrapVend>button{color:#202020!important;background:#fff!important;border:1px solid #d6d6d6!important}
+#sinput{min-height:48px;font-size:16px}
+.fbar{gap:8px;padding-bottom:6px}
+.fbtn{min-height:40px;padding:8px 14px;font-size:13px}
+.cfab{min-height:56px;bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+#plist{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+.cdrawer{overscroll-behavior:contain;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.mpanel{max-height:92dvh;overflow-y:auto}
+.mminput{min-height:48px}
+.mconfirm,.mcancel{min-height:48px}
+#plist button:focus-visible,#plist input:focus-visible,#sinput:focus-visible{outline:3px solid #202020;outline-offset:2px}
+/* ===== V37.85b ICONOS Y MICRO-INTERACCIONES (04-11-2026) - SOLO CSS: iconos de linea SVG que heredan color (reemplazan emojis); sin cambios de logica ===== */
+.ic{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.ic-search{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E")}
+.ic-cart{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4h2l2.4 11h10.2L20 7H6.2'/%3E%3Ccircle cx='9' cy='19' r='1.4'/%3E%3Ccircle cx='17' cy='19' r='1.4'/%3E%3C/svg%3E")}
+.ic-clip{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='4' width='14' height='17' rx='2'/%3E%3Cpath d='M9 4h6v3H9z M9 12h6 M9 16h4'/%3E%3C/svg%3E")}
+.ic-doc{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3h7l5 5v13H7z M14 3v5h5 M10 13h6 M10 17h4'/%3E%3C/svg%3E")}
+.ic-trash{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13 M10 11v6 M14 11v6'/%3E%3C/svg%3E")}
+.ic-refresh{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 0 1 15.5-6.2L21 8 M21 3v5h-5 M21 12a9 9 0 0 1-15.5 6.2L3 16 M3 21v-5h5'/%3E%3C/svg%3E")}
+.ic-clock{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
+.ic-chat{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.3A8 8 0 1 1 21 12z'/%3E%3C/svg%3E")}
+.sico .ic,.search-icon .ic{width:20px;height:20px;color:#6b7280}
+.stock-badge::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:4px;flex-shrink:0;vertical-align:middle}
+.badd,.bunit,.qbtn,.btn-add,.qty-btn,.fbtn,.filter-btn{transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
+.badd:active,.bunit:active,.qbtn:active,.btn-add:active,.qty-btn:active{transform:scale(.96)}
+#sinput:focus,#searchInput:focus{border-color:#DA0000;box-shadow:0 0 0 3px rgba(218,0,0,.15);outline:none}
+@media (prefers-reduced-motion:reduce){.badd,.bunit,.qbtn,.btn-add,.qty-btn,.fbtn,.filter-btn{transition:none}.badd:active,.bunit:active,.qbtn:active,.btn-add:active,.qty-btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -333,7 +380,7 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
       <p style="font-size:10px;color:var(--grm);margin:0">Sucursal El Manzano — <span id="wuser"></span></p>
     </div>
     <div id="horarioWrapVend" style="position:relative">
-      <button onclick="toggleSucursalInfoVend()" style="font-size:11px;color:rgba(255,255,255,.8);cursor:pointer;padding:6px 10px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);font-family:inherit;font-weight:700;white-space:nowrap;margin-right:4px">🕐 Horario</button>
+      <button onclick="toggleSucursalInfoVend()" style="font-size:11px;color:rgba(255,255,255,.8);cursor:pointer;padding:6px 10px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);font-family:inherit;font-weight:700;white-space:nowrap;margin-right:4px"><i class="ic ic-clock"></i> Horario</button>
       <div id="sucursalPopoverVend" style="display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:50;background:rgba(20,20,20,.96);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;width:230px;box-shadow:0 6px 18px rgba(0,0,0,.5)">
         <div style="font-size:10px;font-weight:800;color:#ff3a3a;text-transform:uppercase;letter-spacing:.8px">📍 Sucursal El Manzano</div>
         <div style="display:flex;flex-direction:column;gap:3px">
@@ -365,17 +412,13 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
   <div class="sbar loading" id="sbar"><div class="sdot"></div><span id="stxt">Cargando precios...</span></div>
 
   <div class="mbar">
-    <span class="mlbl">⚙ Margen global Socio:</span>
-    <div class="mwrap">
-      <input class="minput" type="number" id="mglobal" value="0" min="0" max="90" step="1" oninput="renderProds()">
-      <span style="font-size:16px;font-weight:700;color:var(--og)">%</span>
-    </div>
-    <span class="mfml">Precio = CostoPromedio ÷ (1−margen%) × 1.19</span>
+    <button class="mreset" onclick="resetMG()" title="Quita los márgenes puestos en «% Unit» y vuelve al precio original. El margen no se guarda, solo se usa en vivo"><i class="ic ic-refresh"></i> Actualizar MG</button>
+    <span class="mfml">Margen por producto: botón «% Unit». Precio = CostoPromedio ÷ (1−margen%) × 1.19</span>
   </div>
 
   <div class="ssec">
     <div class="swrap">
-      <span class="sico">🔍</span>
+      <span class="sico"><i class="ic ic-search"></i></span>
       <input type="text" id="sinput" placeholder="Buscar producto, código o marca..." oninput="onSearch()">
     </div>
     <div class="fbar" id="fbar"></div>
@@ -398,13 +441,13 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
     <div class="cdrawer">
       <div class="chandle"></div>
       <div class="ctitle">
-        🛒 Mi Cotización
+        <i class="ic ic-cart"></i> Mi Cotización
         <button style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--grm)" onclick="closeCart()">✕</button>
       </div>
       <div id="citems"></div>
       <div id="ctotals"></div>
       <div class="clibox" style="margin-top:12px">
-        <div class="clitit">📋 Datos del cliente</div>
+        <div class="clitit"><i class="ic ic-clip"></i> Datos del cliente</div>
         <div class="fg"><label class="fl">Nombre / Razón Social</label><input class="fi" id="cnombre" placeholder="Juan Pérez o Empresa SA"></div>
         <div class="fgrid">
           <div class="fg"><label class="fl">RUT</label><input class="fi" id="crut" placeholder="12.345.678-9"></div>
@@ -414,8 +457,8 @@ header{background:#fff;border-bottom:3px solid var(--og);padding:10px 14px;displ
         <div class="fg"><label class="fl">Observaciones</label><input class="fi" id="cobs" placeholder="Forma de pago, plazo..."></div>
         <div class="fg"><label class="fl">Vendedor</label><input class="fi" id="cvend" placeholder="Nombre vendedor"></div>
       </div>
-      <button class="bpdf" onclick="genPDF()">📄 Descargar Cotización PDF</button>
-      <button class="bvac" onclick="vaciar()">🗑 Vaciar carrito</button>
+      <button class="bpdf" onclick="genPDF()"><i class="ic ic-doc"></i> Descargar Cotización PDF</button>
+      <button class="bvac" onclick="vaciar()"><i class="ic ic-trash"></i> Vaciar carrito</button>
     </div>
   </div>
 
@@ -946,7 +989,7 @@ function logout(){
   if(_sesionRemotaVendUnsubscribe){ try{ _sesionRemotaVendUnsubscribe(); }catch(e){} _sesionRemotaVendUnsubscribe=null; }
   // Firebase Auth sign out
   if(window.auth){ try{ window.auth.signOut(); }catch(e){} }
-  me=null; PRODS=[]; FILT=[]; CART=[]; MARCA='TODOS';
+  me=null; PRODS=[]; FILT=[]; CART=[]; MARCA='TODOS'; LIVE_M={};
   document.getElementById('app').style.display         = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('luser').value  = '';
@@ -1362,13 +1405,40 @@ function calcSocio(p, m){
   return Math.round(p.CP/(1-m/100)*1.19);
 }
 
+// ── MARGEN EN VIVO (solo memoria, nunca se guarda) ───────────────────────────
+// LIVE_M: margen puesto a mano en "% Unit" para un codigo; si no existe, rige 0 (precio original).
+// No hay margen global (retirado a pedido del dueno 04-11-2026).
+var LIVE_M = {};
+function mEff(cod){
+  return Object.prototype.hasOwnProperty.call(LIVE_M, cod) ? LIVE_M[cod] : 0;
+}
+function socioBoxHtml(p, m){
+  var ps = calcSocio(p, m);
+  return ps!==null
+    ? '<div class="pbox '+(m!==0?'mod':'soc')+'" id="ps'+p.Codigo.replace(/'/g,"\\'")+'"><div class="plbl">Precio Socio c/IVA'+(m!==0?' (MC '+m+'%)':'')+' </div><div class="pval">'+fmt(ps)+'</div></div>'
+    : '<div class="pbox" id="ps'+p.Codigo.replace(/'/g,"\\'")+'" style="background:#fef3c7"><div class="plbl" style="color:#92400e">⚠️ Sin costo real (OC pendiente)</div></div>';
+}
+// Cambia solo la caja Precio Socio de UNA tarjeta (sin redibujar la lista ni perder cantidades)
+function updCardSocio(cod){
+  var el = document.getElementById('ps'+cod.replace(/'/g,"\\'"));
+  if(!el) return;
+  for(var i=0;i<PRODS.length;i++){ if(PRODS[i].Codigo===cod){ el.outerHTML = socioBoxHtml(PRODS[i], mEff(cod)); return; } }
+}
+// Boton "Actualizar MG": borra los margenes por producto y vuelve todo al precio original
+function resetMG(){
+  LIVE_M = {};
+  renderProds();
+  showToast('Margen restablecido: precios originales','ok');
+}
+
 function renderProds(){
-  var m = parseInt(document.getElementById('mglobal').value)||0;
+  // conservar las cantidades escritas en las tarjetas al redibujar
+  var _qs = {}, _qi = document.querySelectorAll('#plist input.qval');
+  for(var _i=0;_i<_qi.length;_i++){ _qs[_qi[_i].id] = _qi[_i].value; }
   var shown40 = Math.min(FILT.length, 40);
   document.getElementById('stbar').innerHTML =
     '<div class="chip">Total: <span>'+PRODS.length+'</span></div>'+
     '<div class="chip">Mostrando: <span>'+shown40+' de '+FILT.length+'</span></div>'+
-    '<div class="chip">Margen: <span>'+m+'%</span></div>'+
     '<div class="chip">Carrito: <span>'+CART.reduce(function(a,c){return a+c.qty;},0)+'</span></div>';
 
   var list = document.getElementById('plist');
@@ -1380,20 +1450,19 @@ function renderProds(){
   var shown = FILT.slice(0,40);
   for(var i=0;i<shown.length;i++){
     var p = shown[i];
-    var ps  = calcSocio(p,m);
+    var pm  = mEff(p.Codigo);
+    var ps  = calcSocio(p,pm);
     var safeCod = p.Codigo.replace(/'/g,"\\'");
     html +=
       '<div class="pcard">'+
       '<div class="phead"><div class="pnom">'+p.Desc+'</div><div class="pcod">'+p.Codigo+'</div></div>'+
-      '<div class="pmarca">'+p.Marca+(p.Sub?' · '+p.Sub:'')+' '+(p.Stk>10?'<span class="stock-badge stock-ok">🟢 STOCK: '+p.Stk+'</span>':p.Stk>0?'<span class="stock-badge stock-low">⚠️ Últimas '+p.Stk+'</span>':'<span class="stock-badge stock-out">🔴 SIN STOCK</span>')+'</div>'+
+      '<div class="pmarca">'+p.Marca+(p.Sub?' · '+p.Sub:'')+' '+(p.Stk>10?'<span class="stock-badge stock-ok">STOCK: '+p.Stk+'</span>':p.Stk>0?'<span class="stock-badge stock-low">Últimas '+p.Stk+'</span>':'<span class="stock-badge stock-out">SIN STOCK</span>')+'</div>'+
       '<div class="pprecios">'+
         (window._mostrarPrecioVendedor!==false
           ? (function(){
               var cp = p.CP>0 ? p.CP : null;
               var margenReal = (cp!==null && p.PIva>0) ? Math.round((1 - cp*1.19/p.PIva)*100) : null;
-              var socioBox = ps!==null
-                ? '<div class="pbox '+(m!==0?'mod':'soc')+'"><div class="plbl">Precio Socio c/IVA'+(m!==0?' (MC '+m+'%)':'')+' </div><div class="pval">'+fmt(ps)+'</div></div>'
-                : '<div class="pbox" style="background:#fef3c7"><div class="plbl" style="color:#92400e">⚠️ Sin costo real (OC pendiente)</div></div>';
+              var socioBox = socioBoxHtml(p, pm);
               return '<div class="pbox pub"><div class="plbl">Precio Retail c/IVA</div><div class="pval">'+fmt(p.PIva)+'</div></div>'+
                 socioBox+
                 (cp!==null?'<div class="pbox cos" style="grid-column:1/-1"><div class="plbl">Costo prom.'+(margenReal!==null?' · Margen retail '+margenReal+'%':'')+' </div><div class="pval">'+fmt(cp)+'</div></div>':'');
@@ -1403,7 +1472,7 @@ function renderProds(){
       '<div class="pacts">'+
         '<div class="qwrap">'+
           '<button class="qbtn" onclick="chgQ(\''+safeCod+'\',-1)">−</button>'+
-          '<span class="qval" id="q'+safeCod+'">1</span>'+
+          '<input class="qval" id="q'+safeCod+'" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" value="1" aria-label="Cantidad" onfocus="this.select()" oninput="qtyIn(this)" onblur="qtyFix(this)">'+
           '<button class="qbtn" onclick="chgQ(\''+safeCod+'\',1)">+</button>'+
         '</div>'+
         '<button class="badd" onclick="addCart(\''+safeCod+'\')">+ Agregar</button>'+
@@ -1412,6 +1481,7 @@ function renderProds(){
       '</div>';
   }
   list.innerHTML = html;
+  for(var _k in _qs){ var _e = document.getElementById(_k); if(_e) _e.value = _qs[_k]; }
 }
 
 function fmt(n){ return '$'+Math.round(n).toLocaleString('es-CL'); }
@@ -1419,9 +1489,12 @@ function fmt(n){ return '$'+Math.round(n).toLocaleString('es-CL'); }
 function chgQ(c,d){
   var el = document.getElementById('q'+c);
   if(!el) return;
-  var v = parseInt(el.textContent)+d;
-  el.textContent = v<1?1:v;
+  var v = (parseInt(el.value,10)||1)+d;
+  el.value = v<1?1:v;
 }
+// Cantidad manual: solo digitos al escribir; vacio/0 vuelve a 1 al salir del campo
+function qtyIn(el){ el.value = el.value.replace(/[^0-9]/g,''); }
+function qtyFix(el){ var v = parseInt(el.value,10); el.value = (v>=1)?v:1; }
 
 // ── MODAL MARGEN UNITARIO ─────────────────────────────────────────────────────
 function openMM(cod){
@@ -1432,24 +1505,36 @@ function openMM(cod){
   document.getElementById('msubt').textContent = p.Desc;
   var cp = p.CP>0 ? p.CP : Math.round(p.SIva/1.19);
   document.getElementById('mcosto').textContent = fmt(cp);
-  document.getElementById('mmargen').value = parseInt(document.getElementById('mglobal').value)||0;
+  MM_PREV = Object.prototype.hasOwnProperty.call(LIVE_M, p.Codigo) ? LIVE_M[p.Codigo] : undefined; // para Cancelar
+  document.getElementById('mmargen').value = mEff(p.Codigo);
   updPrev();
   document.getElementById('moverlay').style.display='flex';
 }
-function closeMModal(){ document.getElementById('moverlay').style.display='none'; MPROD=null; }
+var MM_PREV;
+// Cancelar (sin "keep") deshace el margen en vivo de ese producto; "Aplicar y agregar" lo conserva
+function closeMModal(keep){
+  if(MPROD && keep!==true){
+    var c = MPROD.Codigo;
+    if(MM_PREV===undefined) delete LIVE_M[c]; else LIVE_M[c] = MM_PREV;
+    updCardSocio(c);
+  }
+  document.getElementById('moverlay').style.display='none'; MPROD=null;
+}
 function updPrev(){
   if(!MPROD) return;
   var m = parseInt(document.getElementById('mmargen').value)||0;
   document.getElementById('mprev').textContent = fmt(calcSocio(MPROD,m));
+  LIVE_M[MPROD.Codigo] = m;       // en vivo: la tarjeta cambia mientras se escribe
+  updCardSocio(MPROD.Codigo);
 }
 function confMargen(){
   if(!MPROD) return;
   var m     = parseInt(document.getElementById('mmargen').value)||0;
   var precio = calcSocio(MPROD,m);
   var el    = document.getElementById('q'+MPROD.Codigo);
-  var qty   = el ? parseInt(el.textContent)||1 : 1;
+  var qty   = el ? parseInt(el.value,10)||1 : 1;
   addItem(MPROD, precio, qty, m);
-  closeMModal();
+  closeMModal(true);
 }
 
 // ── CARRITO ───────────────────────────────────────────────────────────────────
@@ -1457,10 +1542,10 @@ function addCart(cod){
   var p=null;
   for(var i=0;i<PRODS.length;i++){ if(PRODS[i].Codigo===cod){p=PRODS[i];break;} }
   if(!p) return;
-  var m     = parseInt(document.getElementById('mglobal').value)||0;
+  var m     = mEff(cod); // el margen que se ve en la tarjeta (global o el puesto en "% Unit")
   var precio = calcSocio(p,m);
   var el    = document.getElementById('q'+cod);
-  var qty   = el ? parseInt(el.textContent)||1 : 1;
+  var qty   = el ? parseInt(el.value,10)||1 : 1;
   addItem(p, precio, qty, m);
 }
 
@@ -1474,7 +1559,12 @@ function addItem(p, precio, qty, m){
   updBadge(); showToast('Agregado al carrito','ok');
 }
 
-function updBadge(){ document.getElementById('cbadge').textContent = CART.reduce(function(a,c){return a+c.qty;},0); }
+// Icono Cotizacion: cuenta ITEMS distintos del carrito (no unidades); oculto si esta vacio
+function updBadge(){
+  var b = document.getElementById('cbadge'), n = CART.length;
+  b.textContent = n;
+  b.style.display = n > 0 ? 'block' : 'none';
+}
 function openCart(){ renderCart(); document.getElementById('cpanel').style.display='block'; }
 function closeCart(){ document.getElementById('cpanel').style.display='none'; }
 
@@ -2443,6 +2533,6 @@ document.addEventListener('keydown', function(e){
   </div>
 </div>
 
-<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.83<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">03-11-2026</span></div>
+<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.86<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">04-11-2026</span></div>
 </body>
 </html>
