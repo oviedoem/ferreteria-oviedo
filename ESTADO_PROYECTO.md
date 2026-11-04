@@ -2,7 +2,7 @@
 ⛔ Deploy y cierre (corregido 03-11-2026): cambios solo estáticos de los paneles → `_utilidades\PUBLICAR_ESTATICOS.bat`; datos o pipeline → `ACTUALIZAR_TODO.bat`; siempre con orden expresa del dueño. Nada queda pendiente: cada punto termina HECHO-VERIFICADO, PROGRAMADO, DELEGADO o BLOQUEADO con su motivo.
 
 # ESTADO_PROYECTO.md — Ferretería Oviedo El Manzano
-# Version activa: V37.86
+# Version activa: V37.87
 # Fecha: 2026-11-04
 # Versiones anteriores disponibles en _HISTORICO/
 # NOTA: este doc no se actualizaba desde V37.25 (2026-06-14) — el historial detallado
@@ -15,7 +15,7 @@
 
 | Campo | Valor |
 |---|---|
-| Version | V37.86 |
+| Version | V37.87 |
 | Fecha | 2026-11-04 |
 | Deploy | V37.83 (sesiones remotas + historial de accesos) y V37.82 (menú Configuración ERP, sub-pestañas de Ventas, tabla Stock por bodega, Mejoras, JSON de despachos por bodega) HECHOS 2026-11-03 con `_utilidades\PUBLICAR_ESTATICOS.bat`, verificados en vivo. Antes: V37.81 HECHO 2026-11-03 con `_utilidades\PUBLICAR_ESTATICOS.bat` (Consulta de Stock + textos estáticos; verificado en vivo, badge V37.81). Antes: HECHO 2026-11-03 17:24 (V37.80 «Pedidos tomados» + PASO 2B de variaciones de precio; `ACTUALIZAR_TODO.bat` desde el Centro de Control con extensión, estado ok, commit `c1a9b6a`). Intento previo 2026-10-24 11:10 (el PASO 1A falló por login ERP, ya corregido). Antes: HECHO 2026-10-13 21:16 (V37.78, `ACTUALIZAR_TODO.bat` manual del dueño, todo OK; commit `c1c00fe`). Antes: 2026-10-12 (`catalogo-bot.json`, V37.77, sesión de ChatGPT) y 2026-10-06 01:34 (+ arreglo 01:43) |
 | Commit | automatico de ACTUALIZAR_TODO.bat al correrlo; bot: d649dc6 y fd43eed (2026-10-06) |
@@ -24,6 +24,9 @@
 ---
 
 ## ULTIMOS CAMBIOS (V37.x)
+
+### 2026-11-04 (V37.87, PUBLICADA) — Arreglo del panel «Mis Ventas» cortado (Panel Vendedor)
+El panel tenía 5 bloques `.ven-body` con scroll propio que se repartían la altura (secciones cortadas y superpuestas; defecto previo a V37.85). Ahora un único scroll con encabezado fijo: solo CSS (+4 líneas), sin tocar `venCargar` ni cálculos. Publicada con `_utilidades\PUBLICAR_ESTATICOS.bat` con orden del dueño. Detalle en AGENTS.md.
 
 ### 2026-11-04 (V37.86, PUBLICADA) — Íconos de línea SVG y micro-interacciones en Panel Vendedor y Cliente
 Emojis de la interfaz (lupa, carrito, datos, PDF, papelera, reloj, chat, actualizar) reemplazados por íconos de línea que heredan el color (CSS máscara); puntos de color en las etiquetas de stock; respuesta al toque en botones; foco rojo en el buscador; reduced-motion. `onclick`/`id`/funciones idénticos; mensajes de WhatsApp intactos. Pruebas 15/15 en cada panel. Publicada con `_utilidades\PUBLICAR_ESTATICOS.bat` con orden del dueño. Detalle en AGENTS.md.

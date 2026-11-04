@@ -286,6 +286,10 @@ header{flex-wrap:wrap;row-gap:6px}
 .badd:active,.bunit:active,.qbtn:active,.btn-add:active,.qty-btn:active{transform:scale(.96)}
 #sinput:focus,#searchInput:focus{border-color:#DA0000;box-shadow:0 0 0 3px rgba(218,0,0,.15);outline:none}
 @media (prefers-reduced-motion:reduce){.badd,.bunit,.qbtn,.btn-add,.qty-btn,.fbtn,.filter-btn{transition:none}.badd:active,.bunit:active,.qbtn:active,.btn-add:active,.qty-btn:active{transform:none}}
+/* ===== V37.86b FIX Mis Ventas cortado (04-11-2026) - SOLO CSS: un unico scroll para todo el panel (antes 5 bloques .ven-body flex:1 con scroll propio se repartian la altura) ===== */
+.ven-panel{overflow-y:auto;overscroll-behavior:contain}
+.ven-panel>.ven-body{flex:none;overflow:visible}
+.ven-hdr{position:sticky;top:0;z-index:5}
 </style>
 </head>
 <body>
@@ -2533,6 +2537,6 @@ document.addEventListener('keydown', function(e){
   </div>
 </div>
 
-<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.86<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">04-11-2026</span></div>
+<div style="position:fixed;bottom:10px;right:12px;z-index:1000;background:rgba(15,23,42,.84);color:rgba(255,255,255,.85);font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;pointer-events:none;letter-spacing:.4px;border:1px solid rgba(99,102,241,.35);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px"><span style="color:#a5b4fc;font-weight:700;letter-spacing:.6px">AG</span><span style="opacity:.35;font-size:9px">●</span>V37.87<span style="opacity:.35;font-size:9px">●</span><span style="opacity:.65;font-weight:500">04-11-2026</span></div>
 </body>
 </html>
